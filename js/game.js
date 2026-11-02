@@ -932,9 +932,10 @@ export class Game {
   // time this gesture is over, say so (once in a while), and how to bring it back.
   _checkSound() {
     if (this.audio.running) return;
+    this.audio.audible;           // notes the clock now, to compare below
     setTimeout(() => {
       const now = performance.now();
-      if (this.audio.running || now - (this.soundNoticeAt || -1e9) < 15000) return;
+      if (this.audio.audible || now - (this.soundNoticeAt || -1e9) < 15000) return;
       this.soundNoticeAt = now;
       this.tts.speak('The game\'s sounds were stopped by your device. Tap the screen once to bring them back.', { interrupt: false });
     }, 900);
@@ -1114,9 +1115,12 @@ export class Game {
     this.practiceBackAt = 0;
     this.scores.settings.practiced = true;
     this.scores.save();
+    // For finding faults: how often the sound has had to be restarted.
+    const n = this.audio.recoveries;
+    const note = n ? ` Since the game started, its sound has been restarted ${n} time${n === 1 ? '' : 's'}.` : '';
     this.tts.speak('Gesture practice. Try any gesture and the game says what it felt. '
       + 'Swipe in four directions, double tap, triple tap, tap four times, tap with two fingers or with three. '
-      + 'Triple tap twice in a row to leave, or wait twenty seconds.');
+      + 'Triple tap twice in a row to leave, or wait twenty seconds.' + note);
   }
 
   _practiceInput(g) {

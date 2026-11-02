@@ -84,15 +84,32 @@ export class AudioEngine {
   // allows sound to be started. If the phone has stopped the game's sound (a
   // call, another app, the screen reader being turned off, or speech), it is
   // started again; if it will not start again, a fresh sound engine is made.
+  //
+  // An iPhone can call the sound 'interrupted' while it is still playing (as it
+  // turns sounds down under the game's speech), so the engine is replaced only
+  // when its clock has truly stopped, and at most once in five seconds.
   wake() {
     if (this.ctx.state === 'running' || this.waking) return;
     this.waking = true;
     const ctx = this.ctx;
+    const t0 = ctx.currentTime;
     ctx.resume().catch(() => {});
     setTimeout(() => {
       this.waking = false;
-      if (this.ctx === ctx && ctx.state !== 'running') this.recover();
+      if (this.ctx !== ctx || ctx.state === 'running') return;
+      const moving = ctx.currentTime - t0 > 0.2;
+      const recent = performance.now() - (this.recoveredAt || -1e9) < 5000;
+      if (!moving && !recent) this.recover();
     }, 400);
+  }
+
+  // Whether sound is really coming out: running, or its clock still moving.
+  get audible() {
+    if (this.ctx.state === 'running') return true;
+    const now = this.ctx.currentTime;
+    const was = this._lastClock;
+    this._lastClock = now;
+    return was !== undefined && now > was;
   }
 
   // A fresh sound engine: everything that was looping carries on from where it
@@ -101,12 +118,15 @@ export class AudioEngine {
   recover() {
     const old = this.ctx;
     this.recoveries += 1;
+    this.recoveredAt = performance.now();
     this.ctx = newContext();
     this.out = this.ctx.createGain();
     this.out.connect(this.ctx.destination);
     this.convolvers = new Map();
     for (const v of [...this.live]) v.rebind(old);
-    try { old.close(); } catch (e) { /* already closed */ }
+    // The old engine is kept a moment, so a one-shot already sounding there (a
+    // footstep, a shot) finishes rather than being cut off.
+    setTimeout(() => { try { old.close(); } catch (e) { /* already closed */ } }, 2000);
     this.ctx.resume().catch(() => {});
   }
 
@@ -392,7 +412,9 @@ export class Voice {
   rebind(oldCtx) {
     if (this.stopped || this.ended) return;
     if (!this.loop || !this.dry) {
-      this.stop();
+      // A one-shot plays out where it began (see recover); it is just no longer
+      // tracked here.
+      this.audio.live.delete(this);
       return;
     }
     const wasPaused = this.paused;
