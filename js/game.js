@@ -875,6 +875,7 @@ export class Game {
   input(g) {
     this.audio.resume();
     this.lastInputAt = performance.now();
+    this._checkSound();
     if (this.state === S.PRACTICE) { this._practiceInput(g); return; }
 
     // Help from the menu, or from a run (four taps reach here only while paused;
@@ -925,6 +926,18 @@ export class Game {
       default: break;
     }
     if (this.playing) this._playInput(g);
+  }
+
+  // If the phone has stopped the game's sound and it has not come back by the
+  // time this gesture is over, say so (once in a while), and how to bring it back.
+  _checkSound() {
+    if (this.audio.running) return;
+    setTimeout(() => {
+      const now = performance.now();
+      if (this.audio.running || now - (this.soundNoticeAt || -1e9) < 15000) return;
+      this.soundNoticeAt = now;
+      this.tts.speak('The game\'s sounds were stopped by your device. Tap the screen once to bring them back.', { interrupt: false });
+    }, 900);
   }
 
   _menuInput(g) {

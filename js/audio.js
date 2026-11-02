@@ -28,16 +28,21 @@ export function isPauseBeep(name) {
     name === 'countdown' || name === 'countdown_high';
 }
 
+function newContext() {
+  const AC = window.AudioContext || window.webkitAudioContext;
+  try {
+    return new AC({ sampleRate: RATE, latencyHint: 'interactive' });
+  } catch (e) {
+    return new AC();
+  }
+}
+
 export class AudioEngine {
   constructor() {
-    const AC = window.AudioContext || window.webkitAudioContext;
-    try {
-      this.ctx = new AC({ sampleRate: RATE, latencyHint: 'interactive' });
-    } catch (e) {
-      this.ctx = new AC();
-    }
+    this.ctx = newContext();
     this.out = this.ctx.createGain();
     this.out.connect(this.ctx.destination);
+    this.recoveries = 0;
     this.entries = new Map();     // name -> {dry, dull} pack entries
     this.irEntries = new Map();   // room key -> [entry per take]
     this.buffers = new Map();     // 'dry:name' / 'dull:name' -> AudioBuffer
@@ -56,9 +61,11 @@ export class AudioEngine {
   }
 
   async unlock() {
-    // Phones keep audio off until the player touches something, and an iPhone's
-    // silent switch would mute the game unless it asks to be treated as playback.
-    try { if (navigator.audioSession) navigator.audioSession.type = 'playback'; } catch (e) { /* older Safari */ }
+    // Phones keep audio off until the player touches something. The sound is
+    // 'ambient', which mixes with the game's own speech. ('playback' does not mix:
+    // on an iPhone the speech then stopped the game's sound altogether.) Ambient
+    // sound is muted by an iPhone's silent mode, so the game asks for that off.
+    try { if (navigator.audioSession) navigator.audioSession.type = 'ambient'; } catch (e) { /* older Safari */ }
     try { await this.ctx.resume(); } catch (e) { /* tried again on the next touch */ }
     // A moment of silence through the context, which some phones need before the
     // first real sound plays.
@@ -67,8 +74,40 @@ export class AudioEngine {
     s.buffer = b; s.connect(this.out); s.start();
   }
 
+  get running() { return this.ctx.state === 'running'; }
+
   resume() {
     if (this.ctx.state !== 'running') this.ctx.resume().catch(() => {});
+  }
+
+  // Called on every touch, tap and key press, which are the moments a phone
+  // allows sound to be started. If the phone has stopped the game's sound (a
+  // call, another app, the screen reader being turned off, or speech), it is
+  // started again; if it will not start again, a fresh sound engine is made.
+  wake() {
+    if (this.ctx.state === 'running' || this.waking) return;
+    this.waking = true;
+    const ctx = this.ctx;
+    ctx.resume().catch(() => {});
+    setTimeout(() => {
+      this.waking = false;
+      if (this.ctx === ctx && ctx.state !== 'running') this.recover();
+    }, 400);
+  }
+
+  // A fresh sound engine: everything that was looping carries on from where it
+  // was (drones, beacons, enemies); a one-shot that was cut off is not replayed.
+  // Sounds already decoded are kept: they belong to no engine in particular.
+  recover() {
+    const old = this.ctx;
+    this.recoveries += 1;
+    this.ctx = newContext();
+    this.out = this.ctx.createGain();
+    this.out.connect(this.ctx.destination);
+    this.convolvers = new Map();
+    for (const v of [...this.live]) v.rebind(old);
+    try { old.close(); } catch (e) { /* already closed */ }
+    this.ctx.resume().catch(() => {});
   }
 
   // ---------------------------------------------------------------- loading
@@ -305,13 +344,13 @@ export class Voice {
     return { buffer, fade, split, gl, gr, merge };
   }
 
-  begin() {
+  begin(offset = 0) {
     const a = this.audio;
     const dryKey = 'dry:' + this.name;
     const buf = a.buffers.get(dryKey);
     if (!buf) {
       // A long recording not decoded yet: it starts the moment it is ready.
-      a._decode(dryKey, this.pair.dry).then(() => { if (!this.stopped) this.begin(); }).catch(() => this.stop());
+      a._decode(dryKey, this.pair.dry).then(() => { if (!this.stopped) this.begin(offset); }).catch(() => this.stop());
       return;
     }
     if (buf && this.pair.dry.frames > BIG_FRAMES) a._noteBig(dryKey);
@@ -346,7 +385,26 @@ export class Voice {
       }
     }
     this.apply(true);
-    this._startSources(0);
+    this._startSources(offset);
+  }
+
+  // Carry a looping sound over to a fresh sound engine (see AudioEngine.recover).
+  rebind(oldCtx) {
+    if (this.stopped || this.ended) return;
+    if (!this.loop || !this.dry) {
+      this.stop();
+      return;
+    }
+    const wasPaused = this.paused;
+    const offset = wasPaused ? this.offset : Math.max(0, oldCtx.currentTime - this.startedAt);
+    this._stopSources();
+    this._disconnect();
+    this.ctx = this.audio.ctx;
+    this.dry = this.dull = this.wet = null;
+    this.fadeMs = 0;
+    this.paused = false;
+    this.begin(offset);
+    if (wasPaused) this.pause();
   }
 
   _startSources(offset) {

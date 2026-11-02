@@ -31,7 +31,8 @@ if (kind === 'computer' && !allowComputer()) {
 function offInstructions() {
   const sr = screenReaderName(kind);
   if (isApple(kind)) {
-    return `Now turn ${sr} off: triple-click the side button, or the Home button on older models, `
+    return `Make sure your ${deviceWord(kind)} is not in silent mode, or the game's sounds will be muted. `
+      + `Now turn ${sr} off: triple-click the side button, or the Home button on older models, `
       + `if your Accessibility Shortcut is set up, or ask Siri to turn ${sr} off. `
       + `The game speaks for itself. When ${sr} is off, swipe up anywhere on the screen to begin. `
       + `When you leave the game, turn ${sr} back on the same way.`;
@@ -92,6 +93,7 @@ function begin() {
     view: (s) => { if (statusLine.textContent !== s) statusLine.textContent = s; },
     leave: () => { location.href = 'index.html'; },
   });
+  audio.wake();
   game.welcome();
   let last = performance.now();
   const loop = (now) => {
@@ -101,6 +103,12 @@ function begin() {
     requestAnimationFrame(loop);
   };
   requestAnimationFrame(loop);
+}
+
+// Every touch, tap and key press wakes the sound if the phone has stopped it:
+// these are the moments a phone allows sound to start again.
+for (const type of ['touchend', 'pointerup', 'click', 'keydown']) {
+  document.addEventListener(type, () => { if (audio) audio.wake(); }, { capture: true, passive: true });
 }
 
 const gestures = new Gestures($('stage'), (g) => {
