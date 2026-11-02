@@ -1,0 +1,16 @@
+{
+ "packs": {
+  "core": {
+   "file": "core-924078d47e.elpack",
+   "bytes": 102841
+  },
+  "standard": {
+   "file": "standard-fe9e2e6519.elpack",
+   "bytes": 6508972
+  },
+  "battle": {
+   "file": "battle-5d22aec25e.elpack",
+   "bytes": 9056436
+  }
+ }
+}

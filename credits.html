@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Credits: Endless Labyrinth</title>
+  <link rel="icon" href="icons/icon-192.png">
+  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+  <meta name="theme-color" content="#0c0f14">
+  <link rel="stylesheet" href="css/site.css">
+</head>
+<body>
+  <header class="site">
+    <h1>Credits</h1>
+  </header>
+  <nav class="site" aria-label="Site">
+    <ul>
+      <li><a href="index.html">Home</a></li>
+      <li><a href="about.html">About and how to play</a></li>
+      <li><a href="credits.html" aria-current="page">Credits</a></li>
+    </ul>
+  </nav>
+  <main class="page">
+    <h2>The game</h2>
+    <p>Endless Labyrinth is designed and directed by Russell Hinderman (DevHinderman2026).</p>
+    <p><strong>AI assisted.</strong> The game's code was written with the help of AI: Claude, by Anthropic, working under Russell's direction. Russell decides how every part of the game works, sounds and plays, and tests it by ear; the AI writes and checks the code that carries those decisions out.</p>
+
+    <h2>Sounds</h2>
+    <p>Every recorded sound in Endless Labyrinth comes from <a href="https://pixabay.com/">Pixabay</a> and is used under the <a href="https://pixabay.com/service/license-summary/">Pixabay Content License</a>. Each recording has been edited for the game and travels only inside the game's sound packs; please do not take them out of the game to share them on their own, and get them from Pixabay instead. Every other sound, including all beacons, the enemies, warnings and the menus, is made by the game itself.</p>
+    <p id="count"></p>
+    <ul class="credits" id="list"></ul>
+  </main>
+  <footer class="site">
+    <h2>Contact</h2>
+    <p>Questions, ideas or problems: <span data-contact>russellhinderman425 at gmail dot com</span>.</p>
+    <p>Copyright 2026 Russell Hinderman. All rights reserved.</p>
+  </footer>
+  <script type="module">
+    import { CREDITS } from './js/credits-data.js';
+    const list = document.getElementById('list');
+    document.getElementById('count').textContent = `${CREDITS.length} recordings are used in this version.`;
+    for (const c of CREDITS) {
+      const li = document.createElement('li');
+      const a = document.createElement('a');
+      a.href = c.url;
+      a.textContent = 'original on Pixabay';
+      li.append(`${c.title}, by ${c.author}. `, a, '.');
+      list.append(li);
+    }
+  </script>
+  <script type="module" src="js/site.js"></script>
+</body>
+</html>

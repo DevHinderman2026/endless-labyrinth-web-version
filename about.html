@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>About and how to play: Endless Labyrinth</title>
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" href="icons/icon-192.png">
+  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+  <meta name="theme-color" content="#0c0f14">
+  <link rel="stylesheet" href="css/site.css">
+</head>
+<body>
+  <header class="site">
+    <h1>About and how to play</h1>
+    <p>Endless Labyrinth, the web version.</p>
+  </header>
+  <nav class="site" aria-label="Site">
+    <ul>
+      <li><a href="index.html">Home</a></li>
+      <li><a href="about.html" aria-current="page">About and how to play</a></li>
+      <li><a href="credits.html">Credits</a></li>
+    </ul>
+  </nav>
+  <main class="page">
+    <h2>What the game is</h2>
+    <p>Endless Labyrinth is a 3D audio game: you play it by ear, with headphones. It began as a game for Windows computers, and this web version brings its first two modes to phones and tablets, with the same rules, the same timings and the same sounds.</p>
+    <p>It works on an iPhone or iPad with iOS 18.4 or newer, and on Android phones and tablets with an up-to-date Chrome. It is not made for computers: on a computer, play the <a href="https://github.com/DevHinderman2026/Endless-Labyrinth/releases/latest">Windows version</a>.</p>
+
+    <h2>How the sound works</h2>
+    <p>Everything is placed by sound. Left and right come from the balance between your ears, and the room never turns: left is always west, and north is always ahead. Distance is loudness: the closer something is, the louder it gets. Something behind you sounds duller, as if heard over your shoulder. Every sound in the labyrinth and the arena has a slight echo of the room it is in, shaped by the walls around you and by the air of each level. Together these make a space you can move through by ear.</p>
+
+    <h2>Starting</h2>
+    <ol>
+      <li>Put on headphones and open <a href="play.html">the play page</a>.</li>
+      <li>Press Start. The first time, the game downloads its sounds, about 16 megabytes; after that they stay on your device.</li>
+      <li>The game speaks for itself and listens to the whole screen, so it asks you to turn VoiceOver or TalkBack off. On an iPhone or iPad, triple-click the side button (or the Home button) if your Accessibility Shortcut is set up, or ask Siri. On Android, hold both volume keys for three seconds if that shortcut is set up.</li>
+      <li>With the screen reader off, swipe up anywhere on the screen to begin.</li>
+      <li>When you leave the game, turn your screen reader back on the same way.</li>
+    </ol>
+
+    <h2>Gestures</h2>
+    <dl class="gestures">
+      <dt>Swipe up, down, left or right</dt><dd>Move one step, or move through a menu.</dd>
+      <dt>Double tap</dt><dd>Choose, like Enter. During a run, the report: your clock, and in battle your ammo, kills and wave.</dd>
+      <dt>Two-finger tap</dt><dd>Fire, like the spacebar.</dd>
+      <dt>Three-finger tap</dt><dd>Pause, and resume.</dd>
+      <dt>Triple tap</dt><dd>Back, in menus and while paused. While paused it asks whether to quit the run.</dd>
+      <dt>Four taps</dt><dd>Help, in menus and while paused.</dd>
+      <dt>One tap</dt><dd>Nothing, so resting a finger on the screen is safe.</dd>
+    </dl>
+    <p>During a run only the double tap is counted, so it acts at once and an extra tap can never end a run by accident. The main menu has a Gesture Practice that says the name of every gesture it feels. A Bluetooth keyboard also works, with the Windows game's keys: the arrows, Enter, Space, Escape, P, H and T.</p>
+    <p>The game pauses by itself if you lock your device, switch apps or leave the page.</p>
+
+    <h2>Standard mode</h2>
+    <p>Find the exit of each labyrinth before the clock runs out. You start with 45 seconds, and every level you complete adds 7 seconds. The exit is marked by a beep that rises and quickens as you get closer. Walls give a sharp knock and you do not move. Time credits, marked by a spinning beacon, turn up in about a third of levels. Your score is the level you reach.</p>
+
+    <h2>Battle mode</h2>
+    <p>No walls and no exit: endless waves of enemies come at you. Whatever sounds centred between your ears is what your shot takes, in front of you or behind. Between waves comes a break, the only time ammo and time credits appear, one at a time, for as long as the break lasts. The clock starts at 60 seconds and never stops. Your score is the number of enemies you shoot down.</p>
+    <p>The game's help, opened with four taps on the main menu, explains every rule and has demo sections that play every sound.</p>
+
+    <h2>Your scores</h2>
+    <p>High scores are kept on your device, in your browser, and are never sent anywhere. On an iPhone or iPad, Safari deletes a website's saved data if you use Safari for a week without visiting it. A game added to your Home Screen is not affected, so add Endless Labyrinth to your Home Screen (Share, then Add to Home Screen) and play it from there.</p>
+
+    <h2>Differences from the Windows version</h2>
+    <ul>
+      <li>Two modes, Standard and Battle.</li>
+      <li>Gestures instead of keys, and a Gesture Practice in place of the Key Test.</li>
+      <li>The voice is your device's own, with a Speech Rate setting on the main menu. It has no room echo.</li>
+      <li>No Braille display output, since the screen reader is off while you play.</li>
+    </ul>
+  </main>
+  <footer class="site">
+    <h2>Contact</h2>
+    <p>Endless Labyrinth is made by Russell Hinderman (DevHinderman2026). Questions, ideas or problems: <span data-contact>russellhinderman425 at gmail dot com</span>.</p>
+    <p>Copyright 2026 Russell Hinderman. All rights reserved. The game is AI assisted: written with Claude, by Anthropic, under Russell's direction.</p>
+  </footer>
+  <script type="module" src="js/site.js"></script>
+</body>
+</html>
