@@ -25,7 +25,7 @@ function setText(id, text) { $(id).textContent = text; }
 
 if (kind === 'computer' && !allowComputer()) {
   $('start').hidden = true;
-  setText('lead', 'This web version of Endless Labyrinth works only on phones and tablets: an iPhone, an iPad, or an Android phone or tablet. Computers are not supported, including Windows, Mac, Linux and Chromebooks, because Endless Labyrinth already has a full Windows version for computers. On a Windows computer, download it from the Releases page of the game\'s GitHub repository.');
+  setText('lead', 'This web version of Endless Labyrinth works only on phones and tablets: an iPhone, an iPad, or an Android phone or tablet. Computers are not supported, including Windows, Mac, Linux and Chromebooks, because Endless Labyrinth already has a full Windows version for computers. On a Windows computer, download it from the Releases page of the game\'s GitHub repository. On an Android tablet, open Chrome\'s menu, turn off Desktop site, and reload this page.');
 }
 
 function offInstructions() {

@@ -11,6 +11,13 @@
 // double tap waits that moment to be sure it is not a triple. During a run only
 // the double tap counts, so it acts at once and a stray extra tap can never quit
 // a run. A Bluetooth keyboard works too, with the desktop game's keys.
+//
+// Driving ('drive' mode, Russell's decision): put one finger down and slide it
+// up: 'accel_on', and the car accelerates until that finger lifts ('accel_off')
+// or slides back down from its highest point ('accel_off', then one 'down': one
+// brake). That is the desktop's held up arrow. A fresh swipe down is one brake
+// ('down'); swipes left and right are 'left' and 'right'. Taps work as in a run.
+// A keyboard's held up arrow accelerates too (keydown and keyup).
 
 const SWIPE_MIN = 30;       // pixels a finger must travel for a swipe
 const TAP_MOVE = 22;        // more than this and it is not a tap
@@ -22,7 +29,9 @@ export class Gestures {
   constructor(el, onGesture) {
     this.el = el;
     this.emit = onGesture;
-    this.mode = 'menu';         // 'menu' or 'run'
+    this.mode = 'menu';         // 'menu', 'run' or 'drive'
+    this.accelHeld = false;     // driving: the throttle is held...
+    this.accelBy = null;        // ...by a finger ('touch') or the up arrow ('key')
     this.taps = 0;
     this.tapTimer = null;
     this.g = null;              // the gesture in progress
@@ -32,10 +41,15 @@ export class Gestures {
     el.addEventListener('touchend', (e) => this._end(e), opts);
     el.addEventListener('touchcancel', (e) => this._cancel(e), opts);
     document.addEventListener('keydown', (e) => this._key(e));
+    document.addEventListener('keyup', (e) => this._keyUp(e));
   }
 
   setMode(mode) {
     if (mode !== this.mode) {
+      // A pause, help, a menu or the end of a run lets go of the throttle. Passing
+      // from one chaos road to the next keeps it: the desktop reads the held up
+      // arrow every frame, so a finger still down accelerates on the new road.
+      if (mode === 'menu') this._dropAccel();
       this.mode = mode;
       this._resetTaps();
     }
@@ -78,11 +92,29 @@ export class Gestures {
       const dy = p.y - p.y0;
       const d = Math.hypot(dx, dy);
       if (d > TAP_MOVE) g.moved = true;
+      if (g.accelId === t.identifier) {
+        // The accelerating finger: sliding back down from its highest point lets
+        // go of the throttle and brakes once.
+        p.top = Math.min(p.top, p.y);
+        if (p.y - p.top >= SWIPE_MIN) {
+          this._releaseAccel();
+          this.emit('down');
+        }
+        continue;
+      }
       if (g.max === 1 && !g.swiped && d >= SWIPE_MIN) {
         g.swiped = true;
         this._resetTaps();
         if (Math.abs(dx) > Math.abs(dy)) this.emit(dx > 0 ? 'right' : 'left');
-        else this.emit(dy > 0 ? 'down' : 'up');
+        else if (dy < 0 && this.mode === 'drive') {
+          // Slide up and hold: the throttle stays on while this finger stays down.
+          g.accelId = t.identifier;
+          p.top = p.y;
+          const was = this.accelHeld;
+          this.accelHeld = true;
+          this.accelBy = 'touch';
+          if (!was) this.emit('accel_on');
+        } else this.emit(dy > 0 ? 'down' : 'up');
       }
     }
   }
@@ -91,7 +123,10 @@ export class Gestures {
     const g = this.g;
     if (!g) return;
     e.preventDefault();
-    for (const t of e.changedTouches) g.touches.delete(t.identifier);
+    for (const t of e.changedTouches) {
+      g.touches.delete(t.identifier);
+      if (g.accelId === t.identifier) this._releaseAccel();
+    }
     if (g.touches.size > 0) return;
     this.g = null;
     if (g.swiped || g.moved) return;
@@ -102,13 +137,32 @@ export class Gestures {
   }
 
   _cancel() {
+    if (this.g && this.g.accelId !== undefined && this.g.accelId !== null) this._releaseAccel();
     this.g = null;
+  }
+
+  // Driving: the throttle let go of, by the finger lifting or sliding down, or
+  // the up arrow released.
+  _releaseAccel() {
+    if (this.g) this.g.accelId = null;
+    if (!this.accelHeld) return;
+    this.accelHeld = false;
+    this.accelBy = null;
+    this.emit('accel_off');
+  }
+
+  // Driving has ended or is held: the throttle is simply gone (the game lets go
+  // of it too), and that finger does nothing more.
+  _dropAccel() {
+    if (this.g) this.g.accelId = null;
+    this.accelHeld = false;
+    this.accelBy = null;
   }
 
   _tap() {
     this.taps += 1;
     clearTimeout(this.tapTimer);
-    if (this.mode === 'run') {
+    if (this.mode === 'run' || this.mode === 'drive') {
       if (this.taps >= 2) { this._resetTaps(); this.emit('enter'); return; }
       this.tapTimer = setTimeout(() => this._resetTaps(), TAP_GAP);
       return;
@@ -130,9 +184,32 @@ export class Gestures {
       Enter: 'enter', Escape: 'back', ' ': 'space', p: 'pause', P: 'pause', h: 'help', H: 'help',
       t: 'clock', T: 'clock', y: 'yes', Y: 'yes', n: 'no', N: 'no',
     };
+    // The desktop never turns on key repeat: a held key is one press.
+    if (e.repeat && !(e.key === 'ArrowUp' && this.mode === 'drive')) {
+      if (map[e.key]) e.preventDefault();
+      return;
+    }
+    if (e.key === 'ArrowUp' && this.mode === 'drive') {
+      // The held up arrow is the throttle; its repeats change nothing.
+      e.preventDefault();
+      if (!this.accelHeld) {
+        this.accelHeld = true;
+        this.accelBy = 'key';
+        this.emit('accel_on', { keyboard: true });
+      }
+      return;
+    }
     const g = map[e.key];
     if (!g) return;
     e.preventDefault();
     this.emit(g, { keyboard: true });
+  }
+
+  _keyUp(e) {
+    if (e.key !== 'ArrowUp' || this.accelBy !== 'key') return;
+    e.preventDefault();
+    this.accelHeld = false;
+    this.accelBy = null;
+    this.emit('accel_off', { keyboard: true });
   }
 }

@@ -24,18 +24,18 @@
   </nav>
   <main class="page">
     <h2>What the game is</h2>
-    <p>Endless Labyrinth is a 3D audio game: you play it by ear, with headphones. It began as a game for Windows computers, and this web version brings its first two modes to phones and tablets, with the same rules, the same timings and the same sounds.</p>
+    <p>Endless Labyrinth is a 3D audio game: you play it by ear, with headphones. It began as a game for Windows computers. Since November 2026 the whole game is also fully playable in the browser of a phone or tablet: all six modes and the events, with the same rules, the same timings and the same sounds as the Windows version. That makes it one of the few audio games of its kind that runs completely in a mobile browser, with nothing to install.</p>
     <h2>Supported devices</h2>
     <p>Phones and tablets only: an iPhone or iPad with iOS 18.4 or newer, or an Android phone or tablet with an up-to-date Chrome.</p>
     <p>Computers are not supported, including Windows, Mac, Linux and Chromebooks, even with a touch screen. Endless Labyrinth already has a full Windows version for computers, with Braille display support and its own room echo on the voice: on a Windows computer, play the <a href="https://github.com/DevHinderman2026/Endless-Labyrinth/releases/latest">Windows version</a>. The web version is built for touch devices and their gestures.</p>
 
     <h2>How the sound works</h2>
-    <p>Everything is placed by sound. Left and right come from the balance between your ears, and the room never turns: left is always west, and north is always ahead. Distance is loudness: the closer something is, the louder it gets. Something behind you sounds duller, as if heard over your shoulder. Every sound in the labyrinth and the arena has a slight echo of the room it is in, shaped by the walls around you and by the air of each level. Together these make a space you can move through by ear.</p>
+    <p>Everything is placed by sound. Left and right come from the balance between your ears, and the room never turns: left is always west, and north is always ahead. Distance is loudness: the closer something is, the louder it gets. Something behind you sounds duller, as if heard over your shoulder. In the labyrinth, the battle arena, a tower and a road's tunnels, every sound has a slight echo of the place it is in, shaped by the walls around you and by the air of each level; islands, the seabed and the open road have none. Together these make a space you can move through by ear.</p>
 
     <h2>Starting</h2>
     <ol>
       <li>Put on headphones and open <a href="play.html">the play page</a>. On an iPhone or iPad, turn silent mode off: it mutes the game's sounds, though not its voice.</li>
-      <li>Press Start. The first time, the game downloads its sounds, about 16 megabytes; after that they stay on your device.</li>
+      <li>Press Start. The first time, the game downloads its sounds, about 120 megabytes, so use Wi-Fi if you can; after that they stay on your device.</li>
       <li>The game speaks for itself and listens to the whole screen, so it asks you to turn VoiceOver or TalkBack off. On an iPhone or iPad, triple-click the side button (or the Home button) if your Accessibility Shortcut is set up, or ask Siri. On Android, hold both volume keys for three seconds if that shortcut is set up.</li>
       <li>With the screen reader off, swipe up anywhere on the screen to begin.</li>
       <li>When you leave the game, turn your screen reader back on the same way.</li>
@@ -44,13 +44,15 @@
     <h2>Gestures</h2>
     <dl class="gestures">
       <dt>Swipe up, down, left or right</dt><dd>Move one step, or move through a menu.</dd>
-      <dt>Double tap</dt><dd>Choose, like Enter. During a run, the report: your clock, and in battle your ammo, kills and wave.</dd>
-      <dt>Two-finger tap</dt><dd>Fire, like the spacebar.</dd>
+      <dt>Double tap</dt><dd>Choose, like Enter. During a run, the report: in standard mode your clock, and in the other modes everything that mode keeps track of, such as your ammo, kills and wave in battle. In driving, and in chaos's battles, roads, tower floors and islands, it also gives the seconds left on the clock; in chaos it ends with your points.</dd>
+      <dt>Two-finger tap</dt><dd>Attack, like the spacebar: the laser, a throw or a shot down the road.</dd>
       <dt>Three-finger tap</dt><dd>Pause, and resume.</dd>
       <dt>Triple tap</dt><dd>Back, in menus and while paused. While paused it asks whether to quit the run.</dd>
-      <dt>Four taps</dt><dd>Help, in menus and while paused.</dd>
+      <dt>Four taps</dt><dd>Help, on the main menu and while paused.</dd>
       <dt>One tap</dt><dd>Nothing, so resting a finger on the screen is safe.</dd>
     </dl>
+    <h3>Driving</h3>
+    <p>Driving, in driving mode and on a chaos road, is the one place you hold rather than tap. Put a finger on the screen and slide it up: the car accelerates for as long as that finger stays on the screen. Lift it and the car coasts. Swipe down to brake: each swipe is one brake, and if your accelerating finger slides back down without lifting, it stops accelerating and brakes once. To change lanes, lift your finger and swipe left or right. To shoot or hear the report, lift first, then tap with two fingers or double tap; the car coasts meanwhile.</p>
     <p>During a run only the double tap is counted, so it acts at once and an extra tap can never end a run by accident. The main menu has a Gesture Practice that says the name of every gesture it feels. A Bluetooth keyboard also works, with the Windows game's keys: the arrows, Enter, Space, Escape, P, H and T.</p>
     <p>The game pauses by itself if you lock your device, switch apps or leave the page.</p>
     <p>On an iPhone or iPad, the game's sounds dip while its voice speaks, and come back about a second after. That is how iOS mixes speech with other sound, and a web page cannot change it.</p>
@@ -59,18 +61,34 @@
     <p>Find the exit of each labyrinth before the clock runs out. You start with 45 seconds, and every level you complete adds 7 seconds. The exit is marked by a beep that rises and quickens as you get closer. Walls give a sharp knock and you do not move. Time credits, marked by a spinning beacon, turn up in about a third of levels. Your score is the level you reach.</p>
 
     <h2>Battle mode</h2>
-    <p>No walls and no exit: endless waves of enemies come at you. Whatever sounds centred between your ears is what your shot takes, in front of you or behind. Between waves comes a break, the only time ammo and time credits appear, one at a time, for as long as the break lasts. The clock starts at 60 seconds and never stops. Your score is the number of enemies you shoot down.</p>
-    <p>The game's help, opened with four taps on the main menu, explains every rule and has demo sections that play every sound.</p>
+    <p>No walls and no exit: endless waves of enemies come at you. Whatever sounds centred between your ears is what your shot takes, in front of you or behind. Between waves comes a break, the only time ammo and time credits are laid out, one at a time, for as long as the break lasts; run dry in the middle of a wave and a single emergency cartridge appears, once a wave. The clock starts at 60 seconds and never stops. Your score is the number of enemies you shoot down.</p>
+
+    <h2>Driving mode</h2>
+    <p>A two minute run down an open road in one of three lanes. Time credits on the road buy more clock, which is the only thing that ends the run. A crash costs thirty seconds and all of your speed. Two high scores: cars destroyed, and distance in metres.</p>
+
+    <h2>Tower mode</h2>
+    <p>Climb a tower one floor at a time. A rival guards each floor and races you for the items lying on it, then throws them at you; the stairs appear once you have destroyed it. Every tower is three to ten floors, and each one is twice as hard as the last. There is no clock. Your score is the floors you climb.</p>
+
+    <h2>Island mode</h2>
+    <p>A chain of islands, and the only way across is down. Clear each island of enemies, ride its elevator to the seabed, find the key while your air lasts, and ride up to the next island. Nothing is described to you: every island sounds different, and everything that happens has its own sound.</p>
+
+    <h2>Chaos mode</h2>
+    <p>Every mode at once, and the hardest in the game. Each level is chosen at random from a labyrinth, a battle, a tower floor, a stretch of road or an island, and nothing tells you which: you work it out from what you hear. Every run starts with exactly five minutes on one clock, and time credits add more; your score is points.</p>
+
+    <h2>Events</h2>
+    <p>Time-limited challenges, published for the Windows version and played here too, the very same events. When one is running it appears in the Events menu, with its own high scores. Each event is checked as genuine before it can be played.</p>
+
+    <p>The game's help, opened with four taps on the main menu, explains every rule of every mode and has demo sections that play every sound.</p>
 
     <h2>Your scores</h2>
     <p>High scores are kept on your device, in your browser, and are never sent anywhere. On an iPhone or iPad, Safari deletes a website's saved data if you use Safari for a week without visiting it. A game added to your Home Screen is not affected, so add Endless Labyrinth to your Home Screen (Share, then Add to Home Screen) and play it from there.</p>
 
     <h2>Differences from the Windows version</h2>
     <ul>
-      <li>Two modes, Standard and Battle.</li>
-      <li>Gestures instead of keys, and a Gesture Practice in place of the Key Test.</li>
+            <li>Gestures instead of keys, and a Gesture Practice in place of the Key Test. Phones have no T key, so in driving, and in chaos's battles, roads, tower floors and islands, the double tap's report also gives the seconds left on the clock.</li>
       <li>The voice is your device's own, with a Speech Rate setting on the main menu. It has no room echo.</li>
       <li>No Braille display output, since the screen reader is off while you play.</li>
+      <li>High scores are kept separately from the Windows version's.</li>
     </ul>
   </main>
   <footer class="site">

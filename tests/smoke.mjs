@@ -218,10 +218,12 @@ const help = await page.evaluate(async () => {
   g.input('enter');               // menu
   g.input('help');
   const s1 = g.state;
-  for (let i = 0; i < 4; i++) g.input('down');   // Demos, Standard Mode
+  // Down to "Demos, Standard Mode", wherever the added modes' sections put it.
+  for (let i = 0; i < 40 && document.getElementById('said').textContent.indexOf('Demos, Standard Mode') !== 0; i++) g.input('down');
+  const want = g.helpCatIndex;
   g.input('enter');
   g.input('down');                // Footstep
-  return { s1, cat: g.helpCat, idx: g.helpIndex };
+  return { s1, cat: g.helpCat === want ? 4 : -1, idx: g.helpIndex };
 });
 check(help.s1 === 'help' && help.cat === 4 && help.idx === 1, 'help opens and moves to a demo topic');
 await page.waitForFunction(() => window.__el.audio.demoVoice, null, { timeout: 15000 }).then(

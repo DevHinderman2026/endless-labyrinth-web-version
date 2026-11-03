@@ -2,7 +2,8 @@
 // and sounds (endless_labyrinth.py, version 1.0.1), played with touch gestures.
 // Names and numbers follow the desktop code so the two can be compared line by line.
 
-import { HELP } from './help-data.js';
+import { HELP as BASE_HELP } from './help-data.js';
+import { MODES } from './modes/index.js';
 import { RATES } from './speech.js';
 
 // ------------------------------------------------------------------ constants
@@ -39,6 +40,12 @@ const REVERB_LEAN_MAX = 0.2;
 const REVERB_WALL_RANGE = 8.0;
 const REVERB_REFRESH = 0.05;
 const BEHIND_CURVE = 1.5;
+// Chaos mode's branches in Standard and Battle (the rest of Chaos is js/modes/chaos.js).
+// Chaos runs on a flat five minutes, with the clock spoken every two minutes.
+const CHAOS_TIME_ANNOUNCE = 120.0;
+const CHAOS_CREDIT_VALUES = [40, 50, 60];
+const CHAOS_CREDIT_LABYRINTH = 0.5;       // chance a chaos labyrinth has one
+const CHAOS_CREDIT_BATTLE_RATE = 1 / 80;  // per second of a chaos battle, one at a time
 
 const LABYRINTH_DRONES = ['lab_01_cavewind', 'lab_02_scary_cave', 'lab_03_scifi_cave', 'lab_04_dungeon_air',
   'lab_05_catacombs', 'lab_06_creepy_basement', 'lab_07_horror_basement', 'lab_08_waterflow_2',
@@ -56,6 +63,24 @@ const S = {
   HIGH_SCORES: 'high_scores', CONFIRM_EXIT: 'confirm_exit', CONFIRM_RESET: 'confirm_reset', PRACTICE: 'practice',
 };
 const PLAYING = [S.STANDARD, S.BATTLE];
+
+// The modes in js/modes/: their methods join the game's own, their runs count as
+// play, and their help sections go after Battle's (and their demos after Battle's
+// demos), all in main menu order.
+const isRunState = (st) => PLAYING.includes(st) || MODES.some((m) => (m.playStates || []).includes(st));
+const modeOf = (st) => MODES.find((m) => (m.playStates || []).includes(st)) || null;
+// A mode whose run passes through other modes' states (Chaos) answers for the whole
+// run while ownsRun is true: its finish and status line are used whatever the state.
+const runOwner = (game) => MODES.find((m) => m.ownsRun && m.ownsRun(game)) || null;
+const HELP = (() => {
+  const isDemo = ([name]) => name.startsWith('Demos');
+  const base = BASE_HELP.filter((s) => !isDemo(s));
+  const baseDemos = BASE_HELP.filter(isDemo);
+  const extra = MODES.flatMap((m) => (m.help && m.help.sections) || []);
+  const extraDemos = MODES.flatMap((m) => (m.help && m.help.demos) || []);
+  return [...base, ...extra, ...baseDemos, ...extraDemos];
+})();
+export { HELP, isRunState, modeOf };
 
 // ------------------------------------------------------------------ helpers
 const rand = Math.random;
@@ -178,11 +203,16 @@ class AmmoCartridge {
 }
 
 class TimeCredit {
-  constructor(x, y, battle = false) {
+  constructor(x, y, battle = false, chaos = false) {
     if (battle) {
       this.value = weighted(BATTLE_CREDIT_VALUES, BATTLE_CREDIT_WEIGHTS);
       this.soundName = { 10: 'credit_10', 15: 'credit_20', 20: 'credit_30' }[this.value];
       this.beaconName = 'credit_beacon_battle_' + this.value;
+    } else if (chaos) {
+      // Chaos mode: 40, 50 or 60 seconds, a beacon per value, one pickup for all.
+      this.value = choice(CHAOS_CREDIT_VALUES);
+      this.soundName = 'credit_chaos';
+      this.beaconName = 'credit_beacon_' + this.value;
     } else {
       this.value = weighted(STANDARD_CREDIT_VALUES, STANDARD_CREDIT_WEIGHTS);
       this.soundName = { 15: 'credit_10', 20: 'credit_20', 30: 'credit_30' }[this.value];
@@ -218,6 +248,7 @@ export class Game {
     this.wakeLock = null;
     this.reverbTick = 0;
     this.helpSavedRoomGain = null;
+    for (const m of MODES) if (m.init) m.init(this);
     this._refreshMenu();
     this.resetGameState();
     // The first drones, decoded ahead so a run starts with its air at once.
@@ -225,9 +256,15 @@ export class Game {
   }
 
   // -------------------------------------------------------------- menu
-  _menuKeys() { return ['standard', 'battle', 'scores', 'practice', 'rate', 'leave']; }
+  _menuItems() { return MODES.flatMap((m) => m.menu || []); }
+
+  _menuKeys() {
+    return ['standard', 'battle', ...this._menuItems().map((i) => i.key), 'scores', 'practice', 'rate', 'leave'];
+  }
 
   _menuLabel(k) {
+    const item = this._menuItems().find((i) => i.key === k);
+    if (item) return typeof item.label === 'function' ? item.label(this) : item.label;
     return {
       standard: 'Standard Mode', battle: 'Battle Mode', scores: 'High Scores', practice: 'Gesture Practice',
       rate: `Speech Rate: ${this.tts.rateLevel} of ${RATES.length}`, leave: 'Leave Game',
@@ -294,9 +331,11 @@ export class Game {
     this.battleBeatIdx = -1;
     this.battleAmbIdx = -1;
     this.breakLastBeep = null;
+    for (const m of MODES) if (m.reset) m.reset(this);
   }
 
-  get playing() { return PLAYING.includes(this.state); }
+  get playing() { return isRunState(this.state); }
+  get mode() { return modeOf(this.state); }
 
   // -------------------------------------------------------------- drones
   // A drone is picked at random, never the one just played; the one after it is
@@ -306,10 +345,13 @@ export class Game {
     const n = BANKS[kind].length;
     const idx = choice([...Array(n).keys()].filter((i) => i !== current));
     this.upcoming[kind] = idx;
-    this.audio.prepare(BANKS[kind][idx]);
+    this.audio.prepare(BANKS[kind][idx], 'next:' + kind);
   }
 
   _pickAmb(kind) {
+    // A drone the chaos elevator already chose and faded in is used instead of a new pick.
+    const pending = this.ambPending || {};
+    if (kind in pending) { const i = pending[kind]; delete pending[kind]; return i; }
     const last = this.ambLast[kind];
     let idx = this.upcoming[kind];
     if (idx === undefined || idx === last) idx = choice([...Array(BANKS[kind].length).keys()].filter((i) => i !== last));
@@ -374,7 +416,7 @@ export class Game {
     this.timeCredit = null;
     this.grid.clear();
     this.playerPos = [0.0, 0.0];
-    const diff = this.level;
+    const diff = this._difficultyLevel();
     let gridSize; let density;
     if (diff <= 10) {
       gridSize = 8 + Math.floor(diff * 0.4);
@@ -441,7 +483,18 @@ export class Game {
       openCredits = creditSpots(lo, hi, slack, sides);
       if (openCredits.length) break;
     }
-    if (this.state === S.STANDARD && rand() < STANDARD_CREDIT_CHANCE) {
+    // Chaos labyrinth levels use rare, high-value credits.
+    if (this.chaosMode) {
+      if (rand() < CHAOS_CREDIT_LABYRINTH) {
+        const valid = openCredits.length ? openCredits
+          : reachable.filter((p) => { const w = walk.get(key(p[0], p[1])); return w !== undefined && w >= 3 && w <= 14 && key(p[0], p[1]) !== exitK; });
+        if (valid.length) {
+          const [cx, cy] = choice(valid);
+          this.timeCredit = new TimeCredit(cx, cy, false, true);
+          this.timeCredit.channel = this.audio.play(this.timeCredit.beaconName, { loops: -1 });
+        }
+      }
+    } else if (this.state === S.STANDARD && rand() < STANDARD_CREDIT_CHANCE) {
       const valid = openCredits.length ? openCredits
         : reachable.filter((p) => { const w = walk.get(key(p[0], p[1])); return w !== undefined && w >= 3 && w <= 14 && key(p[0], p[1]) !== exitK; });
       if (valid.length) {
@@ -454,10 +507,20 @@ export class Game {
   }
 
   // -------------------------------------------------------------- the clock
-  _announceStep() { return this.state === S.BATTLE ? BATTLE_TIME_ANNOUNCE : 30.0; }
+  _announceStep() {
+    // Chaos gets sparse two minute calls.
+    if (this.chaosMode) return CHAOS_TIME_ANNOUNCE;
+    return this.state === S.BATTLE ? BATTLE_TIME_ANNOUNCE : 30.0;
+  }
 
   _advanceTimer(dt) {
     if (this.isPaused) return false;
+    if (this.chaosMode && this._chaosExitOpen()) {
+      // The level is won; the way to its exit costs no time. So a credit still
+      // lying in the level goes: walked to now, it would be free time.
+      this._chaosDropCredits();
+      return false;
+    }
     this.timeLeft -= dt;
     if (this.timeLeft <= this.nextAnnounceTime && this.nextAnnounceTime > 30) {
       const secLeft = Math.floor(this.nextAnnounceTime);
@@ -486,11 +549,17 @@ export class Game {
   }
 
   _updateTimeCredit() {
+    // Panning and pickup of an active time credit (standard, chaos labyrinth, chaos
+    // battle or chaos tower floor).
     const c = this.timeCredit;
     if (!c) return;
-    const [l, r] = calculate3dPanning(this.playerPos, [c.x, c.y], Math.max(20.0, 2.5 * (this.gridSize || 8)));
+    const [l, r, dist] = this.chaosMode ? this._chaosCreditLevels([c.x, c.y])
+      : calculate3dPanning(this.playerPos, [c.x, c.y], Math.max(20.0, 2.5 * (this.gridSize || 8)));
     if (c.channel) c.channel.setVolume(l, r, this._behind([c.x, c.y]));
-    const taken = Math.trunc(this.playerPos[0]) === Math.trunc(c.x) && Math.trunc(this.playerPos[1]) === Math.trunc(c.y);
+    // In a labyrinth, on the grid, from its own cell: never through a wall.
+    const taken = this.state === S.STANDARD
+      ? Math.trunc(this.playerPos[0]) === Math.trunc(c.x) && Math.trunc(this.playerPos[1]) === Math.trunc(c.y)
+      : dist < 3.0;
     if (taken) {
       this.timeLeft += c.value;
       this.thirtySecAnnounced = this.timeLeft <= 30.0;
@@ -500,6 +569,9 @@ export class Game {
       this.audio.play(c.soundName);
       if (c.channel) c.channel.stop();
       this.timeCredit = null;
+      // A chaos tower floor's credit was registered as a tower loop: forget that
+      // handle too (the tower's state is 'tower', in js/modes/tower.js).
+      if (this.state === 'tower' && this.towerLoops) delete this.towerLoops.credit;
     }
   }
 
@@ -521,6 +593,8 @@ export class Game {
 
   nextLevel() {
     this.level += 1;
+    // A chaos level of any kind (the clock is NOT reset): see _chaosNextLevel.
+    if (this.chaosMode) { this._chaosNextLevel(); return; }
     if (this.ambienceChannel) this.ambienceChannel.fadeout(AMBIENCE_CROSSFADE * 1000);
     const amb = this._pickAmb('lab');
     this.ambienceChannel = this.audio.play(LABYRINTH_DRONES[amb], { loops: -1, volume: 0.8, fadeMs: AMBIENCE_CROSSFADE * 1000 });
@@ -532,9 +606,29 @@ export class Game {
   }
 
   // -------------------------------------------------------------- battle
-  _difficultyLevel() { return this.state === S.BATTLE ? this.battleWave : this.level; }
-  _battleTargetsNeeded() { return 3 + Math.trunc(this._difficultyLevel() * 1.2); }
-  _battleMaxConcurrent() { return Math.min(8, 1 + Math.floor(this._difficultyLevel() / 3)); }
+  _difficultyLevel() {
+    // Inside chaos mode each kind of level carries its own count: a battle is as
+    // hard as the number of BATTLES played, a labyrinth as the labyrinths.
+    if (this.chaosMode) return this.state === S.BATTLE ? this.battleLevel : this.labyrinthLevel;
+    return this.state === S.BATTLE ? this.battleWave : this.level;
+  }
+
+  // True in standard battle mode, which has no levels and no exit. Chaos battles
+  // end, hand you an exit, and keep the old halved scaling.
+  _battleEndless() { return this.state === S.BATTLE && !this.chaosMode; }
+
+  _battleTargetsNeeded() {
+    const rate = this._battleEndless() ? 1.2 : 0.6;
+    return 3 + Math.trunc(this._difficultyLevel() * rate);
+  }
+
+  _battleMaxConcurrent() {
+    // One more enemy at once every three waves in battle mode, every six in chaos,
+    // and chaos keeps its ceiling of four.
+    const step = this._battleEndless() ? 3 : 6;
+    const base = 1 + Math.floor(this._difficultyLevel() / step);
+    return this._battleEndless() ? Math.min(8, base) : Math.min(4, base);
+  }
 
   _battleOpenBreak() {
     this.breakLastBeep = null;
@@ -552,7 +646,7 @@ export class Game {
   }
 
   _battleMaybeEmergency() {
-    if (this.inWaveBreak || this.ammo > 0 || this.battleEmergencyUsed) return;
+    if (!this._battleEndless() || this.inWaveBreak || this.ammo > 0 || this.battleEmergencyUsed) return;
     if (this.battleWaveShots <= 0) return;
     const left = this._battleTargetsNeeded() - this.waveKills;
     if (left <= 0) return;
@@ -629,6 +723,12 @@ export class Game {
   }
 
   fireLaser() {
+    // Once a chaos battle's exit is live the round is over: the click says there is
+    // nothing left to shoot.
+    if (this.battleExitActive) {
+      this.audio.play('empty_click');
+      return;
+    }
     if (this.inWaveBreak || this.ammo <= 0) {
       this.audio.play('empty_click');
       return;
@@ -644,6 +744,12 @@ export class Game {
       this.kills += 1;
       this._later(minDist * 0.015, 'explosion', [hit.x, hit.y]);
       this.waveKills += 1;
+      // Chaos battles keep the old two second lull between trickled spawns.
+      const totalNeeded = this._battleTargetsNeeded();
+      if (!this._battleEndless() && !this.obstacles.length && this.kills < totalNeeded) {
+        this.inWaveBreak = true;
+        this.waveBreakTimer = 2.0;
+      }
     }
   }
 
@@ -651,43 +757,74 @@ export class Game {
     if (this.isPaused) return;
     const steps = this.battleSteps;
     this.battleSteps = [];
-    if (this._advanceTimer(dt)) return;
+    // In chaos mode the global run timer keeps ticking during battle levels.
+    if (this.chaosMode) {
+      if (this._advanceTimer(dt)) return;
+      if (this.state !== S.BATTLE) return;
+    }
+    // Standard battle's own clock, which runs through the breaks as well.
+    if (this._battleEndless()) {
+      if (this._advanceTimer(dt)) return;
+    }
     this.battleBeatTimer -= dt;
     if (this.battleBeatTimer <= 0) { this.battleBeatTimer = uniform(...BATTLE_BEAT_SWAP); this._battleSwapBeat(); }
     this.battleAmbTimer -= dt;
     if (this.battleAmbTimer <= 0) { this.battleAmbTimer = uniform(...BATTLE_AMB_SWAP); this._battleSwapAmb(); }
 
     let totalNeeded = this._battleTargetsNeeded();
-    if (this.inWaveBreak) {
-      this.waveBreakTimer -= dt;
-      const left = Math.ceil(this.waveBreakTimer);
-      if (left > 0 && left <= BATTLE_BREAK_COUNTDOWN && left !== this.breakLastBeep) {
-        this.breakLastBeep = left;
-        this.audio.play('countdown_high');
-      }
-      if (this.waveBreakTimer > 0) this._battleRestock();
-      if (this.waveBreakTimer <= 0) {
-        for (const p of this.ammoPickups) if (p.channel) p.channel.stop();
-        this.ammoPickups = [];
+    if (this._battleEndless()) {
+      if (this.inWaveBreak) {
+        this.waveBreakTimer -= dt;
+        const left = Math.ceil(this.waveBreakTimer);
+        if (left > 0 && left <= BATTLE_BREAK_COUNTDOWN && left !== this.breakLastBeep) {
+          this.breakLastBeep = left;
+          this.audio.play('countdown_high');
+        }
+        if (this.waveBreakTimer > 0) this._battleRestock();
+        if (this.waveBreakTimer <= 0) {
+          for (const p of this.ammoPickups) if (p.channel) p.channel.stop();
+          this.ammoPickups = [];
+          this._battleClearCredit();
+          this.inWaveBreak = false;
+          this.battleWave += 1;
+          this.spawnedEnemies = 0;
+          this.waveKills = 0;
+          this.battleEmergencyUsed = false;
+          this.battleWaveShots = 0;
+          totalNeeded = this._battleTargetsNeeded();
+          this.audio.play('wave_start');
+        }
+      } else if (this.spawnedEnemies >= totalNeeded && !this.obstacles.length) {
+        this.inWaveBreak = true;
+        this._battleClearEmergency();
         this._battleClearCredit();
-        this.inWaveBreak = false;
-        this.battleWave += 1;
-        this.spawnedEnemies = 0;
-        this.waveKills = 0;
-        this.battleEmergencyUsed = false;
-        this.battleWaveShots = 0;
-        totalNeeded = this._battleTargetsNeeded();
-        this.audio.play('wave_start');
+        this.audio.play('wave_clear');
+        this._battleOpenBreak();
       }
-    } else if (this.spawnedEnemies >= totalNeeded && !this.obstacles.length) {
-      this.inWaveBreak = true;
-      this._battleClearEmergency();
-      this._battleClearCredit();
-      this.audio.play('wave_clear');
-      this._battleOpenBreak();
+    } else if (this.inWaveBreak) {
+      // A chaos battle's two second lull.
+      this.waveBreakTimer -= dt;
+      if (this.waveBreakTimer <= 0) this.inWaveBreak = false;
     }
     const maxConcurrent = this._battleMaxConcurrent();
-    if (this.inWaveBreak && this.waveBreakTimer > 0 && this.timeCredit === null) this._battleSpawnCredit();
+
+    // Rare high-value time credit can appear on the battlefield in chaos mode.
+    if (this.chaosMode && !this.timeCredit && !this._chaosLevelWon() && rand() < CHAOS_CREDIT_BATTLE_RATE * dt) {
+      let cx = null; let cy = null;
+      for (let i = 0; i < 200; i++) {
+        const tx = uniform(-39.0, 39.0);
+        const ty = uniform(-39.0, 39.0);
+        if (Math.hypot(tx - this.playerPos[0], ty - this.playerPos[1]) >= 15.0) { cx = tx; cy = ty; break; }
+      }
+      // No spot found: no credit this frame, and the frame goes on.
+      if (cx !== null) {
+        this.timeCredit = new TimeCredit(cx, cy, false, true);
+        this.timeCredit.channel = this.audio.play(this.timeCredit.beaconName, { loops: -1 });
+      }
+    }
+
+    // Battle mode credits, during wave breaks only.
+    if (this._battleEndless() && this.inWaveBreak && this.waveBreakTimer > 0 && this.timeCredit === null) this._battleSpawnCredit();
 
     if (!this.inWaveBreak && this.obstacles.length < maxConcurrent && this.spawnedEnemies < totalNeeded) {
       if (rand() < perFrameChance(0.03 + 0.01 * this._difficultyLevel(), dt)) {
@@ -695,12 +832,22 @@ export class Game {
         const available = [...Array(10).keys()].filter((i) => !active.includes(i));
         if (available.length) {
           const o = new Obstacle(this.playerPos, this._difficultyLevel(), choice(available),
-            this.ammoPickups.map((p) => [p.x, p.y]), 7.0, 0.13);
+            this.ammoPickups.map((p) => [p.x, p.y]),
+            this._battleEndless() ? 7.0 : 4.6, this._battleEndless() ? 0.13 : 0.065);
           o.channel = this.audio.play(o.soundName, { loops: -1 });
           this.obstacles.push(o);
           this.spawnedEnemies += 1;
         }
       }
+    }
+
+    // Chaos battles only: one cartridge on the floor at a time, replaced as it is
+    // taken, until the level's quota is met.
+    if (!this._battleEndless() && this.ammoPickups.length < 1 && this.kills < totalNeeded) {
+      const pickup = new AmmoCartridge(this.playerPos, this.obstacles.map((o) => [o.x, o.y]));
+      pickup.channel = this.audio.play('ammo_beacon', { loops: -1 });
+      this.ammoPickups.push(pickup);
+      this.ammoSpawns += 1;
     }
 
     for (const o of this.obstacles) {
@@ -729,7 +876,31 @@ export class Game {
         this.ammoPickups.splice(this.ammoPickups.indexOf(p), 1);
       }
     }
-    this._battleUpdateCredit();
+    if (this._battleEndless()) this._battleUpdateCredit();
+    else this._updateTimeCredit();     // a chaos battlefield credit
+
+    // A chaos battle's exit: the quota shot AND nobody left alive. Standard battle
+    // mode has no exit at all.
+    if (!this._battleEndless() && this.kills >= totalNeeded && !this.obstacles.length && !this.battleExitActive) {
+      this.battleExitActive = true;
+      for (const p of this.ammoPickups) if (p.channel) p.channel.stop();
+      this.ammoPickups = [];
+      // Exactly 40 steps away.
+      let placed = false;
+      for (let i = 0; i < 500; i++) {
+        const ex = uniform(-39.0, 39.0);
+        const ey = uniform(-39.0, 39.0);
+        if (Math.hypot(ex - this.playerPos[0], ey - this.playerPos[1]) >= 40.0) { this.exitPos = [ex, ey]; placed = true; break; }
+      }
+      if (!placed) this.exitPos = [this.playerPos[0] >= 0 ? -39.0 : 39.0, this.playerPos[1] >= 0 ? -39.0 : 39.0];
+      this.battleExitChannel = this.audio.play('exit_morse', { loops: -1 });
+    }
+    if (this.battleExitActive) {
+      // The Morse signal is the exit's whole identity: no proximity beep on top.
+      const [l, r, dist] = this._battleLevels(this.exitPos);
+      if (this.battleExitChannel) this.battleExitChannel.setVolume(l, r, this._behind(this.exitPos));
+      if (dist < 3.0) this.nextLevel();
+    }
   }
 
   // -------------------------------------------------------------- the end of a run
@@ -746,6 +917,7 @@ export class Game {
     for (const v of this.pausedVoices) v.stop();
     this.pausedVoices = [];
     this.isPaused = false;
+    for (const m of MODES) if (m.stopAll) m.stopAll(this);
   }
 
   triggerGameOver() {
@@ -754,7 +926,21 @@ export class Game {
     this._stopRunSounds();
     this._wake(false);
     let prevHigh; let isHigh; let scoreValue; let msg;
-    if (mode === S.STANDARD) {
+    // Another copy of the game may have set a record meanwhile.
+    if (this.scores.refresh) this.scores.refresh();
+    const m = runOwner(this) || modeOf(mode);
+    if (m && m.finish) {
+      // An added mode says what its run scored and opens its own message (r.key
+      // and r.score; or r.custom with the whole message). The high score lines
+      // below are the same for every mode; r.after is added after them.
+      const r = m.finish(this, mode);
+      if (r.custom) { this.tts.speak(r.message); return; }
+      prevHigh = this.scores.scores[r.key] || 0;
+      scoreValue = r.score;
+      isHigh = this.scores.update(r.key, r.score);
+      msg = r.message;
+      this._finishAfter = r.after || '';
+    } else if (mode === S.STANDARD) {
       prevHigh = this.scores.scores.standard || 0;
       scoreValue = this.level;
       isHigh = this.scores.update('standard', this.level);
@@ -767,13 +953,18 @@ export class Game {
       const how = this.inWaveBreak ? 'cleared' : 'reached';
       msg = `${opener} You shot down ${this.kills} ${plural(this.kills, 'enemy', 'enemies')} and ${how} wave ${this.battleWave}. `;
     }
-    if (isHigh) {
+    if (this.scores.readFailed) {
+      // The saved boards could not be read this session: nothing is compared or
+      // saved, so no record is claimed.
+      msg += 'High scores could not be read this session, so this score is not saved. ';
+    } else if (isHigh) {
       msg += prevHigh <= 0 ? `Your first high score for this mode: ${scoreValue}! ` : `New high score! You beat your previous best of ${prevHigh}. `;
     } else if (prevHigh <= 0) {
       msg += 'No high score yet for this mode. ';
     } else {
       msg += `Your high score is ${prevHigh}. `;
     }
+    if (this._finishAfter) { msg += this._finishAfter; this._finishAfter = ''; }
     msg += 'Double tap to return to the menu.';
     this.tts.speak(msg);
   }
@@ -824,6 +1015,8 @@ export class Game {
     this.state = S.CONFIRM_EXIT;
     this.quitWasPaused = this.isPaused;
     if (!this.isPaused) this._pauseSounds();
+    const held = modeOf(this.prevState);    // this.mode is null now: the state is the question
+    if (held && held.hold) held.hold(this, true);
     this.confirmYes = false;
     this.tts.speak('Are you sure you want to return to the main menu? Your score will not be saved. Swipe up or down to choose, then double tap. No.');
   }
@@ -843,7 +1036,8 @@ export class Game {
     this.audio.play('menu_move');
     const [name, items] = HELP[this.helpCat];
     const sec = items[this.helpIndex];
-    this.helpRoom = name.includes('Standard') ? 'lab' : name.includes('Battle') ? 'battle' : null;
+    this.helpRoom = (name.includes('Standard') || name.includes('Chaos')) ? 'lab'
+      : name.includes('Tower') ? 'tower' : name.includes('Battle') ? 'battle' : null;
     this.audio.setRoom(this._currentRoom());
     const sound = sec.sound;
     if (sound) this.audio.prepare(sound);
@@ -855,11 +1049,18 @@ export class Game {
   _scoreLines() {
     const board = (k, label, fmt) => {
       const v = this.scores.scores[k] || 0;
+      if (this.scores.readFailed) return `${label}: could not be read this session`;
       return v <= 0 ? `${label}: No score yet` : `${label}: ${fmt(v)}`;
     };
+    // In the desktop's _score_lines order; a board it does not list goes after.
+    const order = ['chaos', 'tower', 'drive', 'drive_distance', 'island'];
+    const rank = (b) => (order.includes(b.key) ? order.indexOf(b.key) : order.length);
+    const boards = MODES.flatMap((md) => md.boards || []).map((b, i) => [b, i])
+      .sort((a, b) => rank(a[0]) - rank(b[0]) || a[1] - b[1]).map(([b]) => b);
     return [
       board('standard', 'Standard Mode', (v) => `Level ${v}`),
       board('battle', 'Battle Mode', (v) => `${v} ${plural(v, 'enemy', 'enemies')}`),
+      ...boards.map((b) => board(b.key, b.label, b.fmt)),
       'Reset all high scores',
     ];
   }
@@ -877,10 +1078,16 @@ export class Game {
     this.lastInputAt = performance.now();
     this._checkSound();
     if (this.state === S.PRACTICE) { this._practiceInput(g); return; }
+    for (const md of MODES) {
+      const h = md.inputStates && md.inputStates[this.state];
+      if (h) { h(this, g); return; }
+    }
 
     // Help from the menu, or from a run (four taps reach here only while paused;
     // a keyboard's H works at any time, as on the computer).
     if (g === 'help' && (this.state === S.MENU || this.playing)) {
+      const md0 = this.mode;
+      if (md0 && md0.blockPause && md0.blockPause(this)) { this.audio.play('boundary'); return; }
       this._openHelp();
       return;
     }
@@ -899,6 +1106,7 @@ export class Game {
         this._toMenu('Returned to Main Menu. ');
       } else if (no) {
         this.state = this.prevState;
+        if (this.mode && this.mode.hold) this.mode.hold(this, false);
         if (!this.quitWasPaused) {
           this._resumeSounds();
           this.tts.speak('Resuming.');
@@ -959,6 +1167,7 @@ export class Game {
         this.scoreIndex = 0;
         this.tts.speak('High Scores Menu. Swipe up and down to hear scores. Double tap or triple tap to go back. ' + this._scoreLines()[0]);
       } else if (k === 'practice') this._startPractice();
+      else if (this._menuItems().some((i) => i.key === k)) this._menuItems().find((i) => i.key === k).select(this);
       else if (k === 'rate') this._changeRate(1, true);
       else if (k === 'leave') {
         this.tts.speak('Leaving the game. You can turn your screen reader back on now.', { after: () => this.leave() });
@@ -995,6 +1204,8 @@ export class Game {
         this.helpCat = this.helpCatIndex;
         this.helpIndex = 0;
         const [name, items] = HELP[this.helpCat];
+        // The desktop's key handler and its _play_help_item each play the click.
+        this.audio.play('menu_move');
         this._playHelpItem(`${name}. ${items.length} topics. `);
       }
     } else {
@@ -1008,8 +1219,6 @@ export class Game {
       } else if (g === 'up' || g === 'down') {
         this.helpIndex = (this.helpIndex + (g === 'up' ? -1 : 1) + items.length) % items.length;
         this._playHelpItem();
-      } else if (g === 'enter') {
-        this._playHelpItem();     // hear it again
       }
     }
   }
@@ -1040,6 +1249,13 @@ export class Game {
     } else if (yes) {
       this.state = S.HIGH_SCORES;
       this.scoreIndex = 0;
+      if (this.scores.readFailed) {
+        // The file could not be read, so it cannot be written either: the saved
+        // scores are kept safe, and nothing is claimed.
+        this.tts.speak('High scores cannot be changed this session, because the file could not '
+          + 'be read. Nothing was reset. Restart the game to try again.');
+        return;
+      }
       this.scores.reset();
       this.audio.play('explosion');
       this.tts.speak('All high scores reset. ' + this._scoreLines()[0]);
@@ -1050,6 +1266,13 @@ export class Game {
   }
 
   _playInput(g) {
+    // A mode can refuse the pause for a moment (the desktop's elevator ride:
+    // P and H only give the boundary buzz).
+    const blocker = this.mode;
+    if ((g === 'pause' || g === 'help') && blocker && blocker.blockPause && blocker.blockPause(this)) {
+      this.audio.play('boundary');
+      return;
+    }
     if (g === 'pause') {
       this.isPaused = !this.isPaused;
       if (this.isPaused) {
@@ -1062,6 +1285,8 @@ export class Game {
       return;
     }
     if (this.isPaused) return;
+    const md = this.mode;
+    if (md && md.input) { md.input(this, g); return; }
     if (g === 'clock') {
       const secs = Math.trunc(this.timeLeft);
       this.tts.speak(`${secs} second${secs === 1 ? '' : 's'} remaining.`);
@@ -1070,6 +1295,11 @@ export class Game {
     if (this.state === S.BATTLE) {
       if (g === 'space') { this.fireLaser(); return; }
       if (g === 'enter') {
+        if (!this._battleEndless()) {
+          // A chaos battle: the shots, and the run's points.
+          this._report(`${this.ammo} shot${this.ammo === 1 ? '' : 's'} remaining.`, true);
+          return;
+        }
         const left = Math.max(0, this._battleTargetsNeeded() - this.waveKills);
         const shots = `${this.ammo} shot${this.ammo === 1 ? '' : 's'}. ${this.kills} down. `;
         if (this.inWaveBreak) this.tts.speak(`${shots}Wave break, ${Math.trunc(this.waveBreakTimer) + 1} seconds. Clock ${Math.trunc(this.timeLeft)} seconds.`);
@@ -1078,8 +1308,9 @@ export class Game {
       }
     }
     if (this.state === S.STANDARD && g === 'enter') {
+      // The report: in a labyrinth, the clock (and in chaos, the points).
       const t = Math.trunc(this.timeLeft);
-      this.tts.speak(`${t} second${t === 1 ? '' : 's'} left.`);
+      this._report(`${t} second${t === 1 ? '' : 's'} left.`);
       return;
     }
     let [nx, ny] = this.playerPos;
@@ -1108,6 +1339,21 @@ export class Game {
   }
 
   _playStep() { this.audio.play(choice(STEPS)); }
+
+  // Phones have no T, so a report in a mode with a clock and no clock of its own in
+  // the report (driving, and chaos's battles, roads, towers and islands) ends with it.
+  _clockTail() {
+    const s = Math.max(0, Math.trunc(this.timeLeft));
+    return ` Clock ${s} second${s === 1 ? '' : 's'}.`;
+  }
+
+  // Enter's report (the desktop's _report). In chaos mode every report ends with the
+  // run's points, since that is the score the run is played for.
+  _report(text, clock = false) {
+    if (clock) text = text.trimEnd() + this._clockTail();
+    if (this.chaosMode) text = text.trimEnd() + ` ${(this.chaosPoints || 0) + (this.islandPoints || 0)} points total.`;
+    this.tts.speak(text);
+  }
 
   // -------------------------------------------------------------- gesture practice
   _startPractice() {
@@ -1151,6 +1397,8 @@ export class Game {
   _syncRoom() { this.audio.setRoom(this._currentRoom()); }
 
   _currentRoom() {
+    const md = this.mode;
+    if (md && md.room) return md.room(this, this.state);
     if (this.state === S.STANDARD) return 'lab';
     if (this.state === S.BATTLE) return 'battle';
     if (this.state === S.HELP) return this.helpRoom;
@@ -1159,7 +1407,7 @@ export class Game {
 
   _updateReverb(dt) {
     if (this.state === S.CONFIRM_EXIT) return;
-    const inHelpFromGame = this.state === S.HELP && PLAYING.includes(this.prevState);
+    const inHelpFromGame = this.state === S.HELP && isRunState(this.prevState);
     if (inHelpFromGame && this.helpSavedRoomGain === null) {
       this.helpSavedRoomGain = [this.audio.roomGain, this.audio.roomLean];
       this.audio.roomGain = 1.0; this.audio.roomLean = 0.0;
@@ -1171,17 +1419,26 @@ export class Game {
     this.audio.setRoom(room);
     this.reverbTick += dt;
     if (this.reverbTick < REVERB_REFRESH) return;
-    const tick = this.reverbTick;
+    let tick = this.reverbTick;
     this.reverbTick = 0;
     let gain = 1.0; let lean = 0.0;
     if (room === 'lab') [gain, lean] = this._labSurroundings();
     else if (room === 'battle') [gain, lean] = this._arenaSurroundings();
+    if (this.mode && this.mode.surroundings) {
+      // A third value, when given, replaces the easing step (the desktop's road
+      // uses 1.0: the tunnel's own fade is already smooth, so it applies at once).
+      const sr = this.mode.surroundings(this, null, room);
+      [gain, lean] = sr;
+      if (sr.length > 2) tick = sr[2];
+    }
     if (this.state === S.HELP) { gain = 1.0; lean = 0.0; }
     if (this.isPaused || inHelpFromGame) return;
     this.audio.setSurroundings(gain, lean, tick);
   }
 
   _behind(pos) {
+    const md = this.mode;
+    if (md && md.behind) { const b = md.behind(this, pos); if (b !== undefined) return b; }
     const dx = pos[0] - this.playerPos[0];
     const dy = pos[1] - this.playerPos[1];
     const dist = Math.hypot(dx, dy);
@@ -1191,6 +1448,7 @@ export class Game {
 
   _sourceEffect(pos) {
     const room = this._currentRoom();
+    if (this.mode && this.mode.surroundings) return this.mode.surroundings(this, pos, room);
     if (room === 'lab') return this._labSurroundings(pos);
     if (room === 'battle') return this._arenaSurroundings(pos);
     return [1.0, 0.0];
@@ -1239,7 +1497,9 @@ export class Game {
 
   // -------------------------------------------------------------- one frame
   frame(dt) {
-    this.gestures.setMode(this.playing && !this.isPaused ? 'run' : 'menu');
+    const md = this.mode;
+    const gm = md && md.gestureMode ? md.gestureMode(this) : null;
+    this.gestures.setMode(this.playing && !this.isPaused ? (gm || 'run') : 'menu');
     if (this.state === S.PRACTICE && performance.now() - (this.lastInputAt || 0) > 20000) {
       this.menuIndex = this.menuKeys.indexOf('practice');
       this._toMenu('Gesture practice closed. ');
@@ -1247,10 +1507,15 @@ export class Game {
     this._updateReverb(dt);
     if (this.state === S.STANDARD) this.updateStandardMode(dt);
     else if (this.state === S.BATTLE) this.updateBattleMode(dt);
+    else if (md && md.update) md.update(this, dt);
+    for (const m of MODES) if (m.tick) m.tick(this, dt);
     this.view(this._statusLine());
   }
 
   _statusLine() {
+    const md = (this.playing && runOwner(this)) || this.mode;
+    if (md && md.status) return md.status(this) + (this.isPaused ? ' Paused.' : '');
+    for (const m of MODES) if (m.statusFor && m.statusFor[this.state]) return m.statusFor[this.state](this);
     switch (this.state) {
       case S.STANDARD: return `Standard Mode. Level ${this.level}. ${Math.max(0, Math.trunc(this.timeLeft))} seconds.${this.isPaused ? ' Paused.' : ''}`;
       case S.BATTLE: return `Battle Mode. Wave ${this.battleWave}. ${this.kills} down. ${this.ammo} shots. ${Math.max(0, Math.trunc(this.timeLeft))} seconds.${this.isPaused ? ' Paused.' : ''}`;
@@ -1267,3 +1532,7 @@ export class Game {
 }
 
 export const STATES = S;
+
+// Each added mode's methods become the game's own (written with the desktop's
+// names, in camelCase, so they read like the desktop code).
+for (const m of MODES) if (m.mixin) Object.assign(Game.prototype, m.mixin);

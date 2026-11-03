@@ -11,6 +11,7 @@
 
 import { RULES } from './sound-rules.js';
 import { loadPacks } from './packs.js';
+import { reverbIsLoop } from './modes/events/sounds.js';
 
 const RATE = 44100;
 // Recordings longer than this are decoded only when they are about to play, and
@@ -22,10 +23,14 @@ const BIG_KEEP = 6;
 function clamp(v, lo, hi) { return Math.min(hi, Math.max(lo, v)); }
 
 // Which sounds a pause holds: every beacon, chime and beep (the desktop's
-// PAUSE_BEEP_PARTS and PAUSE_BEEP_NAMES, as far as these two modes go).
+// PAUSE_BEEP_PARTS and PAUSE_BEEP_NAMES). An event creature's own recording is
+// named as a beacon, but it is a creature, and creatures play on.
+const PAUSE_BEEP_PARTS = ['beacon', 'prox_', 'elevator_arrive'];
+const PAUSE_BEEP_NAMES = new Set(['countdown', 'countdown_high', 'exit_morse', 'health_low', 'diver_tap', 'vent',
+  'vent_hint', 'elevator_ding', 'event_pad', 'event_bomb_tick', 'event_falling']);
 export function isPauseBeep(name) {
-  return name.includes('beacon') || name.startsWith('prox_') ||
-    name === 'countdown' || name === 'countdown_high';
+  if (name.startsWith('event_beacon_hazard_')) return false;
+  return PAUSE_BEEP_NAMES.has(name) || PAUSE_BEEP_PARTS.some((k) => name.includes(k));
 }
 
 function newContext() {
@@ -48,8 +53,14 @@ export class AudioEngine {
     this.buffers = new Map();     // 'dry:name' / 'dull:name' -> AudioBuffer
     this.pending = new Map();     // same key -> Promise of the buffer
     this.bigUsed = new Map();     // big buffer key -> last used time
+    this.pins = new Map();        // what a recording is held ready for -> its buffer key
     this.irBuffers = new Map();   // 'key#take' -> AudioBuffer
     this.convolvers = new Map();  // 'key#take' -> ConvolverNode
+    // A looping sound's own echo, made once per room and sound (the desktop's
+    // reverb_apply with loop=True: folded into the loop's length, so it loops with
+    // it to the sample and stops, pauses and fades with it).
+    this.loopWets = new Map();    // 'roomKey|name' -> AudioBuffer
+    this.loopWetPending = new Map();
     this.room = null;
     this.variants = {};           // 'lab' -> 'lab/lab_03_scifi_cave'
     this.roomGain = 1.0;
@@ -150,10 +161,11 @@ export class AudioEngine {
     for (const [name, pair] of this.entries) {
       for (const kind of ['dry', 'dull']) {
         const e = pair[kind];
-        if (e && e.frames <= BIG_FRAMES) small.push(this._decode(kind + ':' + name, e));
+        // (A lazy entry, such as the event library's, is decoded only when an event uses it.)
+        if (e && e.frames <= BIG_FRAMES && !e.lazy) small.push(this._decode(kind + ':' + name, e));
       }
     }
-    for (const base of ['lab', 'battle']) {
+    for (const base of ['lab', 'battle', 'tower', 'tunnel', 'cathedral', 'hall']) {
       for (let t = 0; t < (this.irEntries.get(base) || []).length; t++) small.push(this._irBuffer(base, t));
     }
     await Promise.all(small);
@@ -194,21 +206,37 @@ export class AudioEngine {
 
   _noteBig(key) {
     this.bigUsed.set(key, performance.now());
-    if (this.bigUsed.size <= BIG_KEEP) return;
+    // Pinned recordings (see prepare) are held on top of the BIG_KEEP most
+    // recently used others.
+    const pinned = new Set(this.pins.values());
+    const free = [...this.bigUsed.keys()].filter((k) => !pinned.has(k));
+    if (free.length <= BIG_KEEP) return;
     const playing = new Set();
     for (const v of this.live) { playing.add('dry:' + v.name); playing.add('dull:' + v.name); }
-    const old = [...this.bigUsed.entries()].filter(([k]) => !playing.has(k)).sort((a, b) => a[1] - b[1]);
-    while (this.bigUsed.size > BIG_KEEP && old.length) {
-      const [k] = old.shift();
+    // Nor is anything let go that was decoded or asked for in the last few
+    // seconds: it is about to play (a shore and its muffled twin start together).
+    const recent = performance.now() - 5000;
+    const old = free.filter((k) => !playing.has(k) && k !== key && this.bigUsed.get(k) < recent)
+      .sort((a, b) => this.bigUsed.get(a) - this.bigUsed.get(b));
+    let n = free.length;
+    while (n > BIG_KEEP && old.length) {
+      const k = old.shift();
       this.bigUsed.delete(k);
       this.buffers.delete(k);
+      if (k.startsWith('dry:')) this._releaseWets(k.slice(4));
+      n -= 1;
     }
   }
 
   // Have a long recording decoded and waiting, so it starts the moment it is asked for.
-  prepare(name) {
+  // With `pin`, it is held for that purpose (the next labyrinth's drone, say) and
+  // never let go to make room, until something else is pinned for it: a chaos run
+  // goes through every kind of level, and the desktop has every sound ready.
+  prepare(name, pin = null) {
     const pair = this.entries.get(name);
     if (!pair || !pair.dry) return Promise.resolve(null);
+    if (pin) this.pins.set(pin, 'dry:' + name);
+    if (this.bigUsed.has('dry:' + name)) this.bigUsed.set('dry:' + name, performance.now());
     return this._decode('dry:' + name, pair.dry).catch(() => null);
   }
 
@@ -232,7 +260,17 @@ export class AudioEngine {
     return p;
   }
 
-  setRoom(room) { this.room = room; }
+  setRoom(room) {
+    if (room !== this.room && room) {
+      const key = this.variants[room];
+      setTimeout(() => {
+        if (this.room !== room) return;
+        this._buildAhead(room, room);
+        if (key && this.variants[room] === key) this._buildAhead(room, key);
+      }, 200);
+    }
+    this.room = room;
+  }
 
   // A drone starting changes the room with it: each drone has its own slight
   // variation of its mode's echo (the desktop's REVERB_VARIANTS). Its impulses
@@ -242,14 +280,29 @@ export class AudioEngine {
     if (this.variants[base] === key) return;
     this.variants[base] = key;
     const takes = (this.irEntries.get(key) || []).length;
-    for (let t = 0; t < takes; t++) this._irBuffer(key, t).catch(() => {});
+    for (let t = 0; t < takes; t++) {
+      const p = this._irBuffer(key, t).catch(() => {});
+      // Once its impulse is in, the loops already heard in this room get their echo
+      // in the new variation too, in the background.
+      if (t === 0) p.then(() => { if (this.variants[base] === key && this.room === base) this._buildAhead(base, key); });
+    }
     // Let go of other variations of this room (their tails ring out first).
     for (const [k, node] of [...this.convolvers]) {
       const rk = k.split('#')[0];
       if (rk.startsWith(base + '/') && rk !== key) {
         this.convolvers.delete(k);
-        setTimeout(() => { try { node.disconnect(); } catch (e) { /* gone */ } }, 6000);
+        // A sound already playing keeps the echo it began with, as on the desktop,
+        // so the node goes only once nothing live feeds it any more.
+        const retire = () => {
+          if ([...this.live].some((v) => v.wet && v.wet.conv === node)) setTimeout(retire, 6000);
+          else { try { node.disconnect(); } catch (e) { /* gone */ } }
+        };
+        setTimeout(retire, 6000);
       }
+    }
+    for (const k of [...this.loopWets.keys()]) {
+      const rk = k.split('|')[0];
+      if (rk.startsWith(base + '/') && rk !== key) this.loopWets.delete(k);
     }
     for (const k of [...this.irBuffers.keys()]) {
       const rk = k.split('#')[0];
@@ -258,8 +311,8 @@ export class AudioEngine {
   }
 
   // The convolver for a room as heard now (its variation if ready), one take.
-  _convolver(room, take) {
-    for (const key of [this.variants[room], room]) {
+  _convolver(room, take, baseOnly = false) {
+    for (const key of baseOnly ? [room] : [this.variants[room], room]) {
       if (!key) continue;
       const k = key + '#' + take;
       let node = this.convolvers.get(k);
@@ -270,10 +323,106 @@ export class AudioEngine {
       node.normalize = false;
       node.buffer = buf;
       node.connect(this.out);
+      node.key = k;
       this.convolvers.set(k, node);
       return node;
     }
     return null;
+  }
+
+  // A looping sound's echo in a room (variation first, if its impulse is ready),
+  // or null while it is being made: the desktop builds these ahead, and plays a
+  // sound clean until its echo is ready; here the room's shared echo stands in.
+  _loopWet(room, name, dry) {
+    for (const key of [this.variants[room], room]) {
+      if (!key) continue;
+      const k = key + '|' + name;
+      const have = this.loopWets.get(k);
+      if (have) return have;
+      const ir = this.irBuffers.get(key + '#0');
+      if (!ir) continue;
+      this._buildLoopWet(room, key, name, dry, ir);
+      // Not made yet: the plain room's echo stands in, if it is ready (the
+      // desktop's _pair: the variation's echo if built, or else the room's).
+    }
+    return null;
+  }
+
+  _buildLoopWet(room, key, name, dry, ir) {
+    const k = key + '|' + name;
+    if (this.loopWets.has(k) || this.loopWetPending.has(k)) return this.loopWetPending.get(k) || Promise.resolve();
+    const p = this._renderLoopWet(ir, dry).then((buf) => {
+      // Kept only while it is still this room's echo, and while the sound is held.
+      if (buf && (this.variants[room] === key || key === room) && this.buffers.get('dry:' + name) === dry) this.loopWets.set(k, buf);
+    }).catch(() => {}).finally(() => this.loopWetPending.delete(k));
+    this.loopWetPending.set(k, p);
+    return p;
+  }
+
+  // The desktop builds every echo ahead (prepare_reverb, prepare_variant). Here the
+  // looping sounds' own echoes for a room are made in the background, one at a
+  // time, when the room (or its variation) comes into use: for the room itself,
+  // every loop that can echo in it; for a variation, those already used here.
+  _buildAhead(room, key) {
+    const token = {};
+    this._ahead = this._ahead || {};
+    this._ahead[key] = token;
+    const ir = this.irBuffers.get(key + '#0');
+    if (!ir) return;
+    const names = [];
+    for (const [name, pair] of this.entries) {
+      if (!pair.dry || !(pair.dry.loop || reverbIsLoop(name))) continue;
+      if (!(RULES.ROOMS[name] || []).includes(room) || !(RULES.REVERB_SEND[RULES.FAMILY[name] || 'event'] > 0)) continue;
+      const dry = this.buffers.get('dry:' + name);
+      if (!dry || pair.dry.frames > BIG_FRAMES) continue;
+      if (key !== room && !this.loopWets.has(room + '|' + name)) continue;
+      names.push([name, dry]);
+    }
+    const next = () => {
+      if (this._ahead[key] !== token || !names.length) return;
+      if (key !== room && this.variants[room] !== key) return;
+      const [name, dry] = names.shift();
+      this._buildLoopWet(room, key, name, dry, ir).then(() => setTimeout(next, 30));
+    };
+    next();
+  }
+
+  // A long recording let go of: its own echoes go with it.
+  _releaseWets(name) {
+    for (const k of [...this.loopWets.keys()]) if (k.endsWith('|' + name)) this.loopWets.delete(k);
+  }
+
+  // The desktop's reverb_apply for a loop: the loop convolved circularly with the
+  // room's impulse (the loop played round enough times for the echo to settle,
+  // then one turn of it taken), never louder at its peak than 0.9 of full scale.
+  async _renderLoopWet(ir, dry) {
+    const OAC = window.OfflineAudioContext || window.webkitOfflineAudioContext;
+    if (!OAC) return null;
+    const n = dry.length;
+    const turns = Math.ceil(Math.max(1, ir.length - 1) / n) + 1;
+    const off = new OAC(2, turns * n, RATE);
+    const src = off.createBufferSource();
+    src.buffer = dry;
+    src.loop = true;
+    const conv = off.createConvolver();
+    conv.normalize = false;
+    conv.buffer = ir;
+    src.connect(conv);
+    conv.connect(off.destination);
+    src.start(0);
+    const out = await off.startRendering();
+    const buf = new AudioBuffer({ numberOfChannels: 2, length: n, sampleRate: RATE });
+    let peak = 0;
+    for (let c = 0; c < 2; c++) {
+      const seg = out.getChannelData(c).subarray((turns - 1) * n, turns * n);
+      for (let i = 0; i < n; i++) { const v = Math.abs(seg[i]); if (v > peak) peak = v; }
+      buf.copyToChannel(seg, c);
+    }
+    if (peak > 0.9 * 32767 / 32768) {
+      const k = (0.9 * 32767 / 32768) / peak;
+      for (let c = 0; c < 2; c++) { const d = buf.getChannelData(c); for (let i = 0; i < n; i++) d[i] *= k; }
+    }
+    return buf;
   }
 
   // Ease the wall effect toward a new setting and re-level every live echo
@@ -293,8 +442,13 @@ export class AudioEngine {
     const pair = this.entries.get(name);
     if (!pair || !pair.dry) return null;
     if (loops === -1) {
-      if (name.startsWith('lab_')) this.setVariant('lab', name);
-      else if (name.startsWith('bat_')) this.setVariant('battle', name);
+      // A drone starting is the room changing with it (the desktop's
+      // reverb_ambience_base), even heard ahead through the elevator's walls as
+      // its muffled copy. The road's tunnels set theirs themselves.
+      const drone = name.endsWith('_muffled') ? name.slice(0, -'_muffled'.length) : name;
+      if (drone.startsWith('lab_')) this.setVariant('lab', drone);
+      else if (drone.startsWith('bat_')) this.setVariant('battle', drone);
+      else if (drone.startsWith('tow_')) this.setVariant('tower', drone);
     }
     let src = null;
     let behind = 0.0;
@@ -377,11 +531,21 @@ export class Voice {
     this.dry = this._branch(buf);
     const dullBuf = this.pair.dull ? a.buffers.get('dull:' + this.name) : null;
     if (dullBuf && a.room !== 'tunnel') this.dull = this._branch(dullBuf);
-    // The echo: a send from the clean sound into the room's convolver.
+    // The echo. A looping sound gets its own (see AudioEngine._loopWet), played in
+    // step with it, so it stops, pauses and fades with it as the desktop's does.
+    // Anything else sends into the room's convolver; a loop sound played once gets
+    // the plain room's first take, as the desktop's one-shot echo of a loop.
     const rooms = RULES.ROOMS[this.name] || [];
-    if (a.room && this.send > 0 && rooms.includes(a.room)) {
+    const loopWet = (a.room && this.send > 0 && rooms.includes(a.room) && this.loop)
+      ? a._loopWet(a.room, this.name, buf) : null;
+    if (loopWet) {
+      const br = this._branch(loopWet);
+      this.wet = { buffer: loopWet, fade: br.fade, split: br.split, wl: br.gl, wr: br.gr, merge: br.merge };
+    } else if (a.room && this.send > 0 && rooms.includes(a.room)) {
       const takes = RULES.TAKES[this.name] || 1;
-      const conv = a._convolver(a.room, Math.floor(Math.random() * takes)) || a._convolver(a.room, 0);
+      const once = !this.loop && (this.pair.dry.loop || reverbIsLoop(this.name));
+      const conv = once ? a._convolver(a.room, 0, true)
+        : (a._convolver(a.room, Math.floor(Math.random() * takes)) || a._convolver(a.room, 0));
       if (conv) {
         const ctx = this.ctx;
         const split = ctx.createChannelSplitter(2);
@@ -393,11 +557,22 @@ export class Voice {
         split.connect(wl, 0); split.connect(wr, 1);
         wl.connect(merge, 0, 0); wr.connect(merge, 0, 1);
         merge.connect(conv);
-        this.wet = { split, wl, wr, merge };
+        this.wet = { split, wl, wr, merge, conv };
+        // The desktop's echo of a one-shot is never louder at its peak than 0.9 of
+        // full scale (reverb_apply); the factor it scales by comes from the build.
+        // A variation's own factor for the game's sounds; an event recording gets
+        // its room's (the build works those out for the rooms only).
+        const OS = RULES.ONCE_SCALE || {};
+        const own = (OS[conv.key] || {})[this.name];
+        const base = this.pair.dry.lazy ? (OS[conv.key.replace(/\/[^#]*/, '')] || {})[this.name] : undefined;
+        this.wetScale = own || base || 1;
       }
     }
     const now = this.ctx.currentTime;
-    for (const br of [this.dry, this.dull]) {
+    // Nothing has sounded yet: the first levels are set outright, not glided to
+    // (the desktop sets a channel's volume before it is ever mixed).
+    this.begunAt = now;
+    for (const br of [this.dry, this.dull, this.wet && this.wet.buffer ? this.wet : null]) {
       if (!br) continue;
       if (this.fadeMs > 0) {
         br.fade.gain.setValueAtTime(0, now);
@@ -411,6 +586,10 @@ export class Voice {
   // Carry a looping sound over to a fresh sound engine (see AudioEngine.recover).
   rebind(oldCtx) {
     if (this.stopped || this.ended) return;
+    // A loop still being decoded begins in the new engine when it is ready.
+    if (this.loop && !this.dry) { this.ctx = this.audio.ctx; return; }
+    // One fading out was on its way out anyway.
+    if (this.fadingOut) { this.stop(); return; }
     if (!this.loop || !this.dry) {
       // A one-shot plays out where it began (see recover); it is just no longer
       // tracked here.
@@ -433,7 +612,7 @@ export class Voice {
     const now = this.ctx.currentTime;
     this.sources = [];
     let first = null;
-    for (const br of [this.dry, this.dull]) {
+    for (const br of [this.dry, this.dull, this.wet && this.wet.buffer ? this.wet : null]) {
       if (!br) continue;
       const s = this.ctx.createBufferSource();
       s.buffer = br.buffer;
@@ -469,7 +648,7 @@ export class Voice {
 
   _set(param, v, instant) {
     const now = this.ctx.currentTime;
-    if (instant) { param.cancelScheduledValues(now); param.setValueAtTime(v, now); }
+    if (instant || now <= this.begunAt) { param.cancelScheduledValues(now); param.setValueAtTime(v, now); }
     else param.setTargetAtTime(v, now, 0.008);
   }
 
@@ -519,8 +698,9 @@ export class Voice {
     let wr = this.r * send * g;
     if (lean < 0) wr *= 1.0 + lean;
     else if (lean > 0) wl *= 1.0 - lean;
-    this._set(this.wet.wl.gain, clamp(wl, 0, 1), instant);
-    this._set(this.wet.wr.gain, clamp(wr, 0, 1), instant);
+    const k = this.wetScale || 1;
+    this._set(this.wet.wl.gain, clamp(wl, 0, 1) * k, instant);
+    this._set(this.wet.wr.gain, clamp(wr, 0, 1) * k, instant);
   }
 
   _stopSources() {
@@ -542,8 +722,9 @@ export class Voice {
 
   fadeout(ms) {
     if (this.stopped || !this.dry) { this.stop(); return; }
+    this.fadingOut = true;
     const now = this.ctx.currentTime;
-    for (const br of [this.dry, this.dull]) {
+    for (const br of [this.dry, this.dull, this.wet && this.wet.buffer ? this.wet : null]) {
       if (!br) continue;
       const g = br.fade.gain;
       g.cancelScheduledValues(now);

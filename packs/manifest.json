@@ -1,16 +1,44 @@
 {
  "packs": {
   "core": {
-   "file": "core-924078d47e.elpack",
-   "bytes": 102841
+   "file": "core-166282e1e6.elpack",
+   "bytes": 102761
   },
   "standard": {
-   "file": "standard-fe9e2e6519.elpack",
-   "bytes": 6508972
+   "file": "standard-22aa06da30.elpack",
+   "bytes": 6507681
   },
   "battle": {
-   "file": "battle-5d22aec25e.elpack",
-   "bytes": 9056436
+   "file": "battle-5d0dbae233.elpack",
+   "bytes": 9057833
+  },
+  "chaos": {
+   "file": "chaos-1158b63e50.elpack",
+   "bytes": 16211208
+  },
+  "driving": {
+   "file": "driving-b815ed6d4a.elpack",
+   "bytes": 1076430
+  },
+  "events": {
+   "file": "events-98bea12fbf.elpack",
+   "bytes": 24946817
+  },
+  "events2": {
+   "file": "events2-ee98edcb12.elpack",
+   "bytes": 24959562
+  },
+  "events3": {
+   "file": "events3-7ed82ba4f0.elpack",
+   "bytes": 17337227
+  },
+  "island": {
+   "file": "island-34966defd1.elpack",
+   "bytes": 12944043
+  },
+  "tower": {
+   "file": "tower-25ca806766.elpack",
+   "bytes": 7006269
   }
  }
 }

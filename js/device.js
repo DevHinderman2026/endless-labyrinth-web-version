@@ -15,6 +15,11 @@ export function deviceKind() {
     const small = Math.min(screen.width, screen.height);
     return small >= 600 ? 'android-tablet' : 'android-phone';
   }
+  // Chrome (since version 120) and Samsung Internet open sites on a big Android
+  // tablet as a desktop: a Linux user agent with no "Android" in it. Such a tablet
+  // has only a touch screen, while a Linux computer also has a mouse or touchpad.
+  if (/Linux/.test(ua) && navigator.maxTouchPoints > 0 && window.matchMedia
+      && matchMedia('(pointer: coarse)').matches && !matchMedia('(any-pointer: fine)').matches) return 'android-tablet';
   return 'computer';
 }
 
