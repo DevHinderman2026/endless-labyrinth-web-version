@@ -6,10 +6,10 @@ A 3D audio game for phones and tablets, played by ear with headphones and touch 
 
 ## What is here
 
-- `index.html`, `about.html`, `credits.html`, `history.html`: the website. `about.html` teaches how to play, gestures included. `history.html` is the Update History, the players' release notes: each new version goes at the top, with its date and what changed for players.
+- `index.html`, `about.html`, `credits.html`, `history.html`: the website. `about.html` teaches how to play, gestures included. `history.html` is the Update History, the players' release notes: each new version goes at the top, with its date and what changed for players. The web version has its own version numbers (1.0.2 now), separate from the Windows game's.
 - `play.html`: the game.
 - `js/`: the game.
-  - `game.js`: Standard and Battle modes, the menus and help, ported from the desktop game's `endless_labyrinth.py` (version 1.0.1), with the same names and numbers so the two can be compared.
+  - `game.js`: Standard and Battle modes, the menus and help, ported from the Windows game's `endless_labyrinth.py` (Windows version 1.0.1), with the same names and numbers so the two can be compared.
   - `modes/`: the other modes, each a plug-in listed in `modes/index.js`: `driving.js`, `tower.js`, `island.js`, `chaos.js` and `events.js` (with `events/`, the port of the desktop's event engine, missions, schema and signature check).
   - `device.js`: tells phones and tablets from computers, which are not supported.
   - `audio.js`: the sound engine, the desktop's mixer rebuilt on the Web Audio API: left and right levels, the dull "behind you" copy, and the room echo.
