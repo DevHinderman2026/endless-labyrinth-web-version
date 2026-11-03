@@ -83,19 +83,9 @@ async function start() {
   ready = true;
 }
 
-// The last few problems the game ran into, kept on the phone so Gesture Practice
-// can say them (for finding faults without a computer attached).
-function noteError(e) {
-  try {
-    const key = 'endless-labyrinth-web-errors';
-    const list = JSON.parse(localStorage.getItem(key) || '[]');
-    const msg = String((e && (e.stack || e.message)) || e).split('\n').slice(0, 2).join(' ').slice(0, 200);
-    if (list.length && list[list.length - 1].msg === msg) { list[list.length - 1].n += 1; } else list.push({ msg, n: 1, at: new Date().toISOString() });
-    localStorage.setItem(key, JSON.stringify(list.slice(-5)));
-  } catch (err) { /* nothing more to do */ }
-}
-window.addEventListener('error', (ev) => noteError(ev.error || ev.message));
-window.addEventListener('unhandledrejection', (ev) => noteError(ev.reason));
+// An earlier version kept a list of problems on the phone, for testing; it is no
+// longer kept, so any left behind is cleared.
+try { localStorage.removeItem('endless-labyrinth-web-errors'); } catch (e) { /* storage blocked */ }
 
 function begin() {
   if (!ready || started) return;
@@ -113,7 +103,7 @@ function begin() {
   const loop = (now) => {
     const dt = Math.min(0.1, Math.max(0, (now - last) / 1000));
     last = now;
-    try { game.frame(dt); } catch (e) { console.error(e); noteError(e); }
+    try { game.frame(dt); } catch (e) { console.error(e); }
     requestAnimationFrame(loop);
   };
   requestAnimationFrame(loop);
