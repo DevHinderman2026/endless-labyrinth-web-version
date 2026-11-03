@@ -898,12 +898,8 @@ export const EngineMixin = {
   // The four numbers the desktop's warp_copy draws for each recording, from the pack.
   _eventWarpDraws() {
     if (this._warpDraws) return this._warpDraws;
-    try {
-      const e = this.audio.entries.get('event_warp_draws').data;
-      this._warpDraws = JSON.parse(new TextDecoder().decode(new Uint8Array(e.pack.data, e.offset, e.length)));
-    } catch (err) {
-      this._warpDraws = {};
-    }
+    // Read from the pack when the sounds were loaded (AudioEngine.load).
+    this._warpDraws = this.audio.warpDraws || {};
     return this._warpDraws;
   },
 

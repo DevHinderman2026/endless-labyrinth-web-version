@@ -21,6 +21,12 @@ await page.goto(base + '/index.html');
 const contact = await page.locator('footer [data-contact] a').getAttribute('href');
 check(contact === 'mailto:russellhinderman425@gmail.com', 'contact link is written in by script');
 check(await page.locator('#computer-note').isVisible(), 'a computer is told to use the Windows version');
+for (const pg of ['index.html', 'about.html', 'credits.html', 'history.html']) {
+  await page.goto(base + '/' + pg);
+  check(await page.locator('nav.site a[href="history.html"]').count() === 1, `${pg} links to the Update History`);
+}
+await page.goto(base + '/history.html');
+check((await page.locator('main h2').allTextContents()).join(' | ').startsWith('1.0.1'), 'the Update History lists the newest version first');
 await page.goto(base + '/credits.html');
 check((await page.locator('#list li').count()) >= 40, 'credits list the recordings');
 

@@ -1363,7 +1363,13 @@ export class Game {
     this.scores.save();
     // For finding faults: how often the sound has had to be restarted.
     const n = this.audio.recoveries;
-    const note = n ? ` Since the game started, its sound has been restarted ${n} time${n === 1 ? '' : 's'}.` : '';
+    let note = n ? ` Since the game started, its sound has been restarted ${n} time${n === 1 ? '' : 's'}.` : '';
+    // And the last problem the game ran into, if any, for reporting it.
+    try {
+      const errs = JSON.parse(localStorage.getItem('endless-labyrinth-web-errors') || '[]');
+      const last = errs[errs.length - 1];
+      if (last) note += ` The last problem the game ran into, on ${last.at.slice(0, 10)}${last.n > 1 ? `, ${last.n} times` : ''}: ${last.msg}`;
+    } catch (e) { /* none */ }
     this.tts.speak('Gesture practice. Try any gesture and the game says what it felt. '
       + 'Swipe in four directions, double tap, triple tap, tap four times, tap with two fingers or with three. '
       + 'Triple tap twice in a row to leave, or wait twenty seconds.' + note);

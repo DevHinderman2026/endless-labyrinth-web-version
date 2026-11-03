@@ -6,7 +6,7 @@ A 3D audio game for phones and tablets, played by ear with headphones and touch 
 
 ## What is here
 
-- `index.html`, `about.html`, `credits.html`: the website. `about.html` teaches how to play, gestures included.
+- `index.html`, `about.html`, `credits.html`, `history.html`: the website. `about.html` teaches how to play, gestures included. `history.html` is the Update History, the players' release notes: each new version goes at the top, with its date and what changed for players.
 - `play.html`: the game.
 - `js/`: the game.
   - `game.js`: Standard and Battle modes, the menus and help, ported from the desktop game's `endless_labyrinth.py` (version 1.0.1), with the same names and numbers so the two can be compared.

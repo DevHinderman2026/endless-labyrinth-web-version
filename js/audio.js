@@ -18,9 +18,18 @@ const RATE = 44100;
 // let go when they have not been used for a while, so a phone never holds every
 // drone in memory at once.
 const BIG_FRAMES = RATE * 6;
-const BIG_KEEP = 6;
+const BIG_KEEP = 3;
+// A looping sound's own echoes (see _loopWet) are kept up to this many bytes.
+const LOOP_WET_KEEP = 32e6;
 
 function clamp(v, lo, hi) { return Math.min(hi, Math.max(lo, v)); }
+
+function sameSides(buf, frames) {
+  if (buf.numberOfChannels < 2) return true;
+  const l = buf.getChannelData(0); const r = buf.getChannelData(1);
+  for (let i = 0; i < frames; i++) if (l[i] !== r[i]) return false;
+  return true;
+}
 
 // Which sounds a pause holds: every beacon, chime and beep (the desktop's
 // PAUSE_BEEP_PARTS and PAUSE_BEEP_NAMES). An event creature's own recording is
@@ -69,6 +78,25 @@ export class AudioEngine {
     this.sourceEffect = null;     // set by the game: position -> [gain, lean]
     this.behindOf = null;         // set by the game: position -> 0..1
     this.demoVoice = null;
+    // The sound's clock, sampled four times a second (see flowing).
+    this._clk = [];
+    setInterval(() => {
+      this._clk.push([this.ctx, this.ctx.currentTime, performance.now()]);
+      if (this._clk.length > 2) this._clk.shift();
+    }, 250);
+  }
+
+  // Whether sound is coming out right now, whatever the phone calls its state: the
+  // clock moved on over the last quarter second. An iPhone can leave the sound
+  // 'interrupted' after the game's voice has spoken while it plays on, and asking
+  // it to resume then, on every swipe, made it dip the sounds of that moment
+  // (footsteps, while walking).
+  get flowing() {
+    if (this.ctx.state === 'running') return true;
+    const [a, b] = this._clk;
+    if (!a || !b || a[0] !== this.ctx || b[0] !== this.ctx) return false;
+    const wall = (b[2] - a[2]) / 1000;
+    return wall > 0 && (b[1] - a[1]) > wall * 0.5 && performance.now() - b[2] < 600;
   }
 
   async unlock() {
@@ -88,7 +116,7 @@ export class AudioEngine {
   get running() { return this.ctx.state === 'running'; }
 
   resume() {
-    if (this.ctx.state !== 'running') this.ctx.resume().catch(() => {});
+    if (!this.flowing) this.ctx.resume().catch(() => {});
   }
 
   // Called on every touch, tap and key press, which are the moments a phone
@@ -100,7 +128,7 @@ export class AudioEngine {
   // turns sounds down under the game's speech), so the engine is replaced only
   // when its clock has truly stopped, and at most once in five seconds.
   wake() {
-    if (this.ctx.state === 'running' || this.waking) return;
+    if (this.flowing || this.waking) return;
     this.waking = true;
     const ctx = this.ctx;
     const t0 = ctx.currentTime;
@@ -156,6 +184,11 @@ export class AudioEngine {
         }
       }
     }
+    // The events' warp numbers (data, not a sound), read once now.
+    const wd = (this.entries.get('event_warp_draws') || {}).data;
+    if (wd) {
+      try { this.warpDraws = JSON.parse(new TextDecoder().decode(await wd.pack.read(wd))); } catch (e) { this.warpDraws = {}; }
+    }
     // Everything small is decoded now; the long recordings when first needed.
     const small = [];
     for (const [name, pair] of this.entries) {
@@ -174,20 +207,21 @@ export class AudioEngine {
   has(name) { return this.entries.has(name); }
 
   async _decodeEntry(e) {
-    const bytes = e.pack.data.slice(e.offset, e.offset + e.length);
+    const bytes = await e.pack.read(e);
     const decoded = await new Promise((resolve, reject) => {
       const p = this.ctx.decodeAudioData(bytes, resolve, reject);
       if (p && p.catch) p.catch(reject);
     });
     // Cut back to the exact length: a loop was written with its own opening on
     // the end, and some browsers decode a few extra samples at the end of a file.
-    const frames = Math.min(e.frames, decoded.length);
-    if (decoded.length === frames && decoded.numberOfChannels === 2) return decoded;
-    const buf = this.ctx.createBuffer(2, frames, decoded.sampleRate);
-    for (let c = 0; c < 2; c++) {
-      const src = decoded.getChannelData(Math.min(c, decoded.numberOfChannels - 1));
-      buf.copyToChannel(src.subarray(0, frames), c);
-    }
+    const frames = Math.min(e.frames || decoded.length, decoded.length);
+    // A sound whose two sides are the same is kept once (half the memory): every
+    // Voice spreads one channel to both ears, exactly as the desktop's copy does.
+    const same = decoded.numberOfChannels === 1 || sameSides(decoded, frames);
+    const n = same ? 1 : 2;
+    if (decoded.length === frames && decoded.numberOfChannels === n) return decoded;
+    const buf = this.ctx.createBuffer(n, frames, decoded.sampleRate);
+    for (let c = 0; c < n; c++) buf.copyToChannel(decoded.getChannelData(c).subarray(0, frames), c);
     return buf;
   }
 
@@ -262,6 +296,12 @@ export class AudioEngine {
 
   setRoom(room) {
     if (room !== this.room && room) {
+      // Leaving a room lets go of its loops' own echoes (a sound still playing
+      // keeps the one it has).
+      for (const k of [...this.loopWets.keys()]) {
+        const r = k.split('|')[0].split('/')[0];
+        if (r !== room) this.loopWets.delete(k);
+      }
       const key = this.variants[room];
       setTimeout(() => {
         if (this.room !== room) return;
@@ -353,7 +393,10 @@ export class AudioEngine {
     if (this.loopWets.has(k) || this.loopWetPending.has(k)) return this.loopWetPending.get(k) || Promise.resolve();
     const p = this._renderLoopWet(ir, dry).then((buf) => {
       // Kept only while it is still this room's echo, and while the sound is held.
-      if (buf && (this.variants[room] === key || key === room) && this.buffers.get('dry:' + name) === dry) this.loopWets.set(k, buf);
+      if (buf && (this.variants[room] === key || key === room) && this.buffers.get('dry:' + name) === dry) {
+        this.loopWets.set(k, buf);
+        this._capLoopWets();
+      }
     }).catch(() => {}).finally(() => this.loopWetPending.delete(k));
     this.loopWetPending.set(k, p);
     return p;
@@ -385,6 +428,18 @@ export class AudioEngine {
       this._buildLoopWet(room, key, name, dry, ir).then(() => setTimeout(next, 30));
     };
     next();
+  }
+
+  // The oldest echoes go once they pass LOOP_WET_KEEP (Map keeps them in the
+  // order they were made); the one just made stays.
+  _capLoopWets() {
+    let total = 0;
+    for (const b of this.loopWets.values()) total += b.length * b.numberOfChannels * 4;
+    for (const [k, b] of this.loopWets) {
+      if (total <= LOOP_WET_KEEP || this.loopWets.size <= 1) break;
+      total -= b.length * b.numberOfChannels * 4;
+      this.loopWets.delete(k);
+    }
   }
 
   // A long recording let go of: its own echoes go with it.
@@ -506,6 +561,10 @@ export class Voice {
   _branch(buffer) {
     const ctx = this.ctx;
     const fade = ctx.createGain();
+    // A sound kept as one channel is spread to both sides here.
+    fade.channelCount = 2;
+    fade.channelCountMode = 'explicit';
+    fade.channelCountInterpretation = 'speakers';
     const split = ctx.createChannelSplitter(2);
     const gl = ctx.createGain();
     const gr = ctx.createGain();

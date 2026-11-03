@@ -33,14 +33,22 @@ async function fetchWithProgress(url, onBytes) {
   return out.buffer;
 }
 
-function parsePack(buf) {
-  const bytes = new Uint8Array(buf);
-  const magic = new TextDecoder().decode(bytes.subarray(0, 8));
+// A pack is kept as a Blob, not in memory: the one Cache Storage hands back is
+// stored on the phone, so a sound is read from it only when it is decoded. (Holding
+// every pack in memory as well as the decoded sounds was too much for a phone in a
+// chaos run.) Each entry's bytes are read with pack.read(entry).
+async function parsePack(blob) {
+  const head = new Uint8Array(await blob.slice(0, 12).arrayBuffer());
+  const magic = new TextDecoder().decode(head.subarray(0, 8));
   if (magic !== MAGIC) throw new Error('A sound pack is damaged.');
-  const len = new DataView(buf, 8, 4).getUint32(0, true);
-  const header = JSON.parse(new TextDecoder().decode(bytes.subarray(12, 12 + len)));
-  const data = buf.slice(12 + len);
-  return { name: header.pack, entries: header.entries, data };
+  const len = new DataView(head.buffer, 8, 4).getUint32(0, true);
+  const header = JSON.parse(new TextDecoder().decode(await blob.slice(12, 12 + len).arrayBuffer()));
+  const base = 12 + len;
+  return {
+    name: header.pack,
+    entries: header.entries,
+    read: (e) => blob.slice(base + e.offset, base + e.offset + e.length).arrayBuffer(),
+  };
 }
 
 export async function loadPacks(onProgress = () => {}) {
@@ -55,25 +63,32 @@ export async function loadPacks(onProgress = () => {}) {
   const packs = [];
   for (const p of list) {
     const url = 'packs/' + p.file;
-    let buf = null;
+    let blob = null;
     if (cache) {
       const hit = await cache.match(url);
       if (hit) {
-        buf = await hit.arrayBuffer();
-        if (buf.byteLength !== p.bytes) buf = null;
+        blob = await hit.blob();
+        if (blob.size !== p.bytes) blob = null;
       }
     }
-    if (buf) {
+    if (blob) {
       done += p.bytes;
       onProgress(done / total, true);
     } else {
-      buf = await fetchWithProgress(url, (n) => { done += n; onProgress(done / total, false); });
+      let buf = await fetchWithProgress(url, (n) => { done += n; onProgress(done / total, false); });
+      blob = null;
       if (cache) {
-        try { await cache.put(url, new Response(buf.slice(0), { headers: { 'Content-Type': 'application/octet-stream' } })); }
-        catch (e) { /* no room: it is simply downloaded again next time */ }
+        try {
+          await cache.put(url, new Response(buf, { headers: { 'Content-Type': 'application/octet-stream' } }));
+          const back = await cache.match(url);
+          if (back) blob = await back.blob();
+        } catch (e) { /* no room: it is simply downloaded again next time */ }
       }
+      // Without Cache Storage the pack is held in memory, as before.
+      if (!blob || blob.size !== p.bytes) blob = new Blob([buf]);
+      buf = null;
     }
-    packs.push(parsePack(buf));
+    packs.push(await parsePack(blob));
   }
   // Remove packs the game no longer uses.
   if (cache) {

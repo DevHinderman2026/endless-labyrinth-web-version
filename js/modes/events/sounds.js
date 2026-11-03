@@ -447,9 +447,13 @@ export function padded([al, ar], seconds) {
 
 // ------------------------------------------------------------ into the sound engine
 function toBuffer(audio, [l, r]) {
-  const buf = audio.ctx.createBuffer(2, Math.max(1, l.length), SR);
-  const L = buf.getChannelData(0); const R = buf.getChannelData(1);
-  for (let i = 0; i < l.length; i++) { L[i] = l[i] / I16; R[i] = r[i] / I16; }
+  // Kept as one channel when both sides are the same (see AudioEngine._decodeEntry).
+  let same = l.length === r.length;
+  for (let i = 0; same && i < l.length; i++) if (l[i] !== r[i]) same = false;
+  const buf = audio.ctx.createBuffer(same ? 1 : 2, Math.max(1, l.length), SR);
+  const L = buf.getChannelData(0);
+  for (let i = 0; i < l.length; i++) L[i] = l[i] / I16;
+  if (!same) { const R = buf.getChannelData(1); for (let i = 0; i < r.length; i++) R[i] = r[i] / I16; }
   return buf;
 }
 
