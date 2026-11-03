@@ -10,7 +10,8 @@ export const RATES = [0.7, 0.85, 1.0, 1.15, 1.3, 1.5, 1.7, 2.0];
 export const DEFAULT_RATE = 3;   // 1-based: 1.0, the voice's own speed
 
 export class Speech {
-  constructor({ show = () => {}, rateLevel = DEFAULT_RATE } = {}) {
+  constructor({ show = () => {}, rateLevel = DEFAULT_RATE, words = null } = {}) {
+    this.words = words;   // on a computer: gestures turned into keys (keywords.js)
     this.synth = window.speechSynthesis || null;
     this.show = show;
     this.gen = 0;
@@ -45,6 +46,7 @@ export class Speech {
   // now: start speaking within this very call. Phones allow speech to begin only
   // straight from a touch, so the first line, said as Start is pressed, uses it.
   speak(text, { interrupt = true, after = null, now = false } = {}) {
+    if (text && this.words) text = this.words(text);
     if (text) this.show(text);
     if (interrupt) {
       this.gen += 1;

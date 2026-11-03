@@ -1,4 +1,5 @@
-// Which devices may play: phones and tablets only. Run: serve the site folder, then
+// Which devices may play: phones, tablets, Chromebooks, Macs and Linux computers;
+// Windows computers are refused. Run: serve the site folder, then
 //   node tests/devices.mjs http://localhost:8765
 import { chromium } from 'playwright';
 
@@ -10,6 +11,7 @@ const LINUX = 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like G
 async function kind(opts) {
   const ctx = await browser.newContext(opts);
   const page = await ctx.newPage();
+  if (opts.touchPoints) await page.addInitScript((n) => Object.defineProperty(Navigator.prototype, 'maxTouchPoints', { get: () => n }), opts.touchPoints);
   await page.goto(base + '/play.html');
   const r = await page.evaluate(async () => (await import('./js/device.js')).deviceKind());
   const startHidden = await page.evaluate(() => document.getElementById('start').hidden);
@@ -18,12 +20,17 @@ async function kind(opts) {
 }
 const tablet = await kind({ userAgent: LINUX, hasTouch: true, isMobile: true, viewport: { width: 1280, height: 800 } });
 check(tablet[0] === 'android-tablet' && !tablet[1], `a big Android tablet in Chrome's desktop mode (Linux, touch only) may play: ${tablet}`);
-// (A browser here cannot be given a touch screen and a mouse at once; a real
-// Linux computer with a touch screen also has a fine pointer, and is refused.)
 const laptop = await kind({ userAgent: LINUX, viewport: { width: 1280, height: 800 } });
-check(laptop[0] === 'computer' && laptop[1], `a Linux computer is refused: ${laptop}`);
+check(laptop[0] === 'linux' && !laptop[1], `a Linux computer may play: ${laptop}`);
 const cros = await kind({ userAgent: 'Mozilla/5.0 (X11; CrOS x86_64 14541.0.0) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36', hasTouch: true, isMobile: true });
-check(cros[0] === 'computer', `a Chromebook is refused, touch screen or not: ${cros}`);
+check(cros[0] === 'chromebook' && !cros[1], `a Chromebook may play, touch screen or not: ${cros}`);
+const MAC = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.4 Safari/605.1.15';
+const mac = await kind({ userAgent: MAC, viewport: { width: 1440, height: 900 } });
+check(mac[0] === 'mac' && !mac[1], `a Mac may play: ${mac}`);
+const ipad = await kind({ userAgent: MAC, hasTouch: true, isMobile: true, touchPoints: 5, viewport: { width: 1024, height: 1366 } });
+check(ipad[0] === 'ipad' && !ipad[1], `an iPad (which says it is a Mac) is still an iPad: ${ipad}`);
+const win = await kind({ userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36' });
+check(win[0] === 'windows' && win[1], `a Windows computer is refused: ${win}`);
 const phone = await kind({ userAgent: 'Mozilla/5.0 (Linux; Android 14; Pixel 8) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Mobile Safari/537.36', hasTouch: true, isMobile: true, viewport: { width: 412, height: 915 } });
 check(phone[0] === 'android-phone' && !phone[1], `an Android phone may play: ${phone}`);
 await browser.close();

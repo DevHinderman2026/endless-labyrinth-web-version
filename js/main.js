@@ -6,7 +6,8 @@ import { Speech } from './speech.js';
 import { Store } from './storage.js';
 import { Gestures } from './gestures.js';
 import { Game } from './game.js';
-import { deviceKind, isApple, screenReaderName, deviceWord, allowComputer } from './device.js';
+import { deviceKind, isApple, isComputer, keyboardDevice, screenReaderName, deviceWord, allowComputer } from './device.js';
+import { keyWords } from './keywords.js';
 
 const $ = (id) => document.getElementById(id);
 const kind = deviceKind();
@@ -15,7 +16,8 @@ document.documentElement.dataset.device = kind;
 const shown = $('said');
 const statusLine = $('status');
 const store = new Store();
-const speech = new Speech({ show: (t) => { shown.textContent = t; }, rateLevel: store.settings.speechRate });
+const keyboard = keyboardDevice();
+const speech = new Speech({ show: (t) => { shown.textContent = t; }, rateLevel: store.settings.speechRate, words: keyboard ? keyWords : null });
 let audio = null;
 let game = null;
 let ready = false;      // sounds loaded, waiting for the swipe up
@@ -23,9 +25,11 @@ let started = false;
 
 function setText(id, text) { $(id).textContent = text; }
 
-if (kind === 'computer' && !allowComputer()) {
+if (kind === 'windows' && !allowComputer()) {
   $('start').hidden = true;
-  setText('lead', 'This web version of Endless Labyrinth works only on phones and tablets: an iPhone, an iPad, or an Android phone or tablet. Computers are not supported, including Windows, Mac, Linux and Chromebooks, because Endless Labyrinth already has a full Windows version for computers. On a Windows computer, download it from the Releases page of the game\'s GitHub repository. On an Android tablet, open Chrome\'s menu, turn off Desktop site, and reload this page.');
+  setText('lead', 'This web version of Endless Labyrinth is not for Windows computers, because Endless Labyrinth already has a full Windows version. Download it from the Releases page of the game\'s GitHub repository. The web version plays on an iPhone, an iPad, an Android phone or tablet, a Chromebook, a Mac or a Linux computer.');
+} else if (/Firefox\//.test(navigator.userAgent) && isComputer(kind)) {
+  setText('lead', $('lead').textContent + ' Firefox should work, but Chrome, Edge or Safari is recommended: those are the browsers the game is tested with.');
 }
 
 function offInstructions() {
@@ -41,6 +45,18 @@ function offInstructions() {
     return `Now turn ${sr} off: hold both volume keys for three seconds, if that shortcut is set up, `
       + `or ask your assistant to turn ${sr} off. The game speaks for itself. `
       + `When ${sr} is off, swipe up anywhere on the screen to begin. When you leave the game, turn ${sr} back on the same way.`;
+  }
+  if (kind === 'mac') {
+    return 'Now turn VoiceOver off with Command F5. The game speaks for itself, with your Mac\'s own voice. '
+      + 'When VoiceOver is off, press Enter to begin. When you leave the game, turn VoiceOver back on the same way.';
+  }
+  if (kind === 'chromebook') {
+    return 'Now turn ChromeVox off with Control Alt Z. The game speaks for itself. '
+      + 'When ChromeVox is off, press Enter to begin. When you leave the game, turn ChromeVox back on the same way.';
+  }
+  if (keyboard) {
+    return 'Now turn your screen reader off; with Orca, press Super Alt S. The game speaks for itself. '
+      + 'When your screen reader is off, press Enter to begin. When you leave the game, turn it back on the same way.';
   }
   return 'The game speaks for itself. Turn your screen reader off, then swipe up anywhere on the screen, or press Enter, to begin.';
 }
@@ -68,7 +84,9 @@ async function start() {
   } catch (e) {
     console.error(e);
     const msg = /decode|Decod|EncodingError|Unable/.test(String(e && (e.name + e.message)))
-      ? 'Your browser cannot play the game\'s sounds. On an iPhone or iPad, update to iOS 18.4 or newer. On Android, update Chrome.'
+      ? (keyboard
+        ? 'Your browser cannot play the game\'s sounds. Update your browser; on a Mac, update to macOS with Safari 18.4 or newer, or use Chrome.'
+        : 'Your browser cannot play the game\'s sounds. On an iPhone or iPad, update to iOS 18.4 or newer. On Android, update Chrome.')
       : 'The sounds could not be loaded. Check your internet connection and try again.';
     setText('lead', msg);
     speech.speak(msg);

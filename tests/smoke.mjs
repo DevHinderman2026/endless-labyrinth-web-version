@@ -20,13 +20,20 @@ page.on('console', (m) => { if (m.type() === 'error') errors.push(m.text()); });
 await page.goto(base + '/index.html');
 const contact = await page.locator('footer [data-contact] a').getAttribute('href');
 check(contact === 'mailto:russellhinderman425@gmail.com', 'contact link is written in by script');
-check(await page.locator('#computer-note').isVisible(), 'a computer is told to use the Windows version');
+check(!(await page.locator('#computer-note').isVisible()), 'a Linux computer is not sent to the Windows version');
+{
+  const wctx = await browser.newContext({ userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36' });
+  const wpage = await wctx.newPage();
+  await wpage.goto(base + '/index.html');
+  check(await wpage.locator('#computer-note').isVisible(), 'a Windows computer is told to use the Windows version');
+  await wctx.close();
+}
 for (const pg of ['index.html', 'about.html', 'credits.html', 'history.html']) {
   await page.goto(base + '/' + pg);
   check(await page.locator('nav.site a[href="history.html"]').count() === 1, `${pg} links to the Update History`);
 }
 await page.goto(base + '/history.html');
-check((await page.locator('main h2').allTextContents()).join(' | ').startsWith('1.0.2'), 'the Update History lists the newest version first');
+check((await page.locator('main h2').allTextContents()).join(' | ').startsWith('1.0.3'), 'the Update History lists the newest version first');
 await page.goto(base + '/credits.html');
 check((await page.locator('#list li').count()) >= 40, 'credits list the recordings');
 

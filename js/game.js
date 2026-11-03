@@ -5,6 +5,7 @@
 import { HELP as BASE_HELP } from './help-data.js';
 import { MODES } from './modes/index.js';
 import { RATES } from './speech.js';
+import { keyboardDevice } from './device.js';
 
 // ------------------------------------------------------------------ constants
 const FPS = 30;
@@ -259,7 +260,9 @@ export class Game {
   _menuItems() { return MODES.flatMap((m) => m.menu || []); }
 
   _menuKeys() {
-    return ['standard', 'battle', ...this._menuItems().map((i) => i.key), 'scores', 'practice', 'rate', 'leave'];
+    // Gesture Practice is for touch screens: a computer is played with the keyboard.
+    const practice = keyboardDevice() ? [] : ['practice'];
+    return ['standard', 'battle', ...this._menuItems().map((i) => i.key), 'scores', ...practice, 'rate', 'leave'];
   }
 
   _menuLabel(k) {

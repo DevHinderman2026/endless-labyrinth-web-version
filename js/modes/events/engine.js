@@ -9,6 +9,7 @@ import { status as eventStatus, describeDuration, hasClock, ITEMS_NEEDED, canEnd
   soundFiles, pyRound } from './schema.js';
 import { aliasRecording, addMade, fromBuffer, ringPeriodCopy, warpCopy, padded, ensureCopies } from './sounds.js';
 import { uniform, randint, randrange, choice, sample, choices, random, shuffle } from './py.js';
+import { keyboardDevice } from '../../device.js';
 
 // Event descriptions are written for a keyboard (they are signed, so they are
 // never changed). Spoken here, the keys they name become the phone's gestures
@@ -29,6 +30,8 @@ const GESTURE_WORDS = [
   [/\bpressing off the beat\b/g, 'tapping off the beat'],
 ];
 export function gestureWords(text) {
+  // On a computer the keyboard's own words are kept, as written.
+  if (typeof navigator !== 'undefined' && keyboardDevice()) return text;
   let t = text;
   for (const [re, to] of GESTURE_WORDS) t = t.replace(re, to);
   return t;

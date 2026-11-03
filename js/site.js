@@ -15,4 +15,4 @@ for (const el of document.querySelectorAll('[data-contact]')) {
 
 const kind = deviceKind();
 const note = document.getElementById('computer-note');
-if (note && kind === 'computer') note.hidden = false;
+if (note && kind === 'windows') note.hidden = false;

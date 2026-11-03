@@ -25,10 +25,11 @@
   </nav>
   <main class="page">
     <h2>What the game is</h2>
-    <p>Endless Labyrinth is a 3D audio game: you play it by ear, with headphones. It began as a game for Windows computers. Since November 2026 the complete game also plays in the browser of a phone or tablet: all six modes and the events, with the same rules, timings and sounds as the Windows version, and nothing to install.</p>
+    <p>Endless Labyrinth is a 3D audio game: you play it by ear, with headphones. It began as a game for Windows computers. Since November 2026 the complete game also plays in a web browser, on a phone, a tablet, a Chromebook, a Mac or a Linux computer: all six modes and the events, with the same rules, timings and sounds as the Windows version, and nothing to install.</p>
     <h2>Supported devices</h2>
-    <p>Phones and tablets only: an iPhone or iPad with iOS 18.4 or newer, or an Android phone or tablet with an up-to-date Chrome.</p>
-    <p>Computers are not supported, including Windows, Mac, Linux and Chromebooks, even with a touch screen. Endless Labyrinth already has a full Windows version for computers, with Braille display support and its own room echo on the voice: on a Windows computer, play the <a href="https://github.com/DevHinderman2026/Endless-Labyrinth/releases/latest">Windows version</a>. The web version is built for touch devices and their gestures.</p>
+    <p>Phones and tablets, played with touch gestures: an iPhone or iPad with iOS 18.4 or newer, or an Android phone or tablet with an up-to-date Chrome.</p>
+    <p>Computers, played with the keyboard: a Chromebook, a Mac or a Linux computer. Chrome, Edge or Safari is recommended; Firefox should work, but the game is not tested with it. On a Mac, Safari needs macOS with Safari 18.4 or newer.</p>
+    <p>Windows computers are not supported. Endless Labyrinth already has a full Windows version, with Braille display support and its own room echo on the voice: on Windows, play the <a href="https://github.com/DevHinderman2026/Endless-Labyrinth/releases/latest">Windows version</a>.</p>
 
     <h2>How the sound works</h2>
     <p>Everything is placed by sound. Left and right come from the balance between your ears, and the room never turns: left is always west, and north is always ahead. Distance is loudness: the closer something is, the louder it gets. Something behind you sounds duller, as if heard over your shoulder. In the labyrinth, the battle arena, a tower and a road's tunnels, every sound has a slight echo of the place it is in, shaped by the walls around you and by the air of each level; islands, the seabed and the open road have none. Together these make a space you can move through by ear.</p>
@@ -37,8 +38,8 @@
     <ol>
       <li>Put on headphones and open <a href="play.html">the play page</a>. On an iPhone or iPad, turn silent mode off: it mutes the game's sounds, though not its voice.</li>
       <li>Press Start. The first time, the game downloads its sounds, about 120 megabytes, so use Wi-Fi if you can; after that they stay on your device.</li>
-      <li>The game speaks for itself and listens to the whole screen, so it asks you to turn VoiceOver or TalkBack off. On an iPhone or iPad, triple-click the side button (or the Home button) if your Accessibility Shortcut is set up, or ask Siri. On Android, hold both volume keys for three seconds if that shortcut is set up.</li>
-      <li>With the screen reader off, swipe up anywhere on the screen to begin.</li>
+      <li>The game speaks for itself, so it asks you to turn your screen reader off. On an iPhone or iPad, triple-click the side button (or the Home button) if your Accessibility Shortcut is set up, or ask Siri. On Android, hold both volume keys for three seconds if that shortcut is set up. On a Mac, press Command F5 for VoiceOver; on a Chromebook, Control Alt Z for ChromeVox; on Linux, Super Alt S for Orca.</li>
+      <li>With the screen reader off, swipe up anywhere on the screen to begin, or on a computer press Enter.</li>
       <li>When you leave the game, turn your screen reader back on the same way.</li>
     </ol>
 
@@ -55,6 +56,17 @@
     <h3>Driving</h3>
     <p>Driving, in driving mode and on a chaos road, is the one place you hold rather than tap. Put a finger on the screen and slide it up: the car accelerates for as long as that finger stays on the screen. Lift it and the car coasts. Swipe down to brake: each swipe is one brake, and if your accelerating finger slides back down without lifting, it stops accelerating and brakes once. To change lanes, lift your finger and swipe left or right. To shoot or hear the report, lift first, then tap with two fingers or double tap; the car coasts meanwhile.</p>
     <p>During a run only the double tap is counted, so it acts at once and an extra tap can never end a run by accident. The main menu has a Gesture Practice that says the name of every gesture it feels. A Bluetooth keyboard also works, with the Windows game's keys: the arrows, Enter, Space, Escape, P, H and T.</p>
+    <h2>Keys, on a computer</h2>
+    <p>On a Chromebook, Mac or Linux computer, the game uses the Windows game's keys, and everything it says names the keys instead of gestures. Gesture Practice is not on the menu.</p>
+    <dl class="gestures">
+      <dt>Arrow keys</dt><dd>Move one step, or move through a menu. In driving, hold the up arrow to accelerate, press the down arrow to brake, and left and right to change lanes.</dd>
+      <dt>Enter</dt><dd>Choose. During a run, the report, as the double tap above.</dd>
+      <dt>Space</dt><dd>Attack: the laser, a throw or a shot down the road.</dd>
+      <dt>P</dt><dd>Pause, and resume.</dd>
+      <dt>Escape</dt><dd>Back, in menus. During a run, it asks whether to quit the run.</dd>
+      <dt>H</dt><dd>Help, on the main menu and while paused.</dd>
+      <dt>T</dt><dd>The time left on the clock.</dd>
+    </dl>
     <p>The game pauses by itself if you lock your device, switch apps or leave the page.</p>
     <p>On an iPhone or iPad, the game's sounds dip while its voice speaks, and come back about a second after. That is how iOS mixes speech with other sound, and a web page cannot change it.</p>
 
@@ -86,7 +98,7 @@
 
     <h2>Differences from the Windows version</h2>
     <ul>
-            <li>Gestures instead of keys, and a Gesture Practice in place of the Key Test. Phones have no T key, so in driving, and in chaos's battles, roads, tower floors and islands, the double tap's report also gives the seconds left on the clock.</li>
+            <li>On a phone or tablet, gestures instead of keys, and a Gesture Practice in place of the Key Test. Phones have no T key, so in driving, and in chaos's battles, roads, tower floors and islands, the double tap's report also gives the seconds left on the clock.</li>
       <li>The voice is your device's own, with a Speech Rate setting on the main menu. It has no room echo.</li>
       <li>No Braille display output, since the screen reader is off while you play.</li>
       <li>High scores are kept separately from the Windows version's.</li>
