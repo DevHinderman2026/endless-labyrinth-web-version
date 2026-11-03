@@ -24,6 +24,15 @@ await page.waitForFunction(() => /Sounds loaded/.test(document.getElementById('l
 await page.keyboard.press('ArrowUp');
 await page.waitForFunction(() => window.__el.game && window.__el.game.state === 'menu');
 
+// An iPhone fails or closes the page after a few dozen OfflineAudioContexts (WebKit
+// bug 224279): a whole chaos run must make none, and no extra AudioContext either.
+await page.evaluate(() => {
+  window.__ctxMade = { offline: 0, live: 0 };
+  const O = window.OfflineAudioContext; const A = window.AudioContext;
+  window.OfflineAudioContext = function (...x) { window.__ctxMade.offline += 1; return new O(...x); };
+  window.AudioContext = function (...x) { window.__ctxMade.live += 1; return new A(...x); };
+});
+
 // --------------------------------------------------------------- menu, boards, help, packs
 const setup = await page.evaluate(async () => {
   const g = window.__el.game;
@@ -531,6 +540,8 @@ const after = await page.evaluate(() => {
 });
 check(after.state === 'standard' && after.chaos === false && after.step === 30, 'standard mode after a chaos run is plain standard mode');
 
+const made = await page.evaluate(() => window.__ctxMade);
+check(made.offline === 0 && made.live === 0, `no audio engine made during the chaos runs (offline ${made.offline}, live ${made.live})`);
 check(errors.length === 0, 'no errors in the page' + (errors.length ? ': ' + errors.slice(0, 5).join(' | ') : ''));
 await browser.close();
 console.log(failures ? `${failures} FAILED` : 'ALL PASSED');

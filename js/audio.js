@@ -450,34 +450,39 @@ export class AudioEngine {
   // The desktop's reverb_apply for a loop: the loop convolved circularly with the
   // room's impulse (the loop played round enough times for the echo to settle,
   // then one turn of it taken), never louder at its peak than 0.9 of full scale.
-  async _renderLoopWet(ir, dry) {
-    const OAC = window.OfflineAudioContext || window.webkitOfflineAudioContext;
-    if (!OAC) return null;
-    const n = dry.length;
-    const turns = Math.ceil(Math.max(1, ir.length - 1) / n) + 1;
-    const off = new OAC(2, turns * n, RATE);
-    const src = off.createBufferSource();
-    src.buffer = dry;
-    src.loop = true;
-    const conv = off.createConvolver();
-    conv.normalize = false;
-    conv.buffer = ir;
-    src.connect(conv);
-    conv.connect(off.destination);
-    src.start(0);
-    const out = await off.startRendering();
-    const buf = new AudioBuffer({ numberOfChannels: 2, length: n, sampleRate: RATE });
-    let peak = 0;
-    for (let c = 0; c < 2; c++) {
-      const seg = out.getChannelData(c).subarray((turns - 1) * n, turns * n);
-      for (let i = 0; i < n; i++) { const v = Math.abs(seg[i]); if (v > peak) peak = v; }
-      buf.copyToChannel(seg, c);
+  // Worked out in a background thread (wetworker.js), one at a time, never with
+  // an OfflineAudioContext: an iPhone fails or closes the page after a few dozen.
+  _renderLoopWet(ir, dry) {
+    if (!this._wetWorker) {
+      try {
+        this._wetWorker = new Worker(new URL('./wetworker.js', import.meta.url));
+      } catch (e) { return Promise.resolve(null); }
+      this._wetJobs = new Map();
+      this._wetSeq = 0;
+      this._wetWorker.onmessage = (ev) => {
+        const job = this._wetJobs.get(ev.data.id);
+        if (!job) return;
+        this._wetJobs.delete(ev.data.id);
+        if (ev.data.error || !ev.data.out) { job(null); return; }
+        const [l, r] = ev.data.out;
+        const buf = this.ctx.createBuffer(2, l.length, RATE);
+        buf.copyToChannel(l, 0);
+        buf.copyToChannel(r, 1);
+        job(buf);
+      };
+      this._wetWorker.onerror = () => {
+        for (const job of this._wetJobs.values()) job(null);
+        this._wetJobs.clear();
+      };
     }
-    if (peak > 0.9 * 32767 / 32768) {
-      const k = (0.9 * 32767 / 32768) / peak;
-      for (let c = 0; c < 2; c++) { const d = buf.getChannelData(c); for (let i = 0; i < n; i++) d[i] *= k; }
-    }
-    return buf;
+    const id = ++this._wetSeq;
+    const chans = (b) => Array.from({ length: b.numberOfChannels }, (_, c) => b.getChannelData(c).slice());
+    return new Promise((resolve) => {
+      this._wetJobs.set(id, resolve);
+      const dryCh = chans(dry);
+      const irCh = chans(ir);
+      this._wetWorker.postMessage({ id, dry: dryCh, ir: irCh }, [...dryCh, ...irCh].map((c) => c.buffer));
+    });
   }
 
   // Ease the wall effect toward a new setting and re-level every live echo

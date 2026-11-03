@@ -74,6 +74,51 @@ check(r.pausedSources === 0 && r.resumedSources === r.sources && r.stoppedSource
 check(r.instantSameTick, 'a level set straight after play() is set before anything sounds');
 check(r.oneShotConv, 'a one-shot still sends into the room\'s shared echo');
 
+// The loop echo is worked out without any OfflineAudioContext (an iPhone fails or
+// closes the page after a few dozen, WebKit bug 224279), and matches one exactly.
+const wet = await page.evaluate(async () => {
+  const a = window.__el.audio;
+  let made = 0;
+  const Real = window.OfflineAudioContext;
+  window.OfflineAudioContext = function (...args) { made += 1; return new Real(...args); };
+  const out = {};
+  for (const [name, key] of [['ammo_beacon', 'battle'], ['prox_3', 'lab'], ['obstacle_2', 'battle']]) {
+    const dry = a.buffers.get('dry:' + name);
+    const ir = a.irBuffers.get(key + '#0');
+    const mine = await a._renderLoopWet(ir, dry);
+    // The reference, the way the browser itself would render it.
+    const n = dry.length;
+    const turns = Math.ceil(Math.max(1, ir.length - 1) / n) + 1;
+    const off = new Real(2, turns * n, 44100);
+    const src = off.createBufferSource(); src.buffer = dry; src.loop = true;
+    const conv = off.createConvolver(); conv.normalize = false; conv.buffer = ir;
+    src.connect(conv); conv.connect(off.destination); src.start(0);
+    const ref = await off.startRendering();
+    let peak = 0; let err = 0;
+    for (let c = 0; c < 2; c++) {
+      const seg = ref.getChannelData(c).subarray((turns - 1) * n, turns * n);
+      for (let i = 0; i < n; i++) peak = Math.max(peak, Math.abs(seg[i]));
+    }
+    const k = peak > 0.9 * 32767 / 32768 ? (0.9 * 32767 / 32768) / peak : 1;
+    for (let c = 0; c < 2; c++) {
+      const seg = ref.getChannelData(c).subarray((turns - 1) * n, turns * n);
+      const m = mine.getChannelData(c);
+      for (let i = 0; i < n; i++) err = Math.max(err, Math.abs(m[i] - seg[i] * k));
+    }
+    out[name] = { len: mine.length === n, err: +err.toExponential(2), peak: +peak.toFixed(3) };
+  }
+  // Many in a row, as a chaos run makes them.
+  const dry = a.buffers.get('dry:ammo_beacon'); const ir = a.irBuffers.get('battle#1');
+  const t0 = performance.now();
+  for (let i = 0; i < 80; i++) await a._renderLoopWet(ir, dry);
+  out.eightyMs = Math.round(performance.now() - t0);
+  out.made = made;
+  window.OfflineAudioContext = Real;
+  return out;
+});
+check(['ammo_beacon', 'prox_3', 'obstacle_2'].every((n) => wet[n].len && wet[n].err < 1e-4), 'the loop echo matches the browser\'s own rendering: ' + JSON.stringify(wet));
+check(wet.made === 0, `80 loop echoes in a row, with no OfflineAudioContext made (${wet.eightyMs} ms)`);
+
 // Two copies of the game: a record set in one survives the other saving.
 const two = await page.evaluate(() => {
   const s = window.__el.game.scores;
