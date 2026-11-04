@@ -96,3 +96,7 @@ body.game { position: fixed; inset: 0; overflow: hidden; }
 body.playing #status { font-size: 1.4rem; }
 html[data-device="ipad"] #status, html[data-device="android-tablet"] #status { font-size: 1.8rem; }
 html[data-device="ipad"] #said, html[data-device="android-tablet"] #said { font-size: 1.35rem; max-width: 52rem; }
+
+/* The Credits page: a contents list, then the recordings under their headings. */
+ul.contents-list li { margin: 0.25rem 0; }
+main.page h4 { font-size: 1.02rem; margin: 1.2rem 0 0.35rem; color: var(--muted); }

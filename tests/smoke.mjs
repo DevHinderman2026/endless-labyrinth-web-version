@@ -33,6 +33,17 @@ for (const pg of ['index.html', 'about.html', 'credits.html', 'history.html', 's
   check(await page.locator('nav.site a[href="history.html"]').count() === 1, `${pg} links to the Update History`);
   check(await page.locator('nav.site a[href="story.html"]').count() === 1, `${pg} links to the Story of the Game`);
 }
+await page.goto(base + '/credits.html');
+{
+  const n = await page.locator('ul.credits li').count();
+  const heads = await page.locator('main h3').allTextContents();
+  const links = await page.locator('ul.contents-list a').evaluateAll((as) => as.map((a) => a.getAttribute('href').slice(1)));
+  const missing = [];
+  for (const id of links) if (!(await page.locator('#' + id).count())) missing.push(id);
+  check(n === 314, `the Credits page lists all 314 recordings: ${n}`);
+  check(heads.includes('Standard mode') && heads.includes('Events') && heads.includes('Downloaded but not used'), `the Credits page has its headings: ${heads.join(', ')}`);
+  check(links.length === 25 && missing.length === 0, `every link in the credits contents has its heading ${missing}`);
+}
 await page.goto(base + '/story.html');
 {
   const ids = await page.locator('nav.contents a').evaluateAll((as) => as.map((a) => a.getAttribute('href').slice(1)));
@@ -43,7 +54,7 @@ await page.goto(base + '/story.html');
 await page.goto(base + '/history.html');
 check((await page.locator('main h2').allTextContents()).join(' | ').startsWith('1.0.4'), 'the Update History lists the newest version first');
 await page.goto(base + '/credits.html');
-check((await page.locator('#list li').count()) >= 40, 'credits list the recordings');
+check((await page.locator('ul.credits li').count()) === 314, 'credits list the recordings');
 
 // The play page on a computer, with the test switch.
 await page.goto(base + '/play.html?desktop=1');
