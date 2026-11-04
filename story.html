@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>The Story of the Game: Endless Labyrinth</title>
+  <meta name="description" content="How Endless Labyrinth was made: from Sonar Escape and a simple labyrinth found by ear to six modes, events, a Windows release and a web version, built by Russell Hinderman, who is blind, directing Claude, and how it is built and tested.">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" href="icons/icon-192.png">
+  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+  <meta name="theme-color" content="#0c0f14">
+  <link rel="stylesheet" href="css/site.css">
+</head>
+<body>
+  <header class="site">
+    <h1>The Story of the Game</h1>
+    <p>How Endless Labyrinth began, and how it grew, in my own words.</p>
+  </header>
+  <nav class="site" aria-label="Site">
+    <ul>
+      <li><a href="index.html">Home</a></li>
+      <li><a href="about.html">About and how to play</a></li>
+      <li><a href="story.html" aria-current="page">The Story of the Game</a></li>
+      <li><a href="credits.html">Credits</a></li>
+      <li><a href="history.html">Update History</a></li>
+    </ul>
+  </nav>
+  <main class="page">
+    <nav class="panel contents" aria-label="On this page">
+      <h2>On this page</h2>
+      <ol>
+        <li><a href="#why">Why a game made of sound</a></li>
+        <li><a href="#ai">What AI changed for me</a></li>
+        <li><a href="#start">Where it started</a></li>
+        <li><a href="#modes">Growing into six modes</a></li>
+        <li><a href="#sound">Building a world out of sound</a></li>
+        <li><a href="#events">Events</a></li>
+        <li><a href="#release">Release</a></li>
+        <li><a href="#web">Phones, tablets and computers</a></li>
+        <li><a href="#how">How I make the game</a></li>
+        <li><a href="#timeline">Timeline</a></li>
+        <li><a href="#sources">Sources</a></li>
+      </ol>
+    </nav>
+
+    <h2 id="why">Why a game made of sound</h2>
+    <p>My name is Russell Hinderman, and I am totally blind. I play games by ear, and I wanted a game that was built for that from the very beginning, not one where sound was added on top of a picture. In Endless Labyrinth there is nothing to see. Everything you need is in the sound: where something is, how far away it is, and whether it is in front of you or behind you.</p>
+    <p>That also decided how the game was made. Every change, in every mode, was tested the same way a player would meet it: by me, with headphones on, listening.</p>
+
+    <h2 id="ai">What AI changed for me</h2>
+    <p>I first learned to code by taking a Python course. It was all about how to type syntax and what to do when there were syntax errors. I realized from the very start that typing syntax was extremely exhausting for me. I hated going to the computer just to start typing things out.</p>
+    <p>When I began using AI to build things, I was pretty skeptical. Even when I used Google's Gemini to make games, a lot of them had errors and bugs, and I kept having to correct the model. Then, at the Medina County Career Center, where I still study, my instructor showed me Claude. Since I started using Claude, I have never looked back. It has helped me create products I am truly proud of, like a digital audio workstation and this game, Endless Labyrinth.</p>
+
+    <h2 id="start">Where it started</h2>
+    <p>Before Endless Labyrinth there was Sonar Escape, a concept I made a long time ago with Gemini, Google's AI. It no longer exists, and it was simple: you found the exit by listening to a tone that rose in pitch the closer you got, and you collected credits on the way. That was the first version of the idea that grew into the game you can play today.</p>
+    <p>I tried other prototypes with Gemini around the same time, among them a murder mystery, a tower you climbed floor by floor, an ocean dive where you went underwater to catch fish, and Escape the Cave, where an elevator took you up and down a cave and dropped you into random passages, and you collected items to open the elevator door and get out. None of them exist any more, but looking back, I can hear them in Endless Labyrinth today: in Tower mode, in Island mode's dives and elevators, and in the fishing events.</p>
+    <p>I started Endless Labyrinth in the summer of 2026, and it also started simply, as one idea that gave the game its name: you are in a labyrinth you cannot see, and you have to find the exit by ear before the clock runs out. You step through it one square at a time. A thud tells you a step worked, and a knock tells you that you walked into a wall. The exit beeps, panning left and right to give you its direction, and the beep rises in pitch and speeds up as you get closer. Every labyrinth you finish adds a little time and leads to the next, and it never ends. That is still Standard mode today.</p>
+    <p>I wrote it for Windows, in Python, with the pygame library playing the sound. I do not write the code by hand. From the very first version of Endless Labyrinth I have designed the game and directed Claude, an AI made by Anthropic, to write it, then played every build and decided what to keep, what to change and what to throw out. How that works is described below, in <a href="#how">How I make the game</a>.</p>
+
+    <h2 id="modes">Growing into six modes</h2>
+    <p>Once finding an exit by ear worked, I wanted to see how far the same idea could go. Each new mode asks your ears to do something different.</p>
+    <ul>
+      <li><strong>Battle</strong> took away the walls and the exit. Enemies come at you in waves in an open arena, and you aim by turning until an enemy sounds centred between your ears. Its clock went through several versions before it felt right: no limit at first, then three minutes, then thirty seconds, and finally sixty seconds that keep running through the breaks, with time credits only between waves.</li>
+      <li><strong>Tower</strong> became a climb. Each floor has a rival that throws at you and competes with you for the items, and the stairs only appear once the rival is down.</li>
+      <li><strong>Driving</strong> put you on a three-lane road, dodging or shooting oncoming cars. I wanted it to get harder forever, with no top level, and crashes costing time to balance it. In October I found I could survive more than seven minutes, so we made credits and ammo rarer and kept the difficulty endless.</li>
+      <li><strong>Island</strong> came from an idea I had on 28 October: cross a chain of islands, clear each one, and dive to the seabed for the key and the ammo before your air runs out. It grew elevators that carry you down and up, guardians, trapped divers and treasure, and the sounds of water and the seabed.</li>
+      <li><strong>Chaos</strong> started as a mode of its own and was rebuilt into what it is now: every other mode mixed together, one random level after another, against a single five-minute clock, with no warning of what comes next.</li>
+    </ul>
+    <p>As the modes grew, I set rules so they would always feel like one game. Space is always the attack and Enter is always the report, in every mode that attacks. In chaos, each kind of level keeps its own ammo. And anything that changes in a mode has to change in chaos too.</p>
+    <p>Because I test on a BrailleNote, a notetaker with a Braille display, the Windows version also learned to show everything it says on a Braille display, and to work with the BrailleNote's own keys.</p>
+
+    <h2 id="sound">Building a world out of sound</h2>
+    <p>At first most of the game's sounds were generated by the program itself: beeps, tones and chimes. At the end of October we did a big overhaul of how the game sounds.</p>
+    <ul>
+      <li><strong>Real recordings.</strong> Most one-off sounds, such as pickups, shots, explosions, coins and the gong at the end of a wave, became real recordings from Pixabay. The beacons and enemies you track by ear kept their generated sounds, because their exact pitch and rhythm are how you find them. The game now credits 314 recordings, all listed on the <a href="credits.html">Credits</a> page.</li>
+      <li><strong>Room echo.</strong> I wanted every room to sound like a place, but only slightly, so nothing ever becomes harder to hear. We looked at real 3D audio libraries and chose a slight echo built into the game instead. Each room's echo matches the air of that level, gets a little stronger in a corridor or by a wall, and comes from where the sound is. Islands, the seabed and the open road stay dry, except in a road's tunnels and under its overpasses.</li>
+      <li><strong>Behind you.</strong> At first, something in front of you and something behind you sounded the same. Now north is always ahead, and anything behind you sounds duller, as if heard over your shoulder.</li>
+      <li><strong>The voice in the room.</strong> On Windows, I suggested that the game's voice could sit in the room too. It does: each sentence is spoken into a sound file and played back with that room's echo.</li>
+      <li><strong>One rule.</strong> The recordings and generated sounds themselves are never changed. Any effect, like an echo or the dull sound of something behind you, is a copy played alongside the original.</li>
+    </ul>
+
+    <h2 id="events">Events</h2>
+    <p>On Halloween 2026 I wanted the game to have something new to come back to. My first idea was a Pumpkin Hunt: find as many pumpkins as you can in a room as big as a cathedral, in two minutes. That became the event system.</p>
+    <p>Events are limited-time challenges that I publish. Each one has its own mission, its own dates and its own best score, and the Event High Scores never reset. I build them in my own tool, the Event Maker, which uses real accessible controls, and every event is signed with a key only I have, so nobody else can change them. There are now thirty kinds of mission, from hunting and rescuing to rhythm and fishing, and forty-four templates to build events from. Call of Fate, a hunt for the real bell among false ones, and The Angry Papa, my own cookie-collecting event, came out of this.</p>
+
+    <h2 id="release">Release</h2>
+    <p>On 1 November 2026 I put Endless Labyrinth on GitHub, under the name DevHinderman2026, and released version 1.0.0 for Windows. I chose to keep the game's code private and all rights reserved: players download and play. The sounds travel only inside the game, and events reach players straight from the repository, so a new event never needs a new download.</p>
+    <p>The next day I released 1.0.1. Before it, I decided to fix every known problem in one release. The game went through eighteen review rounds, many of them by independent reviewers that had never seen the code, and hundreds of fixes, from how hits are counted to how events save. I consider the Windows game complete at 1.0.1.</p>
+    <p>The Windows version is still the full game on a computer, with Braille display support and the voice in the room. You can <a href="https://github.com/DevHinderman2026/Endless-Labyrinth/releases/latest">download it from the Releases page</a>, and read what each Windows version changed in its <a href="https://github.com/DevHinderman2026/Endless-Labyrinth/blob/main/Credits%20and%20Version%20History/CHANGELOG.md">changelog</a>.</p>
+
+    <h2 id="web">Phones, tablets and computers</h2>
+    <p>On 2 November I wanted to play Endless Labyrinth on my phone. I designed the touch controls myself: swipes are the arrow keys, a double tap is Enter, a two-finger tap is the attack, and in driving you slide a finger up and hold it to accelerate. The game speaks with your phone's own voice while the screen reader is off.</p>
+    <p>The first web version had only Standard and Battle. I tested them on my phone, they worked well, and the same day I decided to bring over everything: all six modes and the events. Every mode was converted from the Windows code line by line and checked against it in two rounds of review, with the same rules, timings and sounds.</p>
+    <p>Playing on a real iPhone found what reviews could not. In Chaos, the sound could disappear a few levels into a run, so the way the game builds its room echoes was rebuilt to suit iPhones; that was version 1.0.2. With 1.0.3 the web version also plays on Chromebooks, Macs and Linux computers, with the keyboard. Windows players keep the full Windows version. Every web version is listed in the <a href="history.html">Update History</a>, and <a href="about.html">About and how to play</a> explains every mode, gesture and key.</p>
+
+    <h2 id="how">How I make the game</h2>
+    <p>Endless Labyrinth is AI assisted, and I am open about how. I am the designer and the tester. Claude writes the code. I have worked this way since the first version of Endless Labyrinth, and over time it has become a method.</p>
+
+    <h3>The tools</h3>
+    <ul>
+      <li><strong>Claude</strong>, by Anthropic. I use its Opus model for most of the building, including this web version, and its Fable model for the hardest bug hunting.</li>
+      <li><strong>The Claude desktop app</strong>, linked to my laptop, so Claude works on the game's files on my own computer.</li>
+      <li><strong>GitHub Desktop</strong>, which I use myself to publish. Nothing goes public until I push it.</li>
+      <li><strong>Headphones, my BrailleNote and my iPhone</strong>, for testing: the Windows version on my laptop and on the BrailleNote with its Braille display, and the web version on my phone.</li>
+    </ul>
+
+    <h3>From idea to build</h3>
+    <ul>
+      <li><strong>I describe what I want in plain words</strong>, often as a scene: a cathedral full of pumpkins, an island you can only cross by diving, a road that gets faster forever.</li>
+      <li><strong>Claude asks before it builds.</strong> Anything that could go more than one way comes back to me as a question, one at a time, with choices I can pick or answer in my own words. For a big piece of work, such as the 1.0.1 bug fixes, we agree a written plan before any code is touched.</li>
+      <li><strong>Every decision about how the game plays is mine</strong>: the clocks, the controls, the sounds, the rules, and what to remove. Claude gives me its honest opinion, and sometimes talks me out of something, but I decide.</li>
+      <li><strong>Files are handled carefully.</strong> Claude backs up what it changes, checks every file it copies to my laptop against a fingerprint so I know it arrived exactly as written, and refreshes a backup copy in OneDrive at the end of each session.</li>
+    </ul>
+
+    <h3>How it is tested</h3>
+    <ul>
+      <li><strong>By ear, by me.</strong> I play every build with headphones and report what I hear, down to a bell I could ring from the side when I should have had to walk into it, or footsteps that dipped while I walked on my phone. Many fixes started that way.</li>
+      <li><strong>Automated tests.</strong> Claude writes test programs that play the game by themselves: bots that walk labyrinths, fight battles and cross islands, and thousands of random sessions run to catch crashes. Before Windows 1.0.1, 374 automated checks passed. The web version has its own tests, which play every mode in a browser and check each kind of phone, tablet and computer.</li>
+      <li><strong>Independent reviews.</strong> Before a release, separate Claude reviewers that have not seen the work read the code from scratch and report what they find. Windows 1.0.1 went through eighteen review rounds, and the web version was checked against the Windows code in two rounds.</li>
+      <li><strong>The real thing.</strong> Some problems only show up on a real device, like the Chaos sound on iPhone. That is why I play every release myself before calling it done.</li>
+    </ul>
+    <h3>How Claude learned to write code</h3>
+    <p>People often ask how an AI can write a whole game. Anthropic has not published every detail of how it trains Claude, but it has said what goes into it, and the general method is well described in research.</p>
+    <ul>
+      <li><strong>Learning from a huge amount of text, including code.</strong> Anthropic's published summary for Claude Opus 5 says it was trained on more than ten trillion tokens of text, including software code. Its sources include the public web, open-source software and GitHub, along with licensed data, synthetic data, and chats and coding sessions from users who chose to share them. [<a href="#src1">1</a>, <a href="#src2">2</a>]</li>
+      <li><strong>Practice with feedback.</strong> After that first stage, a model is refined with reinforcement learning: it tries, and is rewarded for better answers. Anthropic's own method, Constitutional AI, combines people's judgements of how helpful an answer is with feedback guided by a written set of principles. [<a href="#src3">3</a>] For code in particular, researchers train models by running the programs they write against tests and rewarding the ones that pass. [<a href="#src4">4</a>, <a href="#src5">5</a>] Anthropic has not said exactly how it does this for Claude, so this describes the general approach, not Claude's exact recipe.</li>
+      <li><strong>It still makes mistakes.</strong> That is why every build is played by ear, tested and reviewed before it reaches you.</li>
+    </ul>
+    <p>Building it this way means I could make the game I wanted to play, the way I wanted it to sound. I hope you enjoy playing it as much as I have enjoyed making it.</p>
+
+    <h2 id="timeline">Timeline</h2>
+    <dl class="timeline">
+      <dt>Long before</dt><dd>Sonar Escape, made with Gemini: find the exit by a rising tone, collecting credits on the way. Other Gemini prototypes: a murder mystery, a tower climb, an ocean dive and Escape the Cave.</dd>
+      <dt>Summer 2026</dt><dd>The beginning: one labyrinth, found by ear, against the clock. Standard mode.</dd>
+      <dt>By September 2026</dt><dd>Labyrinth, battle, tower and chaos modes, with stereo sound placed around you. Driving mode followed.</dd>
+      <dt>28 October 2026</dt><dd>Driving rebalanced; Island mode designed and built.</dd>
+      <dt>Late October 2026</dt><dd>Real recordings, room echo, the behind-you sound, chaos rebuilt, Braille display output.</dd>
+      <dt>31 October 2026</dt><dd>The event system, the Event Maker and the first event, Pumpkin Hunt.</dd>
+      <dt>1 November 2026</dt><dd>Windows version 1.0.0 released on GitHub.</dd>
+      <dt>2 November 2026</dt><dd>Windows version 1.0.1. The web version begins, with Standard and Battle.</dd>
+      <dt>3 November 2026</dt><dd>Web versions 1.0.1 (the complete game), 1.0.2 (the Chaos fix for iPhone), 1.0.3 (Chromebook, Mac and Linux) and 1.0.4 (this story).</dd>
+    </dl>
+
+    <h2 id="sources">Sources</h2>
+    <ol class="sources">
+      <li id="src1">Anthropic, <a href="https://aial.ie/research/gpai-training-transparency/archive/Claude_Opus_5_2026_08_03.pdf">Public Summary of Training Content: Claude Opus 5</a>, July 2026 (archived copy).</li>
+      <li id="src2">Anthropic Privacy Center, <a href="https://privacy.anthropic.com/en/articles/7996885-how-do-you-use-personal-data-in-model-training">How do you use personal data in model training?</a></li>
+      <li id="src3">Bai and others, Anthropic, <a href="https://arxiv.org/abs/2212.08073">Constitutional AI: Harmlessness from AI Feedback</a>, 2022.</li>
+      <li id="src4">Jiang and others, <a href="https://aclanthology.org/2026.acl-long.164/">CODERL+: Improving Code Generation via Reinforcement with Execution Semantics Alignment</a>, ACL 2026.</li>
+      <li id="src5">Boruch-Gruszecki and others, <a href="https://arxiv.org/abs/2508.04865">Agnostics: Learning to Synthesize Code in Any Programming Language with a Universal Reinforcement Learning Environment</a>, 2025.</li>
+    </ol>
+
+    <p><a class="button" href="play.html">Play Endless Labyrinth</a></p>
+  </main>
+  <footer class="site">
+    <h2>Contact</h2>
+    <p>Endless Labyrinth is made by Russell Hinderman (DevHinderman2026). Questions, ideas or problems: <span data-contact>russellhinderman425 at gmail dot com</span>.</p>
+    <p>Copyright 2026 Russell Hinderman. All rights reserved. The game is AI assisted: written with Claude, by Anthropic, under Russell's direction.</p>
+  </footer>
+  <script type="module" src="js/site.js"></script>
+</body>
+</html>

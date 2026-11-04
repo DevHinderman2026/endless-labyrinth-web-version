@@ -61,6 +61,20 @@ footer.site p { margin: 0.35rem 0; }
 
 ul.credits li { margin: 0.4rem 0; }
 
+/* The Story of the Game. */
+nav.contents h2 { margin-top: 0; font-size: 1.1rem; }
+nav.contents ol { margin: 0; padding-left: 1.4rem; }
+nav.contents li { margin: 0.2rem 0; }
+main.page ul li { margin: 0.35rem 0; }
+ol.sources li { margin: 0.4rem 0; }
+dl.timeline { display: grid; grid-template-columns: max-content 1fr; gap: 0.5rem 1.1rem; }
+dl.timeline dt { font-weight: 700; color: var(--accent); }
+dl.timeline dd { margin: 0; }
+@media (max-width: 34rem) {
+  dl.timeline, dl.gestures { grid-template-columns: 1fr; gap: 0.1rem; }
+  dl.timeline dd, dl.gestures dd { margin-bottom: 0.6rem; }
+}
+
 /* The play page: the whole screen is the game. */
 body.game { position: fixed; inset: 0; overflow: hidden; }
 #stage {

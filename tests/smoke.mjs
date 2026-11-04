@@ -28,12 +28,20 @@ check(!(await page.locator('#computer-note').isVisible()), 'a Linux computer is 
   check(await wpage.locator('#computer-note').isVisible(), 'a Windows computer is told to use the Windows version');
   await wctx.close();
 }
-for (const pg of ['index.html', 'about.html', 'credits.html', 'history.html']) {
+for (const pg of ['index.html', 'about.html', 'credits.html', 'history.html', 'story.html']) {
   await page.goto(base + '/' + pg);
   check(await page.locator('nav.site a[href="history.html"]').count() === 1, `${pg} links to the Update History`);
+  check(await page.locator('nav.site a[href="story.html"]').count() === 1, `${pg} links to the Story of the Game`);
+}
+await page.goto(base + '/story.html');
+{
+  const ids = await page.locator('nav.contents a').evaluateAll((as) => as.map((a) => a.getAttribute('href').slice(1)));
+  const missing = [];
+  for (const id of ids) if (!(await page.locator('#' + id).count())) missing.push(id);
+  check(ids.length >= 8 && missing.length === 0, `every link in the story's contents has its section (${ids.length}) ${missing}`);
 }
 await page.goto(base + '/history.html');
-check((await page.locator('main h2').allTextContents()).join(' | ').startsWith('1.0.3'), 'the Update History lists the newest version first');
+check((await page.locator('main h2').allTextContents()).join(' | ').startsWith('1.0.4'), 'the Update History lists the newest version first');
 await page.goto(base + '/credits.html');
 check((await page.locator('#list li').count()) >= 40, 'credits list the recordings');
 
