@@ -6,6 +6,7 @@ import { HELP as BASE_HELP } from './help-data.js';
 import { MODES } from './modes/index.js';
 import { RATES } from './speech.js';
 import { keyboardDevice } from './device.js';
+import { addMade } from './modes/events/sounds.js';
 
 // ------------------------------------------------------------------ constants
 const FPS = 30;
@@ -62,6 +63,19 @@ const STEPS = ['step_stone_1', 'step_stone_2', 'step_stone_3', 'step_stone_4'];
 // first 190 and 120, then 280 and 200, the same day).
 export const RUN_STEPS_PER_MINUTE = 280;
 export const BACK_STEPS_PER_MINUTE = 200;
+// The soft tick that says a still finger has started walking you backwards
+// (Russell's choice): made here, so it is like no other sound in the game.
+export const BACK_TICK = 'stride_back_tick';
+function backTick() {
+  const sr = 44100;
+  const n = Math.round(0.035 * sr);
+  const l = new Float64Array(n);
+  for (let i = 0; i < n; i++) {
+    const t = i / sr;
+    l[i] = Math.round(0.16 * 32767 * Math.sin(2 * Math.PI * 1800 * t) * Math.exp(-t / 0.008) * Math.min(1, t / 0.0015));
+  }
+  return [l, Float64Array.from(l)];
+}
 
 const S = {
   MENU: 'menu', HELP: 'help', STANDARD: 'standard', BATTLE: 'battle', GAME_OVER: 'game_over',
@@ -254,6 +268,7 @@ export class Game {
     this.reverbTick = 0;
     this.helpSavedRoomGain = null;
     for (const m of MODES) if (m.init) m.init(this);
+    try { addMade(this.audio, BACK_TICK, backTick()); } catch (e) { /* no tick: the steps still say it */ }
     this._refreshMenu();
     this.resetGameState();
     // The first drones, decoded ahead so a run starts with its air at once.
@@ -266,7 +281,9 @@ export class Game {
   _menuKeys() {
     // Gesture Practice is for touch screens: a computer is played with the keyboard.
     const practice = keyboardDevice() ? [] : ['practice'];
-    return ['standard', 'battle', ...this._menuItems().map((i) => i.key), 'scores', ...practice, 'rate', 'leave'];
+    // Walking backwards by holding a finger is a touch gesture, so its setting is too.
+    const holdBack = keyboardDevice() ? [] : ['holdback'];
+    return ['standard', 'battle', ...this._menuItems().map((i) => i.key), 'scores', ...practice, 'rate', ...holdBack, 'leave'];
   }
 
   _menuLabel(k) {
@@ -275,6 +292,7 @@ export class Game {
     return {
       standard: 'Standard Mode', battle: 'Battle Mode', scores: 'High Scores', practice: 'Gesture Practice',
       rate: `Speech Rate: ${this.tts.rateLevel} of ${RATES.length}`, leave: 'Leave Game',
+      holdback: `Walk Backwards by Holding: ${this._holdBackOn() ? 'On' : 'Off'}`,
     }[k];
   }
 
@@ -1170,6 +1188,8 @@ export class Game {
       this.tts.speak(this.menuOptions[this.menuIndex]);
     } else if ((g === 'left' || g === 'right') && k === 'rate') {
       this._changeRate(g === 'left' ? -1 : 1, false);
+    } else if ((g === 'left' || g === 'right') && k === 'holdback') {
+      this._setHoldBack(g === 'right');
     } else if (g === 'enter') {
       this.audio.play('menu_move');
       if (k === 'standard') this.startGame(S.STANDARD);
@@ -1181,11 +1201,27 @@ export class Game {
       } else if (k === 'practice') this._startPractice();
       else if (this._menuItems().some((i) => i.key === k)) this._menuItems().find((i) => i.key === k).select(this);
       else if (k === 'rate') this._changeRate(1, true);
+      else if (k === 'holdback') this._setHoldBack(!this._holdBackOn());
       else if (k === 'leave') {
         this.tts.speak('Leaving the game. You can turn your screen reader back on now.', { after: () => this.leave() });
         setTimeout(() => this.leave(), 6000);
       }
     }
+  }
+
+  // Walking backwards by holding a finger still: on unless the player turns it off
+  // (web 1.2.0). Off, a still finger does nothing again; running and swipes are
+  // unchanged.
+  _holdBackOn() { return this.scores.settings.holdBack !== false; }
+
+  _setHoldBack(on) {
+    this.scores.settings.holdBack = !!on;
+    this.scores.save();
+    this._refreshMenu();
+    this.audio.play('menu_move');
+    this.tts.speak(on
+      ? 'Walk backwards by holding, on. During a run, hold a finger still for half a second to walk backwards.'
+      : 'Walk backwards by holding, off. A finger held still does nothing; swipe down to step back.');
   }
 
   _changeRate(step, wrap) {
@@ -1416,6 +1452,10 @@ export class Game {
       if (g === 'run_start') this.input('up');
       return;
     }
+    if (g === 'back_start') {
+      if (!this._holdBackOn()) return;
+      this.audio.play(BACK_TICK, { volume: 0.6 });
+    }
     if (this._strideStep(dir)) {
       this.stride = { dir, every: 60 / (dir === 'up' ? RUN_STEPS_PER_MINUTE : BACK_STEPS_PER_MINUTE), t: 0 };
     }
@@ -1484,8 +1524,8 @@ export class Game {
       return;
     }
     if (g === 'back_start') {
-      this.audio.play('menu_move');
-      this.tts.speak('Holding still. In a run, you walk backwards until you lift your finger.');
+      this.audio.play(BACK_TICK, { volume: 0.6 });
+      this.tts.speak('Holding still. That tick means you have started walking backwards, until you lift your finger.');
       return;
     }
     this.audio.play('menu_move');
@@ -1622,6 +1662,7 @@ export class Game {
     const md = this.mode;
     const gm = md && md.gestureMode ? md.gestureMode(this) : null;
     this.gestures.setMode(this.playing && !this.isPaused ? (gm || 'run') : this.state === S.PRACTICE ? 'practice' : 'menu');
+    this.gestures.holdBack = this._holdBackOn();
     if (this.state === S.PRACTICE && performance.now() - (this.lastInputAt || 0) > 20000) {
       this.menuIndex = this.menuKeys.indexOf('practice');
       this._toMenu('Gesture practice closed. ');

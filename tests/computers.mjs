@@ -47,6 +47,7 @@ async function computer(name, [ua, kind, srHint]) {
   const g = () => page.evaluate(() => { const x = window.__el.game; return { state: x.state, playing: x.playing, paused: x.isPaused, menu: x.menuOptions, idx: x.menuIndex }; });
   let st = await g();
   check(st.state === 'menu' && !st.menu.includes('Gesture Practice'), `${name}: main menu, no Gesture Practice`);
+  check(!st.menu.some((m) => m.startsWith('Walk Backwards')), `${name}: no Walk Backwards by Holding setting (a touch gesture)`);
   // Standard: walk a little, report, pause, resume, quit with Escape and N, then Y.
   await page.keyboard.press('Enter'); await page.waitForTimeout(500);
   st = await g();

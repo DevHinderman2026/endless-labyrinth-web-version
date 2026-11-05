@@ -45,6 +45,7 @@ export class Gestures {
     this.mode = 'menu';         // 'menu', 'run', 'drive' or 'practice' (menu taps, with the holds)
     this.accelHeld = false;     // driving: the throttle is held...
     this.accelBy = null;        // ...by a finger ('touch') or the up arrow ('key')
+    this.holdBack = true;       // a still finger walks backwards (the game's setting)
     this.taps = 0;
     this.tapTimer = null;
     this.g = null;              // the gesture in progress
@@ -112,11 +113,11 @@ export class Gestures {
       // carries on, and the new finger does nothing (lift to shoot).
       clearTimeout(g.holdTimer); g.holdTimer = null;
       if (g.stride) g.moved = true;
-    } else if (this._holds() && !g.holdTimer && !g.stride && !g.strideDone) {
+    } else if (this._holds() && this.holdBack !== false && !g.holdTimer && !g.stride && !g.strideDone) {
       // One still finger, held long enough, walks backwards.
       g.holdTimer = setTimeout(() => {
         g.holdTimer = null;
-        if (this.g !== g || g.max !== 1 || g.moved || g.swiped || g.stride || g.strideDone || !this._holds()) return;
+        if (this.g !== g || g.max !== 1 || g.moved || g.swiped || g.stride || g.strideDone || !this._holds() || this.holdBack === false) return;
         g.stride = 'back';
         g.swiped = true;           // no swipe, and no tap, from this finger now
         this._resetTaps();

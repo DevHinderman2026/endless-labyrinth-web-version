@@ -115,6 +115,17 @@ l2 = await log();
   const pos = await game(() => window.__el.game.playerPos);
   check(pos[0] === 0 && pos[1] === downs.length, `every step went back, one cell each: ${pos}`);
   check(!l2.some(([x]) => x === 'enter' || x === 'tap'), 'a long hold is never a tap');
+  const ticks = (await game(() => window.__sounds)).filter((n) => n === 'stride_back_tick').length;
+  check(ticks === 1, `a soft tick says the backward walk has begun, once: ${ticks}`);
+  const runTicks = l.filter(([x]) => x === 'run_start').length;
+  check(runTicks === 0, 'holding still never starts a run');
+}
+{
+  // A run has no tick: the slide is the cue.
+  await openLabyrinth(); await clear();
+  await down(); await move(200, 340); await wait(600); await up(200, 340);
+  const ticks = (await game(() => window.__sounds)).filter((n) => n === 'stride_back_tick').length;
+  check(ticks === 0, `a run has no tick: ${ticks}`);
 }
 
 // ------------------------------------------------------------ only lifting stops
@@ -239,6 +250,32 @@ await game(() => { const g = window.__el.game; g._stopRunSounds(); g.state = 'me
   check(steps(l, 'up').length === 1, `a held arrow key is still one step: ${steps(l, 'up').length}`);
 }
 
+// ------------------------------------------------------------ the setting
+{
+  await game(() => { const g = window.__el.game; g._stopRunSounds(); g.state = 'menu'; g._refreshMenu(); });
+  const menu = await game(() => window.__el.game.menuOptions.slice());
+  const i = menu.findIndex((m) => m.startsWith('Walk Backwards by Holding'));
+  check(menu[i] === 'Walk Backwards by Holding: On' && menu[i - 1].startsWith('Speech Rate') && menu[i + 1] === 'Leave Game', `the main menu has Walk Backwards by Holding, on, after Speech Rate: ${menu.join(', ')}`);
+  await game((i) => { const g = window.__el.game; g.menuIndex = i; g.input('enter'); }, i);
+  const r = await game(() => ({ label: window.__el.game.menuOptions.find((m) => m.startsWith('Walk Backwards')),
+    saved: JSON.parse(localStorage.getItem('endless-labyrinth-web')).settings.holdBack, said: document.getElementById('said').textContent }));
+  check(r.label === 'Walk Backwards by Holding: Off' && r.saved === false && /off\. A finger held still does nothing/.test(r.said), `a double tap turns it off, says so, and saves it: ${JSON.stringify(r)}`);
+  // Off: a still finger does nothing, and running still works.
+  await openLabyrinth(); await clear();
+  await down(); await wait(1200);
+  l = await log();
+  check(!l.some(([x]) => x === 'back_start' || x === 'down'), 'with the setting off, a finger held still does nothing');
+  await move(200, 340); await wait(700); await up(200, 340);
+  l = await log();
+  check(l.some(([x]) => x === 'run_start') && steps(l, 'up').length >= 3, 'and sliding up from a resting finger still runs');
+  await openLabyrinth(); await clear();
+  await down(); await up(); await wait(60); await down(); await up(); await wait(300);
+  check((await log()).some(([x]) => x === 'enter'), 'and taps still work');
+  // Swipes left and right on the setting also turn it on and off; back on for the rest.
+  await game((i) => { const g = window.__el.game; g._stopRunSounds(); g.state = 'menu'; g._refreshMenu(); g.menuIndex = i; g.input('right'); }, i);
+  check((await game(() => window.__el.game.menuOptions.find((m) => m.startsWith('Walk Backwards')))) === 'Walk Backwards by Holding: On', 'a swipe right turns it back on');
+}
+
 // ------------------------------------------------------------ Gesture Practice
 await game(() => { const g = window.__el.game; g._stopRunSounds(); g.state = 'menu'; g._startPractice(); });
 await wait(100);
@@ -251,7 +288,7 @@ check(/^Slide up and hold\./.test(await said()), `practice: slide up and hold is
 await up(200, 340); await wait(100);
 check(/^Lifted\./.test(await said()), `practice: lifting is named: ${await said()}`);
 await down(); await wait(700);
-check(/^Holding still\./.test(await said()), `practice: holding still is named: ${await said()}`);
+check(/^Holding still\. That tick/.test(await said()), `practice: holding still is named, with the tick: ${await said()}`);
 await up(); await wait(100);
 check(errors.length === 0, `no page errors ${errors}`);
 
