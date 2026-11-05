@@ -19,13 +19,13 @@ await page.goto(base + '/terms.html');
 {
   const h2s = await page.locator('main h2').allTextContents();
   const numbered = h2s.filter((t) => /^\d+\. /.test(t));
-  check(numbered.length === 22, `22 numbered sections, each a real heading: ${numbered.length}`);
-  check(numbered.every((t, i) => t.startsWith(`${i + 1}. `)), 'numbered 1 to 22 in order');
+  check(numbered.length === 23, `23 numbered sections, each a real heading: ${numbered.length}`);
+  check(numbered.every((t, i) => t.startsWith(`${i + 1}. `)), 'numbered 1 to 23 in order');
   const titles = numbered.map((t) => t.replace(/^\d+\. /, ''));
   for (const want of ['Acceptance of these Terms', 'All ages', 'Hacking and security', 'Cheating and tampering', 'Bots and automated access', 'Attacks and overload',
     'Malware, phishing and impersonation', 'Copying and redistribution', 'No selling', 'The sounds', 'Names and identity', 'Share buttons and outside services',
     'AI assistance and copyright', 'Enforcement', 'No warranty', 'Limitation of liability', 'Changes to these Terms', 'Severability and entire agreement', 'Contact',
-    'Assistive technology is always allowed', 'Recording, streaming and responsible reporting']) {
+    'Assistive technology is always allowed', 'Recording, streaming and responsible reporting', 'The Windows version']) {
     check(titles.includes(want), `section: ${want}`);
   }
   const h3s = await page.locator('main h3').allTextContents();
@@ -35,7 +35,7 @@ await page.goto(base + '/terms.html');
   const contents = await page.locator('nav.contents a').evaluateAll((as) => as.map((a) => a.getAttribute('href').slice(1)));
   const missing = [];
   for (const id of contents) if (!(await page.locator('#' + id).count())) missing.push(id);
-  check(contents.length === 23 && missing.length === 0, `every contents link has its section ${missing}`);
+  check(contents.length === 24 && missing.length === 0, `every contents link has its section ${missing}`);
   check(/Last updated: \d+ \w+ 2026\./.test(await page.locator('header.site p').textContent()), 'the date last updated is at the top');
   const text = await page.locator('main').textContent();
   check(/The game is free, and it stays free/.test(text) && /No one may sell, rent, license or charge money/.test(text), 'no selling is stated plainly in its own section');
@@ -55,11 +55,20 @@ await page.goto(base + '/terms.html');
   check(links.includes('https://support.google.com/youtube/answer/2797454') && links.includes('https://support.google.com/youtube/answer/12104471') && links.includes('https://www.youtube.com/howyoutubeworks/policies/community-guidelines/'), 'links to disputing, appealing and the Community Guidelines');
   check(/Escalate to Appeal/.test(text) && /seven days/.test(text) && /copyright strike/.test(text), 'Escalate to Appeal, its seven days and the strike warning are explained');
   check(/paid promotion of the game without permission/.test(text), 'paid promotion without permission is listed among the things not to do');
+  // Web 1.1.2: one set of Terms for both versions.
+  check(/They also cover the Windows version of Endless Labyrinth/.test(text) && !/do not cover the Windows version/.test(text), 'the Terms cover the Windows version');
+  check(/downloading or playing the Windows version, you accept these Terms/.test(text), 'downloading or playing on Windows is acceptance');
+  check(h3s.some((t) => t === '9.4 Improvements and fan versions') && /only with the maker's written permission/.test(text), 'changing the game or sharing a version built from it needs written permission');
+  check(h3s.some((t) => t === '9.5 Your own game') && /making your own game from scratch, with your own code and your own sounds/.test(text), 'making your own game from scratch is free');
+  for (const sub of ['23.1 Official download only', '23.2 No changing the program', '23.3 Save files are sealed', '23.4 Windows security warnings']) check(h3s.includes(sub), `Windows subsection: ${sub}`);
+  check(/SmartScreen/.test(text) && /do not run it/.test(text), 'the Windows security warning is explained honestly');
+  check(q.some((t) => /cover the Windows version/.test(t)) && q.some((t) => /change the game, or make my own version/.test(t)), 'common questions about Windows and about changing the game');
 }
 
 // ------------------------------------------------------------ the other two
 for (const [pg, title, must] of [
-  ['privacy.html', 'Privacy Policy', [/collects no personal data/, /only when you tap one of their buttons/, /GitHub Pages/, /IP address/, /sends nothing about you during play/]],
+  ['privacy.html', 'Privacy Policy', [/collects no personal data/, /only when you tap one of their buttons/, /GitHub Pages/, /IP address/, /sends nothing about you during play/,
+    /covers the website, the game it plays, and the Windows version/, /players folder, on your own computer/, /newer version of the game has been released/, /only if a sound in its sounds folder is missing or damaged/, /NV Access/]],
   ['accessibility-statement.html', 'Accessibility Statement', [/VoiceOver on an iPhone, iPad or Mac, TalkBack on Android, ChromeVox on a Chromebook, and Orca on Linux/, /turn your screen reader off while you play/, /Windows computers are pointed/, /Chrome, Edge and Safari/, /high contrast and bigger text/]],
 ]) {
   await page.goto(base + '/' + pg);
