@@ -1,26 +1,27 @@
 # Endless Labyrinth: web version
 
-A 3D audio game for phones and tablets, played by ear with headphones and touch gestures. It is the web version of the Windows game [Endless Labyrinth](https://github.com/DevHinderman2026/Endless-Labyrinth), with all six of its modes (Standard, Battle, Driving, Tower, Island and Chaos) and its events, and the same rules, timings and sounds. As of November 2026 the whole game, which began on Windows, is fully playable in a mobile browser.
+A 3D audio game for phones, tablets and computers, played by ear with headphones: touch gestures on a phone or tablet, the keyboard on a computer. It is the web version of the Windows game [Endless Labyrinth](https://github.com/DevHinderman2026/Endless-Labyrinth), with all six of its modes (Standard, Battle, Driving, Tower, Island and Chaos) and its events, and the same rules, timings and sounds. As of November 2026 the whole game, which began on Windows, is fully playable in a browser.
 
-**Play:** open the game's website on an iPhone, iPad (iOS 18.4 or newer) or Android phone or tablet (an up-to-date Chrome), with headphones. Computers are not supported; on a computer, play the Windows version.
+**Play:** open the game's website on an iPhone, iPad (iOS 18.4 or newer), Android phone or tablet (an up-to-date Chrome), Chromebook, Mac or Linux computer, with headphones. Windows computers are pointed to the Windows version.
 
 ## What is here
 
-- `index.html`, `about.html`, `credits.html`, `history.html`: the website. `about.html` teaches how to play, gestures included. `history.html` is the Update History, the players' release notes: each new version goes at the top, with its date and what changed for players. The web version has its own version numbers (1.0.2 now), separate from the Windows game's.
+- `index.html`, `about.html`, `story.html`, `credits.html`, `history.html`, `events.html`, `stats.html`, `backups.html`, `accessibility.html`, `terms.html`, `privacy.html`, `accessibility-statement.html`, `faq.html`: the website. `about.html` teaches how to play, gestures and keys included. `history.html` is the Update History, the players' release notes: each new version goes at the top, with its date and what changed for players. The web version has its own version numbers (1.1.0 now), separate from the Windows game's. The site links and the footer (contact, the legal pages, the FAQ and the share buttons) are built on every page by `js/site.js`, from one list: a new page is added there once.
 - `play.html`: the game.
 - `js/`: the game.
   - `game.js`: Standard and Battle modes, the menus and help, ported from the Windows game's `endless_labyrinth.py` (Windows version 1.0.1), with the same names and numbers so the two can be compared.
   - `modes/`: the other modes, each a plug-in listed in `modes/index.js`: `driving.js`, `tower.js`, `island.js`, `chaos.js` and `events.js` (with `events/`, the port of the desktop's event engine, missions, schema and signature check).
-  - `device.js`: tells phones and tablets from computers, which are not supported.
+  - `device.js`: tells iPhones, iPads, Android phones and tablets, Chromebooks, Macs and Linux computers apart; Windows computers are refused. An iPhone is told from an iPad by the size of its screen (web 1.1.0).
+  - `site.js`: the site links, the footer and the share buttons on every page of the website. `display.js`: the display options (high contrast, bigger text) applied on every page. `calendar.js`, `stats.js`, `backup.js` and `backups-page.js`, `accessibility.js`: the Events calendar, Game Stats, Score Backups and Accessibility pages.
   - `audio.js`: the sound engine, the desktop's mixer rebuilt on the Web Audio API: left and right levels, the dull "behind you" copy, and the room echo.
   - `gestures.js`: touch gestures turned into the game's keys. A Bluetooth keyboard works too.
   - `speech.js`: the game's own voice, through the browser.
   - `packs.js`: downloads the sound packs once and keeps them on the device.
-  - `storage.js`: high scores and settings, kept on the device.
+  - `storage.js`: high scores, settings and stats (time played and runs per mode, since web 1.1.0; save format 2), kept on the device. Event runs are kept beside them by `modes/events/feed.js`.
   - `help-data.js`: the help menu.
-  - `sound-rules.js` and `credits-data.js`: made from the desktop game by the pack builder. Do not edit them by hand.
+  - `sound-rules.js`: made from the desktop game by the pack builder, which also writes the Credits page's list. Do not edit them by hand.
 - `packs/`: the sound packs and `manifest.json`, which names them. No sound is ever on the site as its own file: everything travels inside the packs.
-- `tests/`: end-to-end checks in a real browser engine (see below): `smoke.mjs`, and one file per mode.
+- `tests/`: end-to-end checks in a real browser engine (see below): `smoke.mjs`, one file per mode, `devices.mjs`, `computers.mjs`, `keywords.mjs`, `eventwords.mjs`, and for the website's pages `calendar.mjs`, `stats.mjs`, `backups.mjs`, `accessibility.mjs`, `legal.mjs` and `share.mjs`.
 
 ## The sound packs
 
@@ -28,7 +29,7 @@ The packs are built from the desktop game itself, by a private tool kept with th
 
 ## Testing
 
-Serve this folder (`python3 -m http.server 8765`), then run `node tests/smoke.mjs http://localhost:8765` (and `tower.mjs`, `island.mjs`, `driving.mjs`, `events.mjs`, `chaos.mjs` the same way) with Playwright installed. Where the browser cannot reach GitHub, add `--import ./tests/github-stub.mjs`. They load the packs, play every mode by script and drive the gestures with synthetic touches. It cannot hear: how the game sounds, and how the gestures feel on a real phone, are checked by playing.
+Serve this folder (`python3 -m http.server 8765`), then run `node tests/smoke.mjs http://localhost:8765` (and every other file in `tests/` the same way; `calendar.mjs` and `events.mjs` take the desktop repository's folder as a second argument, for its published events) with Playwright installed. Where the browser cannot reach GitHub, add `--import ./tests/github-stub.mjs`. They load the packs, play every mode by script and drive the gestures with synthetic touches. It cannot hear: how the game sounds, and how the gestures feel on a real phone, are checked by playing.
 
 ## Publishing
 

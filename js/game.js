@@ -926,6 +926,7 @@ export class Game {
   triggerGameOver() {
     const mode = this.state;
     this.state = S.GAME_OVER;
+    this.scores.flushStats();
     this._stopRunSounds();
     this._wake(false);
     let prevHigh; let isHigh; let scoreValue; let msg;
@@ -982,6 +983,7 @@ export class Game {
 
   // Called when the page is hidden: the phone locked, another app, another tab.
   autoPause() {
+    this.scores.flushStats();
     if (this.playing && !this.isPaused) {
       this.isPaused = true;
       this._pauseSounds();
@@ -1103,6 +1105,7 @@ export class Game {
         this.audio.play('menu_move');
         this.tts.speak(this.confirmYes ? 'Yes, return to the main menu.' : 'No, go back.');
       } else if (yes) {
+        this.scores.flushStats();
         this._stopRunSounds();
         this.runId += 1;
         this.menuIndex = 0;
@@ -1495,8 +1498,31 @@ export class Game {
     } catch (e) { /* not allowed here: the phone's own sleep setting applies */ }
   }
 
+  // The key the stats (web 1.1.0) count this run under: chaos for the whole of a
+  // chaos run, whatever level it is in; otherwise the mode of the state.
+  _statsKey() {
+    if (this.chaosMode) return 'chaos';
+    if (this.state === S.STANDARD) return 'standard';
+    if (this.state === S.BATTLE) return 'battle';
+    const m = modeOf(this.state);
+    return m && m.menu && m.menu[0] ? ({ events: 'event' }[m.menu[0].key] || m.menu[0].key) : null;
+  }
+
+  // Runs started and seconds played, per mode (web 1.1.0): a run is counted when
+  // it starts; time counts inside a run and not while paused.
+  _countStats(dt) {
+    if (!this.playing) return;
+    if (this.runId !== this._statsRunId) {
+      this._statsRunId = this.runId;
+      this._statsMode = this._statsKey();
+      this.scores.runStarted(this._statsMode);
+    }
+    if (!this.isPaused && this._statsMode) this.scores.addPlayTime(this._statsMode, dt);
+  }
+
   // -------------------------------------------------------------- one frame
   frame(dt) {
+    this._countStats(dt);
     const md = this.mode;
     const gm = md && md.gestureMode ? md.gestureMode(this) : null;
     this.gestures.setMode(this.playing && !this.isPaused ? (gm || 'run') : 'menu');

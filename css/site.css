@@ -32,6 +32,29 @@ header.site p { margin: 0; color: var(--muted); }
 
 nav.site { max-width: 46rem; margin: 0 auto; padding: 0.75rem 1.25rem 0; }
 nav.site ul { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 0.5rem 1.25rem; }
+nav.site a[aria-current="page"] { color: var(--accent); font-weight: 700; }
+
+/* The site links fold behind a button on a narrow screen (by width, never by
+   the kind of device). The button is hidden on a wide screen, where every link
+   shows. */
+nav.site .menu-toggle {
+  display: none;
+  background: var(--panel);
+  color: var(--text);
+  border: 1px solid #3a4a60;
+  border-radius: 10px;
+  font: inherit;
+  font-weight: 700;
+  padding: 0.6rem 1rem;
+  cursor: pointer;
+}
+nav.site .menu-toggle::after { content: " \25BE"; }
+nav.site.open .menu-toggle::after { content: " \25B4"; }
+@media (max-width: 40rem) {
+  nav.site .menu-toggle { display: inline-block; }
+  nav.site ul { display: none; flex-direction: column; gap: 0.75rem; margin-top: 0.75rem; }
+  nav.site.open ul { display: flex; }
+}
 
 h2 { font-size: 1.35rem; margin: 2rem 0 0.5rem; }
 h3 { font-size: 1.1rem; margin: 1.5rem 0 0.4rem; }
@@ -58,6 +81,8 @@ dl.gestures dd { margin: 0; }
 
 footer.site { max-width: 46rem; margin: 0 auto; padding: 1.5rem 1.25rem 2.5rem; color: var(--muted); border-top: 1px solid #253040; }
 footer.site p { margin: 0.35rem 0; }
+footer.site h2 { font-size: 1.1rem; margin: 1.25rem 0 0.4rem; }
+footer.site nav ul { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 0.4rem 1.25rem; }
 
 ul.credits li { margin: 0.4rem 0; }
 
@@ -100,3 +125,48 @@ html[data-device="ipad"] #said, html[data-device="android-tablet"] #said { font-
 /* The Credits page: a contents list, then the recordings under their headings. */
 ul.contents-list li { margin: 0.25rem 0; }
 main.page h4 { font-size: 1.02rem; margin: 1.2rem 0 0.35rem; color: var(--muted); }
+
+/* The Events calendar and the Game Stats page. */
+article.event h3 { margin-top: 0; }
+article.event p { margin: 0.4rem 0; }
+article.event .event-status { color: var(--accent); font-weight: 700; }
+article.event .event-dates { color: var(--muted); }
+p.none { color: var(--muted); }
+ul.stats li { margin: 0.3rem 0; }
+main.page .button + .button { margin-left: 0.6rem; }
+@media (max-width: 34rem) { main.page .button { display: block; margin: 0.6rem 0; } main.page .button + .button { margin-left: 0; } }
+
+/* Display options (web 1.1.0): high contrast and bigger text, chosen on the
+   Accessibility page and applied on every page, the play page included. */
+html[data-contrast="high"] {
+  --bg: #000;
+  --panel: #000;
+  --text: #fff;
+  --muted: #fff;
+  --accent: #ffff00;
+  --accent-text: #000;
+  --link: #ffff00;
+  --focus: #fff;
+}
+html[data-contrast="high"] .panel, html[data-contrast="high"] nav.site .menu-toggle { border: 2px solid #fff; }
+html[data-contrast="high"] footer.site { border-top-color: #fff; }
+html[data-contrast="high"] a:focus-visible, html[data-contrast="high"] button:focus-visible,
+html[data-contrast="high"] input:focus-visible, html[data-contrast="high"] select:focus-visible { outline: 4px solid #ffff00; }
+html[data-text="large"] { font-size: 22px; }
+html[data-text="larger"] { font-size: 27px; }
+html[data-text="larger"] header.site h1 { font-size: 1.7rem; }
+main.page select, main.page input[type="checkbox"] { font: inherit; font-size: 1rem; }
+main.page input[type="checkbox"] { width: 1.3rem; height: 1.3rem; vertical-align: middle; }
+main.page select { background: var(--panel); color: var(--text); border: 1px solid #3a4a60; border-radius: 8px; padding: 0.4rem 0.6rem; }
+main.page input[type="file"] { font: inherit; color: var(--text); }
+#guides section h3 { margin-top: 0; }
+
+/* The legal pages. */
+main.legal h2 { margin-top: 2.2rem; }
+main.legal h3 { margin-top: 1.2rem; font-size: 1.02rem; }
+main.legal ol[type="a"] li { margin: 0.3rem 0; }
+
+/* The share buttons in the footer. */
+footer.site nav.share ul { gap: 0.5rem 0.9rem; }
+footer.site .share-button { background: var(--panel); color: var(--link); border: 1px solid #3a4a60; border-radius: 8px; font: inherit; padding: 0.3rem 0.7rem; cursor: pointer; }
+footer.site .share-status { min-height: 1.4em; }

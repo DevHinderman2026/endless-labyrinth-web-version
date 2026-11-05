@@ -22,8 +22,9 @@ export const EVENTS_API = `https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB
 export const EVENTS_REFRESH = 120.0;      // seconds before opening the Events menu checks again
 export const EVENT_START_CHECK = 60.0;    // an event is checked again before a run starts if the list is older than this
 const TIME_URL = 'packs/manifest.json';   // the game's own site, for the time
-const PROTECTED_KEY = 'endless-labyrinth-web-protected-events';
-const SCORES_KEY = 'endless-labyrinth-web-event-scores';
+export const PROTECTED_KEY = 'endless-labyrinth-web-protected-events';
+export const EVENT_SCORES_KEY = 'endless-labyrinth-web-event-scores';
+const SCORES_KEY = EVENT_SCORES_KEY;
 
 const monotonic = () => performance.now() / 1000;
 
@@ -90,8 +91,17 @@ export class EventFeed {
     if (this.busy) return;
     if (!force && this.fetchedAt !== null && monotonic() - this.fetchedAt < EVENTS_REFRESH) return;
     this.busy = true;
-    this._run();
+    this.pending = this._run();   // awaited by the website's Events calendar
   }
+
+  // Resolves when the check under way has finished (the game never waits; the
+  // Events calendar page does).
+  async wait() { await this.pending; }
+
+  // Whether the last check reached GitHub's events folder: false when the
+  // internet was out, and false when GitHub answered with an error (its hourly
+  // limit, a fault), in which case only events from an earlier check are known.
+  reachedGitHub() { return this.online && !this.problems.some(([name]) => name === 'GitHub'); }
 
   async _run() {
     let events = {}; const problems = [];

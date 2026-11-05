@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Events calendar: Endless Labyrinth</title>
+  <meta name="description" content="Every Endless Labyrinth event: what is on now, what is coming, what has ended, and your own best runs in each one.">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" href="icons/icon-192.png">
+  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+  <meta name="theme-color" content="#0c0f14">
+  <link rel="stylesheet" href="css/site.css">
+</head>
+<body>
+  <header class="site">
+    <h1>Events calendar</h1>
+    <p>What is on now, what is coming, and what has ended, with your own best runs.</p>
+  </header>
+  <nav class="site" aria-label="Site" data-page="events"></nav>
+  <main class="page">
+    <p>Events are limited-time challenges, shared with the Windows version: the same signed event files, so what you see here is exactly what the game plays. To play one, open the Events menu inside the game. This page is for reading: it does not start a run.</p>
+    <p>Dates are shown in your own time zone. What counts as on now is judged by internet time, the same way the game judges it, so changing your device's clock makes no difference. Your runs, medals and best scores come from this browser alone; nothing is sent anywhere.</p>
+
+    <p id="events-status" class="panel" aria-live="polite">Checking the events now.</p>
+
+    <div id="groups" hidden>
+      <h2 id="on-now">On now</h2>
+      <div id="live" aria-labelledby="on-now"></div>
+
+      <h2 id="coming-soon">Coming soon</h2>
+      <div id="upcoming" aria-labelledby="coming-soon"></div>
+
+      <h2 id="past-events">Past events</h2>
+      <p>An event that has ended, or that the developer has stopped, stays here with your runs in it.</p>
+      <div id="past" aria-labelledby="past-events"></div>
+    </div>
+  </main>
+  <footer class="site"></footer>
+  <script type="module" src="js/site.js"></script>
+  <script type="module" src="js/calendar.js"></script>
+</body>
+</html>

@@ -18,7 +18,7 @@ page.on('console', (m) => { if (m.type() === 'error') errors.push(m.text()); });
 
 // Home page and the contact address.
 await page.goto(base + '/index.html');
-const contact = await page.locator('footer [data-contact] a').getAttribute('href');
+const contact = await page.locator('footer a[href^="mailto:russell"]').getAttribute('href');
 check(contact === 'mailto:russellhinderman425@gmail.com', 'contact link is written in by script');
 check(!(await page.locator('#computer-note').isVisible()), 'a Linux computer is not sent to the Windows version');
 {
@@ -28,10 +28,46 @@ check(!(await page.locator('#computer-note').isVisible()), 'a Linux computer is 
   check(await wpage.locator('#computer-note').isVisible(), 'a Windows computer is told to use the Windows version');
   await wctx.close();
 }
-for (const pg of ['index.html', 'about.html', 'credits.html', 'history.html', 'story.html']) {
+// Web 1.1.0: every page's site links and footer are built by script from one
+// list, and every link they carry leads to a page that exists (an http.server
+// answers 404 for a missing one).
+const SITE_PAGES = ['index.html', 'about.html', 'credits.html', 'history.html', 'story.html', 'events.html', 'stats.html', 'backups.html', 'accessibility.html', 'terms.html', 'privacy.html', 'accessibility-statement.html', 'faq.html'];
+for (const pg of SITE_PAGES) {
   await page.goto(base + '/' + pg);
   check(await page.locator('nav.site a[href="history.html"]').count() === 1, `${pg} links to the Update History`);
   check(await page.locator('nav.site a[href="story.html"]').count() === 1, `${pg} links to the Story of the Game`);
+  check(await page.locator('nav.site a[href="play.html"]').count() === 1, `${pg} links to Play`);
+  check(await page.locator('footer.site a[href^="mailto:russell"]').count() === 1, `${pg} has the contact address in its footer`);
+  const current = await page.locator('nav.site a[aria-current="page"], footer.site nav a[aria-current="page"]').first().getAttribute('href');
+  check(current === pg, `${pg} marks itself as the current page: ${current}`);
+}
+{
+  // Every link the site's own menus carry leads somewhere.
+  await page.goto(base + '/index.html');
+  const hrefs = await page.locator('nav.site a, footer.site nav a').evaluateAll((as) => as.map((a) => a.getAttribute('href')).filter((h) => !/^(https?:|mailto:)/.test(h)));
+  const dead = [];
+  for (const h of new Set(hrefs)) {
+    const r = await page.request.get(base + '/' + h);
+    if (r.status() !== 200) dead.push(h + ' ' + r.status());
+  }
+  check(hrefs.length >= 6 && dead.length === 0, `every site link leads to a page (${hrefs.length} links) ${dead}`);
+}
+{
+  // The site links fold behind a "Site links menu" button on a narrow screen,
+  // and show in full on a wide one, by width alone.
+  const narrow = await browser.newContext({ viewport: { width: 390, height: 844 } });
+  const np = await narrow.newPage();
+  await np.goto(base + '/about.html');
+  const button = np.locator('nav.site button.menu-toggle');
+  check(await button.isVisible() && (await button.textContent()) === 'Site links menu', 'a narrow screen shows the Site links menu button');
+  check((await button.getAttribute('aria-expanded')) === 'false' && !(await np.locator('nav.site a[href="story.html"]').isVisible()), 'the links start folded away');
+  await button.click();
+  check((await button.getAttribute('aria-expanded')) === 'true' && (await np.locator('nav.site a[href="story.html"]').isVisible()), 'tapping the button expands the links');
+  await button.click();
+  check((await button.getAttribute('aria-expanded')) === 'false' && !(await np.locator('nav.site a[href="story.html"]').isVisible()), 'tapping it again folds them');
+  await np.setViewportSize({ width: 1024, height: 768 });
+  check(!(await button.isVisible()) && (await np.locator('nav.site a[href="story.html"]').isVisible()), 'a wide screen shows every link and no button');
+  await narrow.close();
 }
 await page.goto(base + '/credits.html');
 {
@@ -51,8 +87,17 @@ await page.goto(base + '/story.html');
   for (const id of ids) if (!(await page.locator('#' + id).count())) missing.push(id);
   check(ids.length >= 8 && missing.length === 0, `every link in the story's contents has its section (${ids.length}) ${missing}`);
 }
+await page.goto(base + '/faq.html');
+{
+  const ids = await page.locator('nav.contents a').evaluateAll((as) => as.map((a) => a.getAttribute('href').slice(1)));
+  const missing = [];
+  for (const id of ids) if (!(await page.locator('#' + id).count())) missing.push(id);
+  const first = await page.locator('nav.contents a').first().textContent();
+  check(ids.length === 7 && missing.length === 0 && /difference between the website version and the Windows version/.test(first), `the FAQ's seven questions each have their answer, the versions question first ${missing}`);
+  check(await page.locator('footer.site nav a[href="faq.html"][aria-current="page"]').count() === 1, 'the FAQ is in the footer and marked current');
+}
 await page.goto(base + '/history.html');
-check((await page.locator('main h2').allTextContents()).join(' | ').startsWith('1.0.4'), 'the Update History lists the newest version first');
+check((await page.locator('main h2').allTextContents()).join(' | ').startsWith('1.1.0'), 'the Update History lists the newest version first');
 await page.goto(base + '/credits.html');
 check((await page.locator('ul.credits li').count()) === 314, 'credits list the recordings');
 

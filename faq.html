@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Frequently asked questions: Endless Labyrinth</title>
+  <meta name="description" content="Answers to the questions players ask most about Endless Labyrinth: the website and Windows versions, headphones, screen readers, scores, the internet and events.">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" href="icons/icon-192.png">
+  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+  <meta name="theme-color" content="#0c0f14">
+  <link rel="stylesheet" href="css/site.css">
+</head>
+<body>
+  <header class="site">
+    <h1>Frequently asked questions</h1>
+    <p>The questions players ask most, answered plainly.</p>
+  </header>
+  <nav class="site" aria-label="Site" data-page="faq"></nav>
+  <main class="page">
+    <nav class="panel contents" aria-label="On this page">
+      <h2>Questions</h2>
+      <ol>
+        <li><a href="#versions">What is the difference between the website version and the Windows version?</a></li>
+        <li><a href="#windows">Why are Windows computers sent to the Windows game?</a></li>
+        <li><a href="#headphones">Why do I need headphones?</a></li>
+        <li><a href="#screen-reader">Why do I turn off my screen reader while playing?</a></li>
+        <li><a href="#scores">Where are my scores saved, and how do I back them up?</a></li>
+        <li><a href="#internet">Do I need the internet to play?</a></li>
+        <li><a href="#events">How do events work?</a></li>
+      </ol>
+    </nav>
+
+    <h2 id="versions">What is the difference between the website version and the Windows version?</h2>
+    <p>They are the same game. Both have the same six modes, Standard, Battle, Driving, Tower, Island and Chaos, with the same rules, timings and sounds, and both play the same events, read from the same signed event files. The difference is where each one runs.</p>
+    <ul>
+      <li><strong>The website version</strong> plays in the browser of an iPhone, an iPad, an Android phone or tablet, a Chromebook, a Mac or a Linux computer, with nothing to install. On a phone or tablet it is played with touch gestures; on a computer, with the keyboard. It has the website's own extras: this site, the <a href="events.html">Events calendar</a>, <a href="stats.html">Game Stats</a>, <a href="backups.html">Score Backups</a> and the <a href="accessibility.html">display options</a>.</li>
+      <li><strong>The Windows version</strong> is a program you download and run on a Windows PC. It works fully offline, supports a Braille display, puts its own room echo on the voice, and keeps its scores in its own folder. Download it from the <a href="https://github.com/DevHinderman2026/Endless-Labyrinth/releases/latest">Releases page of the game's GitHub repository</a>.</li>
+    </ul>
+    <p>Scores are kept separately by each version. Neither version is less than the other: play whichever fits the device in your hands.</p>
+
+    <h2 id="windows">Why are Windows computers sent to the Windows game?</h2>
+    <p>Because the Windows version is already the complete game for that computer, and a better one there: it works offline, it supports a Braille display, and it has its own voice echo. Running the browser version on Windows as well would give you a second copy of the same game, with separate scores, and nothing the Windows version does not already do. So the website points Windows computers to the download instead.</p>
+
+    <h2 id="headphones">Why do I need headphones?</h2>
+    <p>Everything in the game is in the sound: where things are, how far away they are, and whether they are in front of you or behind you. Left and right are the whole point. A phone's own speaker, or a laptop's, mixes left and right together, so you cannot tell which way to turn. Any headphones or earbuds will do, wired or Bluetooth, as long as the left one is in your left ear.</p>
+
+    <h2 id="screen-reader">Why do I turn off my screen reader while playing?</h2>
+    <p>The game speaks for itself, with your device's own voice, and it listens for your gestures or keys directly. A screen reader that is on takes those gestures for itself: a swipe moves the screen reader's cursor instead of your player, and a double tap activates whatever it is on instead of giving you the game's report. So the game asks you to turn your screen reader off after the sounds have loaded, and tells you the shortcut for your device: triple-click the side button or ask Siri on an iPhone or iPad, hold both volume keys on Android, Command F5 on a Mac, Control Alt Z on a Chromebook, Super Alt S for Orca on Linux. Turn it back on the same way when you leave. The <a href="accessibility.html">Accessibility</a> page has a guide for each device.</p>
+
+    <h2 id="scores">Where are my scores saved, and how do I back them up?</h2>
+    <p>In your own browser's storage, on your own device. Nothing is sent anywhere. On an iPhone or iPad, add the game to your Home Screen and play from there: Safari deletes a website's saved data after a week without visiting it, but a game on the Home Screen keeps its scores. To keep them safe for good, or to carry them to another device, use <a href="backups.html">Score Backups</a>: Back up now saves a sealed file of every score, your stats and your settings, and Restore reads it back, asking first whether to combine it with what is on the device or replace it.</p>
+
+    <h2 id="internet">Do I need the internet to play?</h2>
+    <p>To start, yes. The game loads its sounds from the site the first time, about 120 megabytes, and after that keeps them on your device, so later starts are quick. It also reads the list of events from GitHub, and learns the time from the internet so that events start and end when they should. If the internet cannot be reached, the six modes still play, and the events the game has already seen are kept; only new events cannot be checked. The page itself needs a connection to open; playing with no signal at all is not yet supported.</p>
+
+    <h2 id="events">How do events work?</h2>
+    <p>Events are limited-time challenges, each with its own room, mission, sounds and dates, shared with the Windows version. They are small files published by the maker in the game's GitHub repository and signed with his key; the game plays only events it can verify, so no one else can slip one in. Open the Events menu in the game to hear what is on now and what is coming, with each event's description and how long it has left. Your best run in every event, your medal and the number of runs you played are kept in Event High Scores inside the game and shown on this site's <a href="stats.html">Game Stats</a> and <a href="events.html">Events calendar</a> pages. An event is judged by internet time, so changing your device's clock does not open one early.</p>
+  </main>
+  <footer class="site"></footer>
+  <script type="module" src="js/site.js"></script>
+</body>
+</html>

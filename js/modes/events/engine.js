@@ -9,34 +9,9 @@ import { status as eventStatus, describeDuration, hasClock, ITEMS_NEEDED, canEnd
   soundFiles, pyRound } from './schema.js';
 import { aliasRecording, addMade, fromBuffer, ringPeriodCopy, warpCopy, padded, ensureCopies } from './sounds.js';
 import { uniform, randint, randrange, choice, sample, choices, random, shuffle } from './py.js';
-import { keyboardDevice } from '../../device.js';
 
-// Event descriptions are written for a keyboard (they are signed, so they are
-// never changed). Spoken here, the keys they name become the phone's gestures
-// (Russell's decision); event help explains any wording this does not know.
-// A double tap's report already says the time left, so "T" goes.
-const GESTURE_WORDS = [
-  [/\bwith the arrow keys\b/g, 'by swiping'],
-  [/\bPress the arrow toward it\b/g, 'Swipe toward it'],
-  [/\bThe wrong arrow\b/g, 'The wrong swipe'],
-  [/\bLeft and Right turn you and take a step\b/g, 'Swipes left and right turn you and take a step'],
-  [/\bwith Up or Down\b/g, 'with a swipe up or down'],
-  [/\bEnter tells you\b/g, 'A double tap tells you'],
-  [/,? and T the time( left)?/g, ' and the time$1'],
-  [/\bwith the laser on Space\b/g, 'with the laser, a two-finger tap'],
-  [/\bwith Space\b/g, 'with a two-finger tap'],
-  [/\bPress Space\b/g, 'Tap with two fingers'],
-  [/\bpress Space\b/g, 'tap with two fingers'],
-  [/\bpressing off the beat\b/g, 'tapping off the beat'],
-];
-export function gestureWords(text) {
-  // On a computer the keyboard's own words are kept, as written.
-  if (typeof navigator !== 'undefined' && keyboardDevice()) return text;
-  let t = text;
-  for (const [re, to] of GESTURE_WORDS) t = t.replace(re, to);
-  return t;
-}
-
+import { gestureWords } from './wording.js';
+export { gestureWords };
 
 export const S_EVENT = 'event';
 export const S_EVENTS_MENU = 'events_menu';

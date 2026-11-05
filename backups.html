@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Score Backups: Endless Labyrinth</title>
+  <meta name="description" content="Back up your Endless Labyrinth scores, stats and settings to a file, and restore them on this device or another.">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" href="icons/icon-192.png">
+  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+  <meta name="theme-color" content="#0c0f14">
+  <link rel="stylesheet" href="css/site.css">
+</head>
+<body>
+  <header class="site">
+    <h1>Score Backups</h1>
+    <p>Keep your scores, stats and settings safe in a file, and bring them back whenever you need them.</p>
+  </header>
+  <nav class="site" aria-label="Site" data-page="backups"></nav>
+  <main class="page">
+    <h2>Why back up</h2>
+    <p>The game keeps your high scores, your stats, your settings and your event runs in this browser's own storage, on this device. Nothing is sent anywhere. That storage can be lost: if you clear your browser's data, if Safari removes a website's data after a week without visiting it (playing from the Home Screen prevents that), or if you move to a new device. A backup file keeps everything, and can be restored here or on any other device.</p>
+
+    <h2>Back up</h2>
+    <p>The file holds every high score, your stats, your settings and your event runs. It is sealed, so a file that has been changed is refused when it is restored. Keep it somewhere safe, such as Files on an iPhone or iPad, iCloud Drive or Google Drive.</p>
+    <p>
+      <button id="back-up" class="button" type="button">Back up now</button>
+      <button id="share-backup" class="button" type="button">Share the backup file</button>
+    </p>
+    <p id="backup-status" class="panel" aria-live="polite"></p>
+
+    <h2>Restore</h2>
+    <p>Choose a backup file. Nothing changes until you decide what to do with it: combine it with the play saved on this device, keeping the better of everything, or replace what is saved here with the backup. You can also cancel.</p>
+    <p><label for="restore-file">Choose a backup file to restore:</label> <input id="restore-file" type="file" accept=".json,application/json"></p>
+    <div id="restore-choice" class="panel" hidden>
+      <p id="backup-summary"></p>
+      <p>
+        <button id="combine" class="button" type="button">Combine with my scores</button>
+        <button id="replace" class="button" type="button">Replace my scores</button>
+        <button id="cancel" class="button" type="button">Cancel</button>
+      </p>
+    </div>
+
+    <h2>What combine and replace do</h2>
+    <ul>
+      <li><strong>Combine</strong> keeps the better best score on every board, the larger total for time played and runs, and the better run and medal in every event, so nothing is counted twice. The settings on this device are kept.</li>
+      <li><strong>Replace</strong> puts the backup in place of everything saved on this device, settings included.</li>
+      <li>If the game is open in another tab or on your Home Screen, close it first, or return to its main menu, so that it takes in the restored scores when it next saves.</li>
+    </ul>
+  </main>
+  <footer class="site"></footer>
+  <script type="module" src="js/site.js"></script>
+  <script type="module" src="js/backups-page.js"></script>
+</body>
+</html>

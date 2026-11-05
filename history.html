@@ -15,18 +15,32 @@
     <h1>Update History</h1>
     <p>What each version of the web version of Endless Labyrinth brought.</p>
   </header>
-  <nav class="site" aria-label="Site">
-    <ul>
-      <li><a href="index.html">Home</a></li>
-      <li><a href="about.html">About and how to play</a></li>
-      <li><a href="story.html">The Story of the Game</a></li>
-      <li><a href="credits.html">Credits</a></li>
-      <li><a href="history.html" aria-current="page">Update History</a></li>
-    </ul>
-  </nav>
+  <nav class="site" aria-label="Site" data-page="history"></nav>
   <main class="page">
     <p>This page lists the web version. For the Windows version, see its <a href="https://github.com/DevHinderman2026/Endless-Labyrinth/blob/main/Credits%20and%20Version%20History/CHANGELOG.md">changelog</a> on GitHub.</p>
     <p>The game updates by itself: the next time you open it, you have the latest version. Only a sound pack that has changed is downloaded again, and your high scores are kept. Events are not listed here: they appear in the Events menu as they open.</p>
+
+    <h2>1.1.0 (4 November 2026)</h2>
+    <p>The website grows into a home for the game: new pages for events, stats, backups and accessibility, the site's terms, and a fix for phones and iPads. The game's modes, sounds and rules are unchanged, and the Windows version is unchanged.</p>
+    <h3>New</h3>
+    <ul>
+      <li><strong>Events calendar:</strong> a page listing every event, on now, coming soon and past, with its dates in your own time zone, its description, and your own best run, medal and number of runs in it. It reads the same signed event files as the game and judges what is on by internet time, so it always agrees with the game.</li>
+      <li><strong>Game Stats:</strong> your time played and runs per mode (counted from this version on), your best score on every board, your medals, and every event you have played. An event that is no longer published is kept, marked as no longer available, as the Windows version keeps its Event High Scores.</li>
+      <li><strong>Score Backups:</strong> Back up now saves a sealed file of every score, your stats and your settings, to keep in Files, iCloud Drive or Google Drive. Restore reads it back and always asks first: combine it with what is on the device, keeping the better of everything, replace, or cancel. An edited file is refused.</li>
+      <li><strong>Accessibility page:</strong> display options for low-vision players (high contrast and bigger text, on every page and in the game), the screen reader named for your device, and a setup guide for each device: iPhone and iPad, Android, Chromebook, Mac, Linux and Windows.</li>
+      <li><strong>Terms of Use, Privacy Policy and Accessibility Statement</strong>, in the footer of every page, each with the date it was last updated. The Terms say plainly that recording and streaming the game is encouraged, with YouTube's dispute and appeal steps explained, and that the game is free and stays free.</li>
+      <li><strong>Frequently asked questions</strong>, in the footer: the website and Windows versions compared, headphones, screen readers, scores, the internet and events.</li>
+      <li><strong>Share buttons</strong> in the footer, for Facebook, X, Reddit, WhatsApp and email, plus Copy the link and your device's own share menu. Each service's page opens only when you tap its button; nothing of theirs loads with the page.</li>
+      <li><strong>The site links</strong> now include Play, Events, Game Stats, Score Backups and Accessibility. On a narrow screen they fold behind a Site links menu button, which tells a screen reader whether it is expanded or collapsed; on a wide screen every link shows.</li>
+    </ul>
+    <h3>Fixed</h3>
+    <ul>
+      <li>An iPhone could be taken for an iPad, and an iPad for a phone, so the game named the wrong device when it asked for silent mode to be off. The game now tells them apart by the size of the screen, which no browser setting changes.</li>
+    </ul>
+    <h3>Changed</h3>
+    <ul>
+      <li>Saved scores move to format 2, which adds time played and runs per mode. Every score and setting from before is kept.</li>
+    </ul>
 
     <h2>1.0.4 (3 November 2026)</h2>
     <h3>New</h3>
@@ -92,11 +106,7 @@
       <li>Help with demo sections for every sound.</li>
     </ul>
   </main>
-  <footer class="site">
-    <h2>Contact</h2>
-    <p>Endless Labyrinth is made by Russell Hinderman (DevHinderman2026). Questions, ideas or problems: <span data-contact>russellhinderman425 at gmail dot com</span>.</p>
-    <p>Copyright 2026 Russell Hinderman. All rights reserved. The game is AI assisted: written with Claude, by Anthropic, under Russell's direction.</p>
-  </footer>
+  <footer class="site"></footer>
   <script type="module" src="js/site.js"></script>
 </body>
 </html>

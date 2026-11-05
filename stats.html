@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Game Stats: Endless Labyrinth</title>
+  <meta name="description" content="Your own Endless Labyrinth stats: time played, runs per mode, best scores, medals and events, all from this browser.">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" href="icons/icon-192.png">
+  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+  <meta name="theme-color" content="#0c0f14">
+  <link rel="stylesheet" href="css/site.css">
+</head>
+<body>
+  <header class="site">
+    <h1>Game Stats</h1>
+    <p>Your own play on this device: time played, runs, best scores, medals and events.</p>
+  </header>
+  <nav class="site" aria-label="Site" data-page="stats"></nav>
+  <main class="page">
+    <p id="stats-note" class="panel" aria-live="polite">Reading your stats.</p>
+    <p>Stats belong to the browser they were made in. Playing from the Home Screen and from Safari are two copies of the game that share one set of scores on an iPhone or iPad; a different device or browser starts from nothing. To carry your play to another device, use <a href="backups.html">Score Backups</a>.</p>
+
+    <h2 id="time-played">Time played</h2>
+    <p id="time-total"></p>
+    <div id="time-modes" aria-labelledby="time-played"></div>
+
+    <h2 id="runs-per-mode">Runs per mode</h2>
+    <p id="runs-total"></p>
+    <div id="runs-modes" aria-labelledby="runs-per-mode"></div>
+
+    <h2 id="best-scores">Best scores</h2>
+    <p>The same seven boards as High Scores in the game.</p>
+    <div id="scores" aria-labelledby="best-scores"></div>
+
+    <h2 id="events-heading">Events</h2>
+    <p id="events-completed"></p>
+    <p id="medals"></p>
+    <div id="event-runs" aria-labelledby="events-heading"></div>
+  </main>
+  <footer class="site"></footer>
+  <script type="module" src="js/site.js"></script>
+  <script type="module" src="js/stats.js"></script>
+</body>
+</html>

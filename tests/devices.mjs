@@ -29,6 +29,23 @@ const mac = await kind({ userAgent: MAC, viewport: { width: 1440, height: 900 } 
 check(mac[0] === 'mac' && !mac[1], `a Mac may play: ${mac}`);
 const ipad = await kind({ userAgent: MAC, hasTouch: true, isMobile: true, touchPoints: 5, viewport: { width: 1024, height: 1366 } });
 check(ipad[0] === 'ipad' && !ipad[1], `an iPad (which says it is a Mac) is still an iPad: ${ipad}`);
+// Web 1.1.0: the iPhone and iPad mix-up. The screen decides, not the words.
+const IPHONE = 'Mozilla/5.0 (iPhone; CPU iPhone OS 18_4 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.4 Mobile/15E148 Safari/604.1';
+const IPAD_MOBILE = 'Mozilla/5.0 (iPad; CPU OS 18_4 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.4 Mobile/15E148 Safari/604.1';
+const iphone = await kind({ userAgent: IPHONE, hasTouch: true, isMobile: true, touchPoints: 5, viewport: { width: 390, height: 844 } });
+check(iphone[0] === 'iphone' && !iphone[1], `an iPhone in Safari: ${iphone}`);
+const iphoneWide = await kind({ userAgent: IPHONE, hasTouch: true, isMobile: true, touchPoints: 5, viewport: { width: 956, height: 440 } });
+check(iphoneWide[0] === 'iphone', `the largest iPhone, held sideways, is still an iPhone: ${iphoneWide}`);
+const iphoneDesktop = await kind({ userAgent: MAC, hasTouch: true, isMobile: true, touchPoints: 5, viewport: { width: 390, height: 844 } });
+check(iphoneDesktop[0] === 'iphone', `an iPhone that says it is a Mac (Request Desktop Website) is an iPhone, not an iPad: ${iphoneDesktop}`);
+const ipadMobile = await kind({ userAgent: IPAD_MOBILE, hasTouch: true, isMobile: true, touchPoints: 5, viewport: { width: 820, height: 1180 } });
+check(ipadMobile[0] === 'ipad', `an iPad that says iPad (Request Mobile Website) is an iPad: ${ipadMobile}`);
+const ipadSaysPhone = await kind({ userAgent: IPHONE, hasTouch: true, isMobile: true, touchPoints: 5, viewport: { width: 744, height: 1133 } });
+check(ipadSaysPhone[0] === 'ipad', `an iPad whose browser says iPhone is an iPad, not a phone (the smallest iPad mini): ${ipadSaysPhone}`);
+const ipadSideways = await kind({ userAgent: MAC, hasTouch: true, isMobile: true, touchPoints: 5, viewport: { width: 1366, height: 1024 } });
+check(ipadSideways[0] === 'ipad', `an iPad held sideways is an iPad: ${ipadSideways}`);
+const macTouch = await kind({ userAgent: MAC, viewport: { width: 1440, height: 900 }, touchPoints: 0 });
+check(macTouch[0] === 'mac', `a Mac with no touch screen is a Mac, whatever its screen size: ${macTouch}`);
 const win = await kind({ userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36' });
 check(win[0] === 'windows' && win[1], `a Windows computer is refused: ${win}`);
 const phone = await kind({ userAgent: 'Mozilla/5.0 (Linux; Android 14; Pixel 8) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Mobile Safari/537.36', hasTouch: true, isMobile: true, viewport: { width: 412, height: 915 } });

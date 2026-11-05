@@ -8,10 +8,13 @@ import { Gestures } from './gestures.js';
 import { Game } from './game.js';
 import { deviceKind, isApple, isComputer, keyboardDevice, screenReaderName, deviceWord, allowComputer } from './device.js';
 import { keyWords } from './keywords.js';
+import { applyDisplay, followDisplay } from './display.js';
 
 const $ = (id) => document.getElementById(id);
 const kind = deviceKind();
 document.documentElement.dataset.device = kind;
+applyDisplay();   // the display options chosen on the Accessibility page (web 1.1.0)
+followDisplay();
 
 const shown = $('said');
 const statusLine = $('status');

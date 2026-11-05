@@ -19,15 +19,7 @@
     <h1>Endless Labyrinth</h1>
     <p>A 3D audio game, played by ear with headphones: with touch gestures on a phone or tablet, or the keyboard on a computer.</p>
   </header>
-  <nav class="site" aria-label="Site">
-    <ul>
-      <li><a href="index.html" aria-current="page">Home</a></li>
-      <li><a href="about.html">About and how to play</a></li>
-      <li><a href="story.html">The Story of the Game</a></li>
-      <li><a href="credits.html">Credits</a></li>
-      <li><a href="history.html">Update History</a></li>
-    </ul>
-  </nav>
+  <nav class="site" aria-label="Site" data-page="index"></nav>
   <main class="page">
     <div id="computer-note" class="panel" hidden>
       <p><strong>You are on a Windows computer.</strong> This web version does not run on Windows. Play the full Windows version instead, from the <a href="https://github.com/DevHinderman2026/Endless-Labyrinth/releases/latest">Releases page of the game's GitHub repository</a>.</p>
@@ -70,12 +62,19 @@
     </div>
 
     <p>New to the game? <a href="about.html">Read how to play</a>, including every gesture and key. Curious how it was made? Read <a href="story.html">the story of the game</a>.</p>
+
+    <div class="panel">
+      <h2>More on this site</h2>
+      <ul>
+        <li><a href="events.html">Events calendar</a>: what is on now, what is coming, and your own best runs.</li>
+        <li><a href="stats.html">Game Stats</a>: your time played, runs, best scores and medals.</li>
+        <li><a href="backups.html">Score Backups</a>: keep your scores safe in a file, and restore them anywhere.</li>
+        <li><a href="accessibility.html">Accessibility</a>: display options, and how to set up your device and screen reader.</li>
+        <li><a href="faq.html">Frequently asked questions</a>, including how the website and Windows versions differ.</li>
+      </ul>
+    </div>
   </main>
-  <footer class="site">
-    <h2>Contact</h2>
-    <p>Endless Labyrinth is made by Russell Hinderman (DevHinderman2026). Questions, ideas or problems: <span data-contact>russellhinderman425 at gmail dot com</span>.</p>
-    <p>Copyright 2026 Russell Hinderman. All rights reserved. The game is AI assisted: written with Claude, by Anthropic, under Russell's direction.</p>
-  </footer>
+  <footer class="site"></footer>
   <script type="module" src="js/site.js"></script>
 </body>
 </html>
