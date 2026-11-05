@@ -9,7 +9,7 @@
 
 import { EngineMixin, S_EVENT, S_EVENTS_MENU, S_EVENT_SCORES, EVENT_ROOM_GAIN, EVENT_SQUARE_HALF } from './events/engine.js';
 import { MissionsMixin } from './events/missions.js';
-import { eventHelp } from './events/help.js';
+import { eventHelp, eventDemos } from './events/help.js';
 
 export default {
   name: 'events',
@@ -103,7 +103,7 @@ export default {
     return `${ev.name}. ${p} points.` + (game.evClock ? ` ${Math.max(0, Math.trunc(game.timeLeft))} seconds.` : '');
   },
 
-  help: { sections: [['Events', eventHelp()]], demos: [] },
+  help: { sections: [['Events', eventHelp()]], demos: [['Demos, Events', eventDemos()]] },
 
   inputStates: {
     [S_EVENTS_MENU]: (game, g) => game.eventsMenuInput(g),

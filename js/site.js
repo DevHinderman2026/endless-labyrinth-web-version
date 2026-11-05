@@ -18,6 +18,7 @@ export const NAV = [
   ['index.html', 'Home'],
   ['play.html', 'Play'],
   ['about.html', 'About and how to play'],
+  ['help.html', 'Help'],
   ['story.html', 'The Story of the Game'],
   ['credits.html', 'Credits'],
   ['history.html', 'Update History'],
@@ -32,7 +33,6 @@ export const FOOTER_LINKS = [
   ['terms.html', 'Terms of Use'],
   ['privacy.html', 'Privacy Policy'],
   ['accessibility-statement.html', 'Accessibility Statement'],
-  ['faq.html', 'Frequently asked questions'],
 ];
 
 const user = ['russell', 'hinderman', '425'].join('');

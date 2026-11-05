@@ -101,6 +101,12 @@ const HELP = (() => {
 })();
 export { HELP, isRunState, modeOf };
 
+// The room a help section's demos ring in (the website's Help page uses it too).
+export function helpRoomFor(name) {
+  return (name.includes('Standard') || name.includes('Chaos')) ? 'lab'
+    : name.includes('Tower') ? 'tower' : name.includes('Battle') ? 'battle' : null;
+}
+
 // ------------------------------------------------------------------ helpers
 const rand = Math.random;
 const uniform = (a, b) => a + (b - a) * rand();
@@ -1064,8 +1070,7 @@ export class Game {
     this.audio.play('menu_move');
     const [name, items] = HELP[this.helpCat];
     const sec = items[this.helpIndex];
-    this.helpRoom = (name.includes('Standard') || name.includes('Chaos')) ? 'lab'
-      : name.includes('Tower') ? 'tower' : name.includes('Battle') ? 'battle' : null;
+    this.helpRoom = helpRoomFor(name);
     this.audio.setRoom(this._currentRoom());
     const sound = sec.sound;
     if (sound) this.audio.prepare(sound);

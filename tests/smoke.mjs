@@ -31,7 +31,7 @@ check(!(await page.locator('#computer-note').isVisible()), 'a Linux computer is 
 // Web 1.1.0: every page's site links and footer are built by script from one
 // list, and every link they carry leads to a page that exists (an http.server
 // answers 404 for a missing one).
-const SITE_PAGES = ['index.html', 'about.html', 'credits.html', 'history.html', 'story.html', 'events.html', 'stats.html', 'backups.html', 'accessibility.html', 'terms.html', 'privacy.html', 'accessibility-statement.html', 'faq.html'];
+const SITE_PAGES = ['index.html', 'about.html', 'credits.html', 'history.html', 'story.html', 'events.html', 'stats.html', 'backups.html', 'accessibility.html', 'terms.html', 'privacy.html', 'accessibility-statement.html', 'help.html'];
 for (const pg of SITE_PAGES) {
   await page.goto(base + '/' + pg);
   check(await page.locator('nav.site a[href="history.html"]').count() === 1, `${pg} links to the Update History`);
@@ -94,17 +94,18 @@ await page.goto(base + '/story.html');
   for (const id of ids) if (!(await page.locator('#' + id).count())) missing.push(id);
   check(ids.length >= 8 && missing.length === 0, `every link in the story's contents has its section (${ids.length}) ${missing}`);
 }
+// Web 1.3.0: the old questions page forwards to the Help page, opened at the
+// frequently asked questions; the footer no longer links to it.
 await page.goto(base + '/faq.html');
+await page.waitForURL(/help\.html#faq$/);
+await page.waitForFunction(() => document.querySelector('#faq button.topic-toggle') && document.querySelector('#faq button.topic-toggle').getAttribute('aria-expanded') === 'true');
 {
-  const ids = await page.locator('nav.contents a').evaluateAll((as) => as.map((a) => a.getAttribute('href').slice(1)));
-  const missing = [];
-  for (const id of ids) if (!(await page.locator('#' + id).count())) missing.push(id);
-  const first = await page.locator('nav.contents a').first().textContent();
-  check(ids.length === 7 && missing.length === 0 && /difference between the website version and the Windows version/.test(first), `the FAQ's seven questions each have their answer, the versions question first ${missing}`);
-  check(await page.locator('footer.site nav a[href="faq.html"][aria-current="page"]').count() === 1, 'the FAQ is in the footer and marked current');
+  const qs = await page.locator('#faq-panel h3').allTextContents();
+  check(qs.length === 7 && /difference between the website version and the Windows version/.test(qs[0]), `the old questions page opens Help at the seven questions, the versions question first: ${qs.length}`);
+  check(await page.locator('footer.site nav a[href="faq.html"]').count() === 0, 'the footer no longer links to the old questions page');
 }
 await page.goto(base + '/history.html');
-check((await page.locator('main h2').allTextContents()).join(' | ').startsWith('1.2.0'), 'the Update History lists the newest version first');
+check((await page.locator('main h2').allTextContents()).join(' | ').startsWith('1.3.0'), 'the Update History lists the newest version first');
 await page.goto(base + '/credits.html');
 check((await page.locator('ul.credits li').count()) === 314, 'credits list the recordings');
 

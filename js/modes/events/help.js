@@ -1,14 +1,23 @@
 // The help section "Events" (the desktop's _event_help in event_engine.py), with
 // keys turned into gestures and otherwise word for word. On the desktop the item
-// sounds' demos are part of this section, at its end, and so they are here.
+// sounds' demos are part of this section, at its end; on the web they are their
+// own section, "Demos, Events", after the other demos (web 1.3.0, Russell's
+// decision), so the game's help and the website's Help page match. Topics that
+// explain something and also play its sound (the bell, the mission sounds) stay
+// in Events.
 
 import { THEMES } from './schema.js';
 
 const title = (s) => s.charAt(0).toUpperCase() + s.slice(1);
 
-export function eventHelp() {
+// "Demos, Events": every item sound, then every collected sound.
+export function eventDemos() {
   const demos = Object.entries(THEMES).map(([name, desc]) => ({ title: `${title(name)} Item`, desc, sound: `event_beacon_${name}` }));
   demos.push(...Object.keys(THEMES).map((name) => ({ title: `${title(name)} Collected`, desc: `Collecting a ${name}.`, sound: `event_pickup_${name}` })));
+  return demos;
+}
+
+export function eventHelp() {
   return [
     { title: 'Events', desc: 'Events are special challenges that are only open for a '
       + 'while: anything from half an hour to a few weeks. Choose Events on the main menu '
@@ -157,6 +166,5 @@ export function eventHelp() {
       + 'missed checkpoint or a lost guide. At the end you hear how long the run lasted.', sound: null },
     { title: 'Events The Bell', desc: 'A deep bell tolls when an event run begins, and '
       + 'tolls twice, falling, when it ends.', sound: 'event_toll' },
-    ...demos,
   ];
 }

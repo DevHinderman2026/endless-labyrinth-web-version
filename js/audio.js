@@ -172,6 +172,26 @@ export class AudioEngine {
   // ---------------------------------------------------------------- loading
   async load(onProgress) {
     const packs = await loadPacks(onProgress);
+    await this.attach(packs);
+    // Everything small is decoded now; the long recordings when first needed.
+    const small = [];
+    for (const [name, pair] of this.entries) {
+      for (const kind of ['dry', 'dull']) {
+        const e = pair[kind];
+        // (A lazy entry, such as the event library's, is decoded only when an event uses it.)
+        if (e && e.frames <= BIG_FRAMES && !e.lazy) small.push(this._decode(kind + ':' + name, e));
+      }
+    }
+    for (const base of ['lab', 'battle', 'tower', 'tunnel', 'cathedral', 'hall']) {
+      for (let t = 0; t < (this.irEntries.get(base) || []).length; t++) small.push(this._irBuffer(base, t));
+    }
+    await Promise.all(small);
+  }
+
+  // The packs' entries, known by name; nothing is decoded until it is asked for.
+  // The game calls this through load(); the website's Help page calls it with
+  // packs read one sound at a time (packs.js openPacks).
+  async attach(packs) {
     for (const pack of packs) {
       for (const e of pack.entries) {
         e.pack = pack;
@@ -186,22 +206,15 @@ export class AudioEngine {
     }
     // The events' warp numbers (data, not a sound), read once now.
     const wd = (this.entries.get('event_warp_draws') || {}).data;
-    if (wd) {
+    if (wd && !wd.pack.remote) {
       try { this.warpDraws = JSON.parse(new TextDecoder().decode(await wd.pack.read(wd))); } catch (e) { this.warpDraws = {}; }
     }
-    // Everything small is decoded now; the long recordings when first needed.
-    const small = [];
-    for (const [name, pair] of this.entries) {
-      for (const kind of ['dry', 'dull']) {
-        const e = pair[kind];
-        // (A lazy entry, such as the event library's, is decoded only when an event uses it.)
-        if (e && e.frames <= BIG_FRAMES && !e.lazy) small.push(this._decode(kind + ':' + name, e));
-      }
-    }
-    for (const base of ['lab', 'battle', 'tower', 'tunnel', 'cathedral', 'hall']) {
-      for (let t = 0; t < (this.irEntries.get(base) || []).length; t++) small.push(this._irBuffer(base, t));
-    }
-    await Promise.all(small);
+  }
+
+  // A room's echo, decoded so a sound can ring in it (the Help page's demos).
+  async prepareRoom(base) {
+    const takes = (this.irEntries.get(base) || []).length;
+    for (let t = 0; t < takes; t++) await this._irBuffer(base, t);
   }
 
   has(name) { return this.entries.has(name); }

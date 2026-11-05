@@ -6,13 +6,13 @@ A 3D audio game for phones, tablets and computers, played by ear with headphones
 
 ## What is here
 
-- `index.html`, `about.html`, `story.html`, `credits.html`, `history.html`, `events.html`, `stats.html`, `backups.html`, `accessibility.html`, `terms.html`, `privacy.html`, `accessibility-statement.html`, `faq.html`: the website. `about.html` teaches how to play, gestures and keys included. `history.html` is the Update History, the players' release notes: each new version goes at the top, with its date and what changed for players. The web version has its own version numbers (1.2.0 now), separate from the Windows game's. The site links and the footer (contact, the legal pages, the FAQ and the share buttons) are built on every page by `js/site.js`, from one list: a new page is added there once.
+- `index.html`, `about.html`, `story.html`, `credits.html`, `history.html`, `events.html`, `stats.html`, `backups.html`, `accessibility.html`, `help.html`, `terms.html`, `privacy.html`, `accessibility-statement.html`: the website. `faq.html` only forwards to `help.html#faq`, where the frequently asked questions now live (web 1.3.0). `about.html` teaches how to play, gestures and keys included. `history.html` is the Update History, the players' release notes: each new version goes at the top, with its date and what changed for players. The web version has its own version numbers (1.3.0 now), separate from the Windows game's. The site links and the footer (contact, the legal pages and the share buttons) are built on every page by `js/site.js`, from one list: a new page is added there once.
 - `play.html`: the game.
 - `js/`: the game.
   - `game.js`: Standard and Battle modes, the menus and help, ported from the Windows game's `endless_labyrinth.py` (Windows version 1.0.1), with the same names and numbers so the two can be compared.
   - `modes/`: the other modes, each a plug-in listed in `modes/index.js`: `driving.js`, `tower.js`, `island.js`, `chaos.js` and `events.js` (with `events/`, the port of the desktop's event engine, missions, schema and signature check).
   - `device.js`: tells iPhones, iPads, Android phones and tablets, Chromebooks, Macs and Linux computers apart; Windows computers are refused. An iPhone is told from an iPad by the size of its screen (web 1.1.0).
-  - `site.js`: the site links, the footer and the share buttons on every page of the website. `display.js`: the display options (high contrast, bigger text) applied on every page. `calendar.js`, `stats.js`, `backup.js` and `backups-page.js`, `accessibility.js`: the Events calendar, Game Stats, Score Backups and Accessibility pages.
+  - `site.js`: the site links, the footer and the share buttons on every page of the website. `display.js`: the display options (high contrast, bigger text) applied on every page. `calendar.js`, `stats.js`, `backup.js` and `backups-page.js`, `accessibility.js`, `help-page.js` (the Help page, built from the game's own help; demos read one sound at a time with `packs.js` `openPacks`): the Events calendar, Game Stats, Score Backups, Accessibility and Help pages.
   - `audio.js`: the sound engine, the desktop's mixer rebuilt on the Web Audio API: left and right levels, the dull "behind you" copy, and the room echo.
   - `gestures.js`: touch gestures turned into the game's keys, including running (slide up and hold) and walking backwards (hold still), which the game steps in `game.js` (web 1.2.0). A Bluetooth keyboard works too.
   - `speech.js`: the game's own voice, through the browser.
@@ -21,7 +21,7 @@ A 3D audio game for phones, tablets and computers, played by ear with headphones
   - `help-data.js`: the help menu.
   - `sound-rules.js`: made from the desktop game by the pack builder, which also writes the Credits page's list. Do not edit them by hand.
 - `packs/`: the sound packs and `manifest.json`, which names them. No sound is ever on the site as its own file: everything travels inside the packs.
-- `tests/`: end-to-end checks in a real browser engine (see below): `smoke.mjs`, one file per mode, `devices.mjs`, `computers.mjs`, `stride.mjs` (running and walking backwards on a touch screen), `keywords.mjs`, `eventwords.mjs`, and for the website's pages `calendar.mjs`, `stats.mjs`, `backups.mjs`, `accessibility.mjs`, `legal.mjs` and `share.mjs`.
+- `tests/`: end-to-end checks in a real browser engine (see below): `smoke.mjs`, one file per mode, `devices.mjs`, `computers.mjs`, `stride.mjs` (running and walking backwards on a touch screen), `keywords.mjs`, `eventwords.mjs`, and for the website's pages `calendar.mjs`, `stats.mjs`, `backups.mjs`, `accessibility.mjs`, `legal.mjs`, `share.mjs` and `help.mjs`.
 
 ## The sound packs
 
