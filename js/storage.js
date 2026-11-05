@@ -54,8 +54,9 @@ export class Store {
     this.stats = emptyStats();  // seconds played and runs started, per mode (web 1.1.0)
     this._statsUnsaved = 0;     // seconds of play not yet written
     this.load();
-    // The game can be open twice (a Home Screen copy and a Safari tab): what one
-    // saves, the other takes in, so neither erases the other's records.
+    // The game can be open twice in the same browser (two tabs): what one saves,
+    // the other takes in, so neither erases the other's records. (On an iPhone or
+    // iPad a Home Screen copy has storage of its own, separate from Safari's.)
     try { window.addEventListener('storage', (e) => { if (e.key === KEY) this._merge(); }); } catch (e) { /* none */ }
   }
 

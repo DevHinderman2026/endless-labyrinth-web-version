@@ -38,6 +38,9 @@ for (const pg of SITE_PAGES) {
   check(await page.locator('nav.site a[href="story.html"]').count() === 1, `${pg} links to the Story of the Game`);
   check(await page.locator('nav.site a[href="play.html"]').count() === 1, `${pg} links to Play`);
   check(await page.locator('footer.site a[href^="mailto:russell"]').count() === 1, `${pg} has the contact address in its footer`);
+  // Web 1.1.1: the footer has no heading over its links; its headings are Contact and Share this site.
+  const footHeads = await page.locator('footer.site h2').allTextContents();
+  check(footHeads.join('|') === 'Contact|Share this site', `${pg}: the footer's headings are Contact and Share this site only: ${footHeads.join(', ')}`);
   const current = await page.locator('nav.site a[aria-current="page"], footer.site nav a[aria-current="page"]').first().getAttribute('href');
   check(current === pg, `${pg} marks itself as the current page: ${current}`);
 }
@@ -60,6 +63,10 @@ for (const pg of SITE_PAGES) {
   await np.goto(base + '/about.html');
   const button = np.locator('nav.site button.menu-toggle');
   check(await button.isVisible() && (await button.textContent()) === 'Site links menu', 'a narrow screen shows the Site links menu button');
+  // Web 1.1.1: its name, as a screen reader reads it, is exactly that (no arrow symbol from the style sheet).
+  check(await np.getByRole('button', { name: 'Site links menu', exact: true }).count() === 1, 'the button is read as exactly "Site links menu"');
+  const generated = await button.evaluate((b) => [getComputedStyle(b, '::before').content, getComputedStyle(b, '::after').content]);
+  check(generated.every((c) => c === 'none' || c === 'normal'), `no symbol is added to the button by the style sheet: ${generated}`);
   check((await button.getAttribute('aria-expanded')) === 'false' && !(await np.locator('nav.site a[href="story.html"]').isVisible()), 'the links start folded away');
   await button.click();
   check((await button.getAttribute('aria-expanded')) === 'true' && (await np.locator('nav.site a[href="story.html"]').isVisible()), 'tapping the button expands the links');
@@ -97,7 +104,7 @@ await page.goto(base + '/faq.html');
   check(await page.locator('footer.site nav a[href="faq.html"][aria-current="page"]').count() === 1, 'the FAQ is in the footer and marked current');
 }
 await page.goto(base + '/history.html');
-check((await page.locator('main h2').allTextContents()).join(' | ').startsWith('1.1.0'), 'the Update History lists the newest version first');
+check((await page.locator('main h2').allTextContents()).join(' | ').startsWith('1.1.1'), 'the Update History lists the newest version first');
 await page.goto(base + '/credits.html');
 check((await page.locator('ul.credits li').count()) === 314, 'credits list the recordings');
 

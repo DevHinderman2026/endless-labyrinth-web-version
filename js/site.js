@@ -94,7 +94,10 @@ export function buildNav() {
 // share. (Facebook's and X's embeddable buttons would load their code with every
 // page, and Facebook's needs a developer app; the share pages need neither.)
 export const SHARE_TEXT = 'Endless Labyrinth: a 3D audio game played by ear with headphones, in the browser of a phone, tablet or computer.';
-export function shareTargets(url = location.href, text = SHARE_TEXT) {
+// The link that is shared: this page, without a #section or ?query (web 1.1.1).
+export function pageLink() { return location.origin + location.pathname; }
+
+export function shareTargets(url = pageLink(), text = SHARE_TEXT) {
   const u = encodeURIComponent(url); const t = encodeURIComponent(text);
   return [
     ['Facebook', `https://www.facebook.com/sharer/sharer.php?u=${u}`],
@@ -117,17 +120,17 @@ function shareBlock() {
   const copy = el('button', { type: 'button', class: 'share-button', text: 'Copy the link' });
   copy.addEventListener('click', async () => {
     try {
-      await navigator.clipboard.writeText(location.href);
+      await navigator.clipboard.writeText(pageLink());
       status.textContent = 'Link copied.';
     } catch (e) {
-      status.textContent = 'The link could not be copied; it is ' + location.href;
+      status.textContent = 'The link could not be copied; it is ' + pageLink();
     }
   });
   ul.append(el('li', {}, [copy]));
   if (typeof navigator !== 'undefined' && navigator.share) {
     const more = el('button', { type: 'button', class: 'share-button', text: 'Share using your device' });
     more.addEventListener('click', async () => {
-      try { await navigator.share({ title: 'Endless Labyrinth', text: SHARE_TEXT, url: location.href }); status.textContent = 'Shared.'; } catch (e) { if (!(e && e.name === 'AbortError')) status.textContent = 'Sharing did not work here.'; }
+      try { await navigator.share({ title: 'Endless Labyrinth', text: SHARE_TEXT, url: pageLink() }); status.textContent = 'Shared.'; } catch (e) { if (!(e && e.name === 'AbortError')) status.textContent = 'Sharing did not work here.'; }
     });
     ul.append(el('li', {}, [more]));
   }
@@ -144,8 +147,8 @@ export function buildFooter() {
     el('p', { text: 'Copyright 2026 Russell Hinderman. All rights reserved. The game is AI assisted: written with Claude, by Anthropic, under Russell\'s direction.' }),
   ];
   if (FOOTER_LINKS.length) {
-    const more = el('nav', { 'aria-label': 'More about this site', class: 'footer-links' }, [linkList(FOOTER_LINKS, currentPage())]);
-    parts.push(el('h2', { text: 'More about this site' }), more);
+    // No heading of its own (web 1.1.1): the links sit under the contact lines.
+    parts.push(el('nav', { 'aria-label': 'Site information', class: 'footer-links' }, [linkList(FOOTER_LINKS, currentPage())]));
   }
   parts.push(el('h2', { text: 'Share this site' }), shareBlock());
   footer.replaceChildren(...parts);

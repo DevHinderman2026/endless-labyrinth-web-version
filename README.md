@@ -6,7 +6,7 @@ A 3D audio game for phones, tablets and computers, played by ear with headphones
 
 ## What is here
 
-- `index.html`, `about.html`, `story.html`, `credits.html`, `history.html`, `events.html`, `stats.html`, `backups.html`, `accessibility.html`, `terms.html`, `privacy.html`, `accessibility-statement.html`, `faq.html`: the website. `about.html` teaches how to play, gestures and keys included. `history.html` is the Update History, the players' release notes: each new version goes at the top, with its date and what changed for players. The web version has its own version numbers (1.1.0 now), separate from the Windows game's. The site links and the footer (contact, the legal pages, the FAQ and the share buttons) are built on every page by `js/site.js`, from one list: a new page is added there once.
+- `index.html`, `about.html`, `story.html`, `credits.html`, `history.html`, `events.html`, `stats.html`, `backups.html`, `accessibility.html`, `terms.html`, `privacy.html`, `accessibility-statement.html`, `faq.html`: the website. `about.html` teaches how to play, gestures and keys included. `history.html` is the Update History, the players' release notes: each new version goes at the top, with its date and what changed for players. The web version has its own version numbers (1.1.1 now), separate from the Windows game's. The site links and the footer (contact, the legal pages, the FAQ and the share buttons) are built on every page by `js/site.js`, from one list: a new page is added there once.
 - `play.html`: the game.
 - `js/`: the game.
   - `game.js`: Standard and Battle modes, the menus and help, ported from the Windows game's `endless_labyrinth.py` (Windows version 1.0.1), with the same names and numbers so the two can be compared.

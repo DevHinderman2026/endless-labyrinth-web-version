@@ -48,8 +48,6 @@ nav.site .menu-toggle {
   padding: 0.6rem 1rem;
   cursor: pointer;
 }
-nav.site .menu-toggle::after { content: " \25BE"; }
-nav.site.open .menu-toggle::after { content: " \25B4"; }
 @media (max-width: 40rem) {
   nav.site .menu-toggle { display: inline-block; }
   nav.site ul { display: none; flex-direction: column; gap: 0.75rem; margin-top: 0.75rem; }

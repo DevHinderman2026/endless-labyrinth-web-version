@@ -26,6 +26,13 @@ for (const pg of ['index.html', 'story.html']) {
   check(links[4][1].startsWith('mailto:?subject=Endless%20Labyrinth&body=') && links[4][2] === null, `${pg}: Email is a mailto link`);
   check(await page.locator('footer.site nav.share button', { hasText: 'Copy the link' }).count() === 1, `${pg}: a Copy the link button`);
 }
+// Web 1.1.1: from a link to a section, the page itself is shared, not the section.
+await page.goto(base + '/terms.html#s22');
+{
+  const fb = await page.locator('footer.site nav.share a').first().getAttribute('href');
+  check(fb === `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(base + '/terms.html')}`, `a section link shares the page itself: ${decodeURIComponent(fb.split('u=')[1])}`);
+}
+await page.goto(base + '/story.html');
 check(outside.filter((u) => !/api\.github\.com/.test(u)).length === 0, `nothing outside this site is loaded with the page: ${outside.filter((u) => !/api\.github\.com/.test(u))}`);
 check(await page.locator('script[src*="facebook"], script[src*="twitter"], script[src*="x.com"]').count() === 0, 'no Facebook or X script on the page');
 await page.locator('footer.site nav.share button', { hasText: 'Copy the link' }).click();
