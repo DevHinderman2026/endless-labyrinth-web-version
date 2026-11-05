@@ -58,6 +58,10 @@ const BATTLE_DRUMS = ['drm_01_tribe_loop', 'drm_02_horde_war', 'drm_03_loop_75',
   'drm_05_ancient_war', 'drm_06_tribal_beat', 'drm_07_tribal_drums', 'drm_08_hybrid_epic', 'drm_09_djembe'];
 const BANKS = { lab: LABYRINTH_DRONES, battle_amb: BATTLE_DRONES, battle_beat: BATTLE_DRUMS };
 const STEPS = ['step_stone_1', 'step_stone_2', 'step_stone_3', 'step_stone_4'];
+// Running and walking backwards on a touch screen (web 1.2.0, Russell's tempos:
+// first 190 and 120, then 280 and 200, the same day).
+export const RUN_STEPS_PER_MINUTE = 280;
+export const BACK_STEPS_PER_MINUTE = 200;
 
 const S = {
   MENU: 'menu', HELP: 'help', STANDARD: 'standard', BATTLE: 'battle', GAME_OVER: 'game_over',
@@ -296,6 +300,7 @@ export class Game {
   // -------------------------------------------------------------- state
   resetGameState() {
     this.runId += 1;
+    this.stride = null;          // a run or backward walk never carries into a new run
     this.battleSteps = [];
     for (const v of this.pausedVoices) v.stop();
     this.pausedVoices = [];
@@ -1083,6 +1088,7 @@ export class Game {
     this.lastInputAt = performance.now();
     this._checkSound();
     if (this.state === S.PRACTICE) { this._practiceInput(g); return; }
+    if (g === 'run_start' || g === 'back_start' || g === 'stride_end') { this._strideInput(g); return; }
     for (const md of MODES) {
       const h = md.inputStates && md.inputStates[this.state];
       if (h) { h(this, g); return; }
@@ -1361,6 +1367,70 @@ export class Game {
     this.tts.speak(text);
   }
 
+  // -------------------------------------------------------------- running and walking back
+  // On a touch screen (web 1.2.0): slide up and hold to run, forward, at
+  // RUN_STEPS_PER_MINUTE; hold a finger still to walk backwards at
+  // BACK_STEPS_PER_MINUTE. Each step is the mode's own Up or Down step, exactly as
+  // a swipe makes it, so every mode and event treats it as it always has. Only
+  // lifting the finger ends it (stride_end); it also stops by itself (Russell's
+  // decisions) at a wall or the arena's edge, when a new level, floor, island or
+  // room begins, and whenever the run is paused or over. Turning is unchanged.
+
+  // Where the run is, so that a new level can be told from a step.
+  _strideSig() {
+    return [this.state, this.chaosMode, this.level, this.towerNumber, this.towerFloor, this.islandNumber,
+      this.islandPhase, !!this.islandRide, this.evLevel, this.mRoom, this.runId].join('|');
+  }
+
+  // Whether holding may repeat steps now: in a run, not paused, not driving, and
+  // not where Up and Down are answers rather than steps (a reflex event).
+  _canStride() {
+    if (!this.playing || this.isPaused) return false;
+    const md = this.mode;
+    const gm = md && md.gestureMode ? md.gestureMode(this) : null;
+    if (gm && gm !== 'run') return false;
+    if (this.ev && this.ev.mission === 'reflex') return false;
+    return true;
+  }
+
+  // One step of a run or a backward walk; false when it did not carry on as an
+  // ordinary step (a wall, the edge, a new level, the end of the run).
+  _strideStep(dir) {
+    const before = [...this.playerPos];
+    const sig = this._strideSig();
+    this.input(dir);
+    if (!this.playing || this.isPaused || this._strideSig() !== sig) return false;
+    const dx = this.playerPos[0] - before[0];
+    const dy = this.playerPos[1] - before[1];
+    const moved = dir === 'up' ? -dy : dy;
+    return Math.abs(dx) < 1e-6 && moved > 0.5 && moved < 3.5;
+  }
+
+  _strideInput(g) {
+    if (g === 'stride_end') { this.stride = null; return; }
+    const dir = g === 'run_start' ? 'up' : 'down';
+    this.stride = null;
+    if (!this._canStride()) {
+      // A slide up is still the swipe up it starts with (a reflex answer, say);
+      // a held finger is nothing.
+      if (g === 'run_start') this.input('up');
+      return;
+    }
+    if (this._strideStep(dir)) {
+      this.stride = { dir, every: 60 / (dir === 'up' ? RUN_STEPS_PER_MINUTE : BACK_STEPS_PER_MINUTE), t: 0 };
+    }
+  }
+
+  _tickStride(dt) {
+    const s = this.stride;
+    if (!s) return;
+    if (!this._canStride()) { this.stride = null; return; }
+    s.t += dt;
+    if (s.t + 1e-9 < s.every) return;
+    s.t -= s.every;
+    if (!this._strideStep(s.dir)) this.stride = null;
+  }
+
   // -------------------------------------------------------------- gesture practice
   _startPractice() {
     this.state = S.PRACTICE;
@@ -1368,7 +1438,7 @@ export class Game {
     this.scores.settings.practiced = true;
     this.scores.save();
     this.tts.speak('Gesture practice. Try any gesture and the game says what it felt. '
-      + 'Swipe in four directions, double tap, triple tap, tap four times, tap with two fingers or with three. '
+      + 'Swipe in four directions, slide up and hold, hold a finger still, double tap, triple tap, tap four times, tap with two fingers or with three. '
       + 'Triple tap twice in a row to leave, or wait twenty seconds.');
   }
 
@@ -1392,6 +1462,32 @@ export class Game {
       return;
     }
     this.practiceBackAt = 0;
+    // Slide up and hold, hold still, and lifting (web 1.2.0). A slide up that
+    // lifts at once is a plain swipe up, as it is in a run.
+    if (g === 'run_start') {
+      clearTimeout(this.practiceRunTimer);
+      this.practiceRunTimer = setTimeout(() => {
+        this.practiceRunTimer = null;
+        if (this.state !== S.PRACTICE) return;
+        this.audio.play('menu_move');
+        this.tts.speak('Slide up and hold. In a run, you run forward until you lift your finger.');
+      }, 60000 / RUN_STEPS_PER_MINUTE);
+      return;
+    }
+    if (g === 'stride_end') {
+      this.audio.play('menu_move');
+      if (this.practiceRunTimer) {
+        clearTimeout(this.practiceRunTimer);
+        this.practiceRunTimer = null;
+        this.tts.speak(names.up);
+      } else this.tts.speak('Lifted. In a run, that stops you.');
+      return;
+    }
+    if (g === 'back_start') {
+      this.audio.play('menu_move');
+      this.tts.speak('Holding still. In a run, you walk backwards until you lift your finger.');
+      return;
+    }
     this.audio.play('menu_move');
     this.tts.speak(names[g] || g);
   }
@@ -1525,7 +1621,7 @@ export class Game {
     this._countStats(dt);
     const md = this.mode;
     const gm = md && md.gestureMode ? md.gestureMode(this) : null;
-    this.gestures.setMode(this.playing && !this.isPaused ? (gm || 'run') : 'menu');
+    this.gestures.setMode(this.playing && !this.isPaused ? (gm || 'run') : this.state === S.PRACTICE ? 'practice' : 'menu');
     if (this.state === S.PRACTICE && performance.now() - (this.lastInputAt || 0) > 20000) {
       this.menuIndex = this.menuKeys.indexOf('practice');
       this._toMenu('Gesture practice closed. ');
@@ -1535,6 +1631,7 @@ export class Game {
     else if (this.state === S.BATTLE) this.updateBattleMode(dt);
     else if (md && md.update) md.update(this, dt);
     for (const m of MODES) if (m.tick) m.tick(this, dt);
+    this._tickStride(dt);
     this.view(this._statusLine());
   }
 

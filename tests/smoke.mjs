@@ -104,7 +104,7 @@ await page.goto(base + '/faq.html');
   check(await page.locator('footer.site nav a[href="faq.html"][aria-current="page"]').count() === 1, 'the FAQ is in the footer and marked current');
 }
 await page.goto(base + '/history.html');
-check((await page.locator('main h2').allTextContents()).join(' | ').startsWith('1.1.2'), 'the Update History lists the newest version first');
+check((await page.locator('main h2').allTextContents()).join(' | ').startsWith('1.2.0'), 'the Update History lists the newest version first');
 await page.goto(base + '/credits.html');
 check((await page.locator('ul.credits li').count()) === 314, 'credits list the recordings');
 

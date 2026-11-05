@@ -53,7 +53,8 @@ const setup = await page.evaluate(async () => {
   };
 });
 check(setup.menu.indexOf('Chaos Mode') === setup.menu.indexOf('Island Mode') + 1
-  && setup.menu.indexOf('Events') === setup.menu.indexOf('Chaos Mode') + 1, 'the main menu has Chaos Mode between Island and Events: ' + setup.menu.join(', '));
+  // The Events item reads "Events" or, while GitHub is still being asked, "Events: checking".
+  && setup.menu.findIndex((m) => /^Events\b(?!.*High)/.test(m)) === setup.menu.indexOf('Chaos Mode') + 1, 'the main menu has Chaos Mode between Island and Events: ' + setup.menu.join(', '));
 const lineAt = (k) => setup.lines.findIndex((l) => l.startsWith(k));
 check(lineAt('Chaos Mode') === 2 && lineAt('Tower Mode') === 3 && lineAt('Driving Mode') === 4 && lineAt('Driving Distance') === 5
   && lineAt('Island Mode') === 6 && setup.lines.includes('Chaos Mode: No score yet'), 'the boards in the desktop\'s order: ' + setup.lines.join(' | '));
