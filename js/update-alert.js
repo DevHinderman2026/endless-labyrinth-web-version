@@ -1,10 +1,15 @@
-// The Windows update alert on the home page (web 1.4.0, Russell's design).
+// The Windows update alert on the home page (web 1.4.0, Russell's design; a region named Alert since the evening of 6 November 2026).
 //
 // When a new release of the Windows game is published on GitHub, the home page
 // opens with an alert, for everyone, saying that an update is available and that
-// downloading it is strongly recommended, with a link to the release. It is a
-// real alert region (role="alert"), so a screen reader announces it as soon as it
-// appears, the way Google's sites announce theirs, and it cannot be dismissed.
+// downloading it is strongly recommended, with a link to the release. It cannot be
+// dismissed.
+//
+// It is a REGION NAMED "Alert" (role="region", aria-label="Alert"), the way Google's
+// sites do it: a screen reader says "Alert, region" on entering it and "end of
+// region" on leaving, and lists it among the page's landmarks. It is deliberately
+// not role="alert": a live alert speaks over whatever the screen reader is already
+// reading, which cut the player off (Russell, testing with VoiceOver).
 //
 // It appears by itself and goes away by itself, like an event: it shows for
 // ALERT_DAYS (30) after the latest release was published, judged by internet time
@@ -14,9 +19,9 @@
 // needs changing for it. Home page only (index.html loads this file; no other
 // page does).
 //
-// The alert is added by script, after the checks, rather than written into the
-// page: an alert that is in the HTML when the page loads is not announced by
-// every screen reader, while one inserted later is.
+// The region is added by script, after the checks, at the very top of the page, so
+// it is the first thing a screen reader reaches; being a plain region, not a live
+// one, it never interrupts.
 
 import { el } from './site.js';
 
@@ -65,7 +70,7 @@ export function alertText(version) {
 }
 
 export function buildAlert(release) {
-  return el('div', { role: 'alert', class: 'site-alert', id: 'windows-update-alert' }, [
+  return el('section', { role: 'region', 'aria-label': 'Alert', class: 'site-alert', id: 'windows-update-alert' }, [
     el('p', {}, [
       el('strong', { text: 'Update available for Windows: ' }),
       `Endless Labyrinth ${release.version} includes important bug fixes and stability improvements that make `

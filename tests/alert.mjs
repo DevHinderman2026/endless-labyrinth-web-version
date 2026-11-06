@@ -1,4 +1,4 @@
-// The Windows update alert on the home page (web 1.4.0): shown as an alert region
+// The Windows update alert on the home page (web 1.4.0; a region named Alert since the evening of 6 November 2026, never a live alert),
 // for 30 days after the latest release, by internet time; on the home page only;
 // never when GitHub or the time cannot be reached; and with no way to dismiss it.
 //   node tests/alert.mjs http://localhost:8765
@@ -25,9 +25,11 @@ async function open(path, release, { github = true } = {}) {
   await page.goto(base + path);
   await page.waitForTimeout(1200);
   const alert = await page.evaluate(() => {
-    const a = document.querySelector('[role="alert"]');
+    const a = document.getElementById('windows-update-alert');
     if (!a) return null;
     return {
+      role: a.getAttribute('role'), label: a.getAttribute('aria-label'), live: a.getAttribute('aria-live'),
+      liveAlerts: document.querySelectorAll('[role="alert"]').length, tag: a.tagName,
       id: a.id, text: a.textContent.trim(), first: document.body.firstElementChild === a,
       link: a.querySelector('a') ? a.querySelector('a').getAttribute('href') : null,
       buttons: a.querySelectorAll('button').length,
@@ -46,6 +48,8 @@ const edge = { ...fresh, published_at: new Date(Date.now() - 29 * day).toISOStri
   const { alert, errors } = await open('/index.html', fresh);
   check(alert && alert.id === 'windows-update-alert', 'a release two days old shows the alert on the home page');
   check(alert && alert.first, 'the alert is the first thing on the page');
+  check(alert && alert.role === 'region' && alert.label === 'Alert' && alert.tag === 'SECTION', `it is a region named Alert: ${alert && [alert.tag, alert.role, alert.label]}`);
+  check(alert && !alert.live && alert.liveAlerts === 0, 'it is not a live alert, so it never interrupts the screen reader');
   check(alert && /^Update available for Windows: Endless Labyrinth 2\.0\.0 includes important bug fixes and stability improvements that make gameplay considerably easier\. For the best experience, we strongly recommend downloading the update\. Download Endless Labyrinth 2\.0\.0 for Windows\.$/.test(alert.text), `the wording, with the version number: ${alert && alert.text}`);
   check(alert && alert.link === fresh.html_url, 'the link goes to the release');
   check(alert && alert.buttons === 0, 'there is nothing to dismiss it with');
@@ -81,7 +85,7 @@ for (const path of ['/about.html', '/play.html', '/help.html', '/events.html']) 
   });
   await page.goto(base + '/index.html');
   await page.waitForTimeout(1200);
-  const shown = await page.evaluate(() => !!document.querySelector('[role="alert"]'));
+  const shown = await page.evaluate(() => !!document.getElementById('windows-update-alert'));
   check(shown, 'a device clock a year ahead does not hide a fresh release (internet time decides)');
   await page.close();
 }
