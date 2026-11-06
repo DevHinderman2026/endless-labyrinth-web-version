@@ -6,16 +6,16 @@ import { HELP as BASE_HELP } from './help-data.js';
 import { MODES } from './modes/index.js';
 import { RATES } from './speech.js';
 import { keyboardDevice } from './device.js';
-import { addMade } from './modes/events/sounds.js';
 
 // ------------------------------------------------------------------ constants
 const FPS = 30;
 const BATTLE_AIM_PAN = 0.72;
 const BATTLE_SPAWN_PAN = 0.55;
 const BATTLE_AMMO_CLEARANCE = 14.0;
-const BATTLE_BREAK_START = 24.0;
-const BATTLE_BREAK_DECAY = 0.5;
-const BATTLE_BREAK_MIN = 10.0;
+// 2.0.0 (Russell, by ear): 45 seconds at the start, one fewer each wave, never under 30.
+const BATTLE_BREAK_START = 45.0;
+const BATTLE_BREAK_DECAY = 1.0;
+const BATTLE_BREAK_MIN = 30.0;
 const BATTLE_MAX_PICKUPS = 1;
 const BATTLE_PICKUP_BANDS = [[8.0, 16.0], [16.0, 26.0], [26.0, 38.0]];
 const BATTLE_BEAT_SWAP = [34.0, 62.0];
@@ -25,9 +25,11 @@ const BATTLE_TIME_ANNOUNCE = 60.0;
 const BATTLE_CREDIT_VALUES = [10, 15, 20];
 const BATTLE_CREDIT_WEIGHTS = [55, 30, 15];
 const BATTLE_EMERGENCY_DIST = [12.0, 26.0];
+const BATTLE_EMERGENCY_MIN_SHOTS = 3;   // the emergency cartridge finishes the wave, never fewer than this
 const BATTLE_CREDIT_MIN_DIST = 15.0;
 const BATTLE_CREDIT_GAIN = 0.7;
 const BATTLE_BREAK_COUNTDOWN = 5;
+const LAB_DENSITY_CAP = 0.25;            // the most of a labyrinth's cells that may be walls (2.0.0; was 0.35)
 const STANDARD_CREDIT_VALUES = [15, 20, 30];
 const STANDARD_CREDIT_WEIGHTS = [70, 22, 8];
 const STANDARD_CREDIT_CHANCE = 0.35;
@@ -60,22 +62,11 @@ const BATTLE_DRUMS = ['drm_01_tribe_loop', 'drm_02_horde_war', 'drm_03_loop_75',
 const BANKS = { lab: LABYRINTH_DRONES, battle_amb: BATTLE_DRONES, battle_beat: BATTLE_DRUMS };
 const STEPS = ['step_stone_1', 'step_stone_2', 'step_stone_3', 'step_stone_4'];
 // Running and walking backwards on a touch screen (web 1.2.0, Russell's tempos:
-// first 190 and 120, then 280 and 200, the same day).
+// first 190 and 120, then 280 and 200, the same day). Since web 1.4.0 the backward
+// walk is a slide down and hold, the mirror of the run; the still-finger walk, its
+// tick and its setting are gone.
 export const RUN_STEPS_PER_MINUTE = 280;
 export const BACK_STEPS_PER_MINUTE = 200;
-// The soft tick that says a still finger has started walking you backwards
-// (Russell's choice): made here, so it is like no other sound in the game.
-export const BACK_TICK = 'stride_back_tick';
-function backTick() {
-  const sr = 44100;
-  const n = Math.round(0.035 * sr);
-  const l = new Float64Array(n);
-  for (let i = 0; i < n; i++) {
-    const t = i / sr;
-    l[i] = Math.round(0.16 * 32767 * Math.sin(2 * Math.PI * 1800 * t) * Math.exp(-t / 0.008) * Math.min(1, t / 0.0015));
-  }
-  return [l, Float64Array.from(l)];
-}
 
 const S = {
   MENU: 'menu', HELP: 'help', STANDARD: 'standard', BATTLE: 'battle', GAME_OVER: 'game_over',
@@ -274,7 +265,6 @@ export class Game {
     this.reverbTick = 0;
     this.helpSavedRoomGain = null;
     for (const m of MODES) if (m.init) m.init(this);
-    try { addMade(this.audio, BACK_TICK, backTick()); } catch (e) { /* no tick: the steps still say it */ }
     this._refreshMenu();
     this.resetGameState();
     // The first drones, decoded ahead so a run starts with its air at once.
@@ -287,9 +277,7 @@ export class Game {
   _menuKeys() {
     // Gesture Practice is for touch screens: a computer is played with the keyboard.
     const practice = keyboardDevice() ? [] : ['practice'];
-    // Walking backwards by holding a finger is a touch gesture, so its setting is too.
-    const holdBack = keyboardDevice() ? [] : ['holdback'];
-    return ['standard', 'battle', ...this._menuItems().map((i) => i.key), 'scores', ...practice, 'rate', ...holdBack, 'leave'];
+    return ['standard', 'battle', ...this._menuItems().map((i) => i.key), 'scores', ...practice, 'rate', 'leave'];
   }
 
   _menuLabel(k) {
@@ -298,7 +286,6 @@ export class Game {
     return {
       standard: 'Standard Mode', battle: 'Battle Mode', scores: 'High Scores', practice: 'Gesture Practice',
       rate: `Speech Rate: ${this.tts.rateLevel} of ${RATES.length}`, leave: 'Leave Game',
-      holdback: `Walk Backwards by Holding: ${this._holdBackOn() ? 'On' : 'Off'}`,
     }[k];
   }
 
@@ -454,10 +441,14 @@ export class Game {
       gridSize = 8 + Math.floor(diff * 0.4);
       density = 0.04 + diff * 0.01;
     } else {
-      gridSize = 12 + (diff - 10);
-      density = 0.14 + (diff - 10) * 0.02;
+      // Past level 10 the labyrinth keeps growing, but gently (2.0.0, Russell's
+      // choice): one cell every two levels and one density point a level, never
+      // over a quarter walls. The old curve (a cell and two points a level, up to
+      // 35%) made level 20 a 36-step maze nobody could cross by ear in the time.
+      gridSize = 12 + Math.floor((diff - 10) / 2);
+      density = 0.14 + (diff - 10) * 0.01;
     }
-    density = Math.min(0.35, density);
+    density = Math.min(LAB_DENSITY_CAP, density);
     this.gridSize = gridSize;
     const minExitDist = Math.max(3.0, gridSize / 2.0);
     let validExits = [];
@@ -685,7 +676,9 @@ export class Game {
     this.battleEmergencyUsed = true;
     const p = new AmmoCartridge(this.playerPos, this.obstacles.map((o) => [o.x, o.y]),
       BATTLE_EMERGENCY_DIST[1], null, BATTLE_EMERGENCY_DIST[0]);
-    p.shots = Math.max(1, Math.min(left, this.obstacles.length || this._battleMaxConcurrent()));
+    // Enough to finish the wave, every enemy still to come included, and never fewer
+    // than three (2.0.0): one or two shots against a wave with ten to come was no rescue.
+    p.shots = Math.max(BATTLE_EMERGENCY_MIN_SHOTS, left);
     p.emergency = true;
     p.channel = this.audio.play('ammo_beacon', { loops: -1 });
     this.ammoPickups.push(p);
@@ -1193,8 +1186,6 @@ export class Game {
       this.tts.speak(this.menuOptions[this.menuIndex]);
     } else if ((g === 'left' || g === 'right') && k === 'rate') {
       this._changeRate(g === 'left' ? -1 : 1, false);
-    } else if ((g === 'left' || g === 'right') && k === 'holdback') {
-      this._setHoldBack(g === 'right');
     } else if (g === 'enter') {
       this.audio.play('menu_move');
       if (k === 'standard') this.startGame(S.STANDARD);
@@ -1206,27 +1197,11 @@ export class Game {
       } else if (k === 'practice') this._startPractice();
       else if (this._menuItems().some((i) => i.key === k)) this._menuItems().find((i) => i.key === k).select(this);
       else if (k === 'rate') this._changeRate(1, true);
-      else if (k === 'holdback') this._setHoldBack(!this._holdBackOn());
       else if (k === 'leave') {
         this.tts.speak('Leaving the game. You can turn your screen reader back on now.', { after: () => this.leave() });
         setTimeout(() => this.leave(), 6000);
       }
     }
-  }
-
-  // Walking backwards by holding a finger still: on unless the player turns it off
-  // (web 1.2.0). Off, a still finger does nothing again; running and swipes are
-  // unchanged.
-  _holdBackOn() { return this.scores.settings.holdBack !== false; }
-
-  _setHoldBack(on) {
-    this.scores.settings.holdBack = !!on;
-    this.scores.save();
-    this._refreshMenu();
-    this.audio.play('menu_move');
-    this.tts.speak(on
-      ? 'Walk backwards by holding, on. During a run, hold a finger still for half a second to walk backwards.'
-      : 'Walk backwards by holding, off. A finger held still does nothing; swipe down to step back.');
   }
 
   _changeRate(step, wrap) {
@@ -1410,7 +1385,7 @@ export class Game {
 
   // -------------------------------------------------------------- running and walking back
   // On a touch screen (web 1.2.0): slide up and hold to run, forward, at
-  // RUN_STEPS_PER_MINUTE; hold a finger still to walk backwards at
+  // RUN_STEPS_PER_MINUTE; slide down and hold (web 1.4.0) to walk backwards at
   // BACK_STEPS_PER_MINUTE. Each step is the mode's own Up or Down step, exactly as
   // a swipe makes it, so every mode and event treats it as it always has. Only
   // lifting the finger ends it (stride_end); it also stops by itself (Russell's
@@ -1452,14 +1427,9 @@ export class Game {
     const dir = g === 'run_start' ? 'up' : 'down';
     this.stride = null;
     if (!this._canStride()) {
-      // A slide up is still the swipe up it starts with (a reflex answer, say);
-      // a held finger is nothing.
-      if (g === 'run_start') this.input('up');
+      // A slide is still the swipe it starts with (a reflex answer, say).
+      this.input(dir);
       return;
-    }
-    if (g === 'back_start') {
-      if (!this._holdBackOn()) return;
-      this.audio.play(BACK_TICK, { volume: 0.6 });
     }
     if (this._strideStep(dir)) {
       this.stride = { dir, every: 60 / (dir === 'up' ? RUN_STEPS_PER_MINUTE : BACK_STEPS_PER_MINUTE), t: 0 };
@@ -1483,7 +1453,7 @@ export class Game {
     this.scores.settings.practiced = true;
     this.scores.save();
     this.tts.speak('Gesture practice. Try any gesture and the game says what it felt. '
-      + 'Swipe in four directions, slide up and hold, hold a finger still, double tap, triple tap, tap four times, tap with two fingers or with three. '
+      + 'Swipe in four directions, slide up and hold, slide down and hold, double tap, triple tap, tap four times, tap with two fingers or with three. '
       + 'Triple tap twice in a row to leave, or wait twenty seconds.');
   }
 
@@ -1507,16 +1477,20 @@ export class Game {
       return;
     }
     this.practiceBackAt = 0;
-    // Slide up and hold, hold still, and lifting (web 1.2.0). A slide up that
-    // lifts at once is a plain swipe up, as it is in a run.
-    if (g === 'run_start') {
+    // Slide up and hold, slide down and hold, and lifting (web 1.2.0 and 1.4.0). A
+    // slide that lifts within one step is a plain swipe, as it is in a run.
+    if (g === 'run_start' || g === 'back_start') {
+      const up = g === 'run_start';
       clearTimeout(this.practiceRunTimer);
+      this.practiceRunDir = up ? 'up' : 'down';
       this.practiceRunTimer = setTimeout(() => {
         this.practiceRunTimer = null;
         if (this.state !== S.PRACTICE) return;
         this.audio.play('menu_move');
-        this.tts.speak('Slide up and hold. In a run, you run forward until you lift your finger.');
-      }, 60000 / RUN_STEPS_PER_MINUTE);
+        this.tts.speak(up
+          ? 'Slide up and hold. In a run, you run forward until you lift your finger.'
+          : 'Slide down and hold. In a run, you walk backwards until you lift your finger.');
+      }, 60000 / (up ? RUN_STEPS_PER_MINUTE : BACK_STEPS_PER_MINUTE));
       return;
     }
     if (g === 'stride_end') {
@@ -1524,13 +1498,8 @@ export class Game {
       if (this.practiceRunTimer) {
         clearTimeout(this.practiceRunTimer);
         this.practiceRunTimer = null;
-        this.tts.speak(names.up);
+        this.tts.speak(names[this.practiceRunDir || 'up']);
       } else this.tts.speak('Lifted. In a run, that stops you.');
-      return;
-    }
-    if (g === 'back_start') {
-      this.audio.play(BACK_TICK, { volume: 0.6 });
-      this.tts.speak('Holding still. That tick means you have started walking backwards, until you lift your finger.');
       return;
     }
     this.audio.play('menu_move');
@@ -1667,7 +1636,6 @@ export class Game {
     const md = this.mode;
     const gm = md && md.gestureMode ? md.gestureMode(this) : null;
     this.gestures.setMode(this.playing && !this.isPaused ? (gm || 'run') : this.state === S.PRACTICE ? 'practice' : 'menu');
-    this.gestures.holdBack = this._holdBackOn();
     if (this.state === S.PRACTICE && performance.now() - (this.lastInputAt || 0) > 20000) {
       this.menuIndex = this.menuKeys.indexOf('practice');
       this._toMenu('Gesture practice closed. ');

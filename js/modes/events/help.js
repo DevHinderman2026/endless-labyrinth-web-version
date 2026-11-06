@@ -107,7 +107,9 @@ export function eventHelp() {
     { title: 'Events Follow the Guide', desc: 'In a follow event a sound walks slowly around the '
       + 'room, sometimes stopping for a moment. Stay close to it: every second you are with it is worth '
       + 'points. When it gets too far away a soft tick sounds once a second, and if you stay too far behind '
-      + 'for too long, the guide is lost and the run is over.', sound: 'event_lost_tick' },
+      + 'for too long, the guide is lost and the run is over. The guide walks a little faster as the run '
+      + 'goes on, so even a run with no clock ends in the end: the longer you keep up, the higher your '
+      + 'score.', sound: 'event_lost_tick' },
     { title: 'Events Hunt', desc: 'In a hunt you bring down every creature in the room with the '
       + 'laser on a two-finger tap, aimed like battle mode: whatever is centred between your ears. Some hunts lay out '
       + 'ammo boxes now and then, which you collect by walking onto them. Bring them all down and the hunt '

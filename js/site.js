@@ -45,7 +45,7 @@ function contactLink() {
   return a;
 }
 
-function el(tag, attrs = {}, children = []) {
+export function el(tag, attrs = {}, children = []) {
   const e = document.createElement(tag);
   for (const [k, v] of Object.entries(attrs)) {
     if (k === 'text') e.textContent = v;

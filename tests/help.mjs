@@ -89,7 +89,7 @@ const HELP = await page.evaluate(async () => (await import('./js/game.js')).HELP
   const demoHint = await page.locator('#help-demos-events-hint').textContent();
   check(/^Opens \d+ sound demos, each with a Play button, from \w+ Item to \w+ Collected\.$/.test(demoHint), `a demo topic's hint: ${demoHint}`);
   const faqHint = await page.locator('#faq-hint').textContent();
-  check(/^Opens the 7 frequently asked questions, from What is the difference between the website version and the Windows version\? to How do events work\?$/.test(faqHint), `the questions' hint: ${faqHint}`);
+  check(/^Opens the 8 frequently asked questions, from What is the difference between the website version and the Windows version\? to How do events work\?$/.test(faqHint), `the questions' hint: ${faqHint}`);
   check(/^Opens every topic at once/.test(await page.locator('#open-all-hint').textContent()) && /^Plays the sound this subtopic describes/.test(await page.locator('#play-hint').textContent()), 'Open every topic and Play have hints too');
   const visible = await page.locator('.sr-hint').first().boundingBox();
   check(visible && visible.width <= 1 && visible.height <= 1, 'the hints are for screen readers, not shown on screen');

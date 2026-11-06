@@ -1,8 +1,9 @@
-// Running and walking backwards on a touch screen (web 1.2.0), in a real browser
-// engine, with synthetic touches: slide up and hold runs at 280 steps a minute;
-// a finger held still for half a second walks backwards at 200; only lifting
-// stops it; it stops by itself at a wall, the arena's edge and a new level; a
-// quick swipe is still one step; turning, taps and driving are unchanged. Run:
+// Running and walking backwards on a touch screen (web 1.2.0 and 1.4.0), in a real
+// browser engine, with synthetic touches: slide up and hold runs at 280 steps a
+// minute; slide down and hold walks backwards at 200; a finger held still does
+// nothing; only lifting stops it; it stops by itself at a wall, the arena's edge
+// and a new level; a quick swipe is still one step; turning, taps and driving are
+// unchanged. Run:
 //   node --import ./tests/github-stub.mjs tests/stride.mjs http://localhost:8765
 import { chromium } from 'playwright';
 
@@ -93,40 +94,56 @@ l = await log();
 check(steps(l, 'up').length === 1 && (await game(() => window.__el.game.playerPos))[1] === -1, `a quick swipe up is one step: ${steps(l, 'up').length}`);
 
 // ------------------------------------------------------------ walking backwards
+// A finger held still does nothing (web 1.4.0: the hold-still walk is gone).
 await openLabyrinth(); await clear();
 await down();
-await wait(400);
-l = await log();
-check(steps(l, 'down').length === 0, 'a finger held still does nothing for the first half second');
-await wait(1350);
+await wait(1500);
 l = await log();
 await up();
+await wait(400);
+l2 = await log();
+check(!l2.some(([x]) => x === 'back_start' || x === 'down' || x === 'run_start' || x === 'up'), `a finger held still does nothing: ${l2.map(([x]) => x).join(' ')}`);
+check(!l2.some(([x]) => x === 'enter' || x === 'tap'), 'a long hold is never a tap');
+check((await game(() => window.__el.game.playerPos))[1] === 0, 'and the player has not moved');
+
+// Slide down and hold walks backwards.
+await openLabyrinth(); await clear();
+await down(); await move(200, 460);           // slide down 60 px and hold
+await wait(1600);
+l = await log();
+await up(200, 460);
 await wait(600);
 l2 = await log();
 {
   const downs = steps(l, 'down');
   const first = downs[0] - (l.find(([x]) => x === 'back_start') || [0, 0])[1];
-  check(l.some(([x]) => x === 'back_start'), 'holding still for half a second starts walking backwards');
-  const want = expectSteps(1750, BACK_MS, 500);
-  check(Math.abs(downs.length - want) <= 1, `1.75 seconds held: about ${want} steps back: ${downs.length}`);
+  check(l[0] && l[0][0] === 'back_start', `sliding down and holding starts walking backwards: ${l.map(([x]) => x).slice(0, 3)}`);
+  const want = expectSteps(1600, BACK_MS);
+  check(Math.abs(downs.length - want) <= 1, `1.6 seconds held: about ${want} steps back: ${downs.length}`);
   check(first < 50, 'the first backward step is at once');
   check(Math.abs(mean(gaps(downs)) - BACK_MS) < 25, `at ${BACK} steps a minute (every ${BACK_MS.toFixed(0)} ms): ${mean(gaps(downs)).toFixed(0)} ms`);
-  check(steps(l2, 'down').length === downs.length, 'lifting stops the backward walk');
+  check(steps(l2, 'down').length === downs.length && l2.some(([x]) => x === 'stride_end'), 'lifting stops the backward walk at once');
   const pos = await game(() => window.__el.game.playerPos);
   check(pos[0] === 0 && pos[1] === downs.length, `every step went back, one cell each: ${pos}`);
-  check(!l2.some(([x]) => x === 'enter' || x === 'tap'), 'a long hold is never a tap');
+  check(!l.some(([x]) => x === 'run_start' || x === 'up'), 'sliding down never starts a run');
   const ticks = (await game(() => window.__sounds)).filter((n) => n === 'stride_back_tick').length;
-  check(ticks === 1, `a soft tick says the backward walk has begun, once: ${ticks}`);
-  const runTicks = l.filter(([x]) => x === 'run_start').length;
-  check(runTicks === 0, 'holding still never starts a run');
+  check(ticks === 0, `there is no tick any more: ${ticks}`);
 }
-{
-  // A run has no tick: the slide is the cue.
-  await openLabyrinth(); await clear();
-  await down(); await move(200, 340); await wait(600); await up(200, 340);
-  const ticks = (await game(() => window.__sounds)).filter((n) => n === 'stride_back_tick').length;
-  check(ticks === 0, `a run has no tick: ${ticks}`);
-}
+// A quick swipe down is still one step back.
+await openLabyrinth(); await clear();
+await down(); await move(200, 430); await move(200, 470); await up(200, 470);
+await wait(500);
+l = await log();
+check(steps(l, 'down').length === 1 && (await game(() => window.__el.game.playerPos))[1] === 1, `a quick swipe down is one step back: ${steps(l, 'down').length}`);
+// Sliding up or sideways while walking back changes nothing: only lifting stops it.
+await openLabyrinth(); await clear();
+await down(); await move(200, 460);
+await wait(350);
+await move(200, 300); await move(120, 300);
+await wait(700);
+l = await log();
+await up(120, 300);
+check(!l.some(([x]) => x === 'up' || x === 'left' || x === 'run_start') && steps(l, 'down').length >= 3, `sliding up or sideways while walking back neither stops it nor turns: ${l.map(([x]) => x).join(' ')}`);
 
 // ------------------------------------------------------------ only lifting stops
 await openLabyrinth(); await clear();
@@ -152,7 +169,7 @@ await wait(300);
 await down(); await move(260, 400); await move(300, 400); await up(300, 400);
 await wait(700);
 l = await log();
-check(l.some(([x]) => x === 'enter') && !l.some(([x]) => x === 'back_start'), 'a double tap is still the report, not a hold');
+check(l.some(([x]) => x === 'enter') && !l.some(([x]) => x === 'back_start'), 'a double tap is still the report, not a backward walk');
 check(l.filter(([x]) => x === 'right').length === 1 && !l.some(([x]) => x === 'run_start'), 'a swipe right is still one turn and step to the right');
 
 // ------------------------------------------------------------ stopping by itself
@@ -250,30 +267,27 @@ await game(() => { const g = window.__el.game; g._stopRunSounds(); g.state = 'me
   check(steps(l, 'up').length === 1, `a held arrow key is still one step: ${steps(l, 'up').length}`);
 }
 
-// ------------------------------------------------------------ the setting
+// ------------------------------------------------------------ the old setting is gone
 {
   await game(() => { const g = window.__el.game; g._stopRunSounds(); g.state = 'menu'; g._refreshMenu(); });
   const menu = await game(() => window.__el.game.menuOptions.slice());
-  const i = menu.findIndex((m) => m.startsWith('Walk Backwards by Holding'));
-  check(menu[i] === 'Walk Backwards by Holding: On' && menu[i - 1].startsWith('Speech Rate') && menu[i + 1] === 'Leave Game', `the main menu has Walk Backwards by Holding, on, after Speech Rate: ${menu.join(', ')}`);
-  await game((i) => { const g = window.__el.game; g.menuIndex = i; g.input('enter'); }, i);
-  const r = await game(() => ({ label: window.__el.game.menuOptions.find((m) => m.startsWith('Walk Backwards')),
-    saved: JSON.parse(localStorage.getItem('endless-labyrinth-web')).settings.holdBack, said: document.getElementById('said').textContent }));
-  check(r.label === 'Walk Backwards by Holding: Off' && r.saved === false && /off\. A finger held still does nothing/.test(r.said), `a double tap turns it off, says so, and saves it: ${JSON.stringify(r)}`);
-  // Off: a still finger does nothing, and running still works.
+  check(!menu.some((m) => m.startsWith('Walk Backwards')), `the main menu no longer has Walk Backwards by Holding: ${menu.join(', ')}`);
+  const i = menu.findIndex((m) => m.startsWith('Speech Rate'));
+  check(i > 0 && menu[i + 1] === 'Leave Game', 'Speech Rate is followed by Leave Game');
+  // A setting saved by 1.2.0 (holdBack false) is harmless: sliding up from a
+  // resting finger still runs, sliding down still walks back, taps still work.
+  await game(() => { const g = window.__el.game; g.scores.settings.holdBack = false; g.scores.save(); });
   await openLabyrinth(); await clear();
-  await down(); await wait(1200);
+  await down(); await wait(600); await move(200, 340); await wait(700); await up(200, 340);
   l = await log();
-  check(!l.some(([x]) => x === 'back_start' || x === 'down'), 'with the setting off, a finger held still does nothing');
-  await move(200, 340); await wait(700); await up(200, 340);
+  check(l.some(([x]) => x === 'run_start') && steps(l, 'up').length >= 3, 'sliding up from a resting finger runs');
+  await openLabyrinth(); await clear();
+  await down(); await wait(600); await move(200, 460); await wait(700); await up(200, 460);
   l = await log();
-  check(l.some(([x]) => x === 'run_start') && steps(l, 'up').length >= 3, 'and sliding up from a resting finger still runs');
+  check(l.some(([x]) => x === 'back_start') && steps(l, 'down').length >= 2, 'sliding down from a resting finger walks back');
   await openLabyrinth(); await clear();
   await down(); await up(); await wait(60); await down(); await up(); await wait(300);
   check((await log()).some(([x]) => x === 'enter'), 'and taps still work');
-  // Swipes left and right on the setting also turn it on and off; back on for the rest.
-  await game((i) => { const g = window.__el.game; g._stopRunSounds(); g.state = 'menu'; g._refreshMenu(); g.menuIndex = i; g.input('right'); }, i);
-  check((await game(() => window.__el.game.menuOptions.find((m) => m.startsWith('Walk Backwards')))) === 'Walk Backwards by Holding: On', 'a swipe right turns it back on');
 }
 
 // ------------------------------------------------------------ Gesture Practice
@@ -287,9 +301,17 @@ await down(); await move(200, 340); await wait(500);
 check(/^Slide up and hold\./.test(await said()), `practice: slide up and hold is named: ${await said()}`);
 await up(200, 340); await wait(100);
 check(/^Lifted\./.test(await said()), `practice: lifting is named: ${await said()}`);
-await down(); await wait(700);
-check(/^Holding still\. That tick/.test(await said()), `practice: holding still is named, with the tick: ${await said()}`);
-await up(); await wait(100);
+await down(); await move(200, 440); await move(200, 480); await up(200, 480);
+await wait(150);
+check((await said()) === 'Swipe down.', `practice: a quick slide down is a swipe down: ${await said()}`);
+await down(); await move(200, 460); await wait(500);
+check(/^Slide down and hold\./.test(await said()), `practice: slide down and hold is named: ${await said()}`);
+await up(200, 460); await wait(100);
+check(/^Lifted\./.test(await said()), `practice: lifting after a backward walk is named: ${await said()}`);
+await down(); await wait(800);
+const before = await said();
+await up(); await wait(150);
+check(!/Holding still/.test(await said()) && (await said()) === before, `practice: a finger held still says nothing: ${await said()}`);
 check(errors.length === 0, `no page errors ${errors}`);
 
 await browser.close();

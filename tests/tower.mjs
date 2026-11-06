@@ -264,8 +264,9 @@ const top = await page.evaluate(() => {
 check(top.number === 2 && top.floor === 1 && top.height >= 3 && top.height <= 10 && top.level === 1, `tower 2 begins (${top.height} floors), difficulty ${top.diff}`);
 check(top.hp === 64 && top.items === 5 + 12, `health carries into the next tower (${top.hp}), and 12 bonus items join the 5 held (${top.items})`);
 check(top.lines[0] === 'Tower 1 complete. 12 bonus items.' && /^Floor 1 of \d+\.$/.test(top.lines[1] || ''), 'said: ' + top.lines.join(' / '));
-// The desktop's numbers: each tower ends at double the last (10, 20, 40, 80, 160),
-// about 21 hits by tower five, forty damage by tower three, nine degree fans.
+// The desktop's numbers (2.0.0): each tower ends at one and a half times the last
+// (10, 15, 22, 34, 51), about 12 hits by tower five, damage capped at 25 from tower
+// three, nine degree fans. Tower one's first three floors need 1, 2 and 3 hits.
 const nums = await page.evaluate(async () => {
   const g = window.__el.game;
   const { TowerEnemy, volleySpread } = await import('./js/modes/tower.js');
@@ -278,12 +279,15 @@ const nums = await page.evaluate(async () => {
     dmg.push(g._towerHitDamage());
   }
   [g.towerNumber, g.towerFloor, g.towerHeight] = keep;
-  const e = new TowerEnemy([0, 0], 160, 0, 35, 5);
-  return { ends, dmg, hits: e.hitsNeeded, cap: e.capacity, volley: e.volley, fan: volleySpread(3).map((r) => Math.round(r * 180 / Math.PI)) };
+  const e = new TowerEnemy([0, 0], 51, 0, 35, 5);
+  const first = [1, 2, 3, 4].map((f) => { g.towerNumber = 1; g.towerHeight = 10; g.towerFloor = f; return new TowerEnemy([0, 0], g._towerDifficulty(), 0, 35, 1, f).hitsNeeded; });
+  [g.towerNumber, g.towerFloor, g.towerHeight] = keep;
+  return { ends, dmg, hits: e.hitsNeeded, cap: e.capacity, volley: e.volley, fan: volleySpread(3).map((r) => Math.round(r * 180 / Math.PI)), first };
 });
-check(JSON.stringify(nums.ends) === '[10,20,40,80,160]', 'towers end at difficulty ' + nums.ends.join(', '));
-check(nums.hits === 21 && nums.dmg[2] === 40 && JSON.stringify(nums.fan) === '[-9,0,9]',
-  `tower five's rival needs ${nums.hits} hits (capacity ${nums.cap}, volley ${nums.volley}); damage by tower ${nums.dmg.join(', ')}; a fan of three at ${nums.fan.join(', ')} degrees`);
+check(JSON.stringify(nums.ends) === '[10,15,22,34,51]', 'towers end at difficulty ' + nums.ends.join(', '));
+check(nums.hits === 12 && nums.dmg[0] === 18 && nums.dmg[2] === 25 && nums.dmg[4] === 25 && JSON.stringify(nums.fan) === '[-9,0,9]',
+  `tower five's rival needs ${nums.hits} hits (capacity ${nums.cap}, volley ${nums.volley}); damage by tower ${nums.dmg.join(', ')}, never over 25; a fan of three at ${nums.fan.join(', ')} degrees`);
+check(JSON.stringify(nums.first) === '[1,2,3,4]', `tower one's floors need 1, 2, 3, then 4 hits: ${nums.first.join(', ')}`);
 await page.evaluate(() => { const g = window.__el.game; g.input('pause'); g.input('back'); g.input('up'); g.input('enter'); });
 
 // --------------------------------------------------------------- quitting mid-climb
@@ -294,9 +298,10 @@ const quit = await page.evaluate(async () => {
   g.input('enter');
   const fresh = { hp: g.towerHp, items: g.towerItems, level: g.level };
   for (let i = 0; i < 300; i++) g.frame(1 / 30);
-  // Throw once at the rival (if centred), so a delayed impact is in flight.
-  g.input('space');
   const during = [...a.live].filter((v) => v.loop).map((v) => v.name);
+  // Throw once at the rival (if centred), so a delayed impact is in flight (on
+  // floor one a single hit brings it down, so the loops were read first).
+  g.input('space');
   g.input('pause');
   g.input('back');
   const asked = g.state;

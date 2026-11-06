@@ -58,18 +58,27 @@ await page.goto(base + '/terms.html');
   // Web 1.1.2: one set of Terms for both versions.
   check(/They also cover the Windows version of Endless Labyrinth/.test(text) && !/do not cover the Windows version/.test(text), 'the Terms cover the Windows version');
   check(/downloading or playing the Windows version, you accept these Terms/.test(text), 'downloading or playing on Windows is acceptance');
-  check(h3s.some((t) => t === '9.4 Improvements and fan versions') && /only with the maker's written permission/.test(text), 'changing the game or sharing a version built from it needs written permission');
-  check(h3s.some((t) => t === '9.5 Your own game') && /making your own game from scratch, with your own code and your own sounds/.test(text), 'making your own game from scratch is free');
+  check(h3s.some((t) => t === '9.4 Improvements and fan versions') && /only with the Developer's prior written permission/.test(text), 'changing the game or sharing a version built from it needs written permission');
+  check(h3s.some((t) => t === '9.5 Your own game') && /creating your own game from scratch, using your own code and your own sounds/.test(text), 'making your own game from scratch is free');
   for (const sub of ['23.1 Official download only', '23.2 No changing the program', '23.3 Save files are sealed', '23.4 Windows security warnings']) check(h3s.includes(sub), `Windows subsection: ${sub}`);
   check(/SmartScreen/.test(text) && /do not run it/.test(text), 'the Windows security warning is explained honestly');
   check(q.some((t) => /cover the Windows version/.test(t)) && q.some((t) => /change the game, or make my own version/.test(t)), 'common questions about Windows and about changing the game');
+  // Web 1.4.0: a formal register, with defined terms, and the Windows update facility.
+  check(/legally binding agreement/.test(text) && /trading as DevHinderman2026 \(the "Developer"\)/.test(text), 'the Terms are a legally binding agreement with a defined Developer');
+  check(h3s.includes('1.3 Definitions') && /"Windows Program" means/.test(text) && /"Save Data" means/.test(text) && /"Assistive Technology" has the meaning/.test(text), 'section 1.3 defines the terms used');
+  check(/personal, non-exclusive, non-transferable, revocable licence/.test(text), 'the licence is granted in the usual words');
+  check(/"as is" and "as available"/.test(text) && /merchantability/.test(text), 'the warranty disclaimer is complete');
+  check(h3s.includes('23.5 Updates to the program') && /only at your request/.test(text) && /contains no automatic update facility/.test(text) && /players folder, containing your Save Data, is not altered by an update/.test(text), 'section 23.5 covers Check for Updates: by request only, no automatic updates, saves untouched');
+  check(q.some((t) => /How does the Windows game update/.test(t)), 'a common question explains updating');
 }
 
 // ------------------------------------------------------------ the other two
 for (const [pg, title, must] of [
   ['privacy.html', 'Privacy Policy', [/collects no personal data/, /only when you tap one of their buttons/, /GitHub Pages/, /IP address/, /sends nothing about you during play/,
-    /covers the website, the game it plays, and the Windows version/, /players folder, on your own computer/, /newer version of the game has been released/, /only if a sound in its sounds folder is missing or damaged/, /NV Access/]],
-  ['accessibility-statement.html', 'Accessibility Statement', [/VoiceOver on an iPhone, iPad or Mac, TalkBack on Android, ChromeVox on a Chromebook, and Orca on Linux/, /turn your screen reader off while you play/, /Windows computers are pointed/, /Chrome, Edge and Safari/, /high contrast and bigger text/]],
+    /covers the website, the game it plays, and the Windows version/, /players folder, on your own computer/, /newer version of the game has been released/, /only if a sound in its sounds folder is missing or damaged/, /NV Access/,
+    /when you choose Check for Updates and confirm the update by pressing Y/, /contains no automatic update facility/, /players folder, containing your Save Data, is not read, transmitted or altered by an update/, /trading as DevHinderman2026/]],
+  ['accessibility-statement.html', 'Accessibility Statement', [/VoiceOver on an iPhone, iPad or Mac, TalkBack on Android, ChromeVox on a Chromebook, and Orca on Linux/, /turn your screen reader off while you play/, /Windows computers are pointed/, /Chrome, Edge and Safari/, /high contrast and bigger text/,
+    /NVDA and JAWS/, /Check for Updates/, /alert regions/]],
 ]) {
   await page.goto(base + '/' + pg);
   check((await page.locator('header.site h1').textContent()) === title, `${pg}: ${title}`);

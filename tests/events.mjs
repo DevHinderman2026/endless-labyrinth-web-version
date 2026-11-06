@@ -312,7 +312,7 @@ const scores = await page.evaluate(() => {
 check(/^Event High Scores: \d+ events$/.test(scores.label) && /^Event High Scores\. Your best run in \d+ events\./.test(scores.first) && scores.kept >= 9,
   `Event High Scores list the best runs (${scores.label}) and survive a high score reset`);
 
-// The help section.
+// The help section (38 topics since web 1.3.0 moved the item and collected demos into Demos, Events).
 const help = await page.evaluate(async () => {
   const { HELP } = await import('./js/game.js');
   const sec = HELP.find(([n]) => n === 'Events');
@@ -321,7 +321,7 @@ const help = await page.evaluate(async () => {
     sounds: sec ? sec[1].filter((t) => t.sound).every((t) => window.__el.audio.has(t.sound)) : false,
     keys: sec ? sec[1].filter((t) => /\b(Enter|Escape|Space|arrow|Arrow)\b/.test(t.desc.replace(/Descriptions are written for the computer version too[^.]*\./, ''))).map((t) => t.title) : [] };
 });
-check(help.n === 50 && help.after && help.sounds && help.keys.length === 0, `the help has an Events section of ${help.n} topics, before the demos, every demo sound in the pack, no key names (but the one sentence on descriptions written for a keyboard)`);
+check(help.n === 38 && help.after && help.sounds && help.keys.length === 0, `the help has an Events section of ${help.n} topics, before the demos, every demo sound in the pack, no key names (but the one sentence on descriptions written for a keyboard)`);
 
 // ------------------------------------------------------------ protected events are kept on the device
 listing404 = true;

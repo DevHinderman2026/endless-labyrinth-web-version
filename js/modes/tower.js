@@ -14,6 +14,12 @@ const TOWER_PLAYER_PACE = 9.0;
 // ten floor one arrives at gradually.
 const TOWER_FLOORS_MIN = 3;
 const TOWER_FLOORS_MAX = 10;
+// How much harder each tower is than the one below it, and the most one thrown item
+// can take from the player's 100 health (2.0.0, Russell's choices by ear: the growth
+// was 2 and the damage reached 40 by tower three, 55 deep in a climb). Chaos tower
+// floors use the same two.
+const TOWER_GROWTH = 1.5;
+const TOWER_DAMAGE_CAP = 25;
 // How loud a thrown item's flight buzz is, against the rival's other sounds.
 const TOWER_BUZZ_GAIN = 0.75;
 // Lingering on a floor makes the rival hoard, on every tower: for every this many
@@ -121,7 +127,7 @@ export class TowerProjectile {
 // The rival guarding a tower floor. It does not attack by touch: it competes with
 // the player for the same items and throws what it collects back at them.
 export class TowerEnemy {
-  constructor(playerPos, difficulty, soundIdx, arena, tower = 1) {
+  constructor(playerPos, difficulty, soundIdx, arena, tower = 1, floor = 0) {
     // Which tower this rival is standing in: the ceilings lift with the tower, so a
     // deeper rival is genuinely worse rather than just longer.
     this.tower = Math.max(1, tower);
@@ -141,9 +147,13 @@ export class TowerEnemy {
         break;
       }
     }
-    // Grows with the square root of difficulty, not in step with it: 2 or 3 hits on
-    // the first floor, about 21 by tower five.
+    // Grows with the square root of difficulty, not in step with it: about 6 at the
+    // top of tower one, 12 by tower five, 21 by tower eight.
     this.hitsNeeded = 1 + Math.trunc(1.6 * Math.sqrt(Math.max(1, difficulty)));
+    // The first tower opens one hit at a time (Russell, 2.0.0): floor one's rival goes
+    // down in one hit, floor two's in two, floor three's in three. A floor of tower
+    // one never needs more hits than its number.
+    if (this.tower === 1 && floor) this.hitsNeeded = Math.max(1, Math.min(this.hitsNeeded, Math.trunc(floor)));
     this.hitsTaken = 0;
     // Patrol speed climbs with difficulty; 2.0 lets a floor-one rival reposition, and
     // 8.4 stays short of the player's own pace (9.0) so races stay races.
@@ -352,7 +362,7 @@ const mixin = {
     this.towerHitCooldown = 0.0;
     this.towerLowWarned = false;
 
-    const enemy = new TowerEnemy(this.playerPos, this._towerDifficulty(), randint(0, 9), this.arenaLimit, this.towerNumber);
+    const enemy = new TowerEnemy(this.playerPos, this._towerDifficulty(), randint(0, 9), this.arenaLimit, this.towerNumber, this.towerFloor);
     enemy.channel = this._towerLoop('rival', enemy.soundName);
     this.towerEnemy = enemy;
     this._towerSpawnItem();
@@ -577,22 +587,22 @@ const mixin = {
     }
   },
 
-  // Damage one thrown item does. Also decides when a potion may appear. It creeps
-  // two points per tower past the fifth, so deep in a climb two hits finish a run.
+  // Damage one thrown item does. Also decides when a potion may appear. Twelve on
+  // the first floor, three more for every four points of difficulty, never more than
+  // TOWER_DAMAGE_CAP (2.0.0): four clean hits from full health at the hardest.
   _towerHitDamage() {
-    const base = Math.min(40, 12 + Math.floor(this._towerDifficulty() / 4) * 3);
-    return Math.min(55, base + 2 * Math.max(0, this.towerNumber - 5));
+    return Math.min(TOWER_DAMAGE_CAP, 12 + Math.floor(this._towerDifficulty() / 4) * 3);
   },
 
-  // Difficulty for the current floor. Each tower ends at exactly double the
-  // difficulty the previous one ended at (10, 20, 40, 80, 160 ...), driven by how
-  // far THROUGH the tower you are, whatever its height.
+  // Difficulty for the current floor. Each tower ends at exactly TOWER_GROWTH times
+  // the difficulty the previous one ended at (10, 15, 22.5, 34, 51 ...), driven by
+  // how far THROUGH the tower you are, whatever its height.
   _towerDifficulty() {
     const n = this.towerNumber;
     const h = Math.max(1, this.towerHeight);
     const progress = Math.min(1.0, this.towerFloor / h);
-    const prevEnd = n <= 1 ? 0 : 10 * (2 ** (n - 2));
-    const thisEnd = 10 * (2 ** (n - 1));
+    const prevEnd = n <= 1 ? 0 : 10 * (TOWER_GROWTH ** (n - 2));
+    const thisEnd = 10 * (TOWER_GROWTH ** (n - 1));
     return Math.max(1, Math.trunc(pyRound(prevEnd + progress * (thisEnd - prevEnd))));
   },
 
@@ -857,7 +867,7 @@ function input(game, g) {
 // The desktop's help for the tower, with keys turned into gestures.
 const HELP_SECTIONS = [
   ['Tower Mode', [
-    { title: 'Tower Mode', sound: null, desc: 'Climb a tower one floor at a time. A single rival guards each floor and the stairs only appear once you have destroyed it. Every tower is between three and ten floors, so a tower is a short sharp run rather than a long haul, and a double tap tells you which floor you are on and how tall the tower is. Each new floor is announced as you reach it, for example floor 2 of 5, and finishing a tower is announced with the bonus items it gave you, for example tower 1 complete, 12 bonus items. Reaching the top hands you a stock of bonus items and starts the next tower, which is twice as hard as the one you just finished. Tower one is the gentlest stretch in the game and is your run-up before that doubling starts. There is no clock anywhere in this mode. When your health first drops low on a floor you hear three quick falling low notes and then Health low with the number you have left, and finishing a tower is marked by the bonus chime before it is announced. Your score is the total floors climbed.' },
+    { title: 'Tower Mode', sound: null, desc: 'Climb a tower one floor at a time. A single rival guards each floor and the stairs only appear once you have destroyed it. Every tower is between three and ten floors, so a tower is a short sharp run rather than a long haul, and a double tap tells you which floor you are on and how tall the tower is. Each new floor is announced as you reach it, for example floor 2 of 5, and finishing a tower is announced with the bonus items it gave you, for example tower 1 complete, 12 bonus items. Reaching the top hands you a stock of bonus items and starts the next tower, which is one and a half times as hard as the one you just finished. Tower one is the gentlest stretch in the game and is your run-up before that growth starts. There is no clock anywhere in this mode. When your health first drops low on a floor you hear three quick falling low notes and then Health low with the number you have left, and finishing a tower is marked by the bonus chime before it is announced. Your score is the total floors climbed.' },
     { title: 'Tower The Rival', sound: null, desc: 'The rival never charges you and never hurts you by touching you. It wants exactly what you want: the item lying on the floor. It begins every floor holding nothing, so it has to win a race before it can throw anything, and items are placed so those races are close. You get a couple of seconds at the start of each floor before it will contest anything, which is your window to hear where the item is and start moving. Use it, because once that grace is gone it sprints. It also cannot snatch an item while it is winding up, nor for a moment after it has thrown, so every throw it makes hands you a genuine chance at the next one. Once it is holding something it backs off to throwing range and starts hurling items at you. Every item it takes is both a throw it gains and a throw you lose.' },
     { title: 'Tower Winding Up The Rival', sound: null, desc: 'The rival watches you collect. Every item you pick up on a floor makes it move faster and throw more often, and it keeps ramping to a ceiling set by how long that floor is, so on a long floor it always has somewhere left to go. A fresh rival on the next floor starts calm again. This is why you cannot simply farm a floor for supplies: the longer you spend gathering, the faster the thing you still have to bring down becomes, until it is quicker than you and starts winning every race itself. There is no cap on what you may carry, so stockpiling is allowed, it just gets more dangerous the longer you do it. Lingering has a second cost, on every tower, tower one included: for every thirty seconds you stay on a floor without destroying the rival, it can hold one more item, up to five. While it is hoarding it keeps what it takes and goes on racing you for more, and when its arms are full it throws them all at once: a dump of three or more comes behind the long, low wind-up of a full dump, and one of two behind the ordinary two beats. If you keep beating it to the items so it stops gaining any, it throws whatever it holds twelve seconds after the last one it took. The wind-up never gets shorter however alert it becomes, so throws stay dodgeable to the end.' },
     { title: 'Tower Incoming Throws', sound: null, desc: 'The wind-up is your only warning, and it is quite literally the sound of a throw played backwards, swelling up and cutting off at the moment of release. Count its beats: one beat is one item, two or three beats mean a fan of that many arriving together. Move the instant you hear it. The throw is committed to the spot you were standing when the wind-up started, so a single step to either side takes you off its line before it is even released. Once it is thrown, the item buzzes as it flies, and you can hear the buzz move across the room toward you. If you stepped aside, the buzz goes past you and stops the moment the item is by, so that is how a miss sounds. If it hits you, you hear the hit instead. Step sideways to dodge, never backwards: the item keeps going in a straight line past where you were and it travels faster than you run, so retreating along its path is the one move that guarantees it catches you.' },
@@ -870,8 +880,8 @@ const HELP_SECTIONS = [
     { title: 'Tower Health and Items Carry Over', sound: null, desc: 'This is the most important rule in the mode. Your health and your items are never restored between floors and never restored between towers. Whatever you finish a floor with is what you start the next one with. There is no free reset, so an item wasted on a bad throw and health lost to a dodge you did not make are gone for the rest of the climb. Only a health potion restores anything.' },
     { title: 'Tower Health Potions', sound: null, desc: 'A shimmering chime is a health potion, and it restores your health completely. Two things have to be true for one to appear. You must have just destroyed a floor\'s rival, and you must be hurt enough to be within two hits of the end. That second test is measured against how hard the rival on that floor hits rather than against a fixed number, so it keeps meaning the same thing as you climb. A potion will never turn up while you are healthy, so do not count on one rescuing you later. When you do qualify, it shows up on roughly one cleared floor in three. It is always placed far away from you but you can hear it from anywhere, and it is the one thing the locating beep will lead you to once a floor is clear. With no clock running you can always afford the walk, so take every one you find.' },
     { title: 'Tower Stairs', sound: null, desc: 'Learn this signal, because the game will not tell you out loud. When you destroy a floor\'s rival you hear an explosion, and then a pattern begins repeating: three short chimes rising from low to high, each with a footstep on metal stairs under it, followed by a pause. That repeating rise is the staircase. Walk toward it to climb. It pans left and right and grows louder as you close in, exactly like every other beacon in the game.' },
-    { title: 'Tower Difficulty', sound: null, desc: 'Every tower is exactly twice as hard as the one below it. Not a little harder, twice. Difficulty climbs steadily across a tower however tall it happens to be, then doubles again the moment you start the next one, and it never drops back. A short tower is not an easier tower: it finishes at exactly the same difficulty a tall one would, it just gets there in bigger strides, so a three floor tower ramps fast. Tower one is the exception and the only gentle stretch, so use it to learn the sounds. What the doubling buys the rival is pace, not padding. It moves faster, it throws far more often, and from tower four onward it carries several items at once and unloads them on a single wind-up. Deep in a climb it is the stockpile that keeps growing: the rival\'s pace has to stop short of yours or the races would stop being races, but the number of items it can hoard just keeps rising, and it spends them two and three at a time without stopping to refill. The wind-up itself never gets shorter however deep you go, so a throw is always dodgeable and a burst is always beaten by moving and not stopping. Damage reaches forty a hit by tower three, which is three clean hits from full health, and then creeps up, so deep in a climb two hits will finish you. The hits needed to bring a rival down rise too, from a couple on the opening floors to twenty or more deep in a climb with no upper limit, but deliberately far more slowly than everything else.' },
-    { title: 'Tower Rewards', sound: null, desc: 'Finishing a tower hands you a stock of bonus items, and the size of that stock is worked out from the tower you are about to walk into. It is always roughly enough to bring down two of the rivals waiting up there, so it doubles right along with the difficulty and there is no cap on it: twelve items after tower one, around thirty after tower four, over a hundred deep in a long run. It is the one moment in the mode where you are handed anything, and the payout scales, so a long climb never leaves you poorer than a short one.' },
+    { title: 'Tower Difficulty', sound: null, desc: 'Every tower is one and a half times as hard as the one below it. Difficulty climbs steadily across a tower however tall it happens to be, then jumps again the moment you start the next one, and it never drops back. A short tower is not an easier tower: it finishes at exactly the same difficulty a tall one would, it just gets there in bigger strides, so a three floor tower ramps fast. Tower one is the exception and the only gentle stretch, so use it to learn the sounds: the rival on its first floor goes down in one hit, the one on the second floor in two and the one on the third floor in three. What the growth buys the rival is pace, not padding. It moves faster, it throws far more often, and from tower four onward it carries several items at once and unloads them on a single wind-up. Deep in a climb it is the stockpile that keeps growing: the rival\'s pace has to stop short of yours or the races would stop being races, but the number of items it can hoard just keeps rising, and it spends them two and three at a time without stopping to refill. The wind-up itself never gets shorter however deep you go, so a throw is always dodgeable and a burst is always beaten by moving and not stopping. Damage starts at twelve a hit and reaches twenty-five by tower three, which is four clean hits from full health, and it never goes above twenty-five however deep you climb. The hits needed to bring a rival down rise too, from one on the opening floor to twenty or more deep in a climb with no upper limit, but deliberately far more slowly than everything else.' },
+    { title: 'Tower Rewards', sound: null, desc: 'Finishing a tower hands you a stock of bonus items, and the size of that stock is worked out from the tower you are about to walk into. It is always roughly enough to bring down two of the rivals waiting up there, so it grows right along with the difficulty and there is no cap on it: twelve items after tower one, around twenty after tower four, forty or more deep in a long run. It is the one moment in the mode where you are handed anything, and the payout scales, so a long climb never leaves you poorer than a short one.' },
     { title: 'Tower Defeat', sound: null, desc: 'If your health reaches zero the run ends immediately. There are no retries and no second chances. Your carried health, your carried items and the health potions are the only safety net you get, which is why dodging well and taking every potion you find both matter so much.' },
   ]],
 ];

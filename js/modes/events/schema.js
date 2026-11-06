@@ -62,7 +62,8 @@ export const DEFAULTS = {
   deliver: { dropoff: 'center', dropoff_moves: false, dropoff_sound: '', delivered_sound: '', carry_most: 1, drop_on_touch: true },
   catch: { speed: 2.0, flee_distance: 18, wanders: true },
   relay: { seconds_first: 20, seconds_less_each: 1, seconds_least: 6 },
-  follow: { speed: 1.2, near_distance: 15, lost_seconds: 8, points_per_second: 2, stops: true },
+  // 2.0.0: the guide speeds up every faster_every_seconds by faster_by, up to top_speed (0: never).
+  follow: { speed: 1.2, faster_every_seconds: 15, faster_by: 0.1, top_speed: 3.0, near_distance: 15, lost_seconds: 8, points_per_second: 2, stops: true },
   hunt: { time_bonus: 0, ammo_every_seconds: 0, ammo_amount: 5 },
   seek: { pings: 0, ping_wait: 3.0, ping_sound: '', auto_ping_seconds: 0 },
   order: { first_round: 3, per_round: 1, most: 8, direction: 'low_first', note_gap: 2, wrong: 'end_run', penalty: 10, points_per_round: 10, wrong_sound: '' },
@@ -469,6 +470,10 @@ function checkMissions(ev, errors) {
 
   const fo = ev.follow;
   fo.speed = num(errors, "The guide's speed", fo.speed, 0.2, 3.0, false);
+  fo.faster_every_seconds = num(errors, 'How often the guide speeds up', fo.faster_every_seconds, 0, 600);
+  fo.faster_by = num(errors, 'How much faster the guide gets each time', fo.faster_by, 0.0, 2.0, false);
+  fo.top_speed = num(errors, "The guide's top speed", fo.top_speed, 0.2, 6.0, false);
+  if (fo.top_speed < fo.speed) errors.push("The guide's top speed cannot be lower than its starting speed.");
   fo.near_distance = num(errors, 'How close counts as with the guide', fo.near_distance, 3, 90);
   fo.lost_seconds = num(errors, 'Seconds away from the guide before the run ends', fo.lost_seconds, 2, 120);
   fo.points_per_second = num(errors, 'Points for each second with the guide', fo.points_per_second, 0, 1000);

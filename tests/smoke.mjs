@@ -101,11 +101,11 @@ await page.waitForURL(/help\.html#faq$/);
 await page.waitForFunction(() => document.querySelector('#faq button.topic-toggle') && document.querySelector('#faq button.topic-toggle').getAttribute('aria-expanded') === 'true');
 {
   const qs = await page.locator('#faq-panel h3').allTextContents();
-  check(qs.length === 7 && /difference between the website version and the Windows version/.test(qs[0]), `the old questions page opens Help at the seven questions, the versions question first: ${qs.length}`);
+  check(qs.length === 8 && /difference between the website version and the Windows version/.test(qs[0]), `the old questions page opens Help at the eight questions, the versions question first: ${qs.length}`);
   check(await page.locator('footer.site nav a[href="faq.html"]').count() === 0, 'the footer no longer links to the old questions page');
 }
 await page.goto(base + '/history.html');
-check((await page.locator('main h2').allTextContents()).join(' | ').startsWith('1.3.0'), 'the Update History lists the newest version first');
+check((await page.locator('main h2').allTextContents()).join(' | ').startsWith('1.4.0'), 'the Update History lists the newest version first');
 await page.goto(base + '/credits.html');
 check((await page.locator('ul.credits li').count()) === 314, 'credits list the recordings');
 

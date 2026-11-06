@@ -58,6 +58,12 @@ h2 { font-size: 1.35rem; margin: 2rem 0 0.5rem; }
 h3 { font-size: 1.1rem; margin: 1.5rem 0 0.4rem; }
 
 .panel { background: var(--panel); border-radius: 12px; padding: 1.1rem 1.25rem; margin: 1.25rem 0; }
+/* The Windows update alert at the top of the home page (web 1.4.0): first on the page, for everyone. */
+.site-alert { background: var(--accent); color: var(--accent-text); padding: 0.9rem 1.25rem; border-bottom: 2px solid var(--accent-text); }
+.site-alert p { margin: 0; max-width: 60rem; }
+.site-alert a { color: var(--accent-text); font-weight: 700; }
+html[data-contrast="high"] .site-alert { background: #fff; color: #000; border-bottom: 3px solid #000; }
+html[data-contrast="high"] .site-alert a { color: #000; }
 
 .button {
   display: inline-block;

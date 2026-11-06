@@ -446,6 +446,17 @@ export const MissionsMixin = {
   },
 
   // ------------------------------------------------------------ follow
+  // The guide's speed now: `speed` at the start, `faster_by` more every
+  // `faster_every_seconds` of the run, never above `top_speed` (2.0.0), so a
+  // clockless follow event ends on its own once the guide outruns the player.
+  _mGuideSpeed() {
+    const fo = this.ev.follow;
+    const every = Number(fo.faster_every_seconds || 0);
+    if (every <= 0) return Number(fo.speed);
+    const steps = Math.floor((this.evElapsed || 0.0) / every);
+    return Math.min(Number(fo.top_speed ?? fo.speed), Number(fo.speed) + steps * Number(fo.faster_by || 0));
+  },
+
   _mFollowUpdate(dt) {
     const fo = this.ev.follow; const it = this.ev.item;
     const g = this.mGuide;
@@ -468,7 +479,7 @@ export const MissionsMixin = {
       const dx = g.goal[0] - g.x; const dy = g.goal[1] - g.y;
       const d = Math.hypot(dx, dy);
       if (d > 0.01) {
-        const sp = Math.min(d, fo.speed * STEP * dt);
+        const sp = Math.min(d, this._mGuideSpeed() * STEP * dt);
         g.x += dx / d * sp;
         g.y += dy / d * sp;
       }
