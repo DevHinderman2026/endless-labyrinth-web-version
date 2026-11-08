@@ -167,11 +167,26 @@ export const BUS_RIDE = [15, 30];               // seconds on the road, from BUS
 export const BUS_FAREST_STEPS = 150;
 export const BUS_NEAR = [10, 25];               // it stands this far from you
 export const BUS_RETRY = 10;                    // seconds before it looks again, when the safe zone was near
-export const BUS_DOORS_OPEN = 4.1;              // the recordings' lengths
-export const BUS_DOORS_CLOSE = 5.9;
-export const BUS_BOARD_AT = 2.2;                // steps up or down, this long after the doors start opening
+// Getting on and off is brisk (Russell, 8 Nov: it was too slow): each door
+// recording is cut short with a fade, the steps come as the doors open, and the
+// bus is away as soon as its doors have shut.
+export const BUS_STEP_AT = 0.8;                 // the first step up or down, after the doors start opening
+export const BUS_STEP_GAP = 0.35;               // three steps
+export const BUS_CLOSE_AT = 1.9;                // the doors start closing
+export const BUS_DOOR_CUT = 2.0;                // a door recording plays this long, then fades out
+export const BUS_GO_AT = 3.1;                   // the ride begins, or the bus drives off
+// The bus pulling up (Russell, 8 Nov): derrickmckinnon's "Bus at bus stop"
+// (Pixabay), the pull-in ending on the air brakes, where it stands; then the chime.
+export const BUS_PULL_STOP = 9.8;               // the air brakes, in the recording: the bus has stopped
+export const BUS_PULL_GAIN = 0.9;
 export const BUS_IDLE_GAIN = 0.9;
 export const BUS_WINDOWS = 0.25;                // how much of the world comes through the windows on the ride
+// Sheltered (Russell, 8 Nov): on the bus the whole world, and in a safe zone the
+// world beyond its borders, sounds further off: quieter and dulled, as if through
+// walls or windows. The change eases in and out as you cross.
+export const SAFE_OUTSIDE = 0.45;               // the level of what lies outside a safe zone, heard from inside it
+export const SHELTER_DULL = 0.85;               // how dulled (the "behind you" copy's share)
+export const SHELTER_EASE = 0.6;                // seconds
 export const BUS_CHIME_HZ = [659, 880];         // the bus's chime, made by the game: two notes
 // Each safe zone's echo is sized to its background: a cathedral, a cave or an ice
 // cave ring long (the cathedral's echo, stretched); a kitchen, a library or a
@@ -405,7 +420,7 @@ const mixin = {
     u.safe = SAFE_SECONDS + (first ? 0 : FADE_IN);
     u.enemies = []; u.projectiles = []; u.pickups = []; u.timers = []; u.respawn = new Map();
     u.towerItems = new Map(); u.towerCarry = null; u.potionPending = 0;
-    u.place = 'world'; u.ride = null; u.rideMix = null; u.seabed = null; u.lift = null; u.liftArmed = false; u.dingTimer = 0; u.slide = null; u.slides = []; u.bus = null; u.busAt = null;
+    u.place = 'world'; u.ride = null; u.rideMix = null; u.seabed = null; u.lift = null; u.liftArmed = false; u.dingTimer = 0; u.slide = null; u.slides = []; u.bus = null; u.busAt = null; u.shSafe = 0; u.shBus = 0;
     this._utCompassOff(true);
     u.worldPoints = 0; u.worldDamage = 0;
     u.steps = [];
@@ -492,7 +507,7 @@ const mixin = {
     for (const s of u.projectiles) s.channel = null;
     for (const it of u.towerItems.values()) it.channel = null;
     for (const sl of u.slides || []) sl.voice = null;
-    if (u.bus) { u.bus.voice = null; u.bus.rideVoice = null; }
+    if (u.bus) { if (u.bus.pullVoice) u.bus.pullVoice.stop(); u.bus.voice = null; u.bus.rideVoice = null; u.bus.pullVoice = null; u.bus.doorVoice = null; }
     u.lift = null;
     if (u.ride && u.ride.voice) { u.ride.voice.stop(); u.ride.voice = null; }
     u.rideMix = null;
@@ -529,10 +544,10 @@ const mixin = {
   },
 
   // Keep a placed loop up to date: level by distance, place, behind, echo mix.
-  _utFollow(v, pos, level, height = 0) {
+  _utFollow(v, pos, level, height = 0, dull = 0) {
     if (!v) return;
     const rel = this._utRel(pos);
-    v.setSpatial(level, rel[0], rel[1], this._behind(pos), height);
+    v.setSpatial(level, rel[0], rel[1], Math.max(this._behind(pos), dull), height);
     v.setAreaMix(this._utMixAt(pos));
   },
 
@@ -622,6 +637,7 @@ const mixin = {
   _utHurt(by) {
     const u = this.ut;
     if (u.safe > 0 || u.hitCooldown > 0 || u.compass.on) return;
+    if (u.place === 'bus' || u.place === 'slide') return;   // aboard the bus or on the slide, nothing reaches you
     const dmg = this._utDamage();
     u.hp = Math.max(0, u.hp - dmg);
     u.worldDamage += dmg;
@@ -1056,19 +1072,31 @@ const mixin = {
         if (pos) {
           // The ride is as long as the walk would have been far.
           const far = Math.max(0, Math.min(1, (steps - BUS_FAR_STEPS) / (BUS_FAREST_STEPS - BUS_FAR_STEPS)));
-          u.bus = { area: here, pos, stage: 'waiting', t: 0, voice: null, rideVoice: null, ride: BUS_RIDE[0] + (BUS_RIDE[1] - BUS_RIDE[0]) * far, steps };
-          this.audio.play('ut_bus_chime', { volume: 0.7 });
+          u.bus = { area: here, pos, stage: 'coming', t: 0, voice: null, rideVoice: null, pullVoice: null, doorVoice: null, ride: BUS_RIDE[0] + (BUS_RIDE[1] - BUS_RIDE[0]) * far, steps };
+          // It pulls up where it will stand, then the chime says it has come.
+          if (this.audio.has('ut_bus_arrive')) u.bus.pullVoice = this._utPlay('ut_bus_arrive', pos, { volume: 0.0 });
+          else { u.bus.stage = 'waiting'; this.audio.play('ut_bus_chime', { volume: 0.7 }); }
         }
       }
     }
     const b = u.bus;
     if (!b || b.stage === 'waiting') return;
     b.t += dt;
-    const steps = (from) => { for (let i = 0; i < 3; i++) this._utLater(from + i * 0.45, choice(STEPS_STONE), null); };
+    if (b.stage === 'coming') {
+      if (b.t >= BUS_PULL_STOP) { b.stage = 'waiting'; b.t = 0; b.pullVoice = null; this.audio.play('ut_bus_chime', { volume: 0.7 }); }
+      return;
+    }
+    const steps = () => { for (let i = 0; i < 3; i++) this._utLater(i * BUS_STEP_GAP, choice(STEPS_STONE), null); };
+    const door = (name, pos) => {
+      if (b.doorVoice) b.doorVoice.fadeout(200);
+      b.doorVoice = pos ? this._utPlay(name, pos) : this.audio.play(name);
+      b.doorAt = b.t;
+    };
+    if (b.doorVoice && b.t - b.doorAt >= BUS_DOOR_CUT) { b.doorVoice.fadeout(400); b.doorVoice = null; }
     if (b.stage === 'boarding') {
-      if (!b.stepped && b.t >= BUS_BOARD_AT) { b.stepped = true; steps(0); }
-      if (!b.closed && b.t >= BUS_DOORS_OPEN + 0.6) { b.closed = true; this.audio.play('ut_bus_doors_close'); }
-      if (b.t >= BUS_DOORS_OPEN + 0.6 + BUS_DOORS_CLOSE) {
+      if (!b.stepped && b.t >= BUS_STEP_AT) { b.stepped = true; steps(); }
+      if (!b.closed && b.t >= BUS_CLOSE_AT) { b.closed = true; door('ut_bus_doors_close'); }
+      if (b.t >= BUS_GO_AT) {
         // Off we go: the idling engine gives way to the ride, heard from your seat.
         b.stage = 'riding'; b.t = 0;
         if (b.voice) { b.voice.fadeout(800); u.voices.delete(b.voice); b.voice = null; }
@@ -1078,25 +1106,26 @@ const mixin = {
       if (b.t >= b.ride) {
         // Arrived at the nearest safe zone: the engine idles at the stop, the doors open.
         b.stage = 'arriving'; b.t = 0; b.stepped = false; b.closed = false;
-        if (b.rideVoice) { b.rideVoice.fadeout(1500); u.voices.delete(b.rideVoice); b.rideVoice = null; }
+        if (b.rideVoice) { b.rideVoice.fadeout(1000); u.voices.delete(b.rideVoice); b.rideVoice = null; }
         const safe = u.world.areas.filter((a) => a.kind === 'event');
         const near = safe.slice().sort((x, y) => dist2(x.centre, b.pos) - dist2(y.centre, b.pos))[0] || u.area;
         const spot = randomFloor(u.world, near, rand, { avoid: u.pickups.map((p) => p.pos), clearance: 3.0 }) || posOf(...near.floorCells[0]);
         b.pos = spot; b.area = near;
         this.playerPos = spot; u.area = near;
         this._utRefreshRooms(); this._utListenerMix();
-        this.audio.play('ut_bus_doors_open');
+        door('ut_bus_doors_open');
       }
     } else if (b.stage === 'arriving') {
-      if (!b.stepped && b.t >= BUS_BOARD_AT) {
-        // Down the steps, onto the safe zone's floor: yours to walk again.
-        b.stepped = true; steps(0);
+      if (!b.stepped && b.t >= BUS_STEP_AT) { b.stepped = true; steps(); }
+      if (u.place === 'bus' && b.t >= BUS_STEP_AT + 2 * BUS_STEP_GAP) {
+        // Down the last step, onto the safe zone's floor: yours to walk again.
         u.place = 'world';
       }
-      if (!b.closed && b.t >= BUS_DOORS_OPEN + 1.2) { b.closed = true; this._utPlay('ut_bus_doors_close', b.pos); }
-      if (b.t >= BUS_DOORS_OPEN + 1.2 + BUS_DOORS_CLOSE) {
+      if (!b.closed && b.t >= BUS_CLOSE_AT) { b.closed = true; door('ut_bus_doors_close', b.pos); }
+      if (b.t >= BUS_GO_AT) {
         // And away: the engine goes with it.
         b.stage = 'gone';
+        if (b.doorVoice) { b.doorVoice.fadeout(400); b.doorVoice = null; }
         if (b.voice) { b.voice.fadeout(600); u.voices.delete(b.voice); b.voice = null; }
         if (this.audio.has('ut_bus_leave')) this._utPlay('ut_bus_leave', b.pos);
         u.bus = null;
@@ -1109,7 +1138,8 @@ const mixin = {
     u.place = 'bus';
     b.stage = 'boarding'; b.t = 0; b.stepped = false; b.closed = false;
     this.stride = null;
-    this.audio.play('ut_bus_doors_open');
+    if (b.doorVoice) b.doorVoice.fadeout(200);
+    b.doorVoice = this.audio.play('ut_bus_doors_open'); b.doorAt = 0;
   },
 
   // ---------------------------------------------------------------- the water park
@@ -1310,6 +1340,14 @@ const mixin = {
     // elevator's stages on a ride, faintly from above on the seabed.
     const aboveLevel = onWorld ? 1 : ride ? ride.above : inBus ? BUS_WINDOWS : 0.0;
     const aboveHeight = onWorld ? 0 : ride ? ride.height : inBus ? 0 : 8;
+    // Sheltered: in a safe zone what lies beyond it, on the bus everything, sounds
+    // further off (eased, so a border crossing is a gentle change).
+    const inSafe = onWorld && !!u.area && u.area.kind === 'event';
+    const ease = Math.min(1, dt / SHELTER_EASE);
+    u.shSafe = (u.shSafe || 0) + ((inSafe ? 1 : 0) - (u.shSafe || 0)) * ease;
+    u.shBus = (u.shBus || 0) + ((inBus ? 1 : 0) - (u.shBus || 0)) * ease;
+    const outsideGain = 1 - (1 - SAFE_OUTSIDE) * u.shSafe;
+    const dullOf = (area) => SHELTER_DULL * (area === u.area ? u.shBus : Math.max(u.shSafe, u.shBus));
     const near = this._utNearAreas();
     const nearIds = new Set(near.map((a) => a.id));
     // Each area's air: its own area at full, a neighbour's from its border or its
@@ -1358,17 +1396,18 @@ const mixin = {
         const [, outside] = nearestPointOf(a, this.playerPos);
         from = leakPoint(w, u.area, a, this.playerPos);
         const bd = a.borders.find((b) => (b.a === u.area.id && b.b === a.id) || (b.b === u.area.id && b.a === a.id));
-        level = AMBIENCE_LEVEL * levelAt(outside, AMBIENCE_RANGE) * (bd && bd.door ? DOOR_LEAK : 1);
+        level = AMBIENCE_LEVEL * levelAt(outside, AMBIENCE_RANGE) * (bd && bd.door ? DOOR_LEAK : 1) * outsideGain;
         if (!onWorld) level *= 0.3;
       }
       level *= aboveLevel || (seabed ? 1 : 0);
       const mixHere = this._utMixAt(this.playerPos);
+      const dull = dullOf(a);
       const pair = (placed, wide, gain) => {
         if (placed) {
-          if (from) this._utFollow(placed, from, level * gain * (1 - inside), height);
+          if (from) this._utFollow(placed, from, level * gain * (1 - inside), height, dull);
           else { placed.setSpatial(0, 0, -0.05, 0, height); placed.setAreaMix(mixHere); }
         }
-        if (wide) { wide.setVolume(level * gain * inside, level * gain * inside); wide.setAreaMix(mixHere); }
+        if (wide) { wide.setVolume(level * gain * inside, level * gain * inside, dull); wide.setAreaMix(mixHere); }
       };
       pair(s.amb, s.ambIn, 1);
       pair(s.drums, s.drumsIn, 0.85);
@@ -1397,14 +1436,14 @@ const mixin = {
       if (area === u.area) return levelAt(dist2(pos, this.playerPos));
       if (!onWorld) return 0;
       const [, outside] = nearestPointOf(area, this.playerPos);
-      return levelAt(dist2(pos, this.playerPos)) * levelAt(outside, AMBIENCE_RANGE);
+      return levelAt(dist2(pos, this.playerPos)) * levelAt(outside, AMBIENCE_RANGE) * outsideGain;
     };
     for (const p of u.pickups) {
       const d = dist2(p.pos, this.playerPos);
       const level = reach(p.area, p.pos) * p.gain * (onWorld ? 1 : (ride ? ride.above * 0.6 : 0));
       if (!p.voice && level > 0.01) p.voice = this._utPlay(p.beacon, p.pos, { loops: -1, volume: 0.0 });
       else if (p.voice && level <= 0.001 && d > HEAR_RANGE + 10) { p.voice.stop(); u.voices.delete(p.voice); p.voice = null; }
-      if (p.voice) this._utFollow(p.voice, p.pos, level, aboveHeight);
+      if (p.voice) this._utFollow(p.voice, p.pos, level, aboveHeight, dullOf(p.area));
     }
     const bus = u.bus;
     if (bus && (bus.stage === 'waiting' || bus.stage === 'arriving' || bus.stage === 'boarding')) {
@@ -1413,9 +1452,14 @@ const mixin = {
       if (!bus.voice && level > 0.01) bus.voice = this._utPlay('ut_bus_idle', bus.pos, { loops: -1, volume: 0.0, fadeMs: 400 });
       else if (bus.voice && level <= 0.001 && d > HEAR_RANGE + 10) { bus.voice.stop(); u.voices.delete(bus.voice); bus.voice = null; }
       if (bus.voice) {
-        if (bus.stage === 'waiting') this._utFollow(bus.voice, bus.pos, level, aboveHeight);
+        if (bus.stage === 'waiting') this._utFollow(bus.voice, bus.pos, level, aboveHeight, dullOf(bus.area));
         else bus.voice.setSpatial(level, 0, -1.5, 0, 0);    // at the door, right in front of you
       }
+    }
+    if (bus && bus.stage === 'coming' && bus.pullVoice) {
+      // Pulling up: heard wherever you are in its area (it is meant to be noticed).
+      const r = reach(bus.area, bus.pos);
+      this._utFollow(bus.pullVoice, bus.pos, (bus.area === u.area ? Math.max(0.35, r) : r) * BUS_PULL_GAIN * (onWorld ? 1 : 0), aboveHeight, dullOf(bus.area));
     }
     for (const sl of u.slides || []) {
       if (u.slide && u.slide.sl === sl) continue;     // riding it: no beacon
@@ -1423,7 +1467,7 @@ const mixin = {
       const level = reach(sl.area, sl.pos) * SLIDE_BEACON_GAIN * (onWorld ? 1 : 0);
       if (!sl.voice && level > 0.01) sl.voice = this._utPlay('stairs_beacon', sl.pos, { loops: -1, volume: 0.0 });
       else if (sl.voice && level <= 0.001 && d > HEAR_RANGE + 10) { sl.voice.stop(); u.voices.delete(sl.voice); sl.voice = null; }
-      if (sl.voice) this._utFollow(sl.voice, sl.pos, level, aboveHeight);
+      if (sl.voice) this._utFollow(sl.voice, sl.pos, level, aboveHeight, dullOf(sl.area));
     }
     for (const it of u.towerItems.values()) {
       const pos = this._utItemPos(it);
@@ -1431,7 +1475,7 @@ const mixin = {
       const level = reach(it.area, pos) * (onWorld ? 1 : 0);
       if (!it.channel && level > 0.01) it.channel = this._utPlay('item_beacon', pos, { loops: -1, volume: 0.0 });
       else if (it.channel && level <= 0.001 && d > HEAR_RANGE + 10) { it.channel.stop(); u.voices.delete(it.channel); it.channel = null; }
-      if (it.channel) this._utFollow(it.channel, pos, level, aboveHeight);
+      if (it.channel) this._utFollow(it.channel, pos, level, aboveHeight, dullOf(it.area));
     }
     // The seabed's own things.
     if (u.seabed) {
@@ -1688,7 +1732,13 @@ export default {
   menu: [{ key: 'ultimate', label: 'Ultimate Mode', select: (game) => game.startUltimate() }],
   playStates: [STATE],
   mixin,
-  init(game) { game.ut = null; },
+  init(game) {
+    game.ut = null;
+    // The mode's own tones (the compass, the low-ammo tones, the slide, the bus
+    // chime) are made now, with the game, so Help's demos have them before any run
+    // (they were made only when a run began, and the demos were silent until then).
+    try { if (game.audio && game.audio.ctx) makeSounds(game.audio); } catch (e) { /* made again when a run begins */ }
+  },
   reset,
   update(game, dt) { game.updateUltimateMode(dt); },
   input,

@@ -560,7 +560,7 @@ check(park.skipped || park.points === park.expected, `a ride earns ${park.expect
 // --------------------------------------------------------------- 10. the bus
 const bus = await page.evaluate(async () => {
   const g = window.__el.game; const u = g.ut; const a = window.__el.audio; const T = window.__ut; const W = T.world;
-  const { BUS_FAR_STEPS, BUS_RIDE, BUS_DOORS_OPEN, BUS_DOORS_CLOSE } = T.mod;
+  const { BUS_FAR_STEPS, BUS_RIDE, BUS_GO_AT, BUS_STEP_AT, BUS_STEP_GAP, BUS_PULL_STOP } = T.mod;
   // Stand in a dangerous area; the world is young; make the safe zone count as far.
   const area = T.goTo((x) => x.kind !== 'event');
   u.bus = null; u.busElapsed = 30; u.busAt = 25; u.worldTime = 250; u.safe = 0;
@@ -569,7 +569,10 @@ const bus = await page.evaluate(async () => {
   const played = []; const orig = a.play.bind(a); a.play = (n, o) => { played.push([n, u.busElapsed]); return orig(n, o); };
   g.updateUltimateMode(1 / 30);
   const b = u.bus;
-  const out = { realSteps, came: !!b && b.stage === 'waiting', chime: played.some(([n]) => n === 'ut_bus_chime'), ride: b && b.ride, near: b ? Math.hypot(b.pos[0] - g.playerPos[0], b.pos[1] - g.playerPos[1]) : null, outsideSafe: b && b.area.kind !== 'event' };
+  // First it pulls up, heard where it will stand; the chime comes when it has stopped.
+  const pulling = { stage: b && b.stage, sound: played.some(([n]) => n === 'ut_bus_arrive'), voice: !!(b && b.pullVoice && b.pullVoice.placed), chimeYet: played.some(([n]) => n === 'ut_bus_chime') };
+  for (let i = 0; b && i < 30 * (BUS_PULL_STOP + 0.3) && b.stage === 'coming'; i++) { g.updateUltimateMode(1 / 30); if (i % 10 === 0) await new Promise((r) => setTimeout(r, 5)); }
+  const out = { realSteps, pulling, came: !!b && b.stage === 'waiting', chime: played.some(([n]) => n === 'ut_bus_chime'), ride: b && b.ride, near: b ? Math.hypot(b.pos[0] - g.playerPos[0], b.pos[1] - g.playerPos[1]) : null, outsideSafe: b && b.area.kind !== 'event' };
   if (!b) { a.play = orig; return out; }
   await new Promise((r) => setTimeout(r, 300));
   out.engine = b.voice ? { name: b.voice.name, placed: b.voice.placed, level: b.voice.l } : null;
@@ -586,14 +589,49 @@ const bus = await page.evaluate(async () => {
   for (const d of ['up', 'left', 'space', 'enter']) g.input(d);
   out.heldStill = g.playerPos[0] === before[0] && g.playerPos[1] === before[1];
   // Ride it out (with yields, for the recordings to decode).
-  const total = BUS_DOORS_OPEN + 0.6 + BUS_DOORS_CLOSE + b.ride + BUS_DOORS_OPEN + 1.2 + BUS_DOORS_CLOSE + 2;
-  let arrivedAt = null; let rideVoice = null;
+  const total = BUS_GO_AT + b.ride + BUS_GO_AT + 2;
+  const boardAt = u.busElapsed;
+  let arrivedAt = null; let rideVoice = null; let rideAt = null; let arriveStart = null; let goneAt = null;
+  let hpBefore = null; let hpAfter = null; let shBus = 0; let windowsDull = null;
   for (let i = 0; i < 30 * total && u.bus; i++) {
     g.updateUltimateMode(1 / 30);
+    if (rideAt === null && u.bus && u.bus.stage === 'riding') rideAt = u.busElapsed;
     if (u.bus && u.bus.stage === 'riding' && u.bus.rideVoice) rideVoice = { name: u.bus.rideVoice.name, loop: u.bus.rideVoice.loop };
+    if (u.bus && u.bus.stage === 'riding' && hpBefore === null && u.busElapsed - rideAt > 2) {
+      // A chaser at your seat strikes: nothing reaches you on the bus.
+      hpBefore = u.hp; u.safe = 0; u.hitCooldown = 0;
+      g._utHurt({ kind: 'chaser', area: u.area, x: g.playerPos[0], y: g.playerPos[1], voice: null }); hpAfter = u.hp;
+      shBus = u.shBus;
+      const s = u.areaSounds.get(u.area.id); windowsDull = s && s.ambIn ? s.ambIn.behind : null;
+    }
+    if (arriveStart === null && u.bus && u.bus.stage === 'arriving') arriveStart = u.busElapsed;
     if (u.place === 'world' && arrivedAt === null && u.bus && u.bus.stage === 'arriving') arrivedAt = u.busElapsed;
     if (i % 10 === 0) await new Promise((r) => setTimeout(r, 10));
   }
+  goneAt = u.bus ? null : u.busElapsed;
+  out.boardToRide = rideAt - boardAt; out.offAfter = arrivedAt - arriveStart; out.goneAfter = goneAt - arriveStart;
+  out.hpBefore = hpBefore; out.hpAfter = hpAfter; out.shBus = shBus; out.windowsDull = windowsDull;
+  out.landedSafe = u.place === 'world' && u.area.kind === 'event' && W.areaAt(u.world, g.playerPos) === u.area;
+  // In the safe zone the world beyond sounds further off; out in the open, it comes back.
+  for (let i = 0; i < 45; i++) g.updateUltimateMode(1 / 30);
+  out.shSafe = u.shSafe;
+  const neighbour = u.world.areas.find((x) => x !== u.area && u.areaSounds.get(x.id) && u.areaSounds.get(x.id).amb && u.areaSounds.get(x.id).amb.l > 0);
+  out.outsideDull = neighbour ? u.areaSounds.get(neighbour.id).amb.behind : null;
+  const ownWide = u.areaSounds.get(u.area.id).ambIn; out.ownDull = ownWide ? ownWide.behind : null;
+  if (out.outsideDull === null) {
+    // Stand by the safe zone's edge, where a neighbour's air comes through.
+    const zone = u.area;
+    const edge = zone.floorCells.filter(([cx, cy]) => cx === zone.x0 || cy === zone.y0 || cx === zone.x1 || cy === zone.y1);
+    for (const [cx, cy] of edge.filter((_, i) => i % 3 === 0)) {
+      g.playerPos = W.posOf(cx, cy); u.area = zone; g._utListenerMix();
+      for (let i = 0; i < 3; i++) g.updateUltimateMode(1 / 30);
+      const nb = u.world.areas.find((x) => x !== zone && u.areaSounds.get(x.id) && u.areaSounds.get(x.id).amb && u.areaSounds.get(x.id).amb.l > 0.01);
+      if (nb) { out.outsideDull = u.areaSounds.get(nb.id).amb.behind; out.outsideLevel = u.areaSounds.get(nb.id).amb.l; break; }
+    }
+  }
+  T.goTo((x) => x.kind !== 'event');
+  for (let i = 0; i < 60; i++) g.updateUltimateMode(1 / 30);
+  out.shSafeOut = u.shSafe;
   await new Promise((r) => setTimeout(r, 1500));   // (the steps are real-time timers; the ride here ran faster than life)
   a.play = orig;
   const names = played.map(([n]) => n);
@@ -601,10 +639,10 @@ const bus = await page.evaluate(async () => {
   let at = -1; let inOrder = true;
   for (const n of seq) { const i = names.indexOf(n, at + 1); if (i < 0) { inOrder = false; break; } at = i; }
   out.inOrder = inOrder; out.steps = names.filter((n) => /^step_/.test(n)).length; out.rideVoice = rideVoice;
-  out.landedSafe = u.place === 'world' && u.area.kind === 'event' && W.areaAt(u.world, g.playerPos) === u.area;
   out.gone = !u.bus; out.idleLeft = [...a.live].filter((v) => /^ut_bus_(idle|ride)$/.test(v.name) && v.busy && !v.fadingOut).length;
   return out;
 });
+check(bus.pulling && bus.pulling.stage === 'coming' && bus.pulling.sound && bus.pulling.voice && !bus.pulling.chimeYet, 'the bus is first heard pulling up where it will stand, before any chime: ' + JSON.stringify(bus.pulling));
 check(bus.came && bus.chime && bus.outsideSafe && bus.near >= 10 && bus.near <= 40, `when a safe zone is far (${bus.realSteps} steps here, told 100) a bus pulls up near you with its chime: ` + JSON.stringify({ near: bus.near && bus.near.toFixed(1), ride: bus.ride }));
 check(bus.ride && Math.abs(bus.ride - (15 + 15 * (100 - 45) / 105)) < 0.01, `the ride's length follows the walk it saves (${bus.ride && bus.ride.toFixed(1)} s for 100 steps)`);
 check(bus.engine && bus.engine.name === 'ut_bus_idle' && bus.engine.placed && bus.engine.level > 0.3, 'its engine idles where it stands: ' + JSON.stringify(bus.engine));
@@ -612,6 +650,11 @@ check(bus.legTowardBus && /Compass on, to the bus/.test(bus.compassSaid), 'the c
 check(bus.boarded && bus.heldStill, 'stepping up to the bus boards it; on the bus nothing answers');
 check(bus.inOrder && bus.steps >= 5 && bus.rideVoice && bus.rideVoice.loop, 'doors open, steps, doors close, the ride from your seat, doors open, steps, doors close, and it drives off: ' + JSON.stringify({ steps: bus.steps, ride: bus.rideVoice }));
 check(bus.landedSafe && bus.gone && bus.idleLeft === 0, 'you are left on the floor of the nearest safe zone, the bus gone and its engine with it');
+check(bus.boardToRide > 2.8 && bus.boardToRide < 3.6 && bus.offAfter > 1.2 && bus.offAfter < 1.8 && bus.goneAfter < 3.6, `getting on and off is brisk: the ride starts ${bus.boardToRide && bus.boardToRide.toFixed(1)} s after boarding, you are off ${bus.offAfter && bus.offAfter.toFixed(1)} s after the doors open, and the bus is gone at ${bus.goneAfter && bus.goneAfter.toFixed(1)} s`);
+check(bus.hpBefore !== null && bus.hpAfter === bus.hpBefore, `no chaser can strike you on the bus (${bus.hpBefore} → ${bus.hpAfter})`);
+check(bus.shBus > 0.9 && bus.windowsDull > 0.7, `on the bus the world is dulled, as through the windows (shelter ${bus.shBus && bus.shBus.toFixed(2)}, dull ${bus.windowsDull})`);
+check(bus.shSafe > 0.8 && bus.outsideDull !== null && bus.outsideDull > 0.6 && bus.ownDull !== null && bus.ownDull < 0.1, `in a safe zone the world beyond is quieter and dulled, its own air clear (shelter ${bus.shSafe && bus.shSafe.toFixed(2)}, outside ${bus.outsideDull}, own ${bus.ownDull})`);
+check(bus.shSafeOut < 0.1, `out in the open again, the world comes back (${bus.shSafeOut && bus.shSafeOut.toFixed(2)})`);
 
 // --------------------------------------------------------------- 11. the crowd reacts to a hit (Russell, 8 Nov; the announcer is gone)
 const hits = await page.evaluate(async () => {

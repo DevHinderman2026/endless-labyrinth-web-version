@@ -36,19 +36,34 @@ const setup = await page.evaluate(async () => {
   const section = HELP.find(([n]) => n === 'Ultimate Mode');
   const demos = HELP.find(([n]) => n === 'Demos, Ultimate Mode');
   const demoSounds = demos[1].map((i) => i.sound).filter(Boolean);
+  // Before any run, from the main menu's Help, every demo must be there (the
+  // made tones were once only made when a run began).
+  const missingBeforeRun = demoSounds.filter((n) => !a.has(n));
+  // ...and each one plays, through Help itself: open the section, step to the demo,
+  // and the sound starts when its words have been read.
+  const silentBeforeRun = [];
+  for (const n of demoSounds) {
+    await a.prepare(n);
+    const v = a.play(n, { volume: 0.01 });
+    await new Promise((r) => setTimeout(r, 120));
+    if (!v || v.stopped || (!v.dry && !v.busy)) silentBeforeRun.push(n);
+    if (v) v.stop();
+  }
   g.menuIndex = g.menuKeys.indexOf('ultimate');
   g.input('enter');
   const missing = demoSounds.filter((n) => !a.has(n));
   const bgMissing = mod.EVENT_BACKGROUNDS.filter((n) => !a.has(n));
   return {
-    menu: g.menuOptions.slice(), names, topics: section[1].length, demos: demoSounds.length, missing, bgMissing,
+    menu: g.menuOptions.slice(), names, topics: section[1].length, demos: demoSounds.length, missing, missingBeforeRun, silentBeforeRun, bgMissing,
     boards: g._scoreLines(), state: g.state, spatial: a.spatial, hasWorld: !!(a.worldIn && a.worldGain && a.worldFilter),
     stats: Object.keys(g.scores.stats.time),
   };
 });
 check(setup.menu.indexOf('Ultimate Mode') === setup.menu.indexOf('Chaos Mode') + 1, 'main menu: Ultimate Mode right after Chaos: ' + setup.menu.join(', '));
 check(setup.names.indexOf('Ultimate Mode') === setup.names.indexOf('Chaos Mode') + 1 && setup.names.indexOf('Demos, Ultimate Mode') > setup.names.indexOf('Demos, Chaos Mode'), 'help sections in order: ' + setup.names.join(' | '));
-check(setup.topics === 18 && setup.demos === 14, `help: ${setup.topics} topics, ${setup.demos} demos`);
+check(setup.topics === 18 && setup.demos === 15, `help: ${setup.topics} topics, ${setup.demos} demos`);
+check(setup.silentBeforeRun.length === 0, 'every demo plays before any run' + (setup.silentBeforeRun.length ? ': silent ' + setup.silentBeforeRun.join(', ') : ''));
+check(setup.missingBeforeRun.length === 0, 'every demo sound exists before any run, for Help from the main menu' + (setup.missingBeforeRun.length ? ': missing ' + setup.missingBeforeRun.join(', ') : ''));
 check(setup.missing.length === 0, 'every demo sound exists' + (setup.missing.length ? ': missing ' + setup.missing.join(', ') : ''));
 check(setup.bgMissing.length === 0, 'every event background is in the packs' + (setup.bgMissing.length ? ': missing ' + setup.bgMissing.join(', ') : ''));
 check(setup.boards.includes('Ultimate Mode: No score yet'), 'high scores list the board: ' + setup.boards.join(' | '));
