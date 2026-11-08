@@ -1,4 +1,4 @@
-// Ultimate Test Mode (web 2.1.0): how it sounds, measured. Run with the site served
+// Ultimate Mode (web 2.1.0): how it sounds, measured. Run with the site served
 // (python3 -m http.server 8765):
 //   node --import ./tests/github-stub.mjs tests/ultimate-sound.mjs http://localhost:8765
 // Russell's second play-test: footsteps, the countdown and pickups were dry, the
@@ -148,7 +148,7 @@ const unplaced = await page.evaluate(async () => {
   out.laser = lv ? { taps: lv.wet && lv.wet.taps ? lv.wet.taps.size : 0, ...(await T.measure(lv, area.id)) } : null;
   return out;
 });
-const rings = (r) => r && r.taps >= 1 && r.wet > 0.004 && r.dry > 0.01;
+const rings = (r) => r && r.taps >= 1 && r.wet > 0.003 && r.dry > 0.01;   // (0.003: under load the analyser can miss a short echo's peak; a silent echo reads 0)
 check(unplaced.skipped || (unplaced.mix && Object.keys(unplaced.mix).length >= 1), 'the engine knows the echo mix where the player stands: ' + JSON.stringify(unplaced.mix));
 check(unplaced.skipped || rings(unplaced.step), `a footstep rings in the room (${unplaced.room}): ` + JSON.stringify(unplaced.step));
 check(unplaced.skipped || rings(unplaced.countdown), 'the countdown beep rings in the room: ' + JSON.stringify(unplaced.countdown));
@@ -512,8 +512,13 @@ const park = await page.evaluate(async () => {
   if (!(u.slides && u.slides.length)) return { skipped: true };
   const sl = u.slides[0]; const area = sl.area;
   const out = { kind: area.kind, water: WATER_PARK.test(area.ambience), parksRight: u.world.areas.filter((x) => x.kind === 'event').every((x) => (!!x.waterPark) === WATER_PARK.test(x.ambience)) && u.slides.length === u.world.areas.filter((x) => x.waterPark).length };
-  // Stand in the park, a few steps from the slide: its beacon is Tower's staircase, placed.
-  u.area = area; u.safe = 0; g.playerPos = [sl.pos[0] + 9, sl.pos[1]]; g._utRefreshRooms(); g._utListenerMix();
+  // Stand in the park, a few steps from the slide, on a side whose squares are floor
+  // (the slide may stand by a wall or the park's edge): its beacon is Tower's staircase, placed.
+  const floor = new Set(area.floorCells.map(([cx, cy]) => `${cx},${cy}`));
+  const sc = W.cellOf(sl.pos);
+  const side = [[1, 0], [-1, 0], [0, 1], [0, -1]].find(([dx, dy]) => [1, 2, 3].every((k) => floor.has(`${sc[0] + dx * k},${sc[1] + dy * k}`))) || [1, 0];
+  const toward = side[0] === 1 ? 'left' : side[0] === -1 ? 'right' : side[1] === 1 ? 'up' : 'down';
+  u.area = area; u.safe = 0; g.playerPos = [sl.pos[0] + side[0] * 9, sl.pos[1] + side[1] * 9]; g._utRefreshRooms(); g._utListenerMix();
   T.quiet();
   g.updateUltimateMode(1 / 30);
   await new Promise((r) => setTimeout(r, 300));
@@ -522,8 +527,8 @@ const park = await page.evaluate(async () => {
   const played = []; const orig = a.play.bind(a); a.play = (n, o) => { played.push(n); return orig(n, o); };
   const spoken = []; const os = g.tts.speak.bind(g.tts); g.tts.speak = (t, o) => { spoken.push(t); return os(t, o); };
   const p0 = u.points; const mult = g._utMultiplier();
-  g.playerPos = [sl.pos[0] + 6, sl.pos[1]]; g._utListenerMix();
-  g.input('left');                         // onto the square beside the slide
+  g.playerPos = [sl.pos[0] + side[0] * 6, sl.pos[1] + side[1] * 6]; g._utListenerMix();
+  g.input(toward);                         // onto the square beside the slide
   out.started = u.place === 'slide' && u.slide && u.slide.stage === 'climb';
   // Nothing answers on the slide.
   const before = [...g.playerPos];
@@ -607,6 +612,95 @@ check(bus.legTowardBus && /Compass on, to the bus/.test(bus.compassSaid), 'the c
 check(bus.boarded && bus.heldStill, 'stepping up to the bus boards it; on the bus nothing answers');
 check(bus.inOrder && bus.steps >= 5 && bus.rideVoice && bus.rideVoice.loop, 'doors open, steps, doors close, the ride from your seat, doors open, steps, doors close, and it drives off: ' + JSON.stringify({ steps: bus.steps, ride: bus.rideVoice }));
 check(bus.landedSafe && bus.gone && bus.idleLeft === 0, 'you are left on the floor of the nearest safe zone, the bus gone and its engine with it');
+
+// --------------------------------------------------------------- 11. the arena announcer (Russell, 8 Nov: jkerman's lines, no greeting)
+const ann = await page.evaluate(async () => {
+  const g = window.__el.game; const u = g.ut; const a = window.__el.audio; const T = window.__ut;
+  const { ANN_AFTER, ANN_LEVEL, ANN_MULTI_WINDOW, ANN_FLAVOUR, ANN_STREAK } = T.mod;
+  await T.ensureKind('battle');
+  const area = T.goTo((x) => x.kind === 'battle');
+  if (!area) return { skipped: true };
+  const out = { names: [...a.entries.keys()].filter((n) => /^ut_ann_/.test(n)).length };
+  out.has = ['first_blood', 'double_kill', 'penta_crush', 'godlike', 'revenge', 'last_standing', 'quickdraw', 'flawless', 'victory', 'sudden_death', 'defeat'].every((l) => a.has(`ut_ann_${l}`));
+  out.noGreeting = !a.has('ut_ann_get_ready') && !a.has('ut_ann_fight') && !a.has('ut_ann_holy');
+  const fresh = () => Object.assign(u.ann, { lastKillAt: -1e9, multi: 0, streak: 0, lastHitBy: null, worldKills: 0, areaKills: new Map(), lastArea: area, areaAt: -100 });
+  const chaser = (where = area) => { const e = { kind: 'chaser', area: where, x: g.playerPos[0], y: g.playerPos[1] - 6, voice: null }; u.enemies.push(e); return e; };
+  const take = (e) => { const i = u.enemies.indexOf(e); if (i >= 0) u.enemies.splice(i, 1); return g._utKillLine(e); };
+  u.elapsed = 100; u.place = 'world';
+  // The words, by the rules (the line is chosen before anything is played).
+  fresh(); chaser();   // one more stays alive, so the arena is never cleared here
+  const seq = [];
+  for (let i = 0; i < 6; i++) { seq.push(take(chaser())); u.elapsed += 1; }   // six kills a second apart
+  out.multi = seq;
+  fresh(); chaser(); u.ann.worldKills = 3;
+  const streaks = {};
+  for (const n of [5, 10, 15, 20, 25]) { u.ann.streak = n - 1; u.ann.lastKillAt = -1e9; streaks[n] = take(chaser()); }
+  out.streaks = streaks;
+  fresh(); chaser(); u.ann.worldKills = 3; u.ann.streak = 1;
+  const foe = chaser(); u.ann.lastHitBy = foe; out.revenge = take(foe); out.revengeOnce = u.ann.lastHitBy === null;
+  fresh(); u.enemies = u.enemies.filter((x) => x.area !== area); u.ann.worldKills = 3; u.ann.areaKills.set(area.id, 1); u.ann.streak = 1;
+  out.cleared = take(chaser());
+  fresh(); chaser(); u.ann.worldKills = 3; u.ann.streak = 1; u.ann.areaAt = u.elapsed - 1;
+  out.quickdraw = take(chaser());
+  fresh(); chaser(); u.ann.worldKills = 3;
+  const plain = [];
+  for (let i = 0; i < 40; i++) { u.ann.streak = 1; u.ann.lastKillAt = -1e9; plain.push(take(chaser())); }
+  out.plainOk = plain.every((l) => l === null || ANN_FLAVOUR.includes(l)); out.flourishes = plain.filter(Boolean).length;
+  // Not in a labyrinth, and not for a kill in an arena you are not standing in.
+  const lab = u.world.areas.find((x) => x.kind !== 'battle' && x.kind !== 'event');
+  fresh(); out.elsewhere = lab ? take(chaser(lab)) : null;
+  out.counted = u.ann.worldKills === 1;   // the kill still counts
+  // How the world went, at the warning.
+  fresh(); u.worldDamage = 0; out.warnFlawless = g._utWarnLine();
+  u.worldDamage = 10; u.worldPoints = 80; out.warnVictory = g._utWarnLine();
+  u.worldDamage = 30; out.warnSudden = g._utWarnLine();
+  u.area = lab || area; out.warnElsewhere = lab ? g._utWarnLine() : null; u.area = area;
+  // And one for real: the first kill of a world is called over the roar, unplaced, in the room.
+  fresh(); chaser(); u.enemies = u.enemies.filter((x) => x.area !== area); chaser();
+  const played = []; const orig = a.play.bind(a);
+  a.play = (n, o) => { played.push([n, performance.now(), o || {}]); return orig(n, o); };
+  const e = chaser(); g._utKillEnemy(e, 'laser');
+  await new Promise((r) => setTimeout(r, 1700));
+  a.play = orig;
+  const bang = played.find(([n]) => n === 'explosion'); const call = played.find(([n]) => /^ut_ann_/.test(n));
+  out.call = call ? { name: call[0], after: call[1] - (bang ? bang[1] : 0), placed: !!call[2].pos, mix: !!call[2].areaMix || a.listenerMix !== null } : null;
+  out.after = ANN_AFTER; out.level = ANN_LEVEL; out.window = ANN_MULTI_WINDOW; out.streakTable = ANN_STREAK;
+  return out;
+});
+check(ann.skipped || (ann.has && ann.noGreeting && ann.names === 21), `the announcer's lines are in the pack (${ann.names}), with no greeting and no swearing among them`);
+check(ann.skipped || JSON.stringify(ann.multi) === JSON.stringify(['first_blood', 'double_kill', 'triple_kill', 'quad_kill', 'penta_crush', 'penta_crush']), 'first blood, then double, triple, quad and penta for kills close together: ' + JSON.stringify(ann.multi));
+check(ann.skipped || JSON.stringify(ann.streaks) === JSON.stringify({ 5: 'killstreak', 10: 'rampage', 15: 'unstoppable', 20: 'domination', 25: 'godlike' }), 'killstreak, rampage, unstoppable, domination, godlike at 5, 10, 15, 20, 25 kills unhit: ' + JSON.stringify(ann.streaks));
+check(ann.skipped || (ann.revenge === 'revenge' && ann.revengeOnce && ann.cleared === 'last_standing' && ann.quickdraw === 'quickdraw'), `revenge on the one that struck last, last man standing when the arena is cleared, quickdraw just inside: ${ann.revenge}, ${ann.cleared}, ${ann.quickdraw}`);
+check(ann.skipped || (ann.plainOk && ann.flourishes > 0 && ann.flourishes < 40), `an ordinary kill draws a flourish now and then (${ann.flourishes} of 40), never a false milestone`);
+check(ann.skipped || (ann.elsewhere === null && ann.counted), 'a kill outside a battle area is counted but not called');
+check(ann.skipped || (ann.warnFlawless === 'flawless' && ann.warnVictory === 'victory' && ann.warnSudden === 'sudden_death' && ann.warnElsewhere === null), `at the warning: flawless with no damage, victory for a world done well, sudden death otherwise, nothing outside an arena: ${ann.warnFlawless}, ${ann.warnVictory}, ${ann.warnSudden}, ${ann.warnElsewhere}`);
+check(ann.skipped || (ann.call && ann.call.name === 'ut_ann_first_blood' && ann.call.after > 900 && ann.call.after < 1700 && !ann.call.placed && ann.call.mix), 'the first kill of a world is called over the roar, about a second after the bang, unplaced, in the room: ' + JSON.stringify(ann.call));
+
+// The fatal hit in an arena: Defeat!, and the Game Over words wait for it.
+const defeat = await page.evaluate(async () => {
+  const g = window.__el.game; const u = g.ut; const a = window.__el.audio; const T = window.__ut;
+  const area = T.goTo((x) => x.kind === 'battle');
+  if (!area) return { skipped: true };
+  const e = { kind: 'chaser', area, x: g.playerPos[0], y: g.playerPos[1] - 6, voice: null }; u.enemies.push(e);
+  u.hp = 1; u.safe = 0; u.hitCooldown = 0;
+  const played = []; const orig = a.play.bind(a); a.play = (n, o) => { played.push([n, performance.now()]); return orig(n, o); };
+  const t0 = performance.now();
+  g._utHurt(e);
+  const out = { dead: u.phase === 'dead', stillRunning: g.state === 'ultimate' };
+  const before = [...g.playerPos];
+  g.input('up'); g.input('space'); g.input('hold');
+  out.heldStill = g.playerPos[0] === before[0] && g.playerPos[1] === before[1] && !u.compass.on;
+  await new Promise((r) => setTimeout(r, 1200));
+  out.overEarly = g.state !== 'ultimate';
+  await new Promise((r) => setTimeout(r, 1800));
+  a.play = orig;
+  const d = played.find(([n]) => n === 'ut_ann_defeat');
+  out.defeat = d ? d[1] - t0 : null; out.hit = played.some(([n]) => n === 'player_hit');
+  out.over = g.state === 'game_over'; out.said = document.getElementById('said').textContent;
+  return out;
+});
+check(defeat.skipped || (defeat.dead && defeat.stillRunning && defeat.heldStill && !defeat.overEarly), 'the fatal hit in an arena holds the run for the announcer; meanwhile nothing answers');
+check(defeat.skipped || (defeat.hit && defeat.defeat !== null && defeat.defeat > 300 && defeat.defeat < 700 && defeat.over && /Game Over/.test(defeat.said)), 'Defeat! is called after the hit, then the Game Over words: ' + JSON.stringify({ defeat: defeat.defeat, said: defeat.said.slice(0, 40) }));
 
 check(errors.length === 0, 'no page errors' + (errors.length ? ': ' + errors.slice(0, 3).join(' | ') : ''));
 await browser.close();

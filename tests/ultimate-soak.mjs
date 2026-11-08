@@ -1,4 +1,4 @@
-// Ultimate Test Mode soak (web 2.0.0): a bot plays for several worlds, hurried
+// Ultimate Mode soak (web 2.0.0): a bot plays for several worlds, hurried
 // along, while memory, the number of live sounds and errors are watched. Not part
 // of the quick suite (it takes a few minutes):
 //   node --import ./tests/github-stub.mjs tests/ultimate-soak.mjs http://localhost:8765 [worlds]

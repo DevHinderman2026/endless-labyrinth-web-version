@@ -33,9 +33,9 @@ let started = false;
 function setText(id, text) { $(id).textContent = text; }
 
 if (windowsOnly()) {
-  // Web 2.0.0: a Windows computer plays Ultimate Test Mode, the one mode the
+  // Web 2.0.0: a Windows computer plays Ultimate Mode, the one mode the
   // Windows game does not have; the rest of the game is the Windows version.
-  setText('lead', 'On a Windows computer, this web version plays Ultimate Test Mode: the hardest mode in the game, in binaural 3D sound, made for the web alone. '
+  setText('lead', 'On a Windows computer, this web version plays Ultimate Mode: the hardest mode in the game, in binaural 3D sound, made for the web alone. '
     + 'The other modes and the events are played in the full Windows version of Endless Labyrinth, which you can download from the Releases page of the game\'s GitHub repository (the link is at the bottom of this page). '
     + 'Press Start to load the sounds.'
     + (/Firefox\//.test(navigator.userAgent) ? ' Firefox should work, but Chrome, Edge or Safari is recommended: those are the browsers the game is tested with.' : ''));

@@ -34,7 +34,7 @@
 // Russell had always meant the slide down, the mirror of the run).
 // A keyboard is unchanged: a held arrow is one press.
 //
-// The compass (web 2.0.0, Ultimate Test Mode only): while the game asks for it
+// The compass (web 2.0.0, Ultimate Mode only): while the game asks for it
 // (holdCompass), one finger held still for HOLD_MS emits 'hold'; that finger then
 // does nothing more until it lifts. In every other mode a still finger still does
 // nothing. On a keyboard, C emits 'compass'.
@@ -55,7 +55,7 @@ export class Gestures {
     this.accelBy = null;        // ...by a finger ('touch') or the up arrow ('key')
     this.taps = 0;
     this.tapTimer = null;
-    this.holdCompass = false;   // Ultimate Test Mode: a still finger is the compass
+    this.holdCompass = false;   // Ultimate Mode: a still finger is the compass
     this.holdTimer = null;
     this.braille = null;        // Windows: the Braille keyboard translator (main.js sets it)
     this.g = null;              // the gesture in progress

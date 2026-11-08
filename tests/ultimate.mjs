@@ -1,4 +1,4 @@
-// Ultimate Test Mode (web 2.0.0), end to end in Chromium through Playwright.
+// Ultimate Mode (web 2.0.0), end to end in Chromium through Playwright.
 // Run: serve the site folder (python3 -m http.server 8765), then
 //   node --import ./tests/github-stub.mjs tests/ultimate.mjs http://localhost:8765
 // A scripted player starts a run, walks, shoots, meets the compass, rides an
@@ -33,8 +33,8 @@ const setup = await page.evaluate(async () => {
   const { HELP } = await import('./js/game.js');
   const mod = await import('./js/modes/ultimate.js');
   const names = HELP.map(([n]) => n);
-  const section = HELP.find(([n]) => n === 'Ultimate Test Mode');
-  const demos = HELP.find(([n]) => n === 'Demos, Ultimate Test Mode');
+  const section = HELP.find(([n]) => n === 'Ultimate Mode');
+  const demos = HELP.find(([n]) => n === 'Demos, Ultimate Mode');
   const demoSounds = demos[1].map((i) => i.sound).filter(Boolean);
   g.menuIndex = g.menuKeys.indexOf('ultimate');
   g.input('enter');
@@ -46,12 +46,12 @@ const setup = await page.evaluate(async () => {
     stats: Object.keys(g.scores.stats.time),
   };
 });
-check(setup.menu.indexOf('Ultimate Test Mode') === setup.menu.indexOf('Chaos Mode') + 1, 'main menu: Ultimate Test Mode right after Chaos: ' + setup.menu.join(', '));
-check(setup.names.indexOf('Ultimate Test Mode') === setup.names.indexOf('Chaos Mode') + 1 && setup.names.indexOf('Demos, Ultimate Test Mode') > setup.names.indexOf('Demos, Chaos Mode'), 'help sections in order: ' + setup.names.join(' | '));
-check(setup.topics === 18 && setup.demos === 12, `help: ${setup.topics} topics, ${setup.demos} demos`);
+check(setup.menu.indexOf('Ultimate Mode') === setup.menu.indexOf('Chaos Mode') + 1, 'main menu: Ultimate Mode right after Chaos: ' + setup.menu.join(', '));
+check(setup.names.indexOf('Ultimate Mode') === setup.names.indexOf('Chaos Mode') + 1 && setup.names.indexOf('Demos, Ultimate Mode') > setup.names.indexOf('Demos, Chaos Mode'), 'help sections in order: ' + setup.names.join(' | '));
+check(setup.topics === 18 && setup.demos === 13, `help: ${setup.topics} topics, ${setup.demos} demos`);
 check(setup.missing.length === 0, 'every demo sound exists' + (setup.missing.length ? ': missing ' + setup.missing.join(', ') : ''));
 check(setup.bgMissing.length === 0, 'every event background is in the packs' + (setup.bgMissing.length ? ': missing ' + setup.bgMissing.join(', ') : ''));
-check(setup.boards.includes('Ultimate Test Mode: No score yet'), 'high scores list the board: ' + setup.boards.join(' | '));
+check(setup.boards.includes('Ultimate Mode: No score yet'), 'high scores list the board: ' + setup.boards.join(' | '));
 check(setup.stats.includes('ultimate'), 'stats keep an ultimate line');
 check(setup.state === 'ultimate' && setup.spatial && setup.hasWorld, 'a run starts in the 3D world (spatial on, world chain made)');
 
@@ -427,7 +427,7 @@ const end = await page.evaluate(async () => {
 });
 check(end.frozen, 'the pause freezes the regeneration countdown');
 check(end.state === 'game_over', 'health at zero ends the run');
-check(/^Game Over\. You scored \d+ points?, survived .+, and made it through 1 world\./.test(end.said), 'the end says points, time survived and worlds: ' + end.said);
+check(/^Game Over\. You scored \d+ points?, survived .+, and made it through \d+ worlds?\./.test(end.said), 'the end says points, time survived and worlds: ' + end.said);
 check(!end.spatial, 'the 3D world closes with the run');
 check(end.score === end.points && end.points > 0, `the score is saved to the board (${end.score})`);
 

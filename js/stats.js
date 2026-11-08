@@ -24,7 +24,7 @@ function el(tag, attrs = {}, children = []) {
   return e;
 }
 
-export const MODE_NAMES = { standard: 'Standard Mode', battle: 'Battle Mode', drive: 'Driving Mode', tower: 'Tower Mode', island: 'Island Mode', chaos: 'Chaos Mode', ultimate: 'Ultimate Test Mode', event: 'Events' };
+export const MODE_NAMES = { standard: 'Standard Mode', battle: 'Battle Mode', drive: 'Driving Mode', tower: 'Tower Mode', island: 'Island Mode', chaos: 'Chaos Mode', ultimate: 'Ultimate Mode', event: 'Events' };
 
 // The high score boards, in the game's own High Scores order and words.
 export const BOARDS = [
@@ -33,7 +33,7 @@ export const BOARDS = [
   ['drive', 'Driving Mode', (v) => count(v, 'car')],
   ['drive_distance', 'Driving Distance', (v) => `${v} m`],
   ['island', 'Island Mode', (v) => count(v, 'point')],
-  ['ultimate', 'Ultimate Test Mode', (v) => count(v, 'point')],
+  ['ultimate', 'Ultimate Mode', (v) => count(v, 'point')],
   ['standard', 'Standard Mode', (v) => `Level ${v}`],
   ['battle', 'Battle Mode', (v) => count(v, 'enemy')],
 ];

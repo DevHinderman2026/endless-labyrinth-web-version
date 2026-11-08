@@ -1,4 +1,4 @@
-// Ultimate Test Mode's world generator (web 2.0.0), in Node alone: over many
+// Ultimate Mode's world generator (web 2.0.0), in Node alone: over many
 // seeds, every world is connected, every area is reachable from every other,
 // every world has a safe zone, labyrinths join through doorways, and the compass
 // finds a first step from anywhere. Run: node tests/world.mjs

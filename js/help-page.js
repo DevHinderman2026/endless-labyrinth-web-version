@@ -116,7 +116,7 @@ async function playDemo(button, section, item) {
   try {
     if (!ready) ready = openPacks().then((packs) => audio.attach(packs));
     await ready;
-    // Ultimate Test Mode's own tones are made by the game, not read from a pack.
+    // Ultimate Mode's own tones are made by the game, not read from a pack.
     makeUltimateSounds(audio);
     const room = helpRoomFor(section);
     if (room) await audio.prepareRoom(room);

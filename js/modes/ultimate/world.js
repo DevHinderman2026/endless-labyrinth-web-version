@@ -1,4 +1,4 @@
-// Ultimate Test Mode: the world (web 2.0.0, Russell's design of 8 November 2026).
+// Ultimate Mode: the world (web 2.0.0, Russell's design of 8 November 2026).
 //
 // One continuous space, built at random every world: five to ten square areas of
 // five kinds (labyrinth, island, tower, battle, event), laid side by side on a

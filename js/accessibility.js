@@ -26,7 +26,7 @@ export function deviceAdvice(kind) {
     linux: 'turn Orca on with Super Alt S',
   }[kind];
   if (kind === 'windows') {
-    return 'You are on a Windows computer. This website reads with your screen reader as any website does. The game plays Ultimate Test Mode here, with the keyboard, and speaks for itself with your computer\'s own voice, so quiet NVDA\'s or JAWS\'s speech while you play; the game tells you how at the start. A Braille display and a Braille keyboard work with it, through NVDA or JAWS, as in the Windows version: the game keeps the keyboard focus in a text box of its own and shows what it says there. For every other mode, play the full Windows version, which works with NVDA and JAWS and with a Braille display.';
+    return 'You are on a Windows computer. This website reads with your screen reader as any website does. The game plays Ultimate Mode here, with the keyboard, and speaks for itself with your computer\'s own voice, so quiet NVDA\'s or JAWS\'s speech while you play; the game tells you how at the start. A Braille display and a Braille keyboard work with it, through NVDA or JAWS, as in the Windows version: the game keeps the keyboard focus in a text box of its own and shows what it says there. For every other mode, play the full Windows version, which works with NVDA and JAWS and with a Braille display.';
   }
   const a = /^[aeiou]/i.test(word) ? 'an' : 'a';
   return `You are on ${a} ${word}. ${sr} reads this website for you: if it is not on, ${on}. The game is different: it speaks for itself with your ${word}'s own voice, so turn ${sr} off while you play and back on when you leave. The game tells you how at the start of every session.`;

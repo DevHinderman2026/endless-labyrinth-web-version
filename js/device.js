@@ -1,7 +1,7 @@
 // What kind of device this is. The web version is for phones and tablets
 // (iPhone, iPad, Android phones and tablets) and, since web version 1.0.3, for
 // Chromebooks, Macs and Linux computers, played with the keyboard. A Windows
-// computer plays Ultimate Test Mode only (web 2.0.0): Endless Labyrinth already
+// computer plays Ultimate Mode only (web 2.0.0): Endless Labyrinth already
 // has a full Windows version for the other modes.
 //
 // Apple devices (web 1.1.0): an iPad's Safari says it is a Mac, and an iPhone
@@ -56,10 +56,10 @@ export function deviceKind() {
 }
 
 // The computers the web version plays on, with the keyboard (Windows: Ultimate
-// Test Mode only, see windowsOnly).
+// Mode only, see windowsOnly).
 export function isComputer(kind) { return kind === 'chromebook' || kind === 'mac' || kind === 'linux' || kind === 'windows'; }
 
-// A Windows computer on the website: the game offers Ultimate Test Mode alone, and
+// A Windows computer on the website: the game offers Ultimate Mode alone, and
 // points to the Windows game for the rest. (The developer's play.html?desktop=1 on
 // localhost is not one: it plays the whole game with the phone's wording.)
 export function windowsOnly() {

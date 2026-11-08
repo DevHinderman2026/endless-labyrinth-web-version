@@ -1,5 +1,5 @@
 // Which devices may play: phones, tablets, Chromebooks, Macs and Linux computers;
-// A Windows computer plays Ultimate Test Mode only (web 2.0.0). Run: serve the site folder, then
+// A Windows computer plays Ultimate Mode only (web 2.0.0). Run: serve the site folder, then
 //   node tests/devices.mjs http://localhost:8765
 import { chromium } from 'playwright';
 
@@ -47,7 +47,7 @@ check(ipadSideways[0] === 'ipad', `an iPad held sideways is an iPad: ${ipadSidew
 const macTouch = await kind({ userAgent: MAC, viewport: { width: 1440, height: 900 }, touchPoints: 0 });
 check(macTouch[0] === 'mac', `a Mac with no touch screen is a Mac, whatever its screen size: ${macTouch}`);
 const win = await kind({ userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36' });
-check(win[0] === 'windows' && !win[1], `a Windows computer may start (Ultimate Test Mode only, web 2.0.0): ${win}`);
+check(win[0] === 'windows' && !win[1], `a Windows computer may start (Ultimate Mode only, web 2.0.0): ${win}`);
 const phone = await kind({ userAgent: 'Mozilla/5.0 (Linux; Android 14; Pixel 8) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Mobile Safari/537.36', hasTouch: true, isMobile: true, viewport: { width: 412, height: 915 } });
 check(phone[0] === 'android-phone' && !phone[1], `an Android phone may play: ${phone}`);
 await browser.close();

@@ -1,4 +1,4 @@
-// Ultimate Test Mode (web 2.0.0): the edges. A regeneration while on the seabed
+// Ultimate Mode (web 2.0.0): the edges. A regeneration while on the seabed
 // and while riding, the compass between worlds, help and quitting with the
 // compass on, a pause during the fade, throwers' throws and deaths, the seabed in
 // the world's own coordinates, and a clean start of another mode afterwards.

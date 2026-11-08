@@ -93,10 +93,10 @@ const HELP = (() => {
 })();
 export { HELP, isRunState, modeOf };
 
-// The help the game itself shows. On a Windows computer the game is Ultimate Test
+// The help the game itself shows. On a Windows computer the game is Ultimate
 // Mode alone (web 2.0.0), so its help is the General section, that mode's, and
 // its demos; the website's Help page shows everything, on every device.
-const WINDOWS_HELP = ['General', 'Ultimate Test Mode', 'Demos, Ultimate Test Mode'];
+const WINDOWS_HELP = ['General', 'Ultimate Mode', 'Demos, Ultimate Mode'];
 // Windows only: how the game works with a Braille display and a Braille keyboard
 // (js/braille.js), added to the General section.
 export const BRAILLE_HELP = { title: 'General Braille Keyboard and Display', sound: null, desc: 'On a Windows computer the game works with a Braille display and a Braille keyboard, through NVDA or JAWS, as the Windows version does. '
@@ -298,7 +298,7 @@ export class Game {
   _menuKeys() {
     // Gesture Practice is for touch screens: a computer is played with the keyboard.
     const practice = keyboardDevice() ? [] : ['practice'];
-    // A Windows computer (web 2.0.0): Ultimate Test Mode, the scores and the
+    // A Windows computer (web 2.0.0): Ultimate Mode, the scores and the
     // settings; the other modes and the events are the Windows game's.
     // Its Braille settings are the Windows game's: the keyboard mode, speech off
     // for Braille only, and a key test for a new device.
@@ -326,7 +326,7 @@ export class Game {
     let line = 'Welcome to Endless Labyrinth. Please wear headphones as this is a 3D audio game. '
       + 'Swipe up and down to navigate. Double tap to select. Tap four times for Help. ';
     if (windowsOnly()) {
-      line += 'On this Windows computer the web version plays Ultimate Test Mode, in binaural 3D sound. '
+      line += 'On this Windows computer the web version plays Ultimate Mode, in binaural 3D sound. '
         + 'The other modes and the events are played in the Windows version of Endless Labyrinth; the play page links to its download. ';
     }
     if (this.braille) { const a = this.braille.takeAnnouncement(); if (a) line = a + ' ' + line; }
@@ -1372,7 +1372,7 @@ export class Game {
     if (g === 'pause') {
       this.isPaused = !this.isPaused;
       // A mode may hold or restart something of its own with the pause (Ultimate
-      // Test Mode's world fade).
+      // Mode's world fade).
       if (blocker && blocker.paused) blocker.paused(this, this.isPaused);
       if (this.isPaused) {
         this._pauseSounds();
@@ -1473,7 +1473,7 @@ export class Game {
 
   // Whether holding may repeat steps now: in a run, not paused, not driving, and
   // not where Up and Down are answers rather than steps (a reflex event), nor
-  // where the mode says not (Ultimate Test Mode's compass and elevator).
+  // where the mode says not (Ultimate Mode's compass and elevator).
   _canStride() {
     if (!this.playing || this.isPaused) return false;
     const md = this.mode;
@@ -1538,8 +1538,8 @@ export class Game {
       enter: 'Double tap. Choose, like Enter.', help: 'Four taps. Help.', tap: 'One tap. It does nothing.',
       space: 'Two-finger tap. Fire, like Space.', pause: 'Three-finger tap. Pause and resume.',
       clock: 'T. The clock.', yes: 'Y. Yes.', no: 'N. No.',
-      hold: 'Held still for one second. In Ultimate Test Mode only, that turns the compass on or off.',
-      compass: 'C. The compass, in Ultimate Test Mode.',
+      hold: 'Held still for one second. In Ultimate Mode only, that turns the compass on or off.',
+      compass: 'C. The compass, in Ultimate Mode.',
     };
     if (g === 'back') {
       const now = performance.now();
@@ -1718,7 +1718,7 @@ export class Game {
     const md = this.mode;
     const gm = md && md.gestureMode ? md.gestureMode(this) : null;
     this.gestures.setMode(this.playing && !this.isPaused ? (gm || 'run') : this.state === S.PRACTICE ? 'practice' : 'menu');
-    // A finger held still is the compass only where the mode asks (Ultimate Test
+    // A finger held still is the compass only where the mode asks (Ultimate
     // Mode), and in Gesture Practice, which names it.
     this.gestures.holdCompass = this.state === S.PRACTICE
       || !!(this.playing && !this.isPaused && md && md.holdGesture && md.holdGesture(this));

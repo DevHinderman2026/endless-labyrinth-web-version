@@ -14,7 +14,7 @@ import { loadPacks } from './packs.js';
 import { reverbIsLoop } from './modes/events/sounds.js';
 
 const RATE = 44100;
-// Ultimate Test Mode (web 2.0.0) hears the world in binaural 3D: the browser's
+// Ultimate Mode (web 2.0.0) hears the world in binaural 3D: the browser's
 // HRTF panner. In that mode (AudioEngine.spatial) every sound played with a
 // position goes through a panner, its echo goes to the bus of the area it is in,
 // and the whole world passes through one gain and one low-pass filter, so a
@@ -87,7 +87,7 @@ export class AudioEngine {
     this.sourceEffect = null;     // set by the game: position -> [gain, lean]
     this.behindOf = null;         // set by the game: position -> 0..1
     this.demoVoice = null;
-    // Binaural 3D (Ultimate Test Mode): see spatialOn / spatialOff.
+    // Binaural 3D (Ultimate Mode): see spatialOn / spatialOff.
     this.spatial = false;
     this.worldIn = null;          // GainNode: the world's sounds, before the filter and fade
     this.worldFilter = null;
@@ -537,7 +537,7 @@ export class AudioEngine {
     for (const v of this.live) v.refreshWet();
   }
 
-  // ---------------------------------------------------------------- binaural 3D (Ultimate Test Mode)
+  // ---------------------------------------------------------------- binaural 3D (Ultimate Mode)
   // Turn the 3D world on: from now on a Voice played with `pos` is placed by the
   // HRTF panner (the listener stays at the origin, facing north: the world never
   // turns), and everything but a 'direct' sound passes through the world's filter
