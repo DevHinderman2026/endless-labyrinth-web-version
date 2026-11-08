@@ -8,8 +8,8 @@
 // its home mode's sounds: labyrinths (walls, navigation), islands (a shore, sand
 // underfoot, an elevator down to the seabed, chasers), tower areas (throwers that
 // race you for items and throw them), battle areas (chasers you shoot) and event
-// areas (the event backgrounds; no enemies: the safe zones). It regenerates on a
-// timer (3 minutes, then 2 and a half, then 2), with a spoken warning at 15
+// areas (the event backgrounds; no enemies: the safe zones). It regenerates every
+// three minutes, with a spoken warning at 15
 // seconds and Battle's countdown over the last 5, fading out, a silence, and a
 // new world fading in with 5 safe seconds. There is no clock on the run: it ends
 // when health runs out. Points come from kills, pickups and credits, times a
@@ -20,21 +20,28 @@
 // tower items belong to the tower area they were found in. A compass (hold a
 // finger still for a second; C on a keyboard) points along the walkable route to
 // the nearest safe zone with a centred beep, highest toward the way to go, while
-// the world is muffled and nothing can move.
+// the world is muffled and nothing can move; it says how far the leg runs.
+//
+// Russell's first play test (8 November 2026, night) set: every world three
+// minutes; areas one and a half times bigger with neighbours heard only near their
+// borders; one rival per tower area; one chaser per battle or island area at first,
+// never more than six; slower chasers and two seconds between strikes; the compass
+// speaking its leg; the lift's hum silent in the car; and the area echoes, which a
+// string-against-number lookup had left silent.
 
 import { TowerEnemy, TowerItem, TowerProjectile, volleySpread, TOWER_DRONES } from './tower.js';
 import { addMade, aliasRecording, ensureCopies } from './events/sounds.js';
 import { HELP_SECTIONS, HELP_DEMOS } from './ultimate/help.js';
 import {
   makeWorld, makeSeabed, CELL, AREA_CELLS, key, cellOf, posOf, isFloor, areaAt, nearestPointOf, leakPoint, echoMix,
-  randomFloor, firstStepToward,
+  randomFloor, firstLegToward,
 } from './ultimate/world.js';
 
 export const STATE = 'ultimate';
 export const BOARD = 'ultimate';
 
 // ------------------------------------------------------------------ the numbers (tune)
-export const WORLD_SECONDS = [180, 150, 120];   // the first world, the second, then every one after
+export const WORLD_SECONDS = [180];             // every world (Russell, after the first play test: three minutes throughout; it was 180, 150, then 120)
 export const WARN_AT = 15;                      // "World regenerating in 15 seconds."
 export const COUNT_FROM = 5;                    // Battle's countdown over the last seconds
 export const NO_SPAWN_FROM = 3;                 // nothing new appears in the last seconds
@@ -47,8 +54,8 @@ export const START_HP = 100;
 export const DAMAGE_START = 5;                  // a hit in the easy stretch
 export const DAMAGE_CAP = 25;                   // Tower's cap: death takes at least four hits
 export const DAMAGE_PER_MINUTE = 1.5;           // after the easy stretch, toward the cap
-export const ENEMIES_EASY = [1, 2];             // per enemy area
-export const ENEMIES_MAX = 10;                  // in one area (the event engine's creature limit)
+export const ENEMIES_EASY = [1, 1];             // chasers per battle or island area in the easy stretch (was 1 to 2)
+export const ENEMIES_MAX = 6;                   // chasers in one area (was 10); a tower area always has one thrower
 export const ENEMIES_PER_MINUTE = 1.0;          // the base count rises this fast after the easy stretch
 export const SPEED_RISE = 0.25;                 // speed multiplier added over SPEED_RISE_MINUTES
 export const SPEED_RISE_MINUTES = 10;
@@ -56,10 +63,10 @@ export const SPEED_WELL = 1.10;                 // a world done well: enemies th
 export const SPEED_CAP = 1.5;
 export const WELL_POINTS = 60;                  // doing well in a world: at least this many base points...
 export const WELL_DAMAGE = 25;                  // ...with no more damage than this
-export const CHASER_SPEED = 2.6;                // units a second (the player's run is about 14)
+export const CHASER_SPEED = 2.2;                // units a second at the start (was 2.6; the player's run is about 14)
 export const CHASER_TOUCH = 1.6;
 export const CHASER_PUSH = 15.0;                // a chaser that struck is set back this far
-export const HIT_COOLDOWN = 1.0;
+export const HIT_COOLDOWN = 2.0;                // between strikes (was 1.0)
 export const RESPAWN_ENEMY = [8, 15];           // seconds after a kill
 export const RESPAWN_PICKUP = [10, 20];         // ammo and credits, out in the world
 export const SAFE_AMMO_EVERY = 15;              // a safe zone's one cartridge comes back after this long
@@ -73,13 +80,14 @@ export const POTION_DELAY = [3, 8];
 export const LOW_AMMO_FROM = 5;
 export const POINTS = { chaser: 10, thrower: 20, ammo: 5, potion: 10 };
 export const MULTIPLIER_STEP = 0.5;             // times 1, 1.5, 2 ... by world
-export const HEAR_RANGE = 55.0;                 // enemies and pickups fade to nothing by here
-export const AMBIENCE_RANGE = 45.0;             // an area's air, outside it
+export const HEAR_RANGE = 70.0;                 // enemies and pickups fade to nothing by here, inside their area
+export const AMBIENCE_RANGE = 15.0;             // a neighbouring area's air, and its pickups, reach this far past its border or doorway (was 45)
 export const AMBIENCE_LEVEL = 0.8;
 export const DOOR_LEAK = 0.85;                  // through a doorway, against an open border
 export const REACH = 1.6;                       // walking into a thing: its own cell
 export const COMPASS_HOLD_MS = 1000;
 export const COMPASS_BEEP_EVERY = 0.45;
+const COMPASS_DIRS = [[0, -1], [1, 0], [0, 1], [-1, 0]];   // ahead, right, behind, left
 export const ARENA = (AREA_CELLS - 1) / 2 * CELL;   // an area, as a tower floor sees it: 31.5 each way
 export const SEABED_RANGE = 30.0;
 export const RIDE_MIN = 4.0;
@@ -332,7 +340,8 @@ const mixin = {
     let total = 0;
     for (const a of w.areas) {
       if (!['battle', 'island', 'tower'].includes(a.kind)) continue;
-      a.enemyCount = this._utEnemyCount();
+      // A tower area has one rival, as a tower floor does; chasers go by the ramp.
+      a.enemyCount = a.kind === 'tower' ? 1 : this._utEnemyCount();
       total += a.enemyCount;
       for (let i = 0; i < a.enemyCount; i++) this._utSpawnEnemy(a, mul, true);
       if (a.kind === 'tower') this._utSpawnTowerItem(a);
@@ -1032,23 +1041,33 @@ const mixin = {
       pair(s.drums, s.drumsIn, 0.85);
       if (s.hum) {
         const lp = posOf(a.elevator[0], a.elevator[1]);
-        const hl = (seabed && a === u.area) ? 0 : levelAt(dist2(lp, this.playerPos)) * (onWorld ? 1 : (ride ? ride.above : 0));
+        // The lift's hum is a thing of the ground: silent in the car and on the
+        // seabed, as Island Mode stops it when the ride begins.
+        const hl = onWorld ? levelAt(dist2(lp, this.playerPos)) : 0;
         this._utFollow(s.hum, lp, hl, aboveHeight);
       }
     }
-    // Enemies: heard across the world, fading with distance, never from the seabed.
+    // Enemies: heard only in the area you are in (a neighbour's wait, unheard,
+    // until you cross its border), fading with distance, never from the seabed.
     for (const e of u.enemies) {
       const pos = this._utEnemyPos(e);
       const d = dist2(pos, this.playerPos);
-      const level = levelAt(d) * (onWorld ? 1 : (ride ? ride.above * 0.6 : 0));
+      const level = e.area !== u.area ? 0 : levelAt(d) * (onWorld ? 1 : (ride ? ride.above * 0.6 : 0));
       if (!e.voice && level > 0.01) e.voice = this._utPlay(e.soundName, pos, { loops: -1, volume: 0.0 });
       else if (e.voice && level <= 0.001 && d > HEAR_RANGE + 10) { e.voice.stop(); u.voices.delete(e.voice); e.voice = null; }
       if (e.voice) this._utFollow(e.voice, pos, level, aboveHeight);
     }
-    // Pickups and tower items: beacons, as far as the ear carries.
+    // Pickups and tower items: beacons, as far as the ear carries in your own
+    // area; a neighbour's only within AMBIENCE_RANGE of its border, as its air.
+    const reach = (area, pos) => {
+      if (area === u.area) return levelAt(dist2(pos, this.playerPos));
+      if (!onWorld) return 0;
+      const [, outside] = nearestPointOf(area, this.playerPos);
+      return levelAt(dist2(pos, this.playerPos)) * levelAt(outside, AMBIENCE_RANGE);
+    };
     for (const p of u.pickups) {
       const d = dist2(p.pos, this.playerPos);
-      const level = levelAt(d) * p.gain * (onWorld ? 1 : (ride ? ride.above * 0.6 : 0));
+      const level = reach(p.area, p.pos) * p.gain * (onWorld ? 1 : (ride ? ride.above * 0.6 : 0));
       if (!p.voice && level > 0.01) p.voice = this._utPlay(p.beacon, p.pos, { loops: -1, volume: 0.0 });
       else if (p.voice && level <= 0.001 && d > HEAR_RANGE + 10) { p.voice.stop(); u.voices.delete(p.voice); p.voice = null; }
       if (p.voice) this._utFollow(p.voice, p.pos, level, aboveHeight);
@@ -1056,7 +1075,7 @@ const mixin = {
     for (const it of u.towerItems.values()) {
       const pos = this._utItemPos(it);
       const d = dist2(pos, this.playerPos);
-      const level = levelAt(d) * (onWorld ? 1 : 0);
+      const level = reach(it.area, pos) * (onWorld ? 1 : 0);
       if (!it.channel && level > 0.01) it.channel = this._utPlay('item_beacon', pos, { loops: -1, volume: 0.0 });
       else if (it.channel && level <= 0.001 && d > HEAR_RANGE + 10) { it.channel.stop(); u.voices.delete(it.channel); it.channel = null; }
       if (it.channel) this._utFollow(it.channel, pos, level, aboveHeight);
@@ -1182,7 +1201,7 @@ const mixin = {
     u.compass.t = 0;
     this.stride = null;
     this.audio.setMuffle(true, 0.4);
-    this.tts.speak('Compass on. Ahead.', { interrupt: true });
+    this.tts.speak('Compass on. ' + this._utCompassWords(0), { interrupt: true });
   },
 
   _utCompassOff(quiet = false) {
@@ -1193,15 +1212,33 @@ const mixin = {
     if (!quiet) this.tts.speak('Compass off.', { interrupt: true });
   },
 
-  // The route's first step (one of four directions), or null: already there, or no way.
-  _utRouteStep() {
+  // The route's first leg: { dir (one of four directions), steps (how far it runs
+  // straight before the route turns), arrives }, or null: already there, or no way.
+  _utRouteLeg() {
     const u = this.ut;
     if (u.place === 'seabed') {
       const [cx, cy] = this._utSeabedCell(this.playerPos);
       if (!cx && !cy) return null;
-      return Math.abs(cx) >= Math.abs(cy) ? [-Math.sign(cx), 0] : [0, -Math.sign(cy)];
+      const along = Math.abs(cx) >= Math.abs(cy);
+      const dir = along ? [-Math.sign(cx), 0] : [0, -Math.sign(cy)];
+      const steps = along ? Math.abs(cx) : Math.abs(cy);
+      return { dir, steps, arrives: along ? cy === 0 : cx === 0 };
     }
-    return firstStepToward(u.world, cellOf(this.playerPos), (a) => a.kind === 'event');
+    return firstLegToward(u.world, cellOf(this.playerPos), (a) => a.kind === 'event');
+  },
+
+  _utRouteStep() { const leg = this._utRouteLeg(); return leg ? leg.dir : null; },
+
+  // What the compass says for a direction: the word, and, when it is the way to
+  // go, how far that leg runs before the route turns (Russell, after the first
+  // play test: the first step alone was not enough to walk by in a labyrinth).
+  _utCompassWords(idx) {
+    const word = ['Ahead', 'Right', 'Behind', 'Left'][idx];
+    const leg = this._utRouteLeg();
+    const d = COMPASS_DIRS[idx];
+    if (!leg || leg.dir[0] !== d[0] || leg.dir[1] !== d[1]) return word + '.';
+    const n = leg.steps;
+    return `${word}, ${n} ${plural(n, 'step')}, ${leg.arrives ? 'and you are there' : 'then turn'}.`;
   },
 
   _utCompassTurn(g) {
@@ -1210,7 +1247,7 @@ const mixin = {
     if (idx === undefined) return;
     u.compass.dir = idx;
     u.compass.t = COMPASS_BEEP_EVERY;   // a beep at once, for the new direction
-    this.tts.speak(['Ahead', 'Right', 'Behind', 'Left'][idx] + '.', { interrupt: true });
+    this.tts.speak(this._utCompassWords(idx), { interrupt: true });
   },
 
   _utCompassTick(dt) {
@@ -1219,8 +1256,7 @@ const mixin = {
     if (u.compass.t < COMPASS_BEEP_EVERY) return;
     u.compass.t = 0;
     const route = this._utRouteStep();
-    const dirs = [[0, -1], [1, 0], [0, 1], [-1, 0]];
-    const d = dirs[u.compass.dir];
+    const d = COMPASS_DIRS[u.compass.dir];
     let step = 0;
     if (route) {
       const dot = d[0] * route[0] + d[1] * route[1];   // 1 toward, 0 across, -1 away

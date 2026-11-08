@@ -57,7 +57,7 @@ check(setup.state === 'ultimate' && setup.spatial && setup.hasWorld, 'a run star
 
 // --------------------------------------------------------------- the first world
 await sleep(700);
-const w0 = await page.evaluate(() => {
+const w0 = await page.evaluate(async () => {
   const g = window.__el.game; const a = window.__el.audio; const u = g.ut;
   const kinds = u.world.areas.map((x) => x.kind);
   const enemyAreas = u.world.areas.filter((x) => ['battle', 'island', 'tower'].includes(x.kind));
@@ -71,6 +71,22 @@ const w0 = await page.evaluate(() => {
     kindsRight: u.enemies.every((e) => (e.kind === 'thrower') === (e.area.kind === 'tower')),
     pickups: u.pickups.map((p) => p.kind), safeAmmo: u.pickups.filter((p) => p.safe).length, eventAreas: kinds.filter((k) => k === 'event').length,
     loops: near.length, placed, buses: a.areaBuses.size, said: document.getElementById('said').textContent,
+    // The area echo: a beacon placed beside the player sends into the area's bus
+    // (the first build's bug: a string key against the buses' numbers, so no sound
+    // ever reached an echo).
+    echo: await (async () => {
+      const area = u.area.room ? u.area : u.world.areas.find((x) => x.room);
+      if (!area) return { skipped: true };
+      u.area = area; g.playerPos = [(area.x0 + 11) * 3, (area.y0 + 11) * 3]; g._utRefreshRooms();
+      const c = { kind: 'credit', area, pos: [g.playerPos[0] + 6, g.playerPos[1]], value: 40, beacon: 'credit_beacon_40', gain: 0.7 };
+      u.pickups.push(c);
+      g.updateUltimateMode(1 / 30);
+      await new Promise((r) => setTimeout(r, 500));
+      const v = c.voice;
+      if (!v || !v.wet || !v.wet.taps || !v.wet.taps.size) return { name: v && v.name, taps: 0 };
+      const t = [...v.wet.taps.values()][0];
+      return { name: v.name, taps: v.wet.taps.size, gain: t.gain.value, wl: v.wet.wl.gain.value, conv: !!(t.bus && t.bus.conv && t.bus.conv.buffer), room: area.room };
+    })(),
     farFromEnemies: u.enemies.every((e) => Math.hypot(g._utEnemyPos(e)[0] - g.playerPos[0], g._utEnemyPos(e)[1] - g.playerPos[1]) >= 10),
     towerItems: u.towerItems.size, towers: kinds.filter((k) => k === 'tower').length,
   };
@@ -80,12 +96,13 @@ check(w0.eventAreas >= 1, 'at least one event area (the safe zone)');
 check(w0.hp === 100 && w0.ammo === 0 && w0.points === 0, 'starts with 100 health, no ammo, no points');
 check(w0.worldTime > 178 && w0.worldTime <= 180, `the first world lasts 3 minutes (${w0.worldTime.toFixed(1)} left)`);
 check(w0.labsQuiet && w0.kindsRight, 'enemies only in battle, island and tower areas; throwers in tower areas only');
-check(w0.enemyAreas === 0 || (w0.enemies >= w0.enemyAreas && w0.enemies <= 2 * w0.enemyAreas), `easy stretch: ${w0.enemies} enemies in ${w0.enemyAreas} enemy areas (one or two each)`);
+check(w0.enemies === w0.enemyAreas, `easy stretch: ${w0.enemies} enemies in ${w0.enemyAreas} enemy areas (one each: a chaser, or a tower area's one rival)`);
 check(w0.farFromEnemies, 'no enemy within 10 units of the player at the start');
 check(w0.pickups.filter((k) => k === 'ammo').length >= 3 && w0.safeAmmo === w0.eventAreas, `ammo scattered (${w0.pickups.filter((k) => k === 'ammo').length}), one in each safe zone`);
 check(w0.pickups.filter((k) => k === 'credit').length >= 2 && w0.pickups.filter((k) => k === 'credit').length <= 3, 'two or three credits');
 check(w0.towerItems === w0.towers, 'one item lying in each tower area');
 check(w0.placed >= 1 && w0.loops >= 1 && w0.buses >= 1, `${w0.loops} loops, ${w0.placed} placed in 3D, ${w0.buses} area echo buses`);
+check(w0.echo && (w0.echo.skipped || (w0.echo.taps >= 1 && w0.echo.gain > 0.2 && w0.echo.wl > 0.02 && w0.echo.conv)), 'a placed sound sends into its area\'s echo: ' + JSON.stringify(w0.echo));
 check(w0.said === '' || !/Ultimate/.test(w0.said), 'dropped in silently (nothing said: "' + w0.said + '")');
 
 // --------------------------------------------------------------- walking, walls, the report
@@ -214,7 +231,7 @@ const compass = await page.evaluate(async () => {
 });
 check(compass.on && /Compass on/.test(compass.saidOn), 'a held finger turns the compass on: ' + compass.saidOn);
 check(compass.stillThere, 'while the compass is on, a swipe turns the compass and the player does not move');
-check(compass.saidRight === 'Right.', 'turning speaks one word: ' + compass.saidRight);
+check(/^Right(\.|, \d+ steps?, (then turn|and you are there)\.)$/.test(compass.saidRight), 'turning speaks the direction, with the leg\'s length when it is the way: ' + compass.saidRight);
 check(compass.beeps >= 3 && compass.direct, `the compass beeps (${compass.beeps} in two seconds), played direct (never muffled)`);
 check(compass.f0 >= 19000 && compass.fOn < 2000 && compass.fOff >= 19000, `the world is muffled while the compass is on (${Math.round(compass.f0)} Hz, ${Math.round(compass.fOn)}, ${Math.round(compass.fOff)})`);
 check(compass.ammo0 === compass.ammoAfter, 'the weapon does not fire while the compass is on');
@@ -348,7 +365,7 @@ check(regen.spoken.includes('World regenerating in 15 seconds.'), 'the voice war
 check(regen.counts === 5, `Battle's countdown over the last five seconds (${regen.counts} beeps)`);
 check(regen.phases.includes('fading') && regen.phases.includes('silence') && regen.phases.includes('fadein'), 'fade out, silence, fade in: ' + regen.phases.join(', '));
 check(regen.levels.some(([l, s]) => l === 0 && s === 2) && regen.levels.some(([l, s]) => l === 1 && s === 1), 'the world fades out over two seconds and the new one fades in over one: ' + JSON.stringify(regen.levels));
-check(regen.worldTime > 149 && regen.worldTime <= 150, `the second world lasts two and a half minutes (${regen.worldTime && regen.worldTime.toFixed(1)})`);
+check(regen.worldTime > 179 && regen.worldTime <= 180, `the second world lasts three minutes too (${regen.worldTime && regen.worldTime.toFixed(1)})`);
 check(regen.atEnd && regen.atStart && regen.atEnd.hp === regen.atStart.hp && regen.atEnd.ammo === regen.atStart.ammo && regen.atStart.ammo === 7, 'health and ammo carry over: ' + JSON.stringify([regen.atEnd, regen.atStart]));
 check(regen.mult === 1.5, `the multiplier is now ${regen.mult}`);
 check(regen.place === 'world' && regen.carry === null && regen.compassOff, 'on the ground, no tower items, compass off');

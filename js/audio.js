@@ -805,7 +805,10 @@ export class Voice {
     const now = this.ctx.currentTime;
     // Areas no longer in the mix fade out of it.
     for (const [id, tap] of w.taps) if (!(this.areaMix && this.areaMix[id])) tap.gain.setTargetAtTime(0, now, 0.05);
-    for (const [id, want] of Object.entries(this.areaMix || {})) {
+    for (const [key, want] of Object.entries(this.areaMix || {})) {
+      // (The mix's keys are strings, as every object key is; the buses are kept
+      // by the areas' numbers.)
+      const id = Number(key);
       const bus = a.areaBuses.get(id);
       if (!bus) continue;
       let tap = w.taps.get(id);

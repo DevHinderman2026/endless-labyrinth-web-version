@@ -45,7 +45,11 @@ const seabed = await page.evaluate(async () => {
   g.playerPos = [isl.elevator[0] * 3, (isl.elevator[1] + 1) * 3];
   u.liftArmed = false; g.updateUltimateMode(1 / 30);
   g.input('up'); g.updateUltimateMode(1 / 30);
-  for (let i = 0; i < 30 * 20 && u.place === 'ride'; i++) { g.updateUltimateMode(1 / 30); if (i % 30 === 0) await new Promise((r) => setTimeout(r, 20)); }
+  // The lift's hum is silent in the car (Island Mode stops it as the ride begins).
+  const hum = u.areaSounds.get(isl.id) && u.areaSounds.get(isl.id).hum;
+  let humInCar = 0;
+  for (let i = 0; i < 30 * 20 && u.place === 'ride'; i++) { g.updateUltimateMode(1 / 30); if (hum) humInCar = Math.max(humInCar, hum.l); if (i % 30 === 0) await new Promise((r) => setTimeout(r, 20)); }
+  const humOnSeabed = hum ? hum.l : 0;
   const lift = [isl.elevator[0] * 3, isl.elevator[1] * 3];
   const atLift = g.playerPos[0] === lift[0] && g.playerPos[1] === lift[1];
   const origin = u.seabed.origin;
@@ -68,13 +72,14 @@ const seabed = await page.evaluate(async () => {
   // The shore is heard from above, placed at the player (not off at the island's middle).
   const s = u.areaSounds.get(isl.id);
   const ambPos = s && s.amb && s.amb.pos3 ? s.amb.pos3.slice() : null;
-  return { place: u.place, atLift, origin: JSON.stringify(origin) === JSON.stringify(isl.elevator), steps, edge, taken, inside, route, toward, ambPos, under: !!(u.seabed && u.seabed.under) };
+  return { place: u.place, atLift, origin: JSON.stringify(origin) === JSON.stringify(isl.elevator), steps, edge, taken, inside, route, toward, ambPos, under: !!(u.seabed && u.seabed.under), humInCar, humOnSeabed, hadHum: !!hum };
 });
 check(seabed.place === 'seabed' && seabed.atLift && seabed.origin, 'the ride down lands under the lift; the seabed\'s origin is the elevator\'s cell');
 check(seabed.steps === 6 && seabed.edge === 6, `the seabed is six cells across from the lift, with a wall beyond (${seabed.steps} steps)`);
 check(seabed.taken && seabed.inside, 'a seabed pickup is walked onto and taken, and every pickup lies within the seabed');
 check(seabed.route && seabed.toward, 'the compass on the seabed points back toward the elevator: ' + JSON.stringify(seabed.route));
 check(seabed.ambPos && Math.abs(seabed.ambPos[0]) < 0.1 && seabed.ambPos[1] > 5 && seabed.under, `on the seabed the shore is straight above (${seabed.ambPos && seabed.ambPos.map((v) => v.toFixed(1)).join(', ')}) and the water plays`);
+check(seabed.hadHum && seabed.humInCar === 0 && seabed.humOnSeabed === 0, `the lift's hum is silent in the car and on the seabed (${seabed.humInCar}, ${seabed.humOnSeabed})`);
 
 // --------------------------------------------------------------- a regeneration while on the seabed
 const regenSeabed = await page.evaluate(async () => {

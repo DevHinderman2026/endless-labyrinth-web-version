@@ -62,7 +62,7 @@ const SENTENCES = [
   [/with four positions matching the swipes: swipe up for ahead, right for right, down for behind and left for left/g,
     'with four positions matching the arrow keys: the up arrow for ahead, the right arrow for right, down for behind and left for left'],
   [/you turn with a swipe, as everywhere else in the game/g, 'you turn with the arrow keys, as everywhere else in the game'],
-  [/then go that way: slide up to run ahead, or swipe that way\./g, 'then go that way with the arrow keys.'],
+  [/then go that way for that many steps: slide up to run ahead, or swipe that way\./g, 'then go that way for that many steps with the arrow keys.'],
   [/Hold a finger still for a second for the compass\./g, 'Press C for the compass.'],
   [/The gestures are the same as every other mode: swipe to step, slide up and hold to run, slide down and hold to walk backwards, at the usual speeds, lift to stop\./g,
     'The keys are the same as every other mode: the arrows to step.'],

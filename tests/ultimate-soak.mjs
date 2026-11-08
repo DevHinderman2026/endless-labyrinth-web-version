@@ -58,8 +58,10 @@ for (let round = 0; round < 400 && worlds < worldsWanted; round++) {
   }
 }
 check(worlds >= worldsWanted, `played ${worlds} worlds`);
-const lives = samples.map((s) => s.live);
-check(Math.max(...lives) < 120, `live sounds stay bounded (most ${Math.max(...lives)})`);
+// (The bot plays twenty inputs in a burst, so one-shots pile up far beyond what a
+// hand can make; the loops are the measure of a leak.)
+const loops = samples.map((s) => s.loops);
+check(Math.max(...loops) < 40, `looping sounds stay bounded (most ${Math.max(...loops)}; live at most ${Math.max(...samples.map((s) => s.live))})`);
 const heaps = samples.map((s) => s.mem).filter((m) => m !== null);
 if (heaps.length >= 3) {
   const late = heaps.slice(-2); const early = heaps.slice(1, 3);

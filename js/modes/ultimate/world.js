@@ -16,11 +16,11 @@
 // This file has no sound and no DOM in it, so Node can test it (tests/world.mjs).
 
 export const CELL = 3.0;
-export const AREA_CELLS = 22;          // an area is this many cells square (66 units)
+export const AREA_CELLS = 33;          // an area is this many cells square (99 units; 22 until the first play test, Russell: 1.5 times bigger)
 export const PITCH = AREA_CELLS + 1;   // slot to slot: the shared border line takes one cell
 export const WORLD_AREAS = [5, 10];
 export const KINDS = ['labyrinth', 'island', 'tower', 'battle', 'event'];
-export const LAB_DENSITY = [0.16, 0.24];
+export const LAB_DENSITY = [0.10, 0.16];   // (0.16 to 0.24 at first: too many turns for the compass)
 export const DOOR_CELLS = 2;           // a doorway is this many cells wide
 export const OPEN_BORDER_CHANCE = 0.45;
 export const SEABED_CELLS = 12;        // the seabed under an island, its own small floor
@@ -295,9 +295,9 @@ export function randomFloor(world, a, r, { from = null, minDist = 0, avoid = [],
 }
 
 // ---------------------------------------------------------------- the compass
-// The first step of the shortest walk from a cell to any cell of an area that
-// `isGoal(area)` accepts: one of DIRS, or null when already there or no way.
-export function firstStepToward(world, fromCell, isGoal) {
+// The shortest walk from a cell to any cell of an area that `isGoal(area)`
+// accepts, as the cells after the start, or null when already there or no way.
+export function routeToward(world, fromCell, isGoal) {
   const start = key(fromCell[0], fromCell[1]);
   if (!world.floor.has(start)) return null;
   const startArea = world.cellArea.get(start);
@@ -310,11 +310,9 @@ export function firstStepToward(world, fromCell, isGoal) {
     const [x, y] = k.split(',').map(Number);
     const id = world.cellArea.get(k);
     if (k !== start && id !== undefined && isGoal(world.areas[id])) {
-      // Walk back to the first step.
-      let cur = k; let before = prev.get(cur);
-      while (before && before !== start) { cur = before; before = prev.get(cur); }
-      const [cx, cy] = cur.split(',').map(Number);
-      return [cx - fromCell[0], cy - fromCell[1]];
+      const path = [];
+      for (let cur = k; cur && cur !== start; cur = prev.get(cur)) path.push(cur.split(',').map(Number));
+      return path.reverse();
     }
     for (const [dx, dy] of DIRS) {
       const nk = key(x + dx, y + dy);
@@ -322,6 +320,28 @@ export function firstStepToward(world, fromCell, isGoal) {
     }
   }
   return null;
+}
+
+// The route's first leg: its direction (one of DIRS), how many steps it runs
+// straight before the route turns, and whether it reaches the goal without
+// turning; null when already there or no way. (The compass speaks this.)
+export function firstLegToward(world, fromCell, isGoal) {
+  const path = routeToward(world, fromCell, isGoal);
+  if (!path || !path.length) return null;
+  const dir = [path[0][0] - fromCell[0], path[0][1] - fromCell[1]];
+  let steps = 1;
+  for (let i = 1; i < path.length; i++) {
+    const d = [path[i][0] - path[i - 1][0], path[i][1] - path[i - 1][1]];
+    if (d[0] !== dir[0] || d[1] !== dir[1]) break;
+    steps += 1;
+  }
+  return { dir, steps, arrives: steps === path.length };
+}
+
+// The first step alone, or null (see firstLegToward).
+export function firstStepToward(world, fromCell, isGoal) {
+  const leg = firstLegToward(world, fromCell, isGoal);
+  return leg ? leg.dir : null;
 }
 
 // Steps from a cell to the nearest goal area (the tests), or Infinity.
