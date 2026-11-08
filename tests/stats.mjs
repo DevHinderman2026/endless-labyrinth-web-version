@@ -144,7 +144,7 @@ await page.waitForFunction(() => document.querySelectorAll('#event-runs li').len
   const runs = await text('#runs-modes li');
   check(/Standard Mode: 3 runs/.test(runs) && /Battle Mode: 1 run \|/.test(runs) && /Events: 2 runs/.test(runs), `runs per mode: ${runs}`);
   const scores = await text('#scores li');
-  check(scores === 'Chaos Mode: 310 points | Tower Mode: 7 floors | Driving Mode: No score yet | Driving Distance: 1250 m | Island Mode: No score yet | Standard Mode: Level 4 | Battle Mode: 22 enemies', `the best scores in the game's order and words: ${scores}`);
+  check(scores === 'Chaos Mode: 310 points | Tower Mode: 7 floors | Driving Mode: No score yet | Driving Distance: 1250 m | Island Mode: No score yet | Ultimate Test Mode: No score yet | Standard Mode: Level 4 | Battle Mode: 22 enemies', `the best scores in the game's order and words: ${scores}`);
   check((await text('#events-completed')).startsWith('Events completed: 2.'), `events completed: ${await text('#events-completed')}`);
   check((await text('#medals')) === 'Medals earned: 1 gold, 1 silver, 0 bronze.', `medals: ${await text('#medals')}`);
   const evs = await text('#event-runs li');

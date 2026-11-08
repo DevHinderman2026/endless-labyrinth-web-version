@@ -25,7 +25,7 @@ const left = await page.evaluate(async () => {
     if (typeof x === 'object') { if (x.title) texts.push(x.title); if (x.desc) texts.push(x.desc); if (x.items) walk(x.items); if (x.topics) walk(x.topics); for (const v of Object.values(x)) if (Array.isArray(v)) walk(v); }
   };
   walk(HELP);
-  for (const m of ['driving', 'tower', 'island', 'chaos']) {
+  for (const m of ['driving', 'tower', 'island', 'chaos', 'ultimate']) {
     const mod = await import(`./js/modes/${m}.js`);
     walk(Object.values(mod));
     if (mod.default) walk(Object.values(mod.default));

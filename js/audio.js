@@ -14,6 +14,15 @@ import { loadPacks } from './packs.js';
 import { reverbIsLoop } from './modes/events/sounds.js';
 
 const RATE = 44100;
+// Ultimate Test Mode (web 2.0.0) hears the world in binaural 3D: the browser's
+// HRTF panner. In that mode (AudioEngine.spatial) every sound played with a
+// position goes through a panner, its echo goes to the bus of the area it is in,
+// and the whole world passes through one gain and one low-pass filter, so a
+// regeneration can fade it out and in and the compass can muffle it. The compass
+// beep and the voice's own tones are played 'direct', past that filter. Every
+// other mode is untouched: without spatial, nothing below is used.
+const MUFFLE_OPEN_HZ = 20000;
+const MUFFLE_CLOSED_HZ = 650;
 // Recordings longer than this are decoded only when they are about to play, and
 // let go when they have not been used for a while, so a phone never holds every
 // drone in memory at once.
@@ -78,6 +87,13 @@ export class AudioEngine {
     this.sourceEffect = null;     // set by the game: position -> [gain, lean]
     this.behindOf = null;         // set by the game: position -> 0..1
     this.demoVoice = null;
+    // Binaural 3D (Ultimate Test Mode): see spatialOn / spatialOff.
+    this.spatial = false;
+    this.worldIn = null;          // GainNode: the world's sounds, before the filter and fade
+    this.worldFilter = null;
+    this.worldGain = null;
+    this.areaBuses = new Map();   // area id -> { gain, conv, room, stretch }
+    this.stretched = new Map();   // 'room#take@stretch' -> AudioBuffer
     // The sound's clock, sampled four times a second (see flowing).
     this._clk = [];
     setInterval(() => {
@@ -162,6 +178,12 @@ export class AudioEngine {
     this.out = this.ctx.createGain();
     this.out.connect(this.ctx.destination);
     this.convolvers = new Map();
+    // The world chain and the area echoes belong to the old engine; made again
+    // in the new one, for the same areas, by the mode's next call.
+    const areas = [...this.areaBuses.values()].map((b) => ({ id: b.id, room: b.room, stretch: b.stretch }));
+    this.areaBuses = new Map();
+    this.worldIn = this.worldFilter = this.worldGain = null;
+    if (this.spatial) { this.spatialOn(); this.setAreaRooms(areas); }
     for (const v of [...this.live]) v.rebind(old);
     // The old engine is kept a moment, so a one-shot already sounding there (a
     // footstep, a shot) finishes rather than being cut off.
@@ -507,11 +529,141 @@ export class AudioEngine {
     for (const v of this.live) v.refreshWet();
   }
 
+  // ---------------------------------------------------------------- binaural 3D (Ultimate Test Mode)
+  // Turn the 3D world on: from now on a Voice played with `pos` is placed by the
+  // HRTF panner (the listener stays at the origin, facing north: the world never
+  // turns), and everything but a 'direct' sound passes through the world's filter
+  // and gain. Idempotent; made again for a fresh engine by recover().
+  spatialOn() {
+    this.spatial = true;
+    if (this.worldIn) return;
+    const ctx = this.ctx;
+    this.worldIn = ctx.createGain();
+    this.worldFilter = ctx.createBiquadFilter();
+    this.worldFilter.type = 'lowpass';
+    this.worldFilter.Q.value = 0.5;
+    this.worldFilter.frequency.value = MUFFLE_OPEN_HZ;
+    this.worldGain = ctx.createGain();
+    this.worldGain.gain.value = 1.0;
+    this.worldIn.connect(this.worldFilter);
+    this.worldFilter.connect(this.worldGain);
+    this.worldGain.connect(this.out);
+    const l = ctx.listener;
+    try {
+      if (l.positionX) { l.positionX.value = 0; l.positionY.value = 0; l.positionZ.value = 0; }
+      if (l.forwardX) {
+        l.forwardX.value = 0; l.forwardY.value = 0; l.forwardZ.value = -1;
+        l.upX.value = 0; l.upY.value = 1; l.upZ.value = 0;
+      } else if (l.setOrientation) l.setOrientation(0, 0, -1, 0, 1, 0);
+    } catch (e) { /* the defaults are the same */ }
+  }
+
+  // The 3D world is over: the area echoes go, and sounds play as everywhere else.
+  spatialOff() {
+    this.spatial = false;
+    this.setAreaRooms([]);
+    if (this.worldGain) {
+      const g = this.worldGain; const f = this.worldFilter; const i = this.worldIn;
+      this.worldIn = this.worldFilter = this.worldGain = null;
+      // Anything still ringing (an explosion's echo) is let finish.
+      setTimeout(() => { for (const n of [i, f, g]) { try { n.disconnect(); } catch (e) { /* gone */ } } }, 5000);
+    }
+  }
+
+  // Where a Voice's branches go: the world chain in 3D, the output otherwise.
+  get bus() { return this.spatial && this.worldIn ? this.worldIn : this.out; }
+
+  // The world's level (a regeneration fades it out and in) and its muffling (the
+  // compass): both glide over `seconds`.
+  setWorldLevel(level, seconds = 0) {
+    if (!this.worldGain) return;
+    const p = this.worldGain.gain; const now = this.ctx.currentTime;
+    p.cancelScheduledValues(now);
+    p.setValueAtTime(p.value, now);
+    p.linearRampToValueAtTime(clamp(level, 0, 1), now + Math.max(0.01, seconds));
+  }
+
+  setMuffle(on, seconds = 0.4) {
+    if (!this.worldFilter) return;
+    const p = this.worldFilter.frequency; const now = this.ctx.currentTime;
+    p.cancelScheduledValues(now);
+    p.setValueAtTime(p.value, now);
+    p.exponentialRampToValueAtTime(on ? MUFFLE_CLOSED_HZ : MUFFLE_OPEN_HZ, now + Math.max(0.01, seconds));
+  }
+
+  // A room's impulse response stretched in time, so a bigger area rings longer
+  // (the same echo, slowed; its level eased so a long tail is not louder).
+  _stretchedIr(room, take, stretch) {
+    const src = this.irBuffers.get(room + '#' + take);
+    if (!src) return null;
+    const s = Math.round(Math.max(0.5, Math.min(2.5, stretch)) * 20) / 20;
+    if (Math.abs(s - 1) < 1e-6) return src;
+    const k = room + '#' + take + '@' + s;
+    const have = this.stretched.get(k);
+    if (have) return have;
+    const n = Math.floor(src.length * s);
+    const out = this.ctx.createBuffer(src.numberOfChannels, n, src.sampleRate);
+    const level = 1 / Math.sqrt(s);
+    for (let c = 0; c < src.numberOfChannels; c++) {
+      const a = src.getChannelData(c); const b = out.getChannelData(c);
+      for (let i = 0; i < n; i++) {
+        const x = i / s; const j = Math.floor(x); const f = x - j;
+        const v0 = a[j] || 0; const v1 = a[j + 1] || 0;
+        b[i] = (v0 + (v1 - v0) * f) * level;
+      }
+    }
+    if (this.stretched.size > 24) this.stretched.delete(this.stretched.keys().next().value);
+    this.stretched.set(k, out);
+    return out;
+  }
+
+  // The areas whose echoes are kept ready: [{ id, room, stretch }]. An area that
+  // drops off the list keeps ringing for a moment, then its convolver goes. A
+  // room with no impulse (null: the open air of an island) gets a bus with no
+  // echo, so the sends simply go nowhere.
+  setAreaRooms(areas) {
+    const keep = new Set(areas.map((a) => a.id));
+    for (const [id, b] of [...this.areaBuses]) {
+      if (keep.has(id)) continue;
+      this.areaBuses.delete(id);
+      const retire = () => {
+        if ([...this.live].some((v) => v.areaMix && v.areaMix[id])) { setTimeout(retire, 4000); return; }
+        try { b.gain.disconnect(); } catch (e) { /* gone */ }
+        if (b.conv) { try { b.conv.disconnect(); } catch (e) { /* gone */ } }
+      };
+      setTimeout(retire, 5000);
+    }
+    for (const a of areas) {
+      let b = this.areaBuses.get(a.id);
+      if (b && b.room === a.room && b.stretch === a.stretch) continue;
+      if (b) { try { b.gain.disconnect(); } catch (e) { /* gone */ } }
+      b = { id: a.id, room: a.room, stretch: a.stretch, gain: this.ctx.createGain(), conv: null };
+      b.gain.gain.value = 1.0;
+      if (a.room) {
+        const ir = this._stretchedIr(a.room, 0, a.stretch || 1);
+        if (ir) {
+          b.conv = this.ctx.createConvolver();
+          b.conv.normalize = false;
+          b.conv.buffer = ir;
+          b.conv.key = a.room + '#0';
+          b.gain.connect(b.conv);
+          b.conv.connect(this.bus);
+        }
+      }
+      this.areaBuses.set(a.id, b);
+      // Voices already sending to this area pick the new bus up.
+      for (const v of this.live) if (v.areaMix && v.areaMix[a.id]) v.setAreaMix(v.areaMix);
+    }
+  }
+
   // ---------------------------------------------------------------- playing
   // Play a sound. `loops` -1 loops it; `at` is where in the world it happens, if
   // not at the player: its echo then comes from that part of the room, and it
   // sounds dull if that spot is behind the player. Returns the Voice, or null.
-  play(name, { loops = 0, volume = 1.0, fadeMs = 0, at = null } = {}) {
+  // In 3D (spatial): `pos` [x, y] (and `height`) place the sound relative to the
+  // player, `areaMix` { areaId: weight } sends its echo to its area's bus, and
+  // `direct` plays it past the world's filter and fade (the compass).
+  play(name, { loops = 0, volume = 1.0, fadeMs = 0, at = null, pos = null, height = 0, areaMix = null, direct = false } = {}) {
     const pair = this.entries.get(name);
     if (!pair || !pair.dry) return null;
     if (loops === -1) {
@@ -528,6 +680,11 @@ export class AudioEngine {
     if (at && this.sourceEffect) { try { src = this.sourceEffect(at); } catch (e) { src = null; } }
     if (at && this.behindOf) { try { behind = this.behindOf(at); } catch (e) { behind = 0.0; } }
     const v = new Voice(this, name, pair, { loop: loops === -1, volume, fadeMs, src, behind });
+    if (this.spatial) {
+      v.direct = !!direct;
+      if (pos) v.pos3 = [pos[0], height, pos[1]];
+      if (areaMix) v.areaMix = { ...areaMix };
+    }
     this.live.add(v);
     v.begin();
     return v;
@@ -574,7 +731,16 @@ export class Voice {
     this.ended = false;
     this.sources = [];
     this.offset = 0;
+    // Binaural 3D (see AudioEngine.spatialOn): where the sound is, relative to the
+    // player ([x, height, z]: z positive is behind), which areas' echoes it rings
+    // in, and whether it plays past the world's filter.
+    this.pos3 = null;
+    this.areaMix = null;
+    this.direct = false;
   }
+
+  // Whether this voice is placed by the panner: the world is 3D and it has a place.
+  get placed() { return this.audio.spatial && !!this.pos3 && !this.direct; }
 
   _branch(buffer) {
     const ctx = this.ctx;
@@ -591,8 +757,80 @@ export class Voice {
     fade.connect(split);
     split.connect(gl, 0); split.connect(gr, 1);
     gl.connect(merge, 0, 0); gr.connect(merge, 0, 1);
-    merge.connect(this.audio.out);
-    return { buffer, fade, split, gl, gr, merge };
+    let panner = null;
+    if (this.placed) {
+      // The HRTF panner places the sound; the game still sets its loudness by
+      // distance itself, so the panner's own distance rolloff is turned off.
+      panner = ctx.createPanner();
+      panner.panningModel = 'HRTF';
+      panner.distanceModel = 'linear';
+      panner.refDistance = 1;
+      panner.maxDistance = 10000;
+      panner.rolloffFactor = 0;
+      const [x, y, z] = this.pos3;
+      Voice._place(panner, x, y, z, ctx.currentTime, true);
+      merge.connect(panner);
+      panner.connect(this.audio.bus);
+    } else {
+      merge.connect(this.direct ? this.audio.out : this.audio.bus);
+    }
+    return { buffer, fade, split, gl, gr, merge, panner };
+  }
+
+  static _place(panner, x, y, z, now, instant) {
+    // Never exactly at the listener's own point: the panner's direction would be
+    // undefined there. A thing underfoot is a step ahead, centred.
+    if (Math.hypot(x, y, z) < 0.05) { x = 0; z = -0.05; }
+    if (panner.positionX) {
+      for (const [p, v] of [[panner.positionX, x], [panner.positionY, y], [panner.positionZ, z]]) {
+        if (instant) { p.cancelScheduledValues(now); p.setValueAtTime(v, now); } else p.setTargetAtTime(v, now, 0.02);
+      }
+    } else panner.setPosition(x, y, z);
+  }
+
+  // Move a placed sound (3D). Nothing happens outside the 3D world.
+  setPosition(x, z, y = 0) {
+    this.pos3 = [x, y, z];
+    if (!this.dry || !this.audio.spatial) return;
+    const now = this.ctx.currentTime;
+    for (const br of [this.dry, this.dull]) if (br && br.panner) Voice._place(br.panner, x, y, z, now, false);
+  }
+
+  // Which areas' echoes a placed sound rings in (3D): { areaId: weight }.
+  setAreaMix(mix) {
+    this.areaMix = mix ? { ...mix } : null;
+    const w = this.wet;
+    if (!w || !w.taps) return;
+    const a = this.audio;
+    const now = this.ctx.currentTime;
+    // Areas no longer in the mix fade out of it.
+    for (const [id, tap] of w.taps) if (!(this.areaMix && this.areaMix[id])) tap.gain.setTargetAtTime(0, now, 0.05);
+    for (const [id, want] of Object.entries(this.areaMix || {})) {
+      const bus = a.areaBuses.get(id);
+      if (!bus) continue;
+      let tap = w.taps.get(id);
+      if (!tap || tap.bus !== bus) {
+        if (tap) { try { tap.disconnect(); } catch (e) { /* gone */ } }
+        tap = this.ctx.createGain();
+        tap.gain.value = 0;
+        tap.bus = bus;
+        w.merge.connect(tap);
+        tap.connect(bus.gain);
+        w.taps.set(id, tap);
+      }
+      // The desktop's one-shot echo scale for this sound in that area's room.
+      const OS = RULES.ONCE_SCALE || {};
+      const scale = bus.conv ? ((OS[bus.conv.key] || {})[this.name] || 1) : 1;
+      tap.gain.setTargetAtTime(clamp(want, 0, 1) * scale, now, 0.05);
+    }
+  }
+
+  // Level, place and dullness in one call, every frame (3D): the loudness the
+  // game worked out for the distance, where the thing is relative to the
+  // player, and how far behind.
+  setSpatial(level, dx, dz, behind = 0, height = 0) {
+    this.setPosition(dx, dz, height);
+    this.setVolume(level, level, behind);
   }
 
   begin(offset = 0) {
@@ -613,9 +851,25 @@ export class Voice {
     // Anything else sends into the room's convolver; a loop sound played once gets
     // the plain room's first take, as the desktop's one-shot echo of a loop.
     const rooms = RULES.ROOMS[this.name] || [];
-    const loopWet = (a.room && this.send > 0 && rooms.includes(a.room) && this.loop)
+    const loopWet = (a.room && this.send > 0 && rooms.includes(a.room) && this.loop && !a.spatial)
       ? a._loopWet(a.room, this.name, buf) : null;
-    if (loopWet) {
+    if (a.spatial && !this.direct && this.send > 0 && (rooms.length || this.pair.dry.made)) {
+      // 3D: the echo is sent to the buses of the areas the sound is in (see
+      // setAreaMix), each with that area's own echo. The level is the plain
+      // room's one-shot scale, as a one-shot in that room would get.
+      const ctx = this.ctx;
+      const split = ctx.createChannelSplitter(2);
+      const wl = ctx.createGain();
+      const wr = ctx.createGain();
+      const merge = ctx.createChannelMerger(2);
+      wl.gain.value = 0; wr.gain.value = 0;
+      this.dry.fade.connect(split);
+      split.connect(wl, 0); split.connect(wr, 1);
+      wl.connect(merge, 0, 0); wr.connect(merge, 0, 1);
+      this.wet = { split, wl, wr, merge, taps: new Map() };
+      this.wetScale = 1;
+      if (this.areaMix) this.setAreaMix(this.areaMix);
+    } else if (loopWet) {
       const br = this._branch(loopWet);
       this.wet = { buffer: loopWet, fade: br.fade, split: br.split, wl: br.gl, wr: br.gr, merge: br.merge };
     } else if (a.room && this.send > 0 && rooms.includes(a.room)) {
@@ -720,7 +974,10 @@ export class Voice {
       if (!br) continue;
       try { br.merge.disconnect(); } catch (e) { /* already */ }
     }
-    if (this.wet) { try { this.wet.merge.disconnect(); } catch (e) { /* already */ } }
+    if (this.wet) {
+      try { this.wet.merge.disconnect(); } catch (e) { /* already */ }
+      for (const tap of (this.wet.taps || new Map()).values()) { try { tap.disconnect(); } catch (e) { /* already */ } }
+    }
   }
 
   _set(param, v, instant) {

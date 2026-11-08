@@ -25,7 +25,7 @@ check(!(await page.locator('#computer-note').isVisible()), 'a Linux computer is 
   const wctx = await browser.newContext({ userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36' });
   const wpage = await wctx.newPage();
   await wpage.goto(base + '/index.html');
-  check(await wpage.locator('#computer-note').isVisible(), 'a Windows computer is told to use the Windows version');
+  check(await wpage.locator('#computer-note').isVisible() && /Ultimate Test Mode/.test(await wpage.textContent('#computer-note')), 'a Windows computer is told it plays Ultimate Test Mode here and the rest in the Windows version');
   await wctx.close();
 }
 // Web 1.1.0: every page's site links and footer are built by script from one
@@ -105,7 +105,7 @@ await page.waitForFunction(() => document.querySelector('#faq button.topic-toggl
   check(await page.locator('footer.site nav a[href="faq.html"]').count() === 0, 'the footer no longer links to the old questions page');
 }
 await page.goto(base + '/history.html');
-check((await page.locator('main h2').allTextContents()).join(' | ').startsWith('1.4.0'), 'the Update History lists the newest version first');
+check((await page.locator('main h2').allTextContents()).join(' | ').startsWith('2.0.0 (8 November 2026), web only'), 'the Update History lists the newest version first, marked web only');
 await page.goto(base + '/credits.html');
 check((await page.locator('ul.credits li').count()) === 314, 'credits list the recordings');
 

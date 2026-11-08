@@ -86,14 +86,46 @@ async function computer(name, [ua, kind, srHint]) {
 
 for (const [name, spec] of Object.entries(UA)) await computer(name, spec);
 
-// Windows: refused, on the play page and on the home page.
+// Windows (web 2.0.0): Ultimate Test Mode only, with the keyboard; the other modes
+// are the Windows game's. The play page and the home page say so.
 {
   const ctx = await browser.newContext({ userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36 Edg/130.0.0.0' });
   const page = await ctx.newPage();
+  const errors = [];
+  page.on('pageerror', (e) => errors.push(String(e)));
   await page.goto(base + '/play.html');
-  check(!(await page.locator('#start').isVisible()) && /Windows version/.test(await page.textContent('#lead')), 'Windows (Edge): refused, pointed to the Windows version');
+  check((await page.locator('#start').isVisible()) && /Ultimate Test Mode/.test(await page.textContent('#lead')) && /Windows version/.test(await page.textContent('#lead')), 'Windows (Edge): let in for Ultimate Test Mode, pointed to the Windows version for the rest');
+  check(await page.locator('#windows-note a[href*="releases/latest"]').isVisible(), 'Windows: the play page links to the Windows download');
+  await page.click('#start');
+  await page.waitForFunction(() => /Sounds loaded/.test(document.getElementById('lead').textContent), null, { timeout: 90000 });
+  const lead = await page.textContent('#lead');
+  check(/NVDA key plus S/.test(lead) && /Insert plus Space, then S/.test(lead) && /press Enter to begin/.test(lead), 'Windows: told how to quiet NVDA and JAWS, then Enter to begin');
+  await page.keyboard.press('Enter');
+  await page.waitForFunction(() => window.__el.game && window.__el.game.state === 'menu');
+  await page.waitForTimeout(300);
+  const w = await page.evaluate(async () => {
+    const g = window.__el.game;
+    const { gameHelp, HELP } = await import('./js/game.js');
+    return { menu: g.menuOptions.slice(), said: document.getElementById('said').textContent, help: gameHelp().map(([n]) => n), all: HELP.length };
+  });
+  check(JSON.stringify(w.menu.map((m) => m.replace(/:.*/, ''))) === JSON.stringify(['Ultimate Test Mode', 'High Scores', 'Speech Rate', 'Leave Game']), 'Windows: the menu is Ultimate Test Mode, High Scores, Speech Rate, Leave Game: ' + w.menu.join(', '));
+  check(/other modes and the events are played in the Windows version/.test(w.said) && /arrow/.test(w.said) && !/Swipe/.test(w.said), 'Windows: the welcome says where the other modes are, in the keyboard\'s words');
+  check(JSON.stringify(w.help) === JSON.stringify(['General', 'Ultimate Test Mode', 'Demos, Ultimate Test Mode']) && w.all > 3, 'Windows: the game\'s help is General, Ultimate Test Mode and its demos (the site keeps all ' + w.all + ')');
+  // Enter starts the mode; the compass is C; Escape then Y quits.
+  await page.keyboard.press('Enter');
+  await page.waitForTimeout(800);
+  const run = await page.evaluate(() => ({ state: window.__el.game.state, spatial: window.__el.audio.spatial }));
+  check(run.state === 'ultimate' && run.spatial, 'Windows: Enter starts Ultimate Test Mode in 3D');
+  await page.keyboard.press('c'); await page.waitForTimeout(200);
+  const comp = await page.evaluate(() => ({ on: window.__el.game.ut.compass.on, said: document.getElementById('said').textContent }));
+  check(comp.on || /Compass not available/.test(comp.said), 'Windows: C is the compass: ' + comp.said);
+  await page.keyboard.press('c'); await page.waitForTimeout(200);
+  await page.keyboard.press('Escape'); await page.waitForTimeout(200);
+  await page.keyboard.press('y'); await page.waitForTimeout(300);
+  check((await page.evaluate(() => window.__el.game.state)) === 'menu', 'Windows: Escape then Y returns to the menu');
   await page.goto(base + '/index.html');
-  check(await page.locator('#computer-note').isVisible(), 'Windows: the home page says so');
+  check(await page.locator('#computer-note').isVisible() && /Ultimate Test Mode/.test(await page.textContent('#computer-note')), 'Windows: the home page says so');
+  check(errors.length === 0, 'Windows: no page errors' + (errors.length ? ': ' + errors.join(' | ') : ''));
   await ctx.close();
 }
 

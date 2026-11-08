@@ -15,6 +15,7 @@ import { keyWords } from './keywords.js';
 import { deviceKind, isComputer } from './device.js';
 import { AudioEngine } from './audio.js';
 import { openPacks } from './packs.js';
+import { makeSounds as makeUltimateSounds } from './modes/ultimate.js';
 
 const $ = (id) => document.getElementById(id);
 const kind = deviceKind();
@@ -115,6 +116,8 @@ async function playDemo(button, section, item) {
   try {
     if (!ready) ready = openPacks().then((packs) => audio.attach(packs));
     await ready;
+    // Ultimate Test Mode's own tones are made by the game, not read from a pack.
+    makeUltimateSounds(audio);
     const room = helpRoomFor(section);
     if (room) await audio.prepareRoom(room);
     audio.setRoom(room);

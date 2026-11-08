@@ -1,8 +1,8 @@
 # Endless Labyrinth: web version
 
-A 3D audio game for phones, tablets and computers, played by ear with headphones: touch gestures on a phone or tablet, the keyboard on a computer. It is the web version of the Windows game [Endless Labyrinth](https://github.com/DevHinderman2026/Endless-Labyrinth), with all six of its modes (Standard, Battle, Driving, Tower, Island and Chaos) and its events, and the same rules, timings and sounds. As of November 2026 the whole game, which began on Windows, is fully playable in a browser.
+A 3D audio game for phones, tablets and computers, played by ear with headphones: touch gestures on a phone or tablet, the keyboard on a computer. It is the web version of the Windows game [Endless Labyrinth](https://github.com/DevHinderman2026/Endless-Labyrinth), with all six of its modes (Standard, Battle, Driving, Tower, Island and Chaos) and its events, and the same rules, timings and sounds, plus one mode of its own: Ultimate Test Mode (web 2.0.0), a survival mode in one huge, regenerating world, heard in binaural 3D, which the Windows game does not have. As of November 2026 the whole game, which began on Windows, is fully playable in a browser.
 
-**Play:** open the game's website on an iPhone, iPad (iOS 18.4 or newer), Android phone or tablet (an up-to-date Chrome), Chromebook, Mac or Linux computer, with headphones. Windows computers are pointed to the Windows version.
+**Play:** open the game's website on an iPhone, iPad (iOS 18.4 or newer), Android phone or tablet (an up-to-date Chrome), Chromebook, Mac or Linux computer, with headphones. A Windows computer plays Ultimate Test Mode only, and is pointed to the Windows version for the rest.
 
 ## What is here
 
@@ -10,18 +10,18 @@ A 3D audio game for phones, tablets and computers, played by ear with headphones
 - `play.html`: the game.
 - `js/`: the game.
   - `game.js`: Standard and Battle modes, the menus and help, ported from the Windows game's `endless_labyrinth.py` (Windows version 1.0.1), with the same names and numbers so the two can be compared.
-  - `modes/`: the other modes, each a plug-in listed in `modes/index.js`: `driving.js`, `tower.js`, `island.js`, `chaos.js` and `events.js` (with `events/`, the port of the desktop's event engine, missions, schema and signature check).
-  - `device.js`: tells iPhones, iPads, Android phones and tablets, Chromebooks, Macs and Linux computers apart; Windows computers are refused. An iPhone is told from an iPad by the size of its screen (web 1.1.0).
+  - `modes/`: the other modes, each a plug-in listed in `modes/index.js`: `driving.js`, `tower.js`, `island.js`, `chaos.js`, `ultimate.js` (Ultimate Test Mode, web 2.0.0, with `ultimate/world.js`, the world generator, and `ultimate/help.js`) and `events.js` (with `events/`, the port of the desktop's event engine, missions, schema and signature check).
+  - `device.js`: tells iPhones, iPads, Android phones and tablets, Chromebooks, Macs and Linux computers apart; a Windows computer is let in for Ultimate Test Mode alone (`windowsOnly`). An iPhone is told from an iPad by the size of its screen (web 1.1.0).
   - `site.js`: the site links, the footer and the share buttons on every page of the website. `update-alert.js` (home page only, web 1.4.0): the Windows update alert, an alert region shown for thirty days after the latest Windows release on GitHub, judged by internet time. `display.js`: the display options (high contrast, bigger text) applied on every page. `calendar.js`, `stats.js`, `backup.js` and `backups-page.js`, `accessibility.js`, `help-page.js` (the Help page, built from the game's own help; demos read one sound at a time with `packs.js` `openPacks`): the Events calendar, Game Stats, Score Backups, Accessibility and Help pages.
-  - `audio.js`: the sound engine, the desktop's mixer rebuilt on the Web Audio API: left and right levels, the dull "behind you" copy, and the room echo.
-  - `gestures.js`: touch gestures turned into the game's keys, including running (slide up and hold) and walking backwards (slide down and hold, since web 1.4.0), which the game steps in `game.js`. A Bluetooth keyboard works too.
+  - `audio.js`: the sound engine, the desktop's mixer rebuilt on the Web Audio API: left and right levels, the dull "behind you" copy, and the room echo. For Ultimate Test Mode (`spatial`): HRTF panners for every placed sound, an echo bus per area with the room's impulse stretched to the area's size, and a world gain and low-pass for the regeneration fades and the compass.
+  - `gestures.js`: touch gestures turned into the game's keys, including running (slide up and hold) and walking backwards (slide down and hold, since web 1.4.0), which the game steps in `game.js`, and the held finger that is Ultimate Test Mode's compass (web 2.0.0; C on a keyboard). A Bluetooth keyboard works too.
   - `speech.js`: the game's own voice, through the browser.
   - `packs.js`: downloads the sound packs once and keeps them on the device.
   - `storage.js`: high scores, settings and stats (time played and runs per mode, since web 1.1.0; save format 2), kept on the device. Event runs are kept beside them by `modes/events/feed.js`.
   - `help-data.js`: the help menu.
   - `sound-rules.js`: made from the desktop game by the pack builder, which also writes the Credits page's list. Do not edit them by hand.
 - `packs/`: the sound packs and `manifest.json`, which names them. No sound is ever on the site as its own file: everything travels inside the packs.
-- `tests/`: end-to-end checks in a real browser engine (see below): `smoke.mjs`, one file per mode, `devices.mjs`, `computers.mjs`, `stride.mjs` (running and walking backwards on a touch screen), `keywords.mjs`, `eventwords.mjs`, and for the website's pages `calendar.mjs`, `stats.mjs`, `backups.mjs`, `accessibility.mjs`, `legal.mjs`, `share.mjs` and `help.mjs`.
+- `tests/`: end-to-end checks in a real browser engine (see below): `smoke.mjs`, one file per mode (`ultimate.mjs` for Ultimate Test Mode, with `world.mjs` for its generator in Node alone and `ultimate-soak.mjs`, a longer run that watches memory, not part of the quick suite), `devices.mjs`, `computers.mjs`, `stride.mjs` (running and walking backwards on a touch screen), `keywords.mjs`, `eventwords.mjs`, and for the website's pages `calendar.mjs`, `stats.mjs`, `backups.mjs`, `accessibility.mjs`, `legal.mjs`, `share.mjs` and `help.mjs`.
 
 ## The sound packs
 

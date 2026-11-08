@@ -1,7 +1,8 @@
 // What kind of device this is. The web version is for phones and tablets
 // (iPhone, iPad, Android phones and tablets) and, since web version 1.0.3, for
-// Chromebooks, Macs and Linux computers, played with the keyboard. Windows
-// computers are refused: Endless Labyrinth already has a full Windows version.
+// Chromebooks, Macs and Linux computers, played with the keyboard. A Windows
+// computer plays Ultimate Test Mode only (web 2.0.0): Endless Labyrinth already
+// has a full Windows version for the other modes.
 //
 // Apple devices (web 1.1.0): an iPad's Safari says it is a Mac, and an iPhone
 // can say so too (Request Desktop Website), while an iPad can say "iPad" (Request
@@ -54,8 +55,17 @@ export function deviceKind() {
   return 'linux';
 }
 
-// The computers the web version plays on, with the keyboard.
-export function isComputer(kind) { return kind === 'chromebook' || kind === 'mac' || kind === 'linux'; }
+// The computers the web version plays on, with the keyboard (Windows: Ultimate
+// Test Mode only, see windowsOnly).
+export function isComputer(kind) { return kind === 'chromebook' || kind === 'mac' || kind === 'linux' || kind === 'windows'; }
+
+// A Windows computer on the website: the game offers Ultimate Test Mode alone, and
+// points to the Windows game for the rest. (The developer's play.html?desktop=1 on
+// localhost is not one: it plays the whole game with the phone's wording.)
+export function windowsOnly() {
+  if (typeof window === 'undefined' || typeof location === 'undefined') return false;
+  return deviceKind() === 'windows' && !allowComputer();
+}
 
 // Whether this page is played with the keyboard's wording: a Chromebook, Mac or
 // Linux computer.
@@ -77,7 +87,7 @@ export function screenReaderName(kind) {
   if (kind.startsWith('android')) return 'TalkBack';
   if (kind === 'mac') return 'VoiceOver';
   if (kind === 'chromebook') return 'ChromeVox';
-  if (kind === 'windows') return 'your screen reader';
+  if (kind === 'windows') return 'NVDA or JAWS';
   if (kind === 'linux') return 'Orca';
   return 'your screen reader';
 }

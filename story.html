@@ -29,6 +29,7 @@
         <li><a href="#events">Events</a></li>
         <li><a href="#release">Release</a></li>
         <li><a href="#web">Phones, tablets and computers</a></li>
+        <li><a href="#ultimate">Ultimate Test Mode</a></li>
         <li><a href="#how">How I make the game</a></li>
         <li><a href="#timeline">Timeline</a></li>
         <li><a href="#sources">Sources</a></li>
@@ -38,6 +39,7 @@
     <h2 id="why">Why a game made of sound</h2>
     <p>My name is Russell Hinderman, and I am totally blind. I play games by ear, and I wanted a game that was built for that from the very beginning, not one where sound was added on top of a picture. In Endless Labyrinth there is nothing to see. Everything you need is in the sound: where something is, how far away it is, and whether it is in front of you or behind you.</p>
     <p>That also decided how the game was made. Every change, in every mode, was tested the same way a player would meet it: by me, with headphones on, listening.</p>
+    <p>This page was written with Claude's help, from my own words, my decisions and the record of how the game was made. The ideas and the choices in it are mine; the writing was done the way the game itself is made, with me directing and checking it.</p>
 
     <h2 id="ai">What AI changed for me</h2>
     <p>I first learned to code by taking a Python course. It was all about how to type syntax and what to do when there were syntax errors. I realized from the very start that typing syntax was extremely exhausting for me. I hated going to the computer just to start typing things out.</p>
@@ -47,7 +49,7 @@
     <p>Before Endless Labyrinth there was Sonar Escape, a concept I made a long time ago with Gemini, Google's AI. It no longer exists, and it was simple: you found the exit by listening to a tone that rose in pitch the closer you got, and you collected credits on the way. That was the first version of the idea that grew into the game you can play today.</p>
     <p>I tried other prototypes with Gemini around the same time, among them a murder mystery, a tower you climbed floor by floor, an ocean dive where you went underwater to catch fish, and Escape the Cave, where an elevator took you up and down a cave and dropped you into random passages, and you collected items to open the elevator door and get out. None of them exist any more, but looking back, I can hear them in Endless Labyrinth today: in Tower mode, in Island mode's dives and elevators, and in the fishing events.</p>
     <p>I started Endless Labyrinth in the summer of 2026, and it also started simply, as one idea that gave the game its name: you are in a labyrinth you cannot see, and you have to find the exit by ear before the clock runs out. You step through it one square at a time. A thud tells you a step worked, and a knock tells you that you walked into a wall. The exit beeps, panning left and right to give you its direction, and the beep rises in pitch and speeds up as you get closer. Every labyrinth you finish adds a little time and leads to the next, and it never ends. That is still Standard mode today.</p>
-    <p>I wrote it for Windows, in Python, with the pygame library playing the sound. I do not write the code by hand. From the very first version of Endless Labyrinth I have designed the game and directed Claude, an AI made by Anthropic, to write it, then played every build and decided what to keep, what to change and what to throw out. How that works is described below, in <a href="#how">How I make the game</a>.</p>
+    <p>The very first version of Endless Labyrinth, that simple labyrinth with its proximity beeping, was made in Google Gemini. Then the work carried on in Claude, an AI made by Anthropic, and everything the game has become was built there. I wrote it for Windows, in Python, with the pygame library playing the sound. I do not write the code by hand: I design the game and direct the AI to write it, then play every build and decide what to keep, what to change and what to throw out. How that works is described below, in <a href="#how">How I make the game</a>.</p>
 
     <h2 id="modes">Growing into six modes</h2>
     <p>Once finding an exit by ear worked, I wanted to see how far the same idea could go. Each new mode asks your ears to do something different.</p>
@@ -83,14 +85,19 @@
     <h2 id="web">Phones, tablets and computers</h2>
     <p>On 2 November I wanted to play Endless Labyrinth on my phone. I designed the touch controls myself: swipes are the arrow keys, a double tap is Enter, a two-finger tap is the attack, and in driving you slide a finger up and hold it to accelerate. The game speaks with your phone's own voice while the screen reader is off.</p>
     <p>The first web version had only Standard and Battle. I tested them on my phone, they worked well, and the same day I decided to bring over everything: all six modes and the events. Every mode was converted from the Windows code line by line and checked against it in two rounds of review, with the same rules, timings and sounds.</p>
-    <p>Playing on a real iPhone found what reviews could not. In Chaos, the sound could disappear a few levels into a run, so the way the game builds its room echoes was rebuilt to suit iPhones; that was version 1.0.2. With 1.0.3 the web version also plays on Chromebooks, Macs and Linux computers, with the keyboard. Windows players keep the full Windows version. Every web version is listed in the <a href="history.html">Update History</a>, and <a href="about.html">About and how to play</a> explains every mode, gesture and key.</p>
+    <p>Playing on a real iPhone found what reviews could not. In Chaos, the sound could disappear a few levels into a run, so the way the game builds its room echoes was rebuilt to suit iPhones; that was version 1.0.2. With 1.0.3 the web version also plays on Chromebooks, Macs and Linux computers, with the keyboard. Windows players keep the full Windows version, and since web 2.0.0 a Windows computer can also open the website for Ultimate Test Mode, the one mode the Windows game does not have. Every web version is listed in the <a href="history.html">Update History</a>, and <a href="about.html">About and how to play</a> explains every mode, gesture and key.</p>
+
+    <h2 id="ultimate">Ultimate Test Mode</h2>
+    <p>By November the web version had everything the Windows game had, and I had an idea that could only be done on the web: a mode harder than Chaos. Chaos tests whether you can switch between modes. I wanted a mode where every environment is mixed. Not completing a task and then going to another mode, but one huge environment that you have to navigate and try to make it through: ammo scattered around in certain places and enemies to shoot, labyrinths to find your way out of, islands to walk on with the sounds fading in as you get close, enemies that throw things at you. All of it at once, and the test is survival, not speed. No driving, because a car has nothing to do in a place you walk through. I called it Ultimate Test Mode, and I kept the name after considering others, because it tells you exactly what it is.</p>
+    <p>The web made it possible because a browser has true binaural 3D sound built in. With headphones it can place a sound in front of you, behind you, or below you, not only left and right. The rest of the game stays in stereo, matching Windows, but a world this big needed the 3D, and the elevator down to an island's seabed is where you hear it best: the water rises from beneath you. Every area of the world has its own echo, sized to the area, and crossing a border blends from one to the next.</p>
+    <p>The world regenerates. Every two or three minutes, after a warning and a countdown, the whole thing is torn down and built again at random, and you have to find your bearings again by ear, with the ammo and health you had. I wanted that because finding out where you are is the heart of this game, and a world you could learn would stop testing it. The safe zones are event areas, with the event backgrounds, which I think are an important part of making the worlds sound real; the compass, which you turn on by holding a finger still, points the walkable route to the nearest one. I designed all of this in a conversation with Claude on 8 November 2026, question by question, and we wrote it into a plan before any code was touched; then Claude's Fable model built it from that plan, on my laptop, as web version 2.0.0. It is the first mode made only for the web, it will not come to Windows, and it is the one mode a Windows computer can play on the website.</p>
 
     <h2 id="how">How I make the game</h2>
-    <p>Endless Labyrinth is AI assisted, and I am open about how. I am the designer and the tester. Claude writes the code. I have worked this way since the first version of Endless Labyrinth, and over time it has become a method.</p>
+    <p>Endless Labyrinth is AI assisted, and I am open about how. I am the designer and the tester. Claude writes the code. I have worked this way since the game's first days, when its first version was made in Gemini, and over time it has become a method.</p>
 
     <h3>The tools</h3>
     <ul>
-      <li><strong>Claude</strong>, by Anthropic. I use its Opus model for most of the building, including this web version, and its Fable model for the hardest bug hunting.</li>
+      <li><strong>Claude</strong>, by Anthropic. I use its Opus model for most of the building, including this web version, and its Fable model for the hardest bug hunting and for the biggest builds, such as the 2.0.0 difficulty overhaul and Ultimate Test Mode.</li>
       <li><strong>The Claude desktop app</strong>, linked to my laptop, so Claude works on the game's files on my own computer.</li>
       <li><strong>GitHub Desktop</strong>, which I use myself to publish. Nothing goes public until I push it.</li>
       <li><strong>Headphones, my BrailleNote and my iPhone</strong>, for testing: the Windows version on my laptop and on the BrailleNote with its Braille display, and the web version on my phone.</li>
@@ -123,7 +130,7 @@
     <h2 id="timeline">Timeline</h2>
     <dl class="timeline">
       <dt>Long before</dt><dd>Sonar Escape, made with Gemini: find the exit by a rising tone, collecting credits on the way. Other Gemini prototypes: a murder mystery, a tower climb, an ocean dive and Escape the Cave.</dd>
-      <dt>Summer 2026</dt><dd>The beginning: one labyrinth, found by ear, against the clock. Standard mode.</dd>
+      <dt>Summer 2026</dt><dd>The beginning: one labyrinth, found by ear, against the clock, made in Gemini. Standard mode. The work then carries on in Claude.</dd>
       <dt>By September 2026</dt><dd>Labyrinth, battle, tower and chaos modes, with stereo sound placed around you. Driving mode followed.</dd>
       <dt>28 October 2026</dt><dd>Driving rebalanced; Island mode designed and built.</dd>
       <dt>Late October 2026</dt><dd>Real recordings, room echo, the behind-you sound, chaos rebuilt, Braille display output.</dd>
@@ -131,6 +138,8 @@
       <dt>1 November 2026</dt><dd>Windows version 1.0.0 released on GitHub.</dd>
       <dt>2 November 2026</dt><dd>Windows version 1.0.1. The web version begins, with Standard and Battle.</dd>
       <dt>3 November 2026</dt><dd>Web versions 1.0.1 (the complete game), 1.0.2 (the Chaos fix for iPhone), 1.0.3 (Chromebook, Mac and Linux) and 1.0.4 (this story).</dd>
+      <dt>4 to 6 November 2026</dt><dd>The website grows (web 1.1.0 to 1.3.0); the difficulty overhaul, Windows 2.0.0 and web 1.4.0.</dd>
+      <dt>8 November 2026</dt><dd>Ultimate Test Mode designed and built: web version 2.0.0, web only.</dd>
     </dl>
 
     <h2 id="sources">Sources</h2>

@@ -6,7 +6,7 @@ import { Speech } from './speech.js';
 import { Store } from './storage.js';
 import { Gestures } from './gestures.js';
 import { Game } from './game.js';
-import { deviceKind, isApple, isComputer, keyboardDevice, screenReaderName, deviceWord, allowComputer } from './device.js';
+import { deviceKind, isApple, isComputer, keyboardDevice, screenReaderName, deviceWord, windowsOnly } from './device.js';
 import { keyWords } from './keywords.js';
 import { applyDisplay, followDisplay } from './display.js';
 
@@ -28,9 +28,15 @@ let started = false;
 
 function setText(id, text) { $(id).textContent = text; }
 
-if (kind === 'windows' && !allowComputer()) {
-  $('start').hidden = true;
-  setText('lead', 'This web version of Endless Labyrinth is not for Windows computers, because Endless Labyrinth already has a full Windows version. Download it from the Releases page of the game\'s GitHub repository. The web version plays on an iPhone, an iPad, an Android phone or tablet, a Chromebook, a Mac or a Linux computer.');
+if (windowsOnly()) {
+  // Web 2.0.0: a Windows computer plays Ultimate Test Mode, the one mode the
+  // Windows game does not have; the rest of the game is the Windows version.
+  setText('lead', 'On a Windows computer, this web version plays Ultimate Test Mode: the hardest mode in the game, in binaural 3D sound, made for the web alone. '
+    + 'The other modes and the events are played in the full Windows version of Endless Labyrinth, which you can download from the Releases page of the game\'s GitHub repository (the link is at the bottom of this page). '
+    + 'Press Start to load the sounds.'
+    + (/Firefox\//.test(navigator.userAgent) ? ' Firefox should work, but Chrome, Edge or Safari is recommended: those are the browsers the game is tested with.' : ''));
+  const note = document.getElementById('windows-note');
+  if (note) note.hidden = false;
 } else if (/Firefox\//.test(navigator.userAgent) && isComputer(kind)) {
   setText('lead', $('lead').textContent + ' Firefox should work, but Chrome, Edge or Safari is recommended: those are the browsers the game is tested with.');
 }
@@ -56,6 +62,13 @@ function offInstructions() {
   if (kind === 'chromebook') {
     return 'Now turn ChromeVox off with Control Alt Z. The game speaks for itself. '
       + 'When ChromeVox is off, press Enter to begin. When you leave the game, turn ChromeVox back on the same way.';
+  }
+  if (kind === 'windows') {
+    // The keys confirmed on 8 November 2026 in NV Access's NVDA User Guide and
+    // Freedom Scientific's JAWS keystroke list.
+    return 'Now turn your screen reader\'s speech off. With NVDA, press the NVDA key plus S, which cycles the speech mode off and back on. '
+      + 'With JAWS, press Insert plus Space, then S, which switches between full speech and speech on demand (Caps Lock plus Space, then S, in the laptop layout); the same again turns full speech back on. '
+      + 'The game speaks for itself, with your computer\'s own voice. When your screen reader is quiet, press Enter to begin. When you leave the game, turn its speech back on the same way.';
   }
   if (keyboard) {
     return 'Now turn your screen reader off; with Orca, press Super Alt S. The game speaks for itself. '

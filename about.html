@@ -18,15 +18,15 @@
   <nav class="site" aria-label="Site" data-page="about"></nav>
   <main class="page">
     <h2>What the game is</h2>
-    <p>Endless Labyrinth is a 3D audio game: you play it by ear, with headphones. It began as a game for Windows computers. Since November 2026 the complete game also plays in a web browser, on a phone, a tablet, a Chromebook, a Mac or a Linux computer: all six modes and the events, with the same rules, timings and sounds as the Windows version, and nothing to install.</p>
+    <p>Endless Labyrinth is a 3D audio game: you play it by ear, with headphones. It began as a game for Windows computers. Since November 2026 the complete game also plays in a web browser, on a phone, a tablet, a Chromebook, a Mac or a Linux computer: all six modes and the events, with the same rules, timings and sounds as the Windows version, and nothing to install. Web version 2.0.0 adds a seventh mode made for the web alone, Ultimate Test Mode, in binaural 3D sound; see below.</p>
     <p>Want to know how the game came to be? <a href="story.html">The Story of the Game</a> tells how it grew from a single labyrinth found by ear into six modes, events, a Windows release and this web version, and how I make it: designing and testing by ear, with Claude writing the code.</p>
     <h2>Supported devices</h2>
     <p>Phones and tablets, played with touch gestures: an iPhone or iPad with iOS 18.4 or newer, or an Android phone or tablet with an up-to-date Chrome.</p>
     <p>Computers, played with the keyboard: a Chromebook, a Mac or a Linux computer. Chrome, Edge or Safari is recommended; Firefox should work, but the game is not tested with it. On a Mac, Safari needs macOS with Safari 18.4 or newer.</p>
-    <p>Windows computers are not supported. Endless Labyrinth already has a full Windows version, with Braille display support and its own room echo on the voice: on Windows, play the <a href="https://github.com/DevHinderman2026/Endless-Labyrinth/releases/latest">Windows version</a>.</p>
+    <p>Windows computers play Ultimate Test Mode only, with the keyboard, because it is the one mode the Windows game does not have. For the other modes and the events, Endless Labyrinth already has a full Windows version, with Braille display support and its own room echo on the voice: on Windows, play the <a href="https://github.com/DevHinderman2026/Endless-Labyrinth/releases/latest">Windows version</a>.</p>
 
     <h2>How the sound works</h2>
-    <p>Everything is placed by sound. Left and right come from the balance between your ears, and the room never turns: left is always west, and north is always ahead. Distance is loudness: the closer something is, the louder it gets. Something behind you sounds duller, as if heard over your shoulder. In the labyrinth, the battle arena, a tower and a road's tunnels, every sound has a slight echo of the place it is in, shaped by the walls around you and by the air of each level; islands, the seabed and the open road have none. Together these make a space you can move through by ear.</p>
+    <p>Everything is placed by sound. Left and right come from the balance between your ears, and the room never turns: left is always west, and north is always ahead. Distance is loudness: the closer something is, the louder it gets. Something behind you sounds duller, as if heard over your shoulder. In the labyrinth, the battle arena, a tower and a road's tunnels, every sound has a slight echo of the place it is in, shaped by the walls around you and by the air of each level; islands, the seabed and the open road have none. Together these make a space you can move through by ear. Ultimate Test Mode goes further: it is the one mode heard in binaural 3D, the browser's own head-related panning, so with headphones a sound is placed properly in front of you, behind you, to one side or below you, and every area of its world has an echo sized to that area.</p>
 
     <h2>Starting</h2>
     <ol>
@@ -47,15 +47,16 @@
       <dt>Three-finger tap</dt><dd>Pause, and resume.</dd>
       <dt>Triple tap</dt><dd>Back, in menus and while paused. While paused it asks whether to quit the run.</dd>
       <dt>Four taps</dt><dd>Help, on the main menu and while paused.</dd>
-      <dt>One tap</dt><dd>Nothing. A finger resting still on the screen does nothing either.</dd>
+      <dt>Hold a finger still for a second</dt><dd>In Ultimate Test Mode only, the compass, on or off. In every other mode a finger resting still does nothing.</dd>
+      <dt>One tap</dt><dd>Nothing.</dd>
     </dl>
     <p>Only lifting your finger stops a run or a backward walk; you also stop by yourself at a wall, at the edge of an arena, and whenever a new level begins. Turning is unchanged: lift your finger, then swipe left or right. Lift it, too, before you shoot with two fingers or double tap. Running and walking backwards work in every mode and in events, except driving, which has its own accelerator, and an event where up and down are answers rather than steps.</p>
     <h3>Driving</h3>
     <p>Driving, in driving mode and on a chaos road, works its own way. Put a finger on the screen and slide it up: the car accelerates for as long as that finger stays on the screen. Lift it and the car coasts. Swipe down to brake: each swipe is one brake, and if your accelerating finger slides back down without lifting, it stops accelerating and brakes once. To change lanes, lift your finger and swipe left or right. To shoot or hear the report, lift first, then tap with two fingers or double tap; the car coasts meanwhile.</p>
-    <p>During a run only the double tap is counted, so it acts at once and an extra tap can never end a run by accident. The main menu has a Gesture Practice that says the name of every gesture it feels. A Bluetooth keyboard also works, with the Windows game's keys: the arrows, Enter, Space, Escape, P, H and T.</p>
+    <p>During a run only the double tap is counted, so it acts at once and an extra tap can never end a run by accident. The main menu has a Gesture Practice that says the name of every gesture it feels. A Bluetooth keyboard also works, with the Windows game's keys: the arrows, Enter, Space, Escape, P, H and T, and C for the compass.</p>
     <p>Every topic from the game's own help, with a Play button for every sound, is on the <a href="help.html">Help</a> page.</p>
     <h2>Keys, on a computer</h2>
-    <p>On a Chromebook, Mac or Linux computer, the game uses the Windows game's keys, and everything it says names the keys instead of gestures. Gesture Practice is not on the menu.</p>
+    <p>On a Chromebook, Mac or Linux computer, the game uses the Windows game's keys, and everything it says names the keys instead of gestures. Gesture Practice is not on the menu. On a Windows computer the same keys play Ultimate Test Mode.</p>
     <dl class="gestures">
       <dt>Arrow keys</dt><dd>Move one step, or move through a menu. In driving, hold the up arrow to accelerate, press the down arrow to brake, and left and right to change lanes.</dd>
       <dt>Enter</dt><dd>Choose. During a run, the report, as the double tap above.</dd>
@@ -64,6 +65,7 @@
       <dt>Escape</dt><dd>Back, in menus. During a run, it asks whether to quit the run.</dd>
       <dt>H</dt><dd>Help, on the main menu and while paused.</dd>
       <dt>T</dt><dd>The time left on the clock.</dd>
+      <dt>C</dt><dd>The compass, in Ultimate Test Mode.</dd>
     </dl>
     <p>The game pauses by itself if you lock your device, switch apps or leave the page.</p>
     <p>On an iPhone or iPad, the game's sounds dip while its voice speaks, and come back about a second after. That is how iOS mixes speech with other sound, and a web page cannot change it.</p>
@@ -86,10 +88,13 @@
     <h2>Chaos mode</h2>
     <p>Every mode at once, and the hardest in the game. Each level is chosen at random from a labyrinth, a battle, a tower floor, a stretch of road or an island, and nothing tells you which: you work it out from what you hear. Every run starts with exactly five minutes on one clock, and time credits add more; your score is points.</p>
 
+    <h2>Ultimate Test Mode</h2>
+    <p>The hardest mode in the game, made for the web alone (web 2.0.0) and the first that was never part of the Windows game. Chaos tests switching between modes against the clock; this tests survival. One huge, continuous world is built at random every run from five to ten areas of five kinds, each keeping its home mode's sounds: walled labyrinths, islands with a shore, sand and an elevator down to the seabed, tower areas with throwers racing you for items, battle areas with chasers, and event areas with the event backgrounds, which have no enemies and are the safe zones. There is no clock: you start with 100 health and the run ends when it reaches zero, with no hit ever taking more than 25. Every two or three minutes the whole world regenerates at random, after a spoken warning and a countdown, and you must work out where you are again by ear; your ammo and health carry over, and everything you earn is worth more with every world you survive. A compass, turned on by holding a finger still for a second (C on a keyboard), muffles the world and points the walkable route to the nearest safe zone with a centred beep. The whole mode is heard in binaural 3D, with every sound placed around you and each area ringing with its own echo. It is also the one mode a Windows computer can play on this website.</p>
+
     <h2>Events</h2>
     <p>Time-limited challenges, published for the Windows version and played here too, the very same events. When one is running it appears in the Events menu, with its own high scores. Each event is checked as genuine before it can be played.</p>
 
-    <p>The game's help, opened with four taps on the main menu, explains every rule of every mode and has demo sections that play every sound.</p>
+    <p>The game's help, opened with four taps on the main menu, explains every rule of every mode and has demo sections that play every sound. Ultimate Test Mode has the most detailed section of all, with every area, the enemies, health, ammo, the credits and multiplier, the regeneration, the compass and the 3D sound.</p>
 
     <h2>Your scores</h2>
     <p>High scores are kept on your device, in your browser, and are never sent anywhere. On an iPhone or iPad, Safari deletes a website's saved data if you use Safari for a week without visiting it. A game added to your Home Screen is not affected, so add Endless Labyrinth to your Home Screen (Share, then Add to Home Screen) and play it from there.</p>
@@ -100,6 +105,7 @@
       <li>The voice is your device's own, with a Speech Rate setting on the main menu. It has no room echo.</li>
       <li>No Braille display output, since the screen reader is off while you play.</li>
       <li>High scores are kept separately from the Windows version's.</li>
+      <li>Ultimate Test Mode exists only here, and is the only mode a Windows computer plays on the website.</li>
     </ul>
   </main>
   <footer class="site"></footer>

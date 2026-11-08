@@ -12,7 +12,7 @@ export const KEY = 'endless-labyrinth-web';
 export const FORMAT = 2;
 const DEFAULT_SCORES = { standard: 0, battle: 0 };
 // The modes stats are kept for, by the key the Game Stats page shows them under.
-export const STAT_MODES = ['standard', 'battle', 'drive', 'tower', 'island', 'chaos', 'event'];
+export const STAT_MODES = ['standard', 'battle', 'drive', 'tower', 'island', 'chaos', 'ultimate', 'event'];
 const STATS_FLUSH_SECONDS = 15;   // play time is written this often, and at the end of a run
 
 export function emptyStats() {

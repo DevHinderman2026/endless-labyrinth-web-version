@@ -33,8 +33,14 @@
 // finger walked backwards after half a second, with a setting to turn that off;
 // Russell had always meant the slide down, the mirror of the run).
 // A keyboard is unchanged: a held arrow is one press.
+//
+// The compass (web 2.0.0, Ultimate Test Mode only): while the game asks for it
+// (holdCompass), one finger held still for HOLD_MS emits 'hold'; that finger then
+// does nothing more until it lifts. In every other mode a still finger still does
+// nothing. On a keyboard, C emits 'compass'.
 
 const SWIPE_MIN = 30;       // pixels a finger must travel for a swipe
+const HOLD_MS = 1000;       // a finger still this long is the compass
 const TAP_MOVE = 22;        // more than this and it is not a tap
 const TAP_TIME = 350;       // ms a tap may last
 const TAP_GAP = 330;        // ms between taps of one count
@@ -49,6 +55,8 @@ export class Gestures {
     this.accelBy = null;        // ...by a finger ('touch') or the up arrow ('key')
     this.taps = 0;
     this.tapTimer = null;
+    this.holdCompass = false;   // Ultimate Test Mode: a still finger is the compass
+    this.holdTimer = null;
     this.g = null;              // the gesture in progress
     const opts = { passive: false };
     el.addEventListener('touchstart', (e) => this._start(e), opts);
@@ -68,9 +76,31 @@ export class Gestures {
       // A pause, a menu or a driving road ends a run or a backward walk; the finger
       // still down does nothing more until it lifts.
       this._endStride(true);
+      this._cancelHold();
       this.mode = mode;
       this._resetTaps();
     }
+  }
+
+  _cancelHold() {
+    clearTimeout(this.holdTimer);
+    this.holdTimer = null;
+  }
+
+  // One finger has landed and nothing else is happening: if it stays still for
+  // HOLD_MS, it is the compass (only when the game asks for it).
+  _armHold() {
+    this._cancelHold();
+    if (!this.holdCompass || !this._holds()) return;
+    const g = this.g;
+    this.holdTimer = setTimeout(() => {
+      this.holdTimer = null;
+      if (this.g !== g || g.max !== 1 || g.moved || g.swiped || g.stride || g.strideDone || g.touches.size !== 1) return;
+      g.held = true;
+      g.strideDone = true;     // the finger does nothing more until it lifts
+      this._resetTaps();
+      this.emit('hold');
+    }, HOLD_MS);
   }
 
   _resetTaps() {
@@ -111,6 +141,7 @@ export class Gestures {
     // A second finger: a finger already running or walking back carries on, and
     // the new finger does nothing (lift to shoot).
     if (g.max > 1 && g.stride) g.moved = true;
+    if (g.max === 1) this._armHold(); else this._cancelHold();
   }
 
   _move(e) {
@@ -125,7 +156,8 @@ export class Gestures {
       const dx = p.x - p.x0;
       const dy = p.y - p.y0;
       const d = Math.hypot(dx, dy);
-      if (d > TAP_MOVE) g.moved = true;
+      if (d > TAP_MOVE) { g.moved = true; this._cancelHold(); }
+      if (g.held) continue;        // the compass finger: nothing more until it lifts
       if (g.stride) continue;      // running or walking back: only lifting stops it
       if (g.accelId === t.identifier) {
         // The accelerating finger: sliding back down from its highest point lets
@@ -168,6 +200,7 @@ export class Gestures {
       if (g.accelId === t.identifier) this._releaseAccel();
     }
     if (g.touches.size > 0) return;
+    this._cancelHold();
     if (g.stride) { this._endStride(); this.g = null; return; }
     this.g = null;
     if (g.strideDone) return;
@@ -180,6 +213,7 @@ export class Gestures {
 
   _cancel() {
     if (this.g && this.g.accelId !== undefined && this.g.accelId !== null) this._releaseAccel();
+    this._cancelHold();
     this._endStride();
     this.g = null;
   }
@@ -225,7 +259,7 @@ export class Gestures {
     const map = {
       ArrowUp: 'up', ArrowDown: 'down', ArrowLeft: 'left', ArrowRight: 'right',
       Enter: 'enter', Escape: 'back', ' ': 'space', p: 'pause', P: 'pause', h: 'help', H: 'help',
-      t: 'clock', T: 'clock', y: 'yes', Y: 'yes', n: 'no', N: 'no',
+      t: 'clock', T: 'clock', y: 'yes', Y: 'yes', n: 'no', N: 'no', c: 'compass', C: 'compass',
     };
     // The desktop never turns on key repeat: a held key is one press.
     if (e.repeat && !(e.key === 'ArrowUp' && this.mode === 'drive')) {

@@ -12,7 +12,7 @@ const SENTENCES = [
     'Your screen reader must be off while you play, because the game listens to the keyboard itself and speaks with its own voice.'],
   // Running and walking backwards are touch gestures only (web 1.2.0): a keyboard
   // has none, so on a computer the sentences go.
-  [/During a run, slide a finger up and hold it there to run: you keep stepping forward, fast, for as long as that finger stays on the screen\. Slide a finger down and hold it there to walk backwards, more slowly, for as long as it stays there\. A finger resting still on the screen does nothing\. Only lifting your finger stops you, and you also stop by yourself at a wall, at the edge of an arena, and whenever a new level begins\. Turning is unchanged: lift your finger, then swipe left or right\. Lift it, too, before you shoot or tap\. /g, ''],
+  [/During a run, slide a finger up and hold it there to run: you keep stepping forward, fast, for as long as that finger stays on the screen\. Slide a finger down and hold it there to walk backwards, more slowly, for as long as it stays there\. A finger resting still on the screen does nothing, except in Ultimate Test Mode, where holding it still for about a second turns the compass on or off\. Only lifting your finger stops you, and you also stop by yourself at a wall, at the edge of an arena, and whenever a new level begins\. Turning is unchanged: lift your finger, then swipe left or right\. Lift it, too, before you shoot or tap\. /g, ''],
   [/Swipe up, down, left or right to move, or to move through a menu\. Double tap to choose, like Enter\. In menus, triple tap goes back, and four taps open help\./g,
     'Use the arrow keys to move, or to move through a menu. Press Enter to choose. In menus, Escape goes back, and H opens help.'],
   [/Tap with two fingers to attack, the same as the spacebar on a computer, whether that is the laser, a throw or a shot down the road\./g,
@@ -22,9 +22,9 @@ const SENTENCES = [
   [/A single tap does nothing\. /g, ''],
   [/Driving, in driving mode and on a chaos road, works its own way: put a finger on the screen and slide it up, and the car accelerates for as long as that finger stays on the screen\. Lift it and the car coasts\. Swipe down to brake: each swipe is one brake\. If your accelerating finger slides back down without lifting, it stops accelerating and brakes once\. To change lanes, lift your finger and swipe left or right\. To shoot or hear the report, lift first, then tap with two fingers or double tap as everywhere else; the car coasts meanwhile, and a second finger added while you are accelerating does nothing\./g,
     'Driving, in driving mode and on a chaos road, is the one exception: hold the up arrow and the car accelerates for as long as you hold it. Let go and the car coasts. Press the down arrow to brake: each press is one brake. Left and right arrows change lanes, and Space and Enter shoot and report as everywhere else.'],
-  [/The main menu has a Gesture Practice, which says the name of every gesture it feels, running and walking backwards included\. /g, ''],
-  [/A Bluetooth keyboard works too, with the same keys as the computer version: the arrows, with the up arrow held down to accelerate, Enter, Space, Escape, P to pause, H for help and T for the clock\./g,
-    'These are the same keys as the Windows version: the arrows, with the up arrow held down to accelerate, Enter, Space, Escape, P to pause, H for help and T for the clock.'],
+  [/The main menu has a Gesture Practice, which says the name of every gesture it feels, running, walking backwards and the held finger included\. /g, ''],
+  [/A Bluetooth keyboard works too, with the same keys as the computer version: the arrows, with the up arrow held down to accelerate, Enter, Space, Escape, P to pause, H for help, T for the clock and C for the compass in Ultimate Test Mode\./g,
+    'These are the same keys as the Windows version: the arrows, with the up arrow held down to accelerate, Enter, Space, Escape, P to pause, H for help and T for the clock, and C for the compass in Ultimate Test Mode.'],
   [/General Gestures/g, 'General Keys'],
   // Sound on Your Device.
   [/On an iPhone or iPad, turn silent mode off, or the game's sounds are muted while its voice still speaks\. While the game speaks, its sounds dip and come back about a second later: that is how iOS mixes speech with other sound\. /g, ''],
@@ -56,6 +56,18 @@ const SENTENCES = [
   [/\bwith a two-finger tap\b/g, 'with Space'],
   // Gesture Practice is not offered on a computer; these are only for safety.
   [/New here\? Try Gesture Practice, on this menu\. /g, ''],
+  // Ultimate Test Mode (web 2.0.0): the compass is C on a keyboard.
+  [/To turn it on, put one finger on the screen and hold it still for about one second; hold again to turn it off\. This works in Ultimate Test Mode only: in every other mode a still finger does nothing\./g,
+    'To turn it on, press C; press C again to turn it off. This works in Ultimate Test Mode only.'],
+  [/with four positions matching the swipes: swipe up for ahead, right for right, down for behind and left for left/g,
+    'with four positions matching the arrow keys: the up arrow for ahead, the right arrow for right, down for behind and left for left'],
+  [/you turn with a swipe, as everywhere else in the game/g, 'you turn with the arrow keys, as everywhere else in the game'],
+  [/then go that way: slide up to run ahead, or swipe that way\./g, 'then go that way with the arrow keys.'],
+  [/Hold a finger still for a second for the compass\./g, 'Press C for the compass.'],
+  [/The gestures are the same as every other mode: swipe to step, slide up and hold to run, slide down and hold to walk backwards, at the usual speeds, lift to stop\./g,
+    'The keys are the same as every other mode: the arrows to step.'],
+  [/and if you are holding none the same tap fires your laser instead/g, 'and if you are holding none the same press fires your laser instead'],
+  [/hold a finger still, double tap, triple tap/g, 'double tap, triple tap'],
 ];
 
 const PHRASES = [

@@ -5,7 +5,7 @@
 import { HELP as BASE_HELP } from './help-data.js';
 import { MODES } from './modes/index.js';
 import { RATES } from './speech.js';
-import { keyboardDevice } from './device.js';
+import { keyboardDevice, windowsOnly } from './device.js';
 
 // ------------------------------------------------------------------ constants
 const FPS = 30;
@@ -92,9 +92,17 @@ const HELP = (() => {
 })();
 export { HELP, isRunState, modeOf };
 
+// The help the game itself shows. On a Windows computer the game is Ultimate Test
+// Mode alone (web 2.0.0), so its help is the General section, that mode's, and
+// its demos; the website's Help page shows everything, on every device.
+const WINDOWS_HELP = ['General', 'Ultimate Test Mode', 'Demos, Ultimate Test Mode'];
+export function gameHelp() {
+  return windowsOnly() ? HELP.filter(([name]) => WINDOWS_HELP.includes(name)) : HELP;
+}
+
 // The room a help section's demos ring in (the website's Help page uses it too).
 export function helpRoomFor(name) {
-  return (name.includes('Standard') || name.includes('Chaos')) ? 'lab'
+  return (name.includes('Standard') || name.includes('Chaos') || name.includes('Ultimate')) ? 'lab'
     : name.includes('Tower') ? 'tower' : name.includes('Battle') ? 'battle' : null;
 }
 
@@ -264,6 +272,7 @@ export class Game {
     this.wakeLock = null;
     this.reverbTick = 0;
     this.helpSavedRoomGain = null;
+    this.helpList = gameHelp();
     for (const m of MODES) if (m.init) m.init(this);
     this._refreshMenu();
     this.resetGameState();
@@ -277,6 +286,9 @@ export class Game {
   _menuKeys() {
     // Gesture Practice is for touch screens: a computer is played with the keyboard.
     const practice = keyboardDevice() ? [] : ['practice'];
+    // A Windows computer (web 2.0.0): Ultimate Test Mode, the scores and the
+    // settings; the other modes and the events are the Windows game's.
+    if (windowsOnly()) return ['ultimate', 'scores', 'rate', 'leave'];
     return ['standard', 'battle', ...this._menuItems().map((i) => i.key), 'scores', ...practice, 'rate', 'leave'];
   }
 
@@ -297,6 +309,10 @@ export class Game {
   welcome() {
     let line = 'Welcome to Endless Labyrinth. Please wear headphones as this is a 3D audio game. '
       + 'Swipe up and down to navigate. Double tap to select. Tap four times for Help. ';
+    if (windowsOnly()) {
+      line += 'On this Windows computer the web version plays Ultimate Test Mode, in binaural 3D sound. '
+        + 'The other modes and the events are played in the Windows version of Endless Labyrinth; the play page links to its download. ';
+    }
     if (!this.scores.settings.practiced) line += 'New here? Try Gesture Practice, on this menu. ';
     const ios = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
     const standalone = window.navigator.standalone || (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches);
@@ -1033,8 +1049,8 @@ export class Game {
     this.helpCat = null;
     this.helpCatIndex = 0;
     this.helpIndex = 0;
-    const [name, items] = HELP[0];
-    this.tts.speak(`Help menu. Swipe up and down to choose a section, double tap to open it, triple tap to leave. ${name}. ${items.length} topics. Section 1 of ${HELP.length}.`);
+    const [name, items] = this.helpList[0];
+    this.tts.speak(`Help menu. Swipe up and down to choose a section, double tap to open it, triple tap to leave. ${name}. ${items.length} topics. Section 1 of ${this.helpList.length}.`);
   }
 
   _askQuit() {
@@ -1050,8 +1066,8 @@ export class Game {
 
   _speakHelpCategory(moveSound = true, prefix = '') {
     if (moveSound) this.audio.play('menu_move');
-    const [name, items] = HELP[this.helpCatIndex];
-    this.tts.speak(`${prefix}${name}. ${items.length} topics. Section ${this.helpCatIndex + 1} of ${HELP.length}.`);
+    const [name, items] = this.helpList[this.helpCatIndex];
+    this.tts.speak(`${prefix}${name}. ${items.length} topics. Section ${this.helpCatIndex + 1} of ${this.helpList.length}.`);
   }
 
   _stopDemo() {
@@ -1061,7 +1077,7 @@ export class Game {
   _playHelpItem(prefix = '') {
     this._stopDemo();
     this.audio.play('menu_move');
-    const [name, items] = HELP[this.helpCat];
+    const [name, items] = this.helpList[this.helpCat];
     const sec = items[this.helpIndex];
     this.helpRoom = helpRoomFor(name);
     this.audio.setRoom(this._currentRoom());
@@ -1079,7 +1095,7 @@ export class Game {
       return v <= 0 ? `${label}: No score yet` : `${label}: ${fmt(v)}`;
     };
     // In the desktop's _score_lines order; a board it does not list goes after.
-    const order = ['chaos', 'tower', 'drive', 'drive_distance', 'island'];
+    const order = ['chaos', 'tower', 'drive', 'drive_distance', 'island', 'ultimate'];
     const rank = (b) => (order.includes(b.key) ? order.indexOf(b.key) : order.length);
     const boards = MODES.flatMap((md) => md.boards || []).map((b, i) => [b, i])
       .sort((a, b) => rank(a[0]) - rank(b[0]) || a[1] - b[1]).map(([b]) => b);
@@ -1226,18 +1242,18 @@ export class Game {
         else if (this.helpWasPaused) this.tts.speak('Still paused. Tap with three fingers to resume.');
         else { this._resumeSounds(); this.tts.speak('Resuming.'); }
       } else if (g === 'up' || g === 'down') {
-        this.helpCatIndex = (this.helpCatIndex + (g === 'up' ? -1 : 1) + HELP.length) % HELP.length;
+        this.helpCatIndex = (this.helpCatIndex + (g === 'up' ? -1 : 1) + this.helpList.length) % this.helpList.length;
         this._speakHelpCategory();
       } else if (g === 'enter') {
         this.helpCat = this.helpCatIndex;
         this.helpIndex = 0;
-        const [name, items] = HELP[this.helpCat];
+        const [name, items] = this.helpList[this.helpCat];
         // The desktop's key handler and its _play_help_item each play the click.
         this.audio.play('menu_move');
         this._playHelpItem(`${name}. ${items.length} topics. `);
       }
     } else {
-      const items = HELP[this.helpCat][1];
+      const items = this.helpList[this.helpCat][1];
       if (g === 'back') {
         this._stopDemo();
         this.helpCat = null;
@@ -1394,18 +1410,22 @@ export class Game {
 
   // Where the run is, so that a new level can be told from a step.
   _strideSig() {
+    const md = this.mode;
     return [this.state, this.chaosMode, this.level, this.towerNumber, this.towerFloor, this.islandNumber,
-      this.islandPhase, !!this.islandRide, this.evLevel, this.mRoom, this.runId].join('|');
+      this.islandPhase, !!this.islandRide, this.evLevel, this.mRoom, this.runId,
+      md && md.strideSig ? md.strideSig(this) : ''].join('|');
   }
 
   // Whether holding may repeat steps now: in a run, not paused, not driving, and
-  // not where Up and Down are answers rather than steps (a reflex event).
+  // not where Up and Down are answers rather than steps (a reflex event), nor
+  // where the mode says not (Ultimate Test Mode's compass and elevator).
   _canStride() {
     if (!this.playing || this.isPaused) return false;
     const md = this.mode;
     const gm = md && md.gestureMode ? md.gestureMode(this) : null;
     if (gm && gm !== 'run') return false;
     if (this.ev && this.ev.mission === 'reflex') return false;
+    if (md && md.blockStride && md.blockStride(this)) return false;
     return true;
   }
 
@@ -1453,7 +1473,7 @@ export class Game {
     this.scores.settings.practiced = true;
     this.scores.save();
     this.tts.speak('Gesture practice. Try any gesture and the game says what it felt. '
-      + 'Swipe in four directions, slide up and hold, slide down and hold, double tap, triple tap, tap four times, tap with two fingers or with three. '
+      + 'Swipe in four directions, slide up and hold, slide down and hold, hold a finger still, double tap, triple tap, tap four times, tap with two fingers or with three. '
       + 'Triple tap twice in a row to leave, or wait twenty seconds.');
   }
 
@@ -1463,6 +1483,8 @@ export class Game {
       enter: 'Double tap. Choose, like Enter.', help: 'Four taps. Help.', tap: 'One tap. It does nothing.',
       space: 'Two-finger tap. Fire, like Space.', pause: 'Three-finger tap. Pause and resume.',
       clock: 'T. The clock.', yes: 'Y. Yes.', no: 'N. No.',
+      hold: 'Held still for one second. In Ultimate Test Mode only, that turns the compass on or off.',
+      compass: 'C. The compass, in Ultimate Test Mode.',
     };
     if (g === 'back') {
       const now = performance.now();
@@ -1636,6 +1658,10 @@ export class Game {
     const md = this.mode;
     const gm = md && md.gestureMode ? md.gestureMode(this) : null;
     this.gestures.setMode(this.playing && !this.isPaused ? (gm || 'run') : this.state === S.PRACTICE ? 'practice' : 'menu');
+    // A finger held still is the compass only where the mode asks (Ultimate Test
+    // Mode), and in Gesture Practice, which names it.
+    this.gestures.holdCompass = this.state === S.PRACTICE
+      || !!(this.playing && !this.isPaused && md && md.holdGesture && md.holdGesture(this));
     if (this.state === S.PRACTICE && performance.now() - (this.lastInputAt || 0) > 20000) {
       this.menuIndex = this.menuKeys.indexOf('practice');
       this._toMenu('Gesture practice closed. ');
