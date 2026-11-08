@@ -196,24 +196,27 @@ const thrower = await page.evaluate(async () => {
   }
   a.play = orig;
   const windup = played.some((n) => /^enemy_windup/.test(n)); const thrown = played.includes('item_throw'); const buzz = played.includes('item_buzz');
-  // Kill it with the laser: a respawn is scheduled for its area.
+  // Bring it down with thrown items (the laser never fires in a tower area): a
+  // respawn is scheduled for its area.
   u.ammo = 30;
   e.x = g.playerPos[0] - tw.centre[0]; e.y = g.playerPos[1] - tw.centre[1] - 8;
+  u.towerCarry = { area: tw.id, count: 40 };
   let shots = 0;
   while (u.enemies.includes(e) && shots < 40) { g.input('space'); shots += 1; }
+  const ammoLeft = u.ammo;
   const respawn = (u.respawn.get(tw.id) || []).length;
   const kills = u.kills;
   // Enemies come back after a while (hurried).
   for (const [id, list] of u.respawn) u.respawn.set(id, list.map(() => 0.01));
   const n0 = u.enemies.length;
   g.updateUltimateMode(1 / 30);
-  return { skipped: false, windup, thrown, buzz, flew, hit: hitAt !== null, hp: u.hp, hp0, shots, needed: e.hitsNeeded, respawn, kills, back: u.enemies.length - n0 };
+  return { skipped: false, windup, thrown, buzz, flew, hit: hitAt !== null, hp: u.hp, hp0, shots, ammoLeft, needed: e.hitsNeeded, respawn, kills, back: u.enemies.length - n0 };
 });
 if (thrower.skipped) console.log('SKIP no thrower');
 else {
   check(thrower.windup && thrower.thrown && thrower.buzz && thrower.flew >= 1, `a thrower winds up, throws, and the item buzzes in flight (windup ${thrower.windup}, throw ${thrower.thrown}, buzz ${thrower.buzz}, in flight ${thrower.flew})`);
   check(thrower.hit && thrower.hp === thrower.hp0 - 5, `a thrown item that reaches you costs 5 health in the easy stretch (${thrower.hp0} to ${thrower.hp})`);
-  check(thrower.shots === thrower.needed && thrower.respawn === 1, `the laser brings a thrower down in its ${thrower.needed} hits, and another is due in its area`);
+  check(thrower.shots === thrower.needed && thrower.ammoLeft === 30 && thrower.respawn === 1, `thrown items bring a thrower down in its ${thrower.needed} hits with no ammo spent, and another is due in its area`);
   check(thrower.back === 1, 'a shot enemy comes back in its own area');
 }
 

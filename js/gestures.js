@@ -57,6 +57,7 @@ export class Gestures {
     this.tapTimer = null;
     this.holdCompass = false;   // Ultimate Test Mode: a still finger is the compass
     this.holdTimer = null;
+    this.braille = null;        // Windows: the Braille keyboard translator (main.js sets it)
     this.g = null;              // the gesture in progress
     const opts = { passive: false };
     el.addEventListener('touchstart', (e) => this._start(e), opts);
@@ -256,6 +257,9 @@ export class Gestures {
 
   _key(e) {
     if (e.metaKey || e.ctrlKey || e.altKey) return;
+    // Windows: Braille text typed by a screen reader is read by js/braille.js first
+    // (a wordsign such as "have" is the letter H); it says when it has taken a key.
+    if (this.braille && this.braille.keydown(e)) return;
     const map = {
       ArrowUp: 'up', ArrowDown: 'down', ArrowLeft: 'left', ArrowRight: 'right',
       Enter: 'enter', Escape: 'back', ' ': 'space', p: 'pause', P: 'pause', h: 'help', H: 'help',

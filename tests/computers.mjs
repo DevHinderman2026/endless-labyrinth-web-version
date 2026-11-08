@@ -106,11 +106,11 @@ for (const [name, spec] of Object.entries(UA)) await computer(name, spec);
   const w = await page.evaluate(async () => {
     const g = window.__el.game;
     const { gameHelp, HELP } = await import('./js/game.js');
-    return { menu: g.menuOptions.slice(), said: document.getElementById('said').textContent, help: gameHelp().map(([n]) => n), all: HELP.length };
+    return { menu: g.menuOptions.slice(), said: document.getElementById('said').textContent, help: gameHelp().map(([n]) => n), all: HELP.length, brailleTopic: gameHelp()[0][1].some((t) => /Braille Keyboard and Display/.test(t.title)) && !HELP[0][1].some((t) => /Braille Keyboard and Display/.test(t.title)) };
   });
-  check(JSON.stringify(w.menu.map((m) => m.replace(/:.*/, ''))) === JSON.stringify(['Ultimate Test Mode', 'High Scores', 'Speech Rate', 'Leave Game']), 'Windows: the menu is Ultimate Test Mode, High Scores, Speech Rate, Leave Game: ' + w.menu.join(', '));
+  check(JSON.stringify(w.menu.map((m) => m.replace(/:.*/, ''))) === JSON.stringify(['Ultimate Test Mode', 'High Scores', 'Braille Keyboard', 'Speech', 'Braille Key Test', 'Speech Rate', 'Leave Game']), 'Windows: the menu is Ultimate Test Mode, High Scores, the Braille settings, Speech Rate, Leave Game: ' + w.menu.join(', '));
   check(/other modes and the events are played in the Windows version/.test(w.said) && /arrow/.test(w.said) && !/Swipe/.test(w.said), 'Windows: the welcome says where the other modes are, in the keyboard\'s words');
-  check(JSON.stringify(w.help) === JSON.stringify(['General', 'Ultimate Test Mode', 'Demos, Ultimate Test Mode']) && w.all > 3, 'Windows: the game\'s help is General, Ultimate Test Mode and its demos (the site keeps all ' + w.all + ')');
+  check(JSON.stringify(w.help) === JSON.stringify(['General', 'Ultimate Test Mode', 'Demos, Ultimate Test Mode']) && w.all > 3 && w.brailleTopic, 'Windows: the game\'s help is General (with the Braille topic), Ultimate Test Mode and its demos (the site keeps all ' + w.all + ')');
   // Enter starts the mode; the compass is C; Escape then Y quits.
   await page.keyboard.press('Enter');
   await page.waitForTimeout(800);

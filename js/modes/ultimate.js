@@ -1210,8 +1210,13 @@ const mixin = {
     if (u.place === 'ride') return;                                   // nothing fires in the car (Island Mode)
     if (u.place !== 'world') { this.audio.play('empty_click'); return; }   // the seabed: Island Mode's click
     const a = u.area;
-    // In a tower area, an item you hold is thrown first; the laser is the fallback.
-    if (a.kind === 'tower' && this._utItemsHeld() > 0) { this._utThrow(); return; }
+    // In a tower area only items are thrown, as on a tower floor: with none held
+    // the attack is the empty click, never the laser (Russell, 8 Nov: ammo is no
+    // fallback there; get more items or leave the area).
+    if (a.kind === 'tower') {
+      if (this._utItemsHeld() > 0) this._utThrow(); else this.audio.play('empty_click');
+      return;
+    }
     if (u.ammo <= 0) { this.audio.play('empty_click'); return; }
     u.ammo -= 1;
     this.audio.play('laser');

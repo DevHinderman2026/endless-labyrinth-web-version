@@ -193,3 +193,8 @@ div.topic-panel { border: 1px solid var(--accent); border-top: 0; border-radius:
 div.topic-panel h3 { margin: 1.3rem 0 0.35rem; }
 button.play { background: transparent; color: var(--link); border: 1px solid var(--link); border-radius: 8px; font: inherit; padding: 0.35rem 0.8rem; cursor: pointer; }
 html[data-contrast="high"] button.topic-toggle, html[data-contrast="high"] div.topic-panel { border: 2px solid #fff; }
+
+/* The game's text box on Windows (js/braille.js): on the page for the screen reader,
+   out of the way for the eye. */
+.console { position: fixed; left: 0.5rem; bottom: 0.5rem; width: 14rem; height: 2.4rem; opacity: 0.35; font: inherit; color: inherit; background: transparent; border: 1px solid currentColor; border-radius: 0.3rem; padding: 0.3rem; resize: none; }
+.console:focus { opacity: 0.6; outline: 2px solid currentColor; }

@@ -94,7 +94,8 @@ await page.evaluate(async () => {
 // --------------------------------------------------------------- 1. sounds with no place of their own ring in the player's room
 const unplaced = await page.evaluate(async () => {
   const g = window.__el.game; const a = window.__el.audio; const u = g.ut; const T = window.__ut;
-  const area = T.goTo((x) => x.kind === 'labyrinth' || x.kind === 'battle' || x.kind === 'tower') || T.goTo((x) => !!x.room);
+  // (Not a tower area: the laser never fires there.)
+  const area = T.goTo((x) => x.kind === 'labyrinth' || x.kind === 'battle') || T.goTo((x) => !!x.room && x.kind !== 'tower');
   if (!area) return { skipped: true };
   T.quiet();
   const out = { room: area.room, mix: a.listenerMix };

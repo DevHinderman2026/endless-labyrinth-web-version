@@ -9,6 +9,7 @@ import { Game } from './game.js';
 import { deviceKind, isApple, isComputer, keyboardDevice, screenReaderName, deviceWord, windowsOnly } from './device.js';
 import { keyWords } from './keywords.js';
 import { applyDisplay, followDisplay } from './display.js';
+import { Braille } from './braille.js';
 
 const $ = (id) => document.getElementById(id);
 const kind = deviceKind();
@@ -20,7 +21,10 @@ const shown = $('said');
 const statusLine = $('status');
 const store = new Store();
 const keyboard = keyboardDevice();
-const speech = new Speech({ show: (t) => { shown.textContent = t; }, rateLevel: store.settings.speechRate, words: keyboard ? keyWords : null });
+// Windows (web 2.0.0): the Braille keyboard translator and the Braille display's
+// view of the game (js/braille.js); on every other device it does nothing.
+const braille = new Braille({ field: $('console'), store, enabled: windowsOnly(), emit: (g) => onGesture(g), speak: (t) => speech.speak(t) });
+const speech = new Speech({ show: (t) => { shown.textContent = t; braille.show(t); }, rateLevel: store.settings.speechRate, words: keyboard ? keyWords : null, muted: () => braille.speechMuted });
 let audio = null;
 let game = null;
 let ready = false;      // sounds loaded, waiting for the swipe up
@@ -68,7 +72,8 @@ function offInstructions() {
     // Freedom Scientific's JAWS keystroke list.
     return 'Now turn your screen reader\'s speech off. With NVDA, press the NVDA key plus S, which cycles the speech mode off and back on. '
       + 'With JAWS, press Insert plus Space, then S, which switches between full speech and speech on demand (Caps Lock plus Space, then S, in the laptop layout); the same again turns full speech back on. '
-      + 'The game speaks for itself, with your computer\'s own voice. When your screen reader is quiet, press Enter to begin. When you leave the game, turn its speech back on the same way.';
+      + 'The game speaks for itself, with your computer\'s own voice, and everything it says also appears in the text box that now has the focus, for a Braille display; keep the focus there. '
+      + 'When your screen reader is quiet, press Enter to begin. When you leave the game, turn its speech back on the same way.';
   }
   if (keyboard) {
     return 'Now turn your screen reader off; with Orca, press Super Alt S. The game speaks for itself. '
@@ -113,6 +118,13 @@ async function start() {
   setText('progress', '');
   const text = 'Sounds loaded. ' + offInstructions();
   setText('lead', text);
+  if (windowsOnly()) {
+    // From here the keyboard focus lives in the game's text box: NVDA and JAWS go
+    // to focus mode there, so Enter and every key reach the game, and a Braille
+    // display shows what the game says.
+    $('console').hidden = false;
+    braille.hold(true);
+  }
   speech.speak(text);
   ready = true;
 }
@@ -127,9 +139,9 @@ function begin() {
   document.body.classList.add('playing');
   $('intro').hidden = true;
   game = new Game({
-    audio, speech, store, gestures,
+    audio, speech, store, gestures, braille,
     view: (s) => { if (statusLine.textContent !== s) statusLine.textContent = s; },
-    leave: () => { location.href = 'index.html'; },
+    leave: () => { braille.hold(false); location.href = 'index.html'; },
   });
   audio.wake();
   game.welcome();
@@ -149,14 +161,16 @@ for (const type of ['touchend', 'pointerup', 'click', 'keydown']) {
   document.addEventListener(type, () => { if (audio) audio.wake(); }, { capture: true, passive: true });
 }
 
-const gestures = new Gestures($('stage'), (g) => {
+function onGesture(g) {
   if (audio) audio.resume();
   if (!started) {
     if (g === 'up' || (g === 'enter' && ready)) begin();
     return;
   }
   game.input(g);
-});
+}
+const gestures = new Gestures($('stage'), onGesture);
+gestures.braille = braille;
 
 $('start').addEventListener('click', start);
 
@@ -166,4 +180,4 @@ document.addEventListener('visibilitychange', () => {
 });
 
 // For the tests: the running game, when there is one.
-window.__el = { get game() { return game; }, get audio() { return audio; }, speech };
+window.__el = { get game() { return game; }, get audio() { return audio; }, speech, braille, gestures };

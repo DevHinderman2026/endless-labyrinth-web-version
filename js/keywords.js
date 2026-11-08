@@ -66,7 +66,7 @@ const SENTENCES = [
   [/Hold a finger still for a second for the compass\./g, 'Press C for the compass.'],
   [/The gestures are the same as every other mode: swipe to step, slide up and hold to run, slide down and hold to walk backwards, at the usual speeds, lift to stop\./g,
     'The keys are the same as every other mode: the arrows to step.'],
-  [/and if you are holding none the same tap fires your laser instead/g, 'and if you are holding none the same press fires your laser instead'],
+  [/with no item in hand the tap gives the empty click/g, 'with no item in hand the press gives the empty click'],
   [/hold a finger still, double tap, triple tap/g, 'double tap, triple tap'],
 ];
 

@@ -10,8 +10,9 @@ export const RATES = [0.7, 0.85, 1.0, 1.15, 1.3, 1.5, 1.7, 2.0];
 export const DEFAULT_RATE = 3;   // 1-based: 1.0, the voice's own speed
 
 export class Speech {
-  constructor({ show = () => {}, rateLevel = DEFAULT_RATE, words = null } = {}) {
+  constructor({ show = () => {}, rateLevel = DEFAULT_RATE, words = null, muted = () => false } = {}) {
     this.words = words;   // on a computer: gestures turned into keys (keywords.js)
+    this.muted = muted;   // Windows, Braille only: the voice is silent, the text still shows (js/braille.js)
     this.synth = window.speechSynthesis || null;
     this.show = show;
     this.gen = 0;
@@ -80,7 +81,10 @@ export class Speech {
       if (item.after) { try { item.after(); } catch (e) { /* a demo that could not play */ } }
       this._next();
     };
+    // No voice (or the voice silenced for Braille): the line is on the screen and
+    // the display; what follows it (a help demo) comes after a reading pause.
     if (!this.synth) { setTimeout(done, 50); return; }
+    if (this.muted()) { setTimeout(done, Math.min(2500, 300 + item.text.length * 20)); return; }
     let i = 0;
     const sayPart = () => {
       if (item.gen !== this.gen) return;

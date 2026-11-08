@@ -287,9 +287,18 @@ else {
   check(island.upRide === 'ride' && island.back === 'world' && island.area === 'island' && island.at[0] === island.lift[0] && island.at[1] === island.lift[1], 'the elevator up brings you back onto the island, at the lift');
 }
 
-// --------------------------------------------------------------- a tower area: items first, then the laser
-const tower = await page.evaluate(() => {
+// --------------------------------------------------------------- a tower area: items only, never the laser
+// (Regenerate, hurried along, until the world has a tower area with its thrower.)
+await page.evaluate(async () => {
   const g = window.__el.game; const u = g.ut;
+  for (let n = 0; n < 12 && !u.enemies.some((e) => e.kind === 'thrower'); n++) {
+    u.worldTime = 0.05;
+    for (let i = 0; i < 60; i++) g.updateUltimateMode(1 / 30);
+    await new Promise((r) => setTimeout(r, 40));
+  }
+});
+const tower = await page.evaluate(() => {
+  const g = window.__el.game; const u = g.ut; const a = window.__el.audio;
   const tw = u.world.areas.find((x) => x.kind === 'tower');
   if (!tw) return { skipped: true };
   const thrower = u.enemies.find((e) => e.area === tw && e.kind === 'thrower');
@@ -308,8 +317,10 @@ const tower = await page.evaluate(() => {
   const hits0 = thrower.hitsTaken;
   g.input('space');
   const afterThrow = { held: g._utItemsHeld(), ammo: u.ammo, hits: thrower.hitsTaken, needed: thrower.hitsNeeded, alive: u.enemies.includes(thrower) };
-  g.input('space');   // nothing held: the laser
-  const afterShot = { ammo: u.ammo, hits: thrower.hitsTaken, alive: u.enemies.includes(thrower) };
+  const played = []; const orig = a.play.bind(a); a.play = (n, o) => { played.push(n); return orig(n, o); };
+  g.input('space');   // nothing held: the empty click, not the laser (ammo is no fallback in a tower area)
+  a.play = orig;
+  const afterShot = { ammo: u.ammo, hits: thrower.hitsTaken, alive: u.enemies.includes(thrower), played };
   // Leaving the area loses the items.
   u.towerCarry = { area: tw.id, count: 3 };
   const other = u.world.areas.find((x) => x !== tw);
@@ -324,14 +335,14 @@ if (tower.skipped) console.log('SKIP no tower area with a thrower in this world'
 else {
   check(tower.held === 1 && tower.fresh, 'walking into a tower item takes it, and a fresh one appears');
   check(tower.afterThrow.held === 0 && tower.afterThrow.ammo === 3 && (tower.afterThrow.hits === 1 || !tower.afterThrow.alive), 'the attack throws the held item at the centred thrower, spending no ammo');
-  check(tower.afterShot.ammo === 2 && (!tower.afterShot.alive || tower.afterShot.hits === 2), 'with no item held, the attack fires the laser at the thrower');
+  check(tower.afterShot.ammo === 3 && tower.afterShot.played.includes('empty_click') && !tower.afterShot.played.includes('laser') && (!tower.afterShot.alive || tower.afterShot.hits === tower.afterThrow.hits), 'with no item held, the attack in a tower area is the empty click: no laser, no ammo spent: ' + JSON.stringify(tower.afterShot.played));
   check(tower.after === 0 && tower.carry === null, 'tower items are gone on leaving the area');
 }
 
 // --------------------------------------------------------------- regeneration
 const regen = await page.evaluate(async () => {
   const g = window.__el.game; const u = g.ut; const a = window.__el.audio;
-  const world1 = u.world;
+  const world1 = u.world; const no1 = u.worldNo; const worlds1 = u.worlds;
   u.worldTime = 15.5; u.warned = false;
   const played = [];
   const orig = a.play.bind(a);
@@ -347,27 +358,27 @@ const regen = await page.evaluate(async () => {
   for (let i = 0; i < 30 * 20; i++) {
     g.updateUltimateMode(1 / 30);
     phases.add(u.phase);
-    if (u.phase === 'fading' && !atEnd) atEnd = { hp: u.hp, ammo: u.ammo };
-    if (u.worldNo === 2 && !atStart) { atStart = { hp: u.hp, ammo: u.ammo }; firstTime = u.worldTime; }
-    if (u.worldNo === 2 && u.phase === 'play') break;
+    if (u.worldNo === no1) atEnd = { hp: u.hp, ammo: u.ammo };   // the last values of the old world (a chaser may still strike during the fade)
+    if (u.worldNo === no1 + 1 && !atStart) { atStart = { hp: u.hp, ammo: u.ammo }; firstTime = u.worldTime; }
+    if (u.worldNo === no1 + 1 && u.phase === 'play') break;
     if (i % 15 === 0) await new Promise((r) => setTimeout(r, 15));
   }
   a.play = orig; g.tts.speak = origSpeak; a.setWorldLevel = origLevel;
   await new Promise((r) => setTimeout(r, 1200));
   return {
-    worldNo: u.worldNo, worlds: u.worlds, newWorld: u.world !== world1, phases: [...phases], spoken, counts: played.filter((n) => n === 'countdown_high').length,
+    worldNo: u.worldNo, no1, worlds: u.worlds, worlds1, newWorld: u.world !== world1, phases: [...phases], spoken, counts: played.filter((n) => n === 'countdown_high').length,
     levels, safe: u.safe, atEnd, atStart, worldTime: firstTime, mult: g._utMultiplier(),
     compassOff: !u.compass.on, place: u.place, carry: u.towerCarry, areas: u.world.areas.length, loops: [...a.live].filter((v) => v.loop).length,
   };
 });
-check(regen.worldNo === 2 && regen.newWorld && regen.worlds === 1, 'the world regenerates into world 2');
+check(regen.worldNo === regen.no1 + 1 && regen.newWorld && regen.worlds === regen.worlds1 + 1, `the world regenerates into world ${regen.no1 + 1}`);
 check(regen.spoken.includes('World regenerating in 15 seconds.'), 'the voice warns with the exact words: ' + JSON.stringify(regen.spoken));
 check(regen.counts === 5, `Battle's countdown over the last five seconds (${regen.counts} beeps)`);
 check(regen.phases.includes('fading') && !regen.phases.includes('silence') && regen.phases.includes('fadein'), 'fade out, then the new world at once, no silence: ' + regen.phases.join(', '));
 check(regen.levels.some(([l, s]) => l === 0 && s === 2) && regen.levels.some(([l, s]) => l === 1 && s === 0.5), 'the world fades out over two seconds and the new one rises in half a second: ' + JSON.stringify(regen.levels));
-check(regen.worldTime > 179 && regen.worldTime <= 180, `the second world lasts three minutes too (${regen.worldTime && regen.worldTime.toFixed(1)})`);
+check(regen.worldTime > 179 && regen.worldTime <= 180, `the next world lasts three minutes too (${regen.worldTime && regen.worldTime.toFixed(1)})`);
 check(regen.atEnd && regen.atStart && regen.atEnd.hp === regen.atStart.hp && regen.atEnd.ammo === regen.atStart.ammo && regen.atStart.ammo === 7, 'health and ammo carry over: ' + JSON.stringify([regen.atEnd, regen.atStart]));
-check(regen.mult === 1.5, `the multiplier is now ${regen.mult}`);
+check(Math.abs(regen.mult - (1 + 0.5 * regen.worlds)) < 1e-9, `the multiplier is now ${regen.mult} (${regen.worlds} worlds survived)`);
 check(regen.place === 'world' && regen.carry === null && regen.compassOff, 'on the ground, no tower items, compass off');
 check(regen.loops >= 1, `the new world sounds (${regen.loops} loops)`);
 
@@ -391,10 +402,10 @@ const score = await page.evaluate(() => {
   g._utTakePickup(credit);
   const creditPoints = u.points - p1;
   const timers = u.timers.map((t) => t.kind + (t.danger ? ':danger' : '') + (t.safe ? ':safe' : ''));
-  return { safePoints, gotAmmo, creditPoints, timers };
+  return { safePoints, gotAmmo, creditPoints, timers, mult: g._utMultiplier() };
 });
 check(score.safePoints === 0 && score.gotAmmo > 0, 'a cartridge taken in the safe zone gives ammo but no points');
-check(score.creditPoints === 60, `a 40 credit in world 2 is worth 60 (times 1.5): ${score.creditPoints}`);
+check(score.creditPoints === Math.round(40 * score.mult), `a 40 credit is worth ${Math.round(40 * score.mult)} now (times ${score.mult}): ${score.creditPoints}`);
 check(score.timers.includes('ammo:safe') && score.timers.includes('credit:danger'), 'the safe zone\'s cartridge comes back there; the credit comes back in a dangerous area: ' + score.timers.join(', '));
 
 // --------------------------------------------------------------- pause freezes the countdown; game over
