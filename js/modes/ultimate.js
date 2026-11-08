@@ -137,23 +137,12 @@ export const CROWD_LEVEL = 0.55;                // against the drone's 1 and the
 export const ROARS = ['ut_crowd_roar_1', 'ut_crowd_roar_2'];   // the crowd erupting when a chaser goes down (web-only recordings, the ultimate pack)
 export const ROAR_LEVEL = 0.6;
 export const ROAR_AFTER = 0.35;                 // seconds after the bang
-// The arena announcer (Russell, 8 Nov): jkerman's "Old-school arena FPS announcer
-// voice lines" (Freesound, CC Attribution 4.0), cut line by line into the ultimate
-// pack as ut_ann_<line>. He speaks only in a battle area, after the bang and over
-// the roar, one line a kill at most, and at the regeneration warning; there is no
-// greeting on walking in (Russell: no "Get ready!" and no "3, 2, 1, fight!"), and
-// the one line with a swear word is left out.
-export const ANN_LEVEL = 0.8;
-export const ANN_AFTER = 1.1;                   // seconds after the bang: the roar has begun
-export const ANN_MULTI_WINDOW = 6.0;            // kills this close together are a double, a triple...
-export const ANN_MULTI = [null, null, 'double_kill', 'triple_kill', 'quad_kill', 'penta_crush'];
-export const ANN_STREAK = { 5: 'killstreak', 10: 'rampage', 15: 'unstoppable', 20: 'domination', 25: 'godlike' };   // kills without being hit
-export const ANN_QUICKDRAW = 3.0;               // a kill this soon after walking into the arena
-export const ANN_FLAVOUR = ['epic', 'obliterated', 'ludicrous', 'humiliated'];   // now and then, on an ordinary kill (no swearing: the game is for all ages)
-export const ANN_FLAVOUR_CHANCE = 0.35;
-export const ANN_WARN_AFTER = 2.8;              // after "World regenerating in 15 seconds." has been said
-export const ANN_DEFEAT_AT = 0.4;               // after the fatal hit...
-export const ANN_DEFEAT_HOLD = 2.1;             // ...and the Game Over words wait this long for "Defeat!"
+// When a chaser strikes you in a battle area the crowd reacts (Russell, 8 Nov):
+// a groan or a gasp, all round you, in the arena's room. Universfield's "Crowd
+// Disappointment Reaction" and "Crowd Shocked Reaction" (Pixabay).
+export const HIT_REACTIONS = ['ut_crowd_hit_1', 'ut_crowd_hit_2'];
+export const HIT_REACT_LEVEL = 0.6;
+export const HIT_REACT_AFTER = 0.15;            // seconds after the hit sound
 // The water park (Russell, 8 Nov): a safe zone whose background is water has a
 // water slide. Its beacon is Tower Mode's staircase; reach it and you climb by
 // yourself (Tower's stairs), slide down (a rush made by the game) and splash into
@@ -345,7 +334,6 @@ const mixin = {
       pickups: [], timers: [], respawn: new Map(), potionPending: 0, hitCooldown: 0, lowWarned: false,
       place: 'world', ride: null, seabed: null, lift: null, liftArmed: false, dingTimer: 0,
       compass: { on: false, dir: 0, t: 0 }, prox: 0, steps: [],
-      ann: { lastKillAt: -1e9, multi: 0, streak: 0, lastHitBy: null, worldKills: 0, areaKills: new Map(), lastArea: null, areaAt: 0 },
       voices: new Set(),
     };
     this.tts.speak('', { interrupt: true });   // the menu's words stop; the world says the rest
@@ -420,7 +408,6 @@ const mixin = {
     u.place = 'world'; u.ride = null; u.rideMix = null; u.seabed = null; u.lift = null; u.liftArmed = false; u.dingTimer = 0; u.slide = null; u.slides = []; u.bus = null; u.busAt = null;
     this._utCompassOff(true);
     u.worldPoints = 0; u.worldDamage = 0;
-    Object.assign(u.ann, { lastKillAt: -1e9, multi: 0, worldKills: 0, areaKills: new Map(), lastArea: null });
     u.steps = [];
     this.battleSteps = [];
     this.stride = null;
@@ -613,9 +600,6 @@ const mixin = {
       const roar = ROARS.filter((n) => this.audio.has(n));
       if (roar.length) this._utLater(bang + ROAR_AFTER, choice(roar), null, { volume: ROAR_LEVEL });
     }
-    // ...and the announcer calls it, over the roar.
-    const line = this._utKillLine(e);
-    if (line) this._utAnnounce(line, bang + ANN_AFTER);
     if (e.kind === 'thrower') {
       // Its throws in the air go with it.
       for (const s of [...u.projectiles]) if (s.owner === e) this._utDropProjectile(s);
@@ -642,9 +626,16 @@ const mixin = {
     u.hp = Math.max(0, u.hp - dmg);
     u.worldDamage += dmg;
     u.hitCooldown = HIT_COOLDOWN;
-    u.ann.streak = 0; u.ann.lastHitBy = by;
     this.audio.play('player_hit');
-    if (u.hp <= 0) { this._utGameOver(!!(u.area && u.area.crowd && u.place === 'world')); return; }
+    // In a battle area the crowd reacts to the blow (the last one too).
+    const crowd = !!(u.area && u.area.crowd && u.place === 'world');
+    const react = HIT_REACTIONS.filter((n) => this.audio.has(n));
+    if (u.hp <= 0) {
+      if (crowd && react.length) this.audio.play(choice(react), { volume: HIT_REACT_LEVEL });
+      this._utGameOver();
+      return;
+    }
+    if (crowd && react.length) this._utLater(HIT_REACT_AFTER, choice(react), null, { volume: HIT_REACT_LEVEL });
     // Tower's low-health warning, with its words and its threshold.
     const low = Math.max(35, 2 * dmg);
     if (u.hp <= low && !u.lowWarned) {
@@ -726,47 +717,6 @@ const mixin = {
     return u.towerCarry && u.area && u.towerCarry.area === u.area.id ? u.towerCarry.count : 0;
   },
 
-  // ---------------------------------------------------------------- the announcer
-  // One of jkerman's lines, unplaced, in the player's room (the arena's PA).
-  _utAnnounce(line, delay = 0) {
-    const name = `ut_ann_${line}`;
-    if (!this.audio.has(name)) return false;
-    this._utLater(delay, name, null, { volume: ANN_LEVEL });
-    return true;
-  },
-
-  // Counts every kill; names the line only for a kill in the battle area the
-  // player stands in. Order: a double, triple, quad or penta; first blood; a
-  // streak milestone; revenge on the one that struck last; the arena cleared;
-  // a quickdraw just inside the arena; now and then a flourish.
-  _utKillLine(e) {
-    const u = this.ut; const an = u.ann;
-    const now = u.elapsed;
-    an.multi = now - an.lastKillAt <= ANN_MULTI_WINDOW ? an.multi + 1 : 1;
-    an.lastKillAt = now;
-    an.streak += 1; an.worldKills += 1;
-    const inArea = (an.areaKills.get(e.area.id) || 0) + 1;
-    an.areaKills.set(e.area.id, inArea);
-    if (!(e.area && e.area.crowd && e.area === u.area && u.place === 'world')) return null;
-    if (an.multi >= 2) return ANN_MULTI[Math.min(an.multi, ANN_MULTI.length - 1)];
-    if (an.worldKills === 1) return 'first_blood';
-    if (ANN_STREAK[an.streak]) return ANN_STREAK[an.streak];
-    if (an.lastHitBy === e) { an.lastHitBy = null; return 'revenge'; }
-    if (inArea >= 2 && !u.enemies.some((x) => x.area === e.area)) return 'last_standing';
-    if (now - an.areaAt <= ANN_QUICKDRAW) return 'quickdraw';
-    if (rand() < ANN_FLAVOUR_CHANCE) return choice(ANN_FLAVOUR);
-    return null;
-  },
-
-  // At the regeneration warning, in a battle area: how the world went.
-  _utWarnLine() {
-    const u = this.ut;
-    if (!(u.area && u.area.crowd && u.place === 'world')) return null;
-    if (u.worldDamage === 0) return 'flawless';
-    if (u.worldPoints >= WELL_POINTS && u.worldDamage <= WELL_DAMAGE) return 'victory';
-    return 'sudden_death';
-  },
-
   // ---------------------------------------------------------------- timing
   _utLater(delay, name, pos, opts = {}) {
     const run = this.ut.run;
@@ -790,9 +740,8 @@ const mixin = {
       }
       if (u.phase === 'fadein' && u.gap <= 0) u.phase = 'play';
     }
-    if (u.phase === 'silence' || u.phase === 'dead') return;
+    if (u.phase === 'silence') return;
     u.elapsed += dt;
-    if (u.area !== u.ann.lastArea) { u.ann.lastArea = u.area; u.ann.areaAt = u.elapsed; }
     if (u.safe > 0) u.safe -= dt;
     if (u.hitCooldown > 0) u.hitCooldown -= dt;
     // The regeneration countdown runs whatever else is happening (the compass too).
@@ -800,8 +749,6 @@ const mixin = {
     if (!u.warned && u.worldTime <= WARN_AT) {
       u.warned = true;
       this.tts.speak(`World regenerating in ${WARN_AT} seconds.`, { interrupt: true });
-      const line = this._utWarnLine();
-      if (line) this._utAnnounce(line, ANN_WARN_AFTER);
     }
     const left = Math.ceil(u.worldTime);
     if (left >= 1 && left <= COUNT_FROM && left !== u.lastCount) {
@@ -1690,20 +1637,8 @@ const mixin = {
   },
 
   // ---------------------------------------------------------------- the end
-  _utGameOver(arena = false) {
-    const u = this.ut;
-    const mix = this.audio.listenerMix;
+  _utGameOver() {
     this._utStopWorld();
-    if (arena && this.audio.has('ut_ann_defeat')) {
-      // The arena's announcer calls it, in the arena's room, and the Game Over
-      // words wait for him; meanwhile nothing answers and nothing moves.
-      u.phase = 'dead';
-      this.audio.listenerMix = mix;
-      this._utLater(ANN_DEFEAT_AT, 'ut_ann_defeat', null, { volume: ANN_LEVEL });
-      const run = u.run;
-      setTimeout(() => { if (this.ut && this.ut.run === run && this.state === STATE) this.triggerGameOver(); }, (ANN_DEFEAT_AT + ANN_DEFEAT_HOLD) * 1000);
-      return;
-    }
     this.triggerGameOver();
   },
 };
@@ -1735,7 +1670,7 @@ function input(game, g) {
   const u = game.ut;
   if (!u) return;
   if (g === 'clock') return;   // no clock in this mode
-  if (u.phase === 'silence' || u.phase === 'dead') return;   // between worlds, and after the fatal hit, nothing answers
+  if (u.phase === 'silence') return;   // between worlds nothing answers
   if (g === 'hold' || g === 'compass') { game._utCompassToggle(); return; }
   if (u.compass.on) {
     // Only the compass turns; nothing else moves.
@@ -1775,7 +1710,7 @@ export default {
   // A run or a backward walk never carries across a regeneration or a ride, and
   // never happens while the compass is on, on a ride, or between worlds.
   strideSig(game) { return game.ut ? `${game.ut.worldNo}|${game.ut.place}` : ''; },
-  blockStride(game) { const u = game.ut; return !u || u.compass.on || u.place === 'ride' || u.place === 'slide' || u.place === 'bus' || u.phase === 'silence' || u.phase === 'dead'; },
+  blockStride(game) { const u = game.ut; return !u || u.compass.on || u.place === 'ride' || u.place === 'slide' || u.place === 'bus' || u.phase === 'silence'; },
   finish(game) {
     const u = game.ut || { points: 0, elapsed: 0, worlds: 0 };
     const worlds = u.worlds;

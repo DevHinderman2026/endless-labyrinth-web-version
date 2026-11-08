@@ -48,7 +48,7 @@ const setup = await page.evaluate(async () => {
 });
 check(setup.menu.indexOf('Ultimate Mode') === setup.menu.indexOf('Chaos Mode') + 1, 'main menu: Ultimate Mode right after Chaos: ' + setup.menu.join(', '));
 check(setup.names.indexOf('Ultimate Mode') === setup.names.indexOf('Chaos Mode') + 1 && setup.names.indexOf('Demos, Ultimate Mode') > setup.names.indexOf('Demos, Chaos Mode'), 'help sections in order: ' + setup.names.join(' | '));
-check(setup.topics === 18 && setup.demos === 13, `help: ${setup.topics} topics, ${setup.demos} demos`);
+check(setup.topics === 18 && setup.demos === 14, `help: ${setup.topics} topics, ${setup.demos} demos`);
 check(setup.missing.length === 0, 'every demo sound exists' + (setup.missing.length ? ': missing ' + setup.missing.join(', ') : ''));
 check(setup.bgMissing.length === 0, 'every event background is in the packs' + (setup.bgMissing.length ? ': missing ' + setup.bgMissing.join(', ') : ''));
 check(setup.boards.includes('Ultimate Mode: No score yet'), 'high scores list the board: ' + setup.boards.join(' | '));

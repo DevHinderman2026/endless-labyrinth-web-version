@@ -613,94 +613,48 @@ check(bus.boarded && bus.heldStill, 'stepping up to the bus boards it; on the bu
 check(bus.inOrder && bus.steps >= 5 && bus.rideVoice && bus.rideVoice.loop, 'doors open, steps, doors close, the ride from your seat, doors open, steps, doors close, and it drives off: ' + JSON.stringify({ steps: bus.steps, ride: bus.rideVoice }));
 check(bus.landedSafe && bus.gone && bus.idleLeft === 0, 'you are left on the floor of the nearest safe zone, the bus gone and its engine with it');
 
-// --------------------------------------------------------------- 11. the arena announcer (Russell, 8 Nov: jkerman's lines, no greeting)
-const ann = await page.evaluate(async () => {
+// --------------------------------------------------------------- 11. the crowd reacts to a hit (Russell, 8 Nov; the announcer is gone)
+const hits = await page.evaluate(async () => {
   const g = window.__el.game; const u = g.ut; const a = window.__el.audio; const T = window.__ut;
-  const { ANN_AFTER, ANN_LEVEL, ANN_MULTI_WINDOW, ANN_FLAVOUR, ANN_STREAK } = T.mod;
+  const out = { annNames: [...a.entries.keys()].filter((n) => /^ut_ann_/.test(n)).length, has: a.has('ut_crowd_hit_1') && a.has('ut_crowd_hit_2') };
   await T.ensureKind('battle');
   const area = T.goTo((x) => x.kind === 'battle');
-  if (!area) return { skipped: true };
-  const out = { names: [...a.entries.keys()].filter((n) => /^ut_ann_/.test(n)).length };
-  out.has = ['first_blood', 'double_kill', 'penta_crush', 'godlike', 'revenge', 'last_standing', 'quickdraw', 'flawless', 'victory', 'sudden_death', 'defeat'].every((l) => a.has(`ut_ann_${l}`));
-  out.noGreeting = !a.has('ut_ann_get_ready') && !a.has('ut_ann_fight') && !a.has('ut_ann_holy');
-  const fresh = () => Object.assign(u.ann, { lastKillAt: -1e9, multi: 0, streak: 0, lastHitBy: null, worldKills: 0, areaKills: new Map(), lastArea: area, areaAt: -100 });
-  const chaser = (where = area) => { const e = { kind: 'chaser', area: where, x: g.playerPos[0], y: g.playerPos[1] - 6, voice: null }; u.enemies.push(e); return e; };
-  const take = (e) => { const i = u.enemies.indexOf(e); if (i >= 0) u.enemies.splice(i, 1); return g._utKillLine(e); };
-  u.elapsed = 100; u.place = 'world';
-  // The words, by the rules (the line is chosen before anything is played).
-  fresh(); chaser();   // one more stays alive, so the arena is never cleared here
-  const seq = [];
-  for (let i = 0; i < 6; i++) { seq.push(take(chaser())); u.elapsed += 1; }   // six kills a second apart
-  out.multi = seq;
-  fresh(); chaser(); u.ann.worldKills = 3;
-  const streaks = {};
-  for (const n of [5, 10, 15, 20, 25]) { u.ann.streak = n - 1; u.ann.lastKillAt = -1e9; streaks[n] = take(chaser()); }
-  out.streaks = streaks;
-  fresh(); chaser(); u.ann.worldKills = 3; u.ann.streak = 1;
-  const foe = chaser(); u.ann.lastHitBy = foe; out.revenge = take(foe); out.revengeOnce = u.ann.lastHitBy === null;
-  fresh(); u.enemies = u.enemies.filter((x) => x.area !== area); u.ann.worldKills = 3; u.ann.areaKills.set(area.id, 1); u.ann.streak = 1;
-  out.cleared = take(chaser());
-  fresh(); chaser(); u.ann.worldKills = 3; u.ann.streak = 1; u.ann.areaAt = u.elapsed - 1;
-  out.quickdraw = take(chaser());
-  fresh(); chaser(); u.ann.worldKills = 3;
-  const plain = [];
-  for (let i = 0; i < 40; i++) { u.ann.streak = 1; u.ann.lastKillAt = -1e9; plain.push(take(chaser())); }
-  out.plainOk = plain.every((l) => l === null || ANN_FLAVOUR.includes(l)); out.flourishes = plain.filter(Boolean).length;
-  // Not in a labyrinth, and not for a kill in an arena you are not standing in.
-  const lab = u.world.areas.find((x) => x.kind !== 'battle' && x.kind !== 'event');
-  fresh(); out.elsewhere = lab ? take(chaser(lab)) : null;
-  out.counted = u.ann.worldKills === 1;   // the kill still counts
-  // How the world went, at the warning.
-  fresh(); u.worldDamage = 0; out.warnFlawless = g._utWarnLine();
-  u.worldDamage = 10; u.worldPoints = 80; out.warnVictory = g._utWarnLine();
-  u.worldDamage = 30; out.warnSudden = g._utWarnLine();
-  u.area = lab || area; out.warnElsewhere = lab ? g._utWarnLine() : null; u.area = area;
-  // And one for real: the first kill of a world is called over the roar, unplaced, in the room.
-  fresh(); chaser(); u.enemies = u.enemies.filter((x) => x.area !== area); chaser();
+  if (!area) return { skipped: true, ...out };
+  const foe = { kind: 'chaser', area, x: g.playerPos[0], y: g.playerPos[1] - 6, voice: null };
   const played = []; const orig = a.play.bind(a);
-  a.play = (n, o) => { played.push([n, performance.now(), o || {}]); return orig(n, o); };
-  const e = chaser(); g._utKillEnemy(e, 'laser');
-  await new Promise((r) => setTimeout(r, 1700));
+  a.play = (n, o) => { played.push([n, performance.now(), o || {}, a.listenerMix !== null]); return orig(n, o); };
+  const strike = () => { u.hp = 100; u.safe = 0; u.hitCooldown = 0; u.place = 'world'; if (u.compass.on) g._utCompassOff(true); g._utHurt(foe); };
+  strike();
+  await new Promise((r) => setTimeout(r, 700));
+  const hit = played.find(([n]) => n === 'player_hit'); const react = played.find(([n]) => /^ut_crowd_hit_/.test(n));
+  out.first = react ? { name: react[0], after: react[1] - (hit ? hit[1] : 0), placed: !!react[2].pos, volume: react[2].volume, room: react[3] } : null;
+  // Many hits: the groan and the gasp both come, one to a hit.
+  for (let i = 0; i < 16; i++) strike();
+  await new Promise((r) => setTimeout(r, 600));
+  const names = played.filter(([n]) => /^ut_crowd_hit_/.test(n)).map(([n]) => n);
+  out.count = names.length; out.both = names.includes('ut_crowd_hit_1') && names.includes('ut_crowd_hit_2');
+  // Not outside a battle area.
+  const lab = T.goTo((x) => x.kind !== 'battle' && x.kind !== 'event');
+  if (lab) {
+    const before = played.filter(([n]) => /^ut_crowd_hit_/.test(n)).length;
+    foe.area = lab; strike();
+    await new Promise((r) => setTimeout(r, 600));
+    out.elsewhere = played.filter(([n]) => /^ut_crowd_hit_/.test(n)).length - before;
+  }
+  // The fatal hit in an arena: the crowd reacts with it, and Game Over comes at once.
+  T.goTo((x) => x.kind === 'battle'); foe.area = u.area;
+  const k = played.length;
+  u.hp = 1; u.safe = 0; u.hitCooldown = 0; g._utHurt(foe);
+  out.overAtOnce = g.state === 'game_over';
+  out.fatalReact = played.slice(k).some(([n]) => /^ut_crowd_hit_/.test(n));
   a.play = orig;
-  const bang = played.find(([n]) => n === 'explosion'); const call = played.find(([n]) => /^ut_ann_/.test(n));
-  out.call = call ? { name: call[0], after: call[1] - (bang ? bang[1] : 0), placed: !!call[2].pos, mix: !!call[2].areaMix || a.listenerMix !== null } : null;
-  out.after = ANN_AFTER; out.level = ANN_LEVEL; out.window = ANN_MULTI_WINDOW; out.streakTable = ANN_STREAK;
   return out;
 });
-check(ann.skipped || (ann.has && ann.noGreeting && ann.names === 21), `the announcer's lines are in the pack (${ann.names}), with no greeting and no swearing among them`);
-check(ann.skipped || JSON.stringify(ann.multi) === JSON.stringify(['first_blood', 'double_kill', 'triple_kill', 'quad_kill', 'penta_crush', 'penta_crush']), 'first blood, then double, triple, quad and penta for kills close together: ' + JSON.stringify(ann.multi));
-check(ann.skipped || JSON.stringify(ann.streaks) === JSON.stringify({ 5: 'killstreak', 10: 'rampage', 15: 'unstoppable', 20: 'domination', 25: 'godlike' }), 'killstreak, rampage, unstoppable, domination, godlike at 5, 10, 15, 20, 25 kills unhit: ' + JSON.stringify(ann.streaks));
-check(ann.skipped || (ann.revenge === 'revenge' && ann.revengeOnce && ann.cleared === 'last_standing' && ann.quickdraw === 'quickdraw'), `revenge on the one that struck last, last man standing when the arena is cleared, quickdraw just inside: ${ann.revenge}, ${ann.cleared}, ${ann.quickdraw}`);
-check(ann.skipped || (ann.plainOk && ann.flourishes > 0 && ann.flourishes < 40), `an ordinary kill draws a flourish now and then (${ann.flourishes} of 40), never a false milestone`);
-check(ann.skipped || (ann.elsewhere === null && ann.counted), 'a kill outside a battle area is counted but not called');
-check(ann.skipped || (ann.warnFlawless === 'flawless' && ann.warnVictory === 'victory' && ann.warnSudden === 'sudden_death' && ann.warnElsewhere === null), `at the warning: flawless with no damage, victory for a world done well, sudden death otherwise, nothing outside an arena: ${ann.warnFlawless}, ${ann.warnVictory}, ${ann.warnSudden}, ${ann.warnElsewhere}`);
-check(ann.skipped || (ann.call && ann.call.name === 'ut_ann_first_blood' && ann.call.after > 900 && ann.call.after < 1700 && !ann.call.placed && ann.call.mix), 'the first kill of a world is called over the roar, about a second after the bang, unplaced, in the room: ' + JSON.stringify(ann.call));
-
-// The fatal hit in an arena: Defeat!, and the Game Over words wait for it.
-const defeat = await page.evaluate(async () => {
-  const g = window.__el.game; const u = g.ut; const a = window.__el.audio; const T = window.__ut;
-  const area = T.goTo((x) => x.kind === 'battle');
-  if (!area) return { skipped: true };
-  const e = { kind: 'chaser', area, x: g.playerPos[0], y: g.playerPos[1] - 6, voice: null }; u.enemies.push(e);
-  u.hp = 1; u.safe = 0; u.hitCooldown = 0;
-  const played = []; const orig = a.play.bind(a); a.play = (n, o) => { played.push([n, performance.now()]); return orig(n, o); };
-  const t0 = performance.now();
-  g._utHurt(e);
-  const out = { dead: u.phase === 'dead', stillRunning: g.state === 'ultimate' };
-  const before = [...g.playerPos];
-  g.input('up'); g.input('space'); g.input('hold');
-  out.heldStill = g.playerPos[0] === before[0] && g.playerPos[1] === before[1] && !u.compass.on;
-  await new Promise((r) => setTimeout(r, 1200));
-  out.overEarly = g.state !== 'ultimate';
-  await new Promise((r) => setTimeout(r, 1800));
-  a.play = orig;
-  const d = played.find(([n]) => n === 'ut_ann_defeat');
-  out.defeat = d ? d[1] - t0 : null; out.hit = played.some(([n]) => n === 'player_hit');
-  out.over = g.state === 'game_over'; out.said = document.getElementById('said').textContent;
-  return out;
-});
-check(defeat.skipped || (defeat.dead && defeat.stillRunning && defeat.heldStill && !defeat.overEarly), 'the fatal hit in an arena holds the run for the announcer; meanwhile nothing answers');
-check(defeat.skipped || (defeat.hit && defeat.defeat !== null && defeat.defeat > 300 && defeat.defeat < 700 && defeat.over && /Game Over/.test(defeat.said)), 'Defeat! is called after the hit, then the Game Over words: ' + JSON.stringify({ defeat: defeat.defeat, said: defeat.said.slice(0, 40) }));
+check(hits.annNames === 0 && hits.has, `the announcer's lines are gone from the pack (${hits.annNames}) and the crowd's groan and gasp are in it`);
+check(hits.skipped || (hits.first && hits.first.after > 100 && hits.first.after < 450 && !hits.first.placed && hits.first.room), 'a hit in a battle area: the crowd reacts just after the hit sound, all round you, in the room: ' + JSON.stringify(hits.first));
+check(hits.skipped || (hits.count === 17 && hits.both), `one reaction to every hit (${hits.count} of 17), the groan and the gasp both heard`);
+check(hits.skipped || hits.elsewhere === 0, 'a hit outside a battle area draws no reaction');
+check(hits.skipped || (hits.overAtOnce && hits.fatalReact), 'the fatal hit in an arena: the crowd reacts with it, and Game Over comes at once');
 
 check(errors.length === 0, 'no page errors' + (errors.length ? ': ' + errors.slice(0, 3).join(' | ') : ''));
 await browser.close();

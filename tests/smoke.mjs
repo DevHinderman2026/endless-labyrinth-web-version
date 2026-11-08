@@ -83,7 +83,7 @@ await page.goto(base + '/credits.html');
   const links = await page.locator('ul.contents-list a').evaluateAll((as) => as.map((a) => a.getAttribute('href').slice(1)));
   const missing = [];
   for (const id of links) if (!(await page.locator('#' + id).count())) missing.push(id);
-  check(n === 322, `the Credits page lists all 322 recordings: ${n}`);
+  check(n === 324, `the Credits page lists all 324 recordings: ${n}`);
   check(heads.includes('Standard mode') && heads.includes('Events') && heads.includes('Downloaded but not used'), `the Credits page has its headings: ${heads.join(', ')}`);
   check(links.length === 26 && missing.length === 0, `every link in the credits contents has its heading ${missing}`);
 }
@@ -107,7 +107,7 @@ await page.waitForFunction(() => document.querySelector('#faq button.topic-toggl
 await page.goto(base + '/history.html');
 check((await page.locator('main h2').allTextContents()).join(' | ').startsWith('2.1.0 (8 November 2026), web only | 2.0.0 (8 November 2026), web only'), 'the Update History lists the newest version first, 2.1.0 then 2.0.0, marked web only');
 await page.goto(base + '/credits.html');
-check((await page.locator('ul.credits li').count()) === 322, 'credits list the recordings');
+check((await page.locator('ul.credits li').count()) === 324, 'credits list the recordings');
 
 // The play page on a computer, with the test switch.
 await page.goto(base + '/play.html?desktop=1');
