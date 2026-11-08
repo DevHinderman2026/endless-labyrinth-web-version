@@ -293,8 +293,8 @@ const mixin = {
     u.safe = SAFE_SECONDS + (first ? 0 : FADE_IN);
     u.enemies = []; u.projectiles = []; u.pickups = []; u.timers = []; u.respawn = new Map();
     u.towerItems = new Map(); u.towerCarry = null; u.potionPending = 0;
-    u.place = 'world'; u.ride = null; u.seabed = null; u.lift = null; u.liftArmed = false; u.dingTimer = 0;
-    u.compass.on = false;
+    u.place = 'world'; u.ride = null; u.rideMix = null; u.seabed = null; u.lift = null; u.liftArmed = false; u.dingTimer = 0;
+    this._utCompassOff(true);
     u.worldPoints = 0; u.worldDamage = 0;
     u.steps = [];
     this.battleSteps = [];
@@ -359,6 +359,7 @@ const mixin = {
     for (const it of u.towerItems.values()) it.channel = null;
     u.lift = null;
     if (u.ride && u.ride.voice) { u.ride.voice.stop(); u.ride.voice = null; }
+    u.rideMix = null;
     if (u.compass.on) this._utCompassOff(true);
     this.stride = null;
   },
@@ -870,15 +871,19 @@ const mixin = {
     u.liftArmed = false;
     u.ride = { dir, t: 0, len, area: a, chimed: false, voice: this.audio.play('elevator_ride', { direct: false }) };
     if (dir === 'down') {
-      u.seabed = { area: a, grid: makeSeabed(), pickups: [], under: null };
+      // The seabed lies straight under the island's elevator, in the world's own
+      // coordinates: its cell (0, 0) is the elevator's cell, so every position in
+      // the mode stays in one system and nothing above is misplaced.
+      const [ex, ey] = a.elevator;
+      u.seabed = { area: a, grid: makeSeabed(), origin: [ex, ey], pickups: [], under: null };
       // The seabed's own supply: a cartridge or two, and now and then a credit.
       const g = u.seabed.grid;
       const spot = () => {
         for (let i = 0; i < 50; i++) {
           const cx = randint(-g.half, g.half); const cy = randint(-g.half, g.half);
-          if (Math.hypot(cx, cy) >= 3) return posOf(cx, cy);
+          if (Math.hypot(cx, cy) >= 3) return posOf(ex + cx, ey + cy);
         }
-        return posOf(g.half, 0);
+        return posOf(ex + g.half, ey);
       };
       for (let i = 0; i < randint(1, 2); i++) u.seabed.pickups.push({ kind: 'ammo', pos: spot(), shots: this._utShotsPerCartridge(), beacon: 'ammo_beacon', gain: 0.55 });
       if (rand() < 0.3) { const v = choice(CREDIT_VALUES); u.seabed.pickups.push({ kind: 'credit', pos: spot(), value: v, beacon: `credit_beacon_${v}`, gain: 0.7 }); }
@@ -917,8 +922,7 @@ const mixin = {
     u.rideMix = null;
     if (r.dir === 'down') {
       u.place = 'seabed';
-      this.playerPos = [0, 0];
-      u.seabedPos = posOf(0, 0);
+      this.playerPos = posOf(r.area.elevator[0], r.area.elevator[1]);   // in the car, under the lift
       u.liftArmed = false;
       u.area = r.area;
       if (u.seabed.under) u.seabed.under.setSpatial(0.8, 0, -0.05, 0, 0);
@@ -944,7 +948,7 @@ const mixin = {
         else { this.audio.play('credit_chaos'); this._utScore(p.value); }
       }
     }
-    const lp = posOf(0, 0);
+    const lp = posOf(s.origin[0], s.origin[1]);
     const d = dist2(lp, this.playerPos);
     if (d >= REACH) u.liftArmed = true;
     else if (u.liftArmed) { this._utStartRide('up'); return; }
@@ -953,6 +957,13 @@ const mixin = {
       u.dingTimer = 1.6;
       this._utPlay('elevator_arrive_1', lp, { volume: levelAt(d, SEABED_RANGE) });
     }
+  },
+
+  // A seabed position's cell, counted from the elevator.
+  _utSeabedCell(pos) {
+    const [cx, cy] = cellOf(pos);
+    const [ex, ey] = this.ut.seabed.origin;
+    return [cx - ex, cy - ey];
   },
 
   // ---------------------------------------------------------------- every sound, every frame
@@ -997,7 +1008,10 @@ const mixin = {
       if (a === u.area) {
         level = AMBIENCE_LEVEL;
         if (seabed) level = 0.22;
-        if (seabed || ride) from = a.centre; else { from = null; inside = 1; }
+        // On the seabed and in the car the island is straight above you.
+        if (seabed || ride) from = this.playerPos; else { from = null; inside = 1; }
+      } else if (seabed) {
+        level = 0; from = a.centre;
       } else {
         const [, outside] = nearestPointOf(a, this.playerPos);
         from = leakPoint(w, u.area, a, this.playerPos);
@@ -1071,7 +1085,7 @@ const mixin = {
     else { nx += CELL; this.playerFacing = [1, 0]; }
     const [cx, cy] = cellOf([nx, ny]);
     let ok;
-    if (u.place === 'seabed') ok = u.seabed.grid.floor.has(key(cx, cy));
+    if (u.place === 'seabed') { const [sx, sy] = this._utSeabedCell([nx, ny]); ok = u.seabed.grid.floor.has(key(sx, sy)); }
     else ok = isFloor(u.world, cx, cy);
     if (!ok) {
       // A wall, where it is (the world's edge is a wall too).
@@ -1183,7 +1197,7 @@ const mixin = {
   _utRouteStep() {
     const u = this.ut;
     if (u.place === 'seabed') {
-      const [cx, cy] = cellOf(this.playerPos);
+      const [cx, cy] = this._utSeabedCell(this.playerPos);
       if (!cx && !cy) return null;
       return Math.abs(cx) >= Math.abs(cy) ? [-Math.sign(cx), 0] : [0, -Math.sign(cy)];
     }
@@ -1249,6 +1263,7 @@ function input(game, g) {
   const u = game.ut;
   if (!u) return;
   if (g === 'clock') return;   // no clock in this mode
+  if (u.phase === 'silence') return;   // between worlds nothing answers
   if (g === 'hold' || g === 'compass') { game._utCompassToggle(); return; }
   if (u.compass.on) {
     // Only the compass turns; nothing else moves.
@@ -1257,7 +1272,6 @@ function input(game, g) {
     else if (g === 'space') game.audio.play('empty_click');
     return;
   }
-  if (u.phase === 'silence') return;
   if (g === 'enter') { game._utReport(); return; }
   if (g === 'space') { game._utAttack(); return; }
   if (['up', 'down', 'left', 'right'].includes(g)) game._utStep(g);
@@ -1276,6 +1290,16 @@ export default {
   blockPause(game) { return !!(game.ut && game.ut.place === 'ride') && !game.isPaused; },
   // A finger held still turns the compass (gestures.js emits 'hold' only when asked).
   holdGesture(game) { return !!(game.ut && game.ut.place !== 'ride'); },
+  // Help opens: the compass goes off, so the help's demos are not heard muffled.
+  interrupted(game) { if (game.ut) game._utCompassOff(true); },
+  // A pause in the last two seconds of a world holds the fade where it is; the
+  // fade carries on from there when the run resumes.
+  paused(game, on) {
+    const u = game.ut; const a = game.audio;
+    if (!u || u.phase !== 'fading' || !a.worldGain) return;
+    if (on) a.setWorldLevel(a.worldGain.gain.value, 0.01);
+    else a.setWorldLevel(0, Math.max(0.05, u.worldTime));
+  },
   // A run or a backward walk never carries across a regeneration or a ride, and
   // never happens while the compass is on, on a ride, or between worlds.
   strideSig(game) { return game.ut ? `${game.ut.worldNo}|${game.ut.place}` : ''; },

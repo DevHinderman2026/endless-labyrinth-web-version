@@ -21,7 +21,7 @@ A 3D audio game for phones, tablets and computers, played by ear with headphones
   - `help-data.js`: the help menu.
   - `sound-rules.js`: made from the desktop game by the pack builder, which also writes the Credits page's list. Do not edit them by hand.
 - `packs/`: the sound packs and `manifest.json`, which names them. No sound is ever on the site as its own file: everything travels inside the packs.
-- `tests/`: end-to-end checks in a real browser engine (see below): `smoke.mjs`, one file per mode (`ultimate.mjs` for Ultimate Test Mode, with `world.mjs` for its generator in Node alone and `ultimate-soak.mjs`, a longer run that watches memory, not part of the quick suite), `devices.mjs`, `computers.mjs`, `stride.mjs` (running and walking backwards on a touch screen), `keywords.mjs`, `eventwords.mjs`, and for the website's pages `calendar.mjs`, `stats.mjs`, `backups.mjs`, `accessibility.mjs`, `legal.mjs`, `share.mjs` and `help.mjs`.
+- `tests/`: end-to-end checks in a real browser engine (see below): `smoke.mjs`, one file per mode (`ultimate.mjs` and `ultimate-edges.mjs` for Ultimate Test Mode, with `world.mjs` for its generator in Node alone and `ultimate-soak.mjs`, a longer run that watches memory, not part of the quick suite), `devices.mjs`, `computers.mjs`, `stride.mjs` (running and walking backwards on a touch screen), `keywords.mjs`, `eventwords.mjs`, and for the website's pages `calendar.mjs`, `stats.mjs`, `backups.mjs`, `accessibility.mjs`, `legal.mjs`, `share.mjs` and `help.mjs`.
 
 ## The sound packs
 

@@ -1025,6 +1025,7 @@ export class Game {
     if (this.playing && !this.isPaused) {
       this.isPaused = true;
       this._pauseSounds();
+      if (this.mode && this.mode.paused) this.mode.paused(this, true);
       this.tts.speak('Game paused. Tap with three fingers to resume.');
     }
   }
@@ -1044,6 +1045,8 @@ export class Game {
     if (this.playing) {
       this.helpWasPaused = this.isPaused;
       if (!this.isPaused) this._pauseSounds();
+      // A mode may put something of its own away for the help (the compass).
+      if (this.mode && this.mode.interrupted) this.mode.interrupted(this);
     }
     this.state = S.HELP;
     this.helpCat = null;
@@ -1319,6 +1322,9 @@ export class Game {
     }
     if (g === 'pause') {
       this.isPaused = !this.isPaused;
+      // A mode may hold or restart something of its own with the pause (Ultimate
+      // Test Mode's world fade).
+      if (blocker && blocker.paused) blocker.paused(this, this.isPaused);
       if (this.isPaused) {
         this._pauseSounds();
         this.tts.speak('Game paused. Tap with three fingers to resume. Triple tap to quit, or tap four times for help.');
