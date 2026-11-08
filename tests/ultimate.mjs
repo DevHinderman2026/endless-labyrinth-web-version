@@ -48,7 +48,7 @@ const setup = await page.evaluate(async () => {
 });
 check(setup.menu.indexOf('Ultimate Test Mode') === setup.menu.indexOf('Chaos Mode') + 1, 'main menu: Ultimate Test Mode right after Chaos: ' + setup.menu.join(', '));
 check(setup.names.indexOf('Ultimate Test Mode') === setup.names.indexOf('Chaos Mode') + 1 && setup.names.indexOf('Demos, Ultimate Test Mode') > setup.names.indexOf('Demos, Chaos Mode'), 'help sections in order: ' + setup.names.join(' | '));
-check(setup.topics === 16 && setup.demos === 9, `help: ${setup.topics} topics, ${setup.demos} demos`);
+check(setup.topics === 18 && setup.demos === 12, `help: ${setup.topics} topics, ${setup.demos} demos`);
 check(setup.missing.length === 0, 'every demo sound exists' + (setup.missing.length ? ': missing ' + setup.missing.join(', ') : ''));
 check(setup.bgMissing.length === 0, 'every event background is in the packs' + (setup.bgMissing.length ? ': missing ' + setup.bgMissing.join(', ') : ''));
 check(setup.boards.includes('Ultimate Test Mode: No score yet'), 'high scores list the board: ' + setup.boards.join(' | '));
@@ -94,7 +94,7 @@ const w0 = await page.evaluate(async () => {
 check(w0.worldNo === 1 && w0.areas.length >= 5 && w0.areas.length <= 10, `world 1 has ${w0.areas.length} areas: ${w0.areas.join(', ')}`);
 check(w0.eventAreas >= 1, 'at least one event area (the safe zone)');
 check(w0.hp === 100 && w0.ammo === 0 && w0.points === 0, 'starts with 100 health, no ammo, no points');
-check(w0.worldTime > 178 && w0.worldTime <= 180, `the first world lasts 3 minutes (${w0.worldTime.toFixed(1)} left)`);
+check(w0.worldTime > 298 && w0.worldTime <= 300, `the first world lasts 5 minutes (${w0.worldTime.toFixed(1)} left)`);
 check(w0.labsQuiet && w0.kindsRight, 'enemies only in battle, island and tower areas; throwers in tower areas only');
 check(w0.enemies === w0.enemyAreas, `easy stretch: ${w0.enemies} enemies in ${w0.enemyAreas} enemy areas (one each: a chaser, or a tower area's one rival)`);
 check(w0.farFromEnemies, 'no enemy within 10 units of the player at the start');
@@ -376,7 +376,7 @@ check(regen.spoken.includes('World regenerating in 15 seconds.'), 'the voice war
 check(regen.counts === 5, `Battle's countdown over the last five seconds (${regen.counts} beeps)`);
 check(regen.phases.includes('fading') && !regen.phases.includes('silence') && regen.phases.includes('fadein'), 'fade out, then the new world at once, no silence: ' + regen.phases.join(', '));
 check(regen.levels.some(([l, s]) => l === 0 && s === 2) && regen.levels.some(([l, s]) => l === 1 && s === 0.5), 'the world fades out over two seconds and the new one rises in half a second: ' + JSON.stringify(regen.levels));
-check(regen.worldTime > 179 && regen.worldTime <= 180, `the next world lasts three minutes too (${regen.worldTime && regen.worldTime.toFixed(1)})`);
+check(regen.worldTime > 299 && regen.worldTime <= 300, `the next world lasts five minutes too (${regen.worldTime && regen.worldTime.toFixed(1)})`);
 check(regen.atEnd && regen.atStart && regen.atEnd.hp === regen.atStart.hp && regen.atEnd.ammo === regen.atStart.ammo && regen.atStart.ammo === 7, 'health and ammo carry over: ' + JSON.stringify([regen.atEnd, regen.atStart]));
 check(Math.abs(regen.mult - (1 + 0.5 * regen.worlds)) < 1e-9, `the multiplier is now ${regen.mult} (${regen.worlds} worlds survived)`);
 check(regen.place === 'world' && regen.carry === null && regen.compassOff, 'on the ground, no tower items, compass off');

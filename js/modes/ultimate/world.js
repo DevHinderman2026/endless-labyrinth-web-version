@@ -297,11 +297,13 @@ export function randomFloor(world, a, r, { from = null, minDist = 0, maxDist = I
 // ---------------------------------------------------------------- the compass
 // The shortest walk from a cell to any cell of an area that `isGoal(area)`
 // accepts, as the cells after the start, or null when already there or no way.
-export function routeToward(world, fromCell, isGoal) {
+// With `goalCell`, the goal is that one cell instead (the bus, say).
+export function routeToward(world, fromCell, isGoal, goalCell = null) {
   const start = key(fromCell[0], fromCell[1]);
   if (!world.floor.has(start)) return null;
-  const startArea = world.cellArea.get(start);
-  if (startArea !== undefined && isGoal(world.areas[startArea])) return null;
+  const goalKey = goalCell ? key(goalCell[0], goalCell[1]) : null;
+  const atGoal = (k, id) => (goalKey ? k === goalKey : (id !== undefined && isGoal(world.areas[id])));
+  if (atGoal(start, world.cellArea.get(start))) return null;
   const prev = new Map([[start, null]]);
   const queue = [start];
   let head = 0;
@@ -309,7 +311,7 @@ export function routeToward(world, fromCell, isGoal) {
     const k = queue[head++];
     const [x, y] = k.split(',').map(Number);
     const id = world.cellArea.get(k);
-    if (k !== start && id !== undefined && isGoal(world.areas[id])) {
+    if (k !== start && atGoal(k, id)) {
       const path = [];
       for (let cur = k; cur && cur !== start; cur = prev.get(cur)) path.push(cur.split(',').map(Number));
       return path.reverse();
@@ -325,8 +327,8 @@ export function routeToward(world, fromCell, isGoal) {
 // The route's first leg: its direction (one of DIRS), how many steps it runs
 // straight before the route turns, and whether it reaches the goal without
 // turning; null when already there or no way. (The compass speaks this.)
-export function firstLegToward(world, fromCell, isGoal) {
-  const path = routeToward(world, fromCell, isGoal);
+export function firstLegToward(world, fromCell, isGoal, goalCell = null) {
+  const path = routeToward(world, fromCell, isGoal, goalCell);
   if (!path || !path.length) return null;
   const dir = [path[0][0] - fromCell[0], path[0][1] - fromCell[1]];
   let steps = 1;

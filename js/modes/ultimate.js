@@ -9,7 +9,7 @@
 // underfoot, an elevator down to the seabed, chasers), tower areas (throwers that
 // race you for items and throw them), battle areas (chasers you shoot) and event
 // areas (the event backgrounds; no enemies: the safe zones). It regenerates every
-// three minutes, with a spoken warning at 15
+// five minutes, with a spoken warning at 15
 // seconds and Battle's countdown over the last 5, fading out, and a new world
 // there at once, with 5 safe seconds. There is no clock on the run: it ends
 // when health runs out. Points come from kills, pickups and credits, times a
@@ -34,14 +34,14 @@ import { addMade, aliasRecording, ensureCopies } from './events/sounds.js';
 import { HELP_SECTIONS, HELP_DEMOS } from './ultimate/help.js';
 import {
   makeWorld, makeSeabed, CELL, AREA_CELLS, key, cellOf, posOf, isFloor, areaAt, nearestPointOf, leakPoint, echoMix,
-  randomFloor, firstLegToward,
+  randomFloor, firstLegToward, routeToward,
 } from './ultimate/world.js';
 
 export const STATE = 'ultimate';
 export const BOARD = 'ultimate';
 
 // ------------------------------------------------------------------ the numbers (tune)
-export const WORLD_SECONDS = [180];             // every world (Russell, after the first play test: three minutes throughout; it was 180, 150, then 120)
+export const WORLD_SECONDS = [300];             // every world (Russell, 8 Nov evening: five minutes throughout, so a run hardens with time; it was 180, and 150 then 120 before)
 export const WARN_AT = 15;                      // "World regenerating in 15 seconds."
 export const COUNT_FROM = 5;                    // Battle's countdown over the last seconds
 export const NO_SPAWN_FROM = 3;                 // nothing new appears in the last seconds
@@ -137,6 +137,36 @@ export const CROWD_LEVEL = 0.55;                // against the drone's 1 and the
 export const ROARS = ['ut_crowd_roar_1', 'ut_crowd_roar_2'];   // the crowd erupting when a chaser goes down (web-only recordings, the ultimate pack)
 export const ROAR_LEVEL = 0.6;
 export const ROAR_AFTER = 0.35;                 // seconds after the bang
+// The water park (Russell, 8 Nov): a safe zone whose background is water has a
+// water slide. Its beacon is Tower Mode's staircase; reach it and you climb by
+// yourself (Tower's stairs), slide down (a rush made by the game) and splash into
+// the water, for points, landing somewhere else in the park.
+export const WATER_PARK = /ocean|river|waterfall|rain|marsh|underwater|water_drip/;
+export const SLIDE_POINTS = 15;                 // a ride, times the multiplier (the one thing a safe zone pays for)
+export const SLIDE_CLIMB = 2.6;                 // seconds up the stairs
+export const SLIDE_DOWN = 3.0;                  // seconds down the slide
+export const SLIDE_LAND_AWAY = 15.0;            // you come up at least this far from the slide
+export const SLIDE_BEACON_GAIN = 0.8;
+// The buses (Russell, 8 Nov): when a safe zone is a long walk away, a bus may be
+// standing near you, engine idling, with a chime to say it has come, and the
+// compass points to it while it waits. Reach it and the doors open, you climb in
+// and sit, the doors close, and it carries you to the nearest safe zone: a quarter
+// of a minute from nearby, half a minute from the far end of the world. The doors
+// open, you climb down, they close, and it drives off. At most one a world, never
+// in a world's last minute, so the ride is never cut short by the regeneration.
+export const BUS_CHANCE = 0.67;                 // of a world having a bus at all
+export const BUS_APPEARS = [20, 60];            // from this many seconds in, to this many before the regeneration
+export const BUS_FAR_STEPS = 45;                // a safe zone at least this many steps' walk away: the bus comes
+export const BUS_RIDE = [15, 30];               // seconds on the road, from BUS_FAR_STEPS away to BUS_FAREST_STEPS or more
+export const BUS_FAREST_STEPS = 150;
+export const BUS_NEAR = [10, 25];               // it stands this far from you
+export const BUS_RETRY = 10;                    // seconds before it looks again, when the safe zone was near
+export const BUS_DOORS_OPEN = 4.1;              // the recordings' lengths
+export const BUS_DOORS_CLOSE = 5.9;
+export const BUS_BOARD_AT = 2.2;                // steps up or down, this long after the doors start opening
+export const BUS_IDLE_GAIN = 0.9;
+export const BUS_WINDOWS = 0.25;                // how much of the world comes through the windows on the ride
+export const BUS_CHIME_HZ = [659, 880];         // the bus's chime, made by the game: two notes
 // Each safe zone's echo is sized to its background: a cathedral, a cave or an ice
 // cave ring long (the cathedral's echo, stretched); a kitchen, a library or a
 // tavern are small rooms (the tower's short echo); the open air has a short,
@@ -223,7 +253,40 @@ export function makeSounds(audio) {
     const hz = COMPASS_HZ[0] * Math.pow(COMPASS_HZ[1] / COMPASS_HZ[0], s / 8);
     return tone(hz, 0.16, 0.3);
   }), 0.3));
-  for (const n of ['ut_low_ammo_demo', 'ut_compass_demo']) ensureCopies(audio, n);
+  addMade(audio, 'ut_slide', slideRush(SLIDE_DOWN));
+  addMade(audio, 'ut_bus_chime', joined([tone(BUS_CHIME_HZ[0], 0.5, 0.4), tone(BUS_CHIME_HZ[1], 0.7, 0.4)], 0.05));
+  for (const n of ['ut_low_ammo_demo', 'ut_compass_demo', 'ut_slide', 'ut_bus_chime']) ensureCopies(audio, n);
+}
+
+// The rush of a water slide: noise through a resonant band that falls from a
+// hiss to a roar as you pick up speed, swelling to the splash at the bottom.
+function slideRush(seconds) {
+  const n = Math.floor(RATE * seconds);
+  const L = new Float64Array(n); const R = new Float64Array(n);
+  let seed = 12345;
+  const rnd = () => { seed = (seed * 1664525 + 1013904223) >>> 0; return seed / 4294967296 - 0.5; };
+  // Two band-pass filters (state variable), one per ear, slightly apart.
+  const mk = () => ({ lp: 0, bp: 0 });
+  const fl = mk(); const fr = mk();
+  const run = (f, x, hz, q) => {
+    const w = 2 * Math.sin(Math.PI * Math.min(hz, RATE / 6) / RATE);
+    const hp = x - f.lp - f.bp / q;
+    f.bp += w * hp; f.lp += w * f.bp;
+    return f.bp;
+  };
+  for (let i = 0; i < n; i++) {
+    const t = i / n;
+    const hz = 2600 * Math.pow(0.12, t);                   // 2600 Hz down to about 310
+    const env = Math.min(1, i / (RATE * 0.25)) * (0.35 + 0.65 * t) * Math.min(1, (n - i) / (RATE * 0.08));
+    const x = rnd();
+    L[i] = run(fl, x, hz, 2.2) * env * 0.9 * 32768;
+    R[i] = run(fr, rnd() * 0.5 + x * 0.5, hz * 1.06, 2.2) * env * 0.9 * 32768;
+  }
+  // Keep the peak in range.
+  let peak = 1; for (let i = 0; i < n; i++) peak = Math.max(peak, Math.abs(L[i]), Math.abs(R[i]));
+  const g = 0.8 * 32767 / peak;
+  for (let i = 0; i < n; i++) { L[i] *= g; R[i] *= g; }
+  return [L, R];
 }
 
 // ------------------------------------------------------------------ things in the world
@@ -310,9 +373,9 @@ const mixin = {
   },
 
   // Points earned now: nothing in a safe zone, nothing while the compass is on.
-  _utScore(base) {
+  _utScore(base, { safeOk = false } = {}) {
     const u = this.ut;
-    if (u.compass.on || this._utInSafeZone()) return;
+    if (u.compass.on || (this._utInSafeZone() && !safeOk)) return;
     const got = Math.round(base * this._utMultiplier());
     u.points += got;
     u.worldPoints += base;
@@ -320,7 +383,7 @@ const mixin = {
 
   _utInSafeZone() {
     const u = this.ut;
-    return u.place === 'world' && u.area && u.area.kind === 'event';
+    return (u.place === 'world' || u.place === 'slide' || u.place === 'bus') && u.area && u.area.kind === 'event';
   },
 
   // ---------------------------------------------------------------- a world
@@ -336,7 +399,7 @@ const mixin = {
     u.safe = SAFE_SECONDS + (first ? 0 : FADE_IN);
     u.enemies = []; u.projectiles = []; u.pickups = []; u.timers = []; u.respawn = new Map();
     u.towerItems = new Map(); u.towerCarry = null; u.potionPending = 0;
-    u.place = 'world'; u.ride = null; u.rideMix = null; u.seabed = null; u.lift = null; u.liftArmed = false; u.dingTimer = 0;
+    u.place = 'world'; u.ride = null; u.rideMix = null; u.seabed = null; u.lift = null; u.liftArmed = false; u.dingTimer = 0; u.slide = null; u.slides = []; u.bus = null; u.busAt = null;
     this._utCompassOff(true);
     u.worldPoints = 0; u.worldDamage = 0;
     u.steps = [];
@@ -364,6 +427,7 @@ const mixin = {
         a.ambience = aliasRecording(this.audio, stem, `event_amb_file_${stem}`) || 'event_amb_cathedral';
         [a.room, a.stretch] = backgroundRoom(stem);
         a.stretch *= uniform(0.95, 1.08);
+        if (WATER_PARK.test(stem)) a.waterPark = true;
       }
     }
     // Dropped in silently, somewhere at random.
@@ -394,6 +458,18 @@ const mixin = {
     for (const a of w.areas.filter((x) => x.kind === 'event')) this._utSpawnPickup('ammo', a, { safe: true });
     const credits = randint(CREDITS_AT_ONCE[0], CREDITS_AT_ONCE[1]);
     for (let i = 0; i < credits; i++) this._utSpawnPickup('credit', choice(w.areas));
+    // The water parks: one slide in each safe zone with a water background.
+    u.slides = [];
+    for (const a of w.areas.filter((x) => x.waterPark)) {
+      const pos = randomFloor(u.world, a, rand, { from: this.playerPos, minDist: 12.0, avoid: u.pickups.map((p) => p.pos), clearance: 6.0 });
+      if (pos) u.slides.push({ area: a, pos, voice: null });
+    }
+    u.slide = null;
+    // The bus, if this world has one: due at a random moment of the world's
+    // middle; it comes the first time, from then, that a safe zone is far from you.
+    u.bus = null;
+    u.busAt = (rand() < BUS_CHANCE && u.worldTime > BUS_APPEARS[0] + BUS_APPEARS[1] + 10) ? uniform(BUS_APPEARS[0], u.worldTime - BUS_APPEARS[1]) : null;
+    u.busElapsed = 0;
     this._utRefreshRooms();
     this._utMaybePotion();     // already below fifty: the new world gets its potion too
     if (!first) this.audio.setWorldLevel(1, FADE_IN);
@@ -409,6 +485,8 @@ const mixin = {
     for (const p of u.pickups) p.voice = null;
     for (const s of u.projectiles) s.channel = null;
     for (const it of u.towerItems.values()) it.channel = null;
+    for (const sl of u.slides || []) sl.voice = null;
+    if (u.bus) { u.bus.voice = null; u.bus.rideVoice = null; }
     u.lift = null;
     if (u.ride && u.ride.voice) { u.ride.voice.stop(); u.ride.voice = null; }
     u.rideMix = null;
@@ -433,7 +511,7 @@ const mixin = {
 
   _utMixAt(pos) {
     const u = this.ut;
-    if (u.place !== 'world' || !u.world) return {};
+    if ((u.place !== 'world' && u.place !== 'slide' && u.place !== 'bus') || !u.world) return {};
     return echoMix(u.world, pos);
   },
 
@@ -677,6 +755,13 @@ const mixin = {
       return;
     }
     if (u.place === 'ride') { this._utUpdateRide(dt); return; }
+    if (u.place === 'slide') {
+      // On the water slide: the world goes on around you, you cannot act.
+      this._utUpdateSlide(dt);
+      if (u.place === 'slide') { this._utTimers(dt); this._utUpdateEnemies(dt); if (this.state !== STATE) return; this._utUpdateSounds(dt); return; }
+    }
+    this._utUpdateBus(dt);
+    if (u.place === 'bus') { this._utTimers(dt); this._utUpdateEnemies(dt); if (this.state !== STATE) return; this._utUpdateSounds(dt); return; }
     if (u.place === 'seabed') { this._utUpdateSeabed(dt); this._utUpdateSounds(dt); return; }
     this._utTimers(dt);
     this._utUpdateEnemies(dt);
@@ -922,6 +1007,132 @@ const mixin = {
       if (p.area !== u.area) continue;
       if (dist2(p.pos, this.playerPos) < PICKUP_REACH) this._utTakePickup(p);
     }
+    if (u.place === 'world') {
+      for (const sl of u.slides || []) {
+        if (sl.area === u.area && dist2(sl.pos, this.playerPos) < PICKUP_REACH) { this._utStartSlide(sl); break; }
+      }
+      const b = this._utBusWaiting();
+      if (b && dist2(b.pos, this.playerPos) < PICKUP_REACH) this._utBoardBus();
+    }
+  },
+
+  // ---------------------------------------------------------------- the bus
+  // How many steps the walk to the nearest safe zone is from here (null: none).
+  _utStepsToSafety() {
+    const u = this.ut;
+    if (u.place !== 'world' || !u.world) return null;
+    const path = routeToward(u.world, cellOf(this.playerPos), (a) => a.kind === 'event');
+    return path ? path.length : (this._utInSafeZone() ? 0 : null);
+  },
+
+  _utUpdateBus(dt) {
+    const u = this.ut;
+    u.busElapsed += dt;
+    // Due, and a safe zone far away: the bus comes, near you, with its chime. Near
+    // one, it looks again in a while, until the world's last minute.
+    if (!u.bus && u.busAt !== null && u.busElapsed >= u.busAt && u.place === 'world' && this.audio.has('ut_bus_idle')) {
+      const steps = this._utStepsToSafety();
+      if (u.worldTime <= BUS_APPEARS[1]) u.busAt = null;
+      else if (steps === null || steps < BUS_FAR_STEPS) u.busAt = u.busElapsed + BUS_RETRY;
+      else {
+        const here = u.area;
+        const pos = randomFloor(u.world, here, rand, { from: this.playerPos, minDist: BUS_NEAR[0], maxDist: BUS_NEAR[1], avoid: u.pickups.map((p) => p.pos), clearance: 4.0 })
+          || randomFloor(u.world, here, rand, { from: this.playerPos, minDist: 6.0, maxDist: BUS_NEAR[1] * 1.6 });
+        u.busAt = null;
+        if (pos) {
+          // The ride is as long as the walk would have been far.
+          const far = Math.max(0, Math.min(1, (steps - BUS_FAR_STEPS) / (BUS_FAREST_STEPS - BUS_FAR_STEPS)));
+          u.bus = { area: here, pos, stage: 'waiting', t: 0, voice: null, rideVoice: null, ride: BUS_RIDE[0] + (BUS_RIDE[1] - BUS_RIDE[0]) * far, steps };
+          this.audio.play('ut_bus_chime', { volume: 0.7 });
+        }
+      }
+    }
+    const b = u.bus;
+    if (!b || b.stage === 'waiting') return;
+    b.t += dt;
+    const steps = (from) => { for (let i = 0; i < 3; i++) this._utLater(from + i * 0.45, choice(STEPS_STONE), null); };
+    if (b.stage === 'boarding') {
+      if (!b.stepped && b.t >= BUS_BOARD_AT) { b.stepped = true; steps(0); }
+      if (!b.closed && b.t >= BUS_DOORS_OPEN + 0.6) { b.closed = true; this.audio.play('ut_bus_doors_close'); }
+      if (b.t >= BUS_DOORS_OPEN + 0.6 + BUS_DOORS_CLOSE) {
+        // Off we go: the idling engine gives way to the ride, heard from your seat.
+        b.stage = 'riding'; b.t = 0;
+        if (b.voice) { b.voice.fadeout(800); u.voices.delete(b.voice); b.voice = null; }
+        if (this.audio.has('ut_bus_ride')) b.rideVoice = this._utPlay('ut_bus_ride', null, { loops: -1, volume: 0.9, fadeMs: 1200, send: 0 });
+      }
+    } else if (b.stage === 'riding') {
+      if (b.t >= b.ride) {
+        // Arrived at the nearest safe zone: the engine idles at the stop, the doors open.
+        b.stage = 'arriving'; b.t = 0; b.stepped = false; b.closed = false;
+        if (b.rideVoice) { b.rideVoice.fadeout(1500); u.voices.delete(b.rideVoice); b.rideVoice = null; }
+        const safe = u.world.areas.filter((a) => a.kind === 'event');
+        const near = safe.slice().sort((x, y) => dist2(x.centre, b.pos) - dist2(y.centre, b.pos))[0] || u.area;
+        const spot = randomFloor(u.world, near, rand, { avoid: u.pickups.map((p) => p.pos), clearance: 3.0 }) || posOf(...near.floorCells[0]);
+        b.pos = spot; b.area = near;
+        this.playerPos = spot; u.area = near;
+        this._utRefreshRooms(); this._utListenerMix();
+        this.audio.play('ut_bus_doors_open');
+      }
+    } else if (b.stage === 'arriving') {
+      if (!b.stepped && b.t >= BUS_BOARD_AT) {
+        // Down the steps, onto the safe zone's floor: yours to walk again.
+        b.stepped = true; steps(0);
+        u.place = 'world';
+      }
+      if (!b.closed && b.t >= BUS_DOORS_OPEN + 1.2) { b.closed = true; this._utPlay('ut_bus_doors_close', b.pos); }
+      if (b.t >= BUS_DOORS_OPEN + 1.2 + BUS_DOORS_CLOSE) {
+        // And away: the engine goes with it.
+        b.stage = 'gone';
+        if (b.voice) { b.voice.fadeout(600); u.voices.delete(b.voice); b.voice = null; }
+        if (this.audio.has('ut_bus_leave')) this._utPlay('ut_bus_leave', b.pos);
+        u.bus = null;
+      }
+    }
+  },
+
+  _utBoardBus() {
+    const u = this.ut; const b = u.bus;
+    u.place = 'bus';
+    b.stage = 'boarding'; b.t = 0; b.stepped = false; b.closed = false;
+    this.stride = null;
+    this.audio.play('ut_bus_doors_open');
+  },
+
+  // ---------------------------------------------------------------- the water park
+  // Reaching the slide: you climb by yourself (Tower's stairs), slide down (the
+  // rush, made by the game), splash into the water for points, and come up
+  // somewhere else in the park; the slide is where it was, to be found again.
+  _utStartSlide(sl) {
+    const u = this.ut;
+    u.place = 'slide';
+    u.slide = { sl, t: 0, stage: 'climb' };
+    if (sl.voice) { sl.voice.stop(); u.voices.delete(sl.voice); sl.voice = null; }
+    this.stride = null;
+    this.audio.play('stairs_climb');
+  },
+
+  _utUpdateSlide(dt) {
+    const u = this.ut;
+    const r = u.slide;
+    if (!r) { u.place = 'world'; return; }
+    r.t += dt;
+    if (r.stage === 'climb' && r.t >= SLIDE_CLIMB) {
+      r.stage = 'down';
+      r.t = 0;
+      if (this.audio.has('ut_slide')) this.audio.play('ut_slide', { volume: 0.9 });
+    } else if (r.stage === 'down' && r.t >= SLIDE_DOWN) {
+      // The splash, the points, and up somewhere else in the park.
+      if (this.audio.has('evt_water_splash')) this.audio.play('evt_water_splash');
+      const a = r.sl.area;
+      const spot = randomFloor(u.world, a, rand, { from: r.sl.pos, minDist: SLIDE_LAND_AWAY, avoid: u.pickups.map((p) => p.pos), clearance: 3.0 })
+        || randomFloor(u.world, a, rand, { from: r.sl.pos, minDist: 8.0 });
+      if (spot) { this.playerPos = spot; u.area = a; }
+      u.place = 'world';
+      u.slide = null;
+      this._utScore(SLIDE_POINTS, { safeOk: true });
+      this._utRefreshRooms();
+      this._utListenerMix();
+    }
   },
 
   // ---------------------------------------------------------------- the island's elevator and the seabed
@@ -1077,13 +1288,14 @@ const mixin = {
     const u = this.ut;
     const w = u.world;
     if (!w) return;
-    const onWorld = u.place === 'world';
+    const onWorld = u.place === 'world' || u.place === 'slide';
     const ride = u.rideMix;
     const seabed = u.place === 'seabed';
+    const inBus = u.place === 'bus';
     // How much of the world above is heard: all of it on the ground, through the
     // elevator's stages on a ride, faintly from above on the seabed.
-    const aboveLevel = onWorld ? 1 : ride ? ride.above : 0.0;
-    const aboveHeight = onWorld ? 0 : ride ? ride.height : 8;
+    const aboveLevel = onWorld ? 1 : ride ? ride.above : inBus ? BUS_WINDOWS : 0.0;
+    const aboveHeight = onWorld ? 0 : ride ? ride.height : inBus ? 0 : 8;
     const near = this._utNearAreas();
     const nearIds = new Set(near.map((a) => a.id));
     // Each area's air: its own area at full, a neighbour's from its border or its
@@ -1180,6 +1392,25 @@ const mixin = {
       else if (p.voice && level <= 0.001 && d > HEAR_RANGE + 10) { p.voice.stop(); u.voices.delete(p.voice); p.voice = null; }
       if (p.voice) this._utFollow(p.voice, p.pos, level, aboveHeight);
     }
+    const bus = u.bus;
+    if (bus && (bus.stage === 'waiting' || bus.stage === 'arriving' || bus.stage === 'boarding')) {
+      const d = dist2(bus.pos, this.playerPos);
+      const level = bus.stage === 'waiting' ? reach(bus.area, bus.pos) * BUS_IDLE_GAIN * (onWorld ? 1 : 0) : BUS_IDLE_GAIN;
+      if (!bus.voice && level > 0.01) bus.voice = this._utPlay('ut_bus_idle', bus.pos, { loops: -1, volume: 0.0, fadeMs: 400 });
+      else if (bus.voice && level <= 0.001 && d > HEAR_RANGE + 10) { bus.voice.stop(); u.voices.delete(bus.voice); bus.voice = null; }
+      if (bus.voice) {
+        if (bus.stage === 'waiting') this._utFollow(bus.voice, bus.pos, level, aboveHeight);
+        else bus.voice.setSpatial(level, 0, -1.5, 0, 0);    // at the door, right in front of you
+      }
+    }
+    for (const sl of u.slides || []) {
+      if (u.slide && u.slide.sl === sl) continue;     // riding it: no beacon
+      const d = dist2(sl.pos, this.playerPos);
+      const level = reach(sl.area, sl.pos) * SLIDE_BEACON_GAIN * (onWorld ? 1 : 0);
+      if (!sl.voice && level > 0.01) sl.voice = this._utPlay('stairs_beacon', sl.pos, { loops: -1, volume: 0.0 });
+      else if (sl.voice && level <= 0.001 && d > HEAR_RANGE + 10) { sl.voice.stop(); u.voices.delete(sl.voice); sl.voice = null; }
+      if (sl.voice) this._utFollow(sl.voice, sl.pos, level, aboveHeight);
+    }
     for (const it of u.towerItems.values()) {
       const pos = this._utItemPos(it);
       const d = dist2(pos, this.playerPos);
@@ -1204,7 +1435,7 @@ const mixin = {
   // ---------------------------------------------------------------- walking and shooting
   _utStep(g) {
     const u = this.ut;
-    if (u.place === 'ride') return;   // no walking while the elevator is moving (Island Mode: a swipe does nothing)
+    if (u.place === 'ride' || u.place === 'slide' || u.place === 'bus') return;   // no walking in the elevator (Island Mode: a swipe does nothing), on the slide or on the bus
     let [nx, ny] = this.playerPos;
     if (g === 'up') { ny -= CELL; this.playerFacing = [0, -1]; }
     else if (g === 'down') { ny += CELL; this.playerFacing = [0, 1]; }
@@ -1241,7 +1472,7 @@ const mixin = {
 
   _utAttack() {
     const u = this.ut;
-    if (u.place === 'ride') return;                                   // nothing fires in the car (Island Mode)
+    if (u.place === 'ride' || u.place === 'slide' || u.place === 'bus') return;   // nothing fires in the car (Island Mode), on the slide or on the bus
     if (u.place !== 'world') { this.audio.play('empty_click'); return; }   // the seabed: Island Mode's click
     const a = u.area;
     // In a tower area only items are thrown, as on a tower floor: with none held
@@ -1311,7 +1542,10 @@ const mixin = {
     const u = this.ut;
     if (u.compass.on) { this._utCompassOff(); return; }
     if (u.place === 'ride') { this.tts.speak('Compass not available in the elevator.', { interrupt: true }); return; }
-    if (this._utInSafeZone()) {
+    if (u.place === 'slide') { this.tts.speak('Compass not available on the slide.', { interrupt: true }); return; }
+    if (u.place === 'bus') { this.tts.speak('Compass not available on the bus.', { interrupt: true }); return; }
+    const bus = this._utBusWaiting();
+    if (this._utInSafeZone() && !bus) {
       this.tts.speak('Compass not available. Safe zone detected.', { interrupt: true });
       return;
     }
@@ -1320,7 +1554,7 @@ const mixin = {
     u.compass.t = 0;
     this.stride = null;
     this.audio.setMuffle(true, 0.4);
-    this.tts.speak('Compass on. ' + this._utCompassWords(0), { interrupt: true });
+    this.tts.speak((bus ? 'Compass on, to the bus. ' : 'Compass on. ') + this._utCompassWords(0), { interrupt: true });
   },
 
   _utCompassOff(quiet = false) {
@@ -1343,8 +1577,12 @@ const mixin = {
       const steps = along ? Math.abs(cx) : Math.abs(cy);
       return { dir, steps, arrives: along ? cy === 0 : cx === 0 };
     }
-    return firstLegToward(u.world, cellOf(this.playerPos), (a) => a.kind === 'event');
+    // A bus waiting is where the compass points; otherwise the nearest safe zone.
+    const bus = this._utBusWaiting();
+    return firstLegToward(u.world, cellOf(this.playerPos), (a) => a.kind === 'event', bus ? cellOf(bus.pos) : null);
   },
+
+  _utBusWaiting() { const b = this.ut.bus; return b && b.stage === 'waiting' ? b : null; },
 
   _utRouteStep() { const leg = this._utRouteLeg(); return leg ? leg.dir : null; },
 
@@ -1442,7 +1680,7 @@ export default {
   input,
   stopAll,
   // No pause during an elevator ride, as in Island Mode.
-  blockPause(game) { return !!(game.ut && game.ut.place === 'ride') && !game.isPaused; },
+  blockPause(game) { return !!(game.ut && (game.ut.place === 'ride' || game.ut.place === 'slide' || game.ut.place === 'bus')) && !game.isPaused; },
   // A finger held still turns the compass (gestures.js emits 'hold' only when asked).
   holdGesture(game) { return !!(game.ut && game.ut.place !== 'ride'); },
   // Help opens: the compass goes off, so the help's demos are not heard muffled.
@@ -1458,7 +1696,7 @@ export default {
   // A run or a backward walk never carries across a regeneration or a ride, and
   // never happens while the compass is on, on a ride, or between worlds.
   strideSig(game) { return game.ut ? `${game.ut.worldNo}|${game.ut.place}` : ''; },
-  blockStride(game) { const u = game.ut; return !u || u.compass.on || u.place === 'ride' || u.phase === 'silence'; },
+  blockStride(game) { const u = game.ut; return !u || u.compass.on || u.place === 'ride' || u.place === 'slide' || u.place === 'bus' || u.phase === 'silence'; },
   finish(game) {
     const u = game.ut || { points: 0, elapsed: 0, worlds: 0 };
     const worlds = u.worlds;

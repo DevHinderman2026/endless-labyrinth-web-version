@@ -44,6 +44,8 @@ await page.evaluate(async () => {
     const area = u.world.areas.find(pick);
     if (!area) return null;
     u.area = area; u.safe = 0;
+    // (No bus and no slide underfoot: a check that walks must not be carried off.)
+    u.bus = null; u.busAt = null; u.slide = null; u.slides = []; u.place = 'world';
     g.playerPos = [(area.x0 + 16) * 3, (area.y0 + 16) * 3];
     g._utRefreshRooms(); g._utListenerMix();
     g.updateUltimateMode(1 / 30);
@@ -86,6 +88,7 @@ await page.evaluate(async () => {
       for (let i = 0; i < 30 * 2; i++) g.updateUltimateMode(1 / 30);
       await new Promise((r) => setTimeout(r, 50));
     }
+    u.bus = null; u.busAt = null;
     return u.world.areas.some((x) => x.kind === kind);
   };
   window.__ut.quiet = () => { for (const v of [...a.live]) if (v.loop) v.stop(); g.ut.areaSounds.clear(); g.ut.voices.clear(); for (const e of g.ut.enemies) e.voice = null; for (const p of g.ut.pickups) p.voice = null; };
@@ -450,11 +453,12 @@ const third = await page.evaluate(async () => {
   if (e2) u.enemies.splice(u.enemies.indexOf(e2), 1);
   u.elapsed = el0;
   // The crowd: every battle area has one, under its drone and drums, in its room.
-  T.goTo((x) => x.kind === 'battle');
+  await T.ensureKind('battle');
+  const barea = T.goTo((x) => x.kind === 'battle');
   T.quiet();
   g.updateUltimateMode(1 / 30);
   await new Promise((r) => setTimeout(r, 800));
-  const s = u.areaSounds.get(area.id);
+  const s = barea && u.areaSounds.get(barea.id);
   out.crowd = s && s.crowdIn ? { name: s.crowdIn.name, level: s.crowdIn.l, send: s.crowdIn.send, placedToo: !!s.crowd } : null;
   out.everyBattleHasCrowd = u.world.areas.filter((x) => x.kind === 'battle').every((x) => !!x.crowd);
   out.safeZonesWithout = u.world.areas.filter((x) => x.kind === 'event').every((x) => !/stadium_crowd/.test(x.ambience));
@@ -466,7 +470,9 @@ check(third.diff10 === 14 && third.hits10 === 6 && third.hitsStart === 1, `the r
 // The crowd erupts right after the bang of a chaser going down in a battle area.
 const roar = await page.evaluate(async () => {
   const g = window.__el.game; const u = g.ut; const a = window.__el.audio; const T = window.__ut;
+  await T.ensureKind('battle');
   const area = T.goTo((x) => x.kind === 'battle');
+  if (!area) return { skipped: true };
   const played = []; const orig = a.play.bind(a);
   a.play = (n, o) => { played.push([n, performance.now(), o || {}]); return orig(n, o); };
   const e = g._utSpawnEnemy(area) || u.enemies.find((x) => x.area === area && x.kind === 'chaser');
@@ -491,6 +497,116 @@ const roar = await page.evaluate(async () => {
 check(roar.skipped || (roar.bang && roar.cheer && roar.cheer.after > 250 && roar.cheer.after < 700 && !roar.cheer.placed), 'the crowd erupts about a third of a second after the bang, all round you: ' + JSON.stringify(roar.cheer));
 check(roar.skipped || roar.elsewhere === 0, 'a kill outside a battle area draws no roar');
 check(!third.poolHasCrowd && third.safeZonesWithout && third.everyBattleHasCrowd && third.crowd && /stadium_crowd/.test(third.crowd.name) && Math.abs(third.crowd.level - 0.8 * 0.55) < 0.02 && third.crowd.placedToo, 'the stadium crowd roars in every battle area, under the drone and drums, and in no safe zone: ' + JSON.stringify(third.crowd));
+
+// --------------------------------------------------------------- 9. the water park
+const park = await page.evaluate(async () => {
+  const g = window.__el.game; const u = g.ut; const a = window.__el.audio; const T = window.__ut; const W = T.world;
+  const { WATER_PARK, SLIDE_POINTS, SLIDE_CLIMB, SLIDE_DOWN } = T.mod;
+  // Regenerate until a safe zone with a water background exists (its slide with it).
+  for (let n = 0; n < 20 && !(u.slides && u.slides.length); n++) {
+    u.worldTime = 0.05;
+    for (let i = 0; i < 60; i++) g.updateUltimateMode(1 / 30);
+    await new Promise((r) => setTimeout(r, 40));
+  }
+  u.bus = null; u.busAt = null;
+  if (!(u.slides && u.slides.length)) return { skipped: true };
+  const sl = u.slides[0]; const area = sl.area;
+  const out = { kind: area.kind, water: WATER_PARK.test(area.ambience), parksRight: u.world.areas.filter((x) => x.kind === 'event').every((x) => (!!x.waterPark) === WATER_PARK.test(x.ambience)) && u.slides.length === u.world.areas.filter((x) => x.waterPark).length };
+  // Stand in the park, a few steps from the slide: its beacon is Tower's staircase, placed.
+  u.area = area; u.safe = 0; g.playerPos = [sl.pos[0] + 9, sl.pos[1]]; g._utRefreshRooms(); g._utListenerMix();
+  T.quiet();
+  g.updateUltimateMode(1 / 30);
+  await new Promise((r) => setTimeout(r, 300));
+  out.beacon = sl.voice ? { name: sl.voice.name, placed: sl.voice.placed, level: sl.voice.l } : null;
+  // Step onto the square beside it: the ride takes over.
+  const played = []; const orig = a.play.bind(a); a.play = (n, o) => { played.push(n); return orig(n, o); };
+  const spoken = []; const os = g.tts.speak.bind(g.tts); g.tts.speak = (t, o) => { spoken.push(t); return os(t, o); };
+  const p0 = u.points; const mult = g._utMultiplier();
+  g.playerPos = [sl.pos[0] + 6, sl.pos[1]]; g._utListenerMix();
+  g.input('left');                         // onto the square beside the slide
+  out.started = u.place === 'slide' && u.slide && u.slide.stage === 'climb';
+  // Nothing answers on the slide.
+  const before = [...g.playerPos];
+  for (const d of ['up', 'down', 'space', 'enter']) g.input(d);
+  g.input('hold');
+  out.heldStill = g.playerPos[0] === before[0] && g.playerPos[1] === before[1] && !u.compass.on && spoken.some((t) => /Compass not available on the slide/.test(t));
+  out.stepSounds = played.filter((n) => /^step_/.test(n)).length;
+  out.pauseBlocked = T.mod.default.blockPause(g);
+  // Ride it out.
+  for (let i = 0; i < 30 * (SLIDE_CLIMB + SLIDE_DOWN + 1) && u.place === 'slide'; i++) g.updateUltimateMode(1 / 30);
+  await new Promise((r) => setTimeout(r, 200));
+  a.play = orig; g.tts.speak = os;
+  out.sounds = { climb: played.includes('stairs_climb'), rush: played.includes('ut_slide'), splash: played.includes('evt_water_splash') };
+  out.order = ['stairs_climb', 'ut_slide', 'evt_water_splash'].map((n) => played.indexOf(n));
+  out.landed = u.place === 'world' && u.area === area && W.areaAt(u.world, g.playerPos) === area;
+  out.away = Math.hypot(g.playerPos[0] - sl.pos[0], g.playerPos[1] - sl.pos[1]);
+  out.points = u.points - p0; out.expected = Math.round(SLIDE_POINTS * mult);
+  out.slideStays = u.slides.includes(sl);
+  return out;
+});
+check(!park.skipped, 'a world with a water park was found');
+check(park.skipped || (park.kind === 'event' && park.water && park.parksRight), 'every safe zone with a water background has a slide, and no other does');
+check(park.skipped || (park.beacon && park.beacon.name === 'stairs_beacon' && park.beacon.placed && park.beacon.level > 0.3), 'the slide\'s beacon is Tower Mode\'s staircase, placed where the slide is: ' + JSON.stringify(park.beacon));
+check(park.skipped || (park.started && park.heldStill && park.stepSounds <= 1 && park.pauseBlocked), 'stepping beside the slide starts the ride; on it nothing answers (no walking, no shot, no compass, no pause)');
+check(park.skipped || (park.sounds.climb && park.sounds.rush && park.sounds.splash && park.order[0] < park.order[1] && park.order[1] < park.order[2]), 'the climb, then the rush, then the splash: ' + JSON.stringify(park.sounds));
+check(park.skipped || (park.landed && park.away >= 15 && park.slideStays), `you come up elsewhere in the park (${park.away && park.away.toFixed(1)} units away) and the slide stays to be found again`);
+check(park.skipped || park.points === park.expected, `a ride earns ${park.expected} points (15 times the multiplier) even though it is a safe zone: ${park.points}`);
+
+// --------------------------------------------------------------- 10. the bus
+const bus = await page.evaluate(async () => {
+  const g = window.__el.game; const u = g.ut; const a = window.__el.audio; const T = window.__ut; const W = T.world;
+  const { BUS_FAR_STEPS, BUS_RIDE, BUS_DOORS_OPEN, BUS_DOORS_CLOSE } = T.mod;
+  // Stand in a dangerous area; the world is young; make the safe zone count as far.
+  const area = T.goTo((x) => x.kind !== 'event');
+  u.bus = null; u.busElapsed = 30; u.busAt = 25; u.worldTime = 250; u.safe = 0;
+  const realSteps = g._utStepsToSafety();
+  g._utStepsToSafety = () => 100;
+  const played = []; const orig = a.play.bind(a); a.play = (n, o) => { played.push([n, u.busElapsed]); return orig(n, o); };
+  g.updateUltimateMode(1 / 30);
+  const b = u.bus;
+  const out = { realSteps, came: !!b && b.stage === 'waiting', chime: played.some(([n]) => n === 'ut_bus_chime'), ride: b && b.ride, near: b ? Math.hypot(b.pos[0] - g.playerPos[0], b.pos[1] - g.playerPos[1]) : null, outsideSafe: b && b.area.kind !== 'event' };
+  if (!b) { a.play = orig; return out; }
+  await new Promise((r) => setTimeout(r, 300));
+  out.engine = b.voice ? { name: b.voice.name, placed: b.voice.placed, level: b.voice.l } : null;
+  // The compass points to the bus while it waits.
+  const leg = g._utRouteLeg();
+  const busCell = W.cellOf(b.pos); const here = W.cellOf(g.playerPos);
+  out.legTowardBus = leg ? Math.sign(busCell[0] - here[0]) === leg.dir[0] || Math.sign(busCell[1] - here[1]) === leg.dir[1] : null;
+  g.input('hold'); out.compassSaid = document.getElementById('said').textContent; g.input('hold');
+  // Walk onto it.
+  g.playerPos = [b.pos[0] + 3, b.pos[1]]; g._utListenerMix();
+  g.input('left');
+  out.boarded = u.place === 'bus' && b.stage === 'boarding';
+  const before = [...g.playerPos];
+  for (const d of ['up', 'left', 'space', 'enter']) g.input(d);
+  out.heldStill = g.playerPos[0] === before[0] && g.playerPos[1] === before[1];
+  // Ride it out (with yields, for the recordings to decode).
+  const total = BUS_DOORS_OPEN + 0.6 + BUS_DOORS_CLOSE + b.ride + BUS_DOORS_OPEN + 1.2 + BUS_DOORS_CLOSE + 2;
+  let arrivedAt = null; let rideVoice = null;
+  for (let i = 0; i < 30 * total && u.bus; i++) {
+    g.updateUltimateMode(1 / 30);
+    if (u.bus && u.bus.stage === 'riding' && u.bus.rideVoice) rideVoice = { name: u.bus.rideVoice.name, loop: u.bus.rideVoice.loop };
+    if (u.place === 'world' && arrivedAt === null && u.bus && u.bus.stage === 'arriving') arrivedAt = u.busElapsed;
+    if (i % 10 === 0) await new Promise((r) => setTimeout(r, 10));
+  }
+  await new Promise((r) => setTimeout(r, 1500));   // (the steps are real-time timers; the ride here ran faster than life)
+  a.play = orig;
+  const names = played.map(([n]) => n);
+  const seq = ['ut_bus_doors_open', 'ut_bus_doors_close', 'ut_bus_doors_open', 'ut_bus_doors_close', 'ut_bus_leave'];
+  let at = -1; let inOrder = true;
+  for (const n of seq) { const i = names.indexOf(n, at + 1); if (i < 0) { inOrder = false; break; } at = i; }
+  out.inOrder = inOrder; out.steps = names.filter((n) => /^step_/.test(n)).length; out.rideVoice = rideVoice;
+  out.landedSafe = u.place === 'world' && u.area.kind === 'event' && W.areaAt(u.world, g.playerPos) === u.area;
+  out.gone = !u.bus; out.idleLeft = [...a.live].filter((v) => /^ut_bus_(idle|ride)$/.test(v.name) && v.busy && !v.fadingOut).length;
+  return out;
+});
+check(bus.came && bus.chime && bus.outsideSafe && bus.near >= 10 && bus.near <= 40, `when a safe zone is far (${bus.realSteps} steps here, told 100) a bus pulls up near you with its chime: ` + JSON.stringify({ near: bus.near && bus.near.toFixed(1), ride: bus.ride }));
+check(bus.ride && Math.abs(bus.ride - (15 + 15 * (100 - 45) / 105)) < 0.01, `the ride's length follows the walk it saves (${bus.ride && bus.ride.toFixed(1)} s for 100 steps)`);
+check(bus.engine && bus.engine.name === 'ut_bus_idle' && bus.engine.placed && bus.engine.level > 0.3, 'its engine idles where it stands: ' + JSON.stringify(bus.engine));
+check(bus.legTowardBus && /Compass on, to the bus/.test(bus.compassSaid), 'the compass points to the waiting bus and says so: ' + bus.compassSaid);
+check(bus.boarded && bus.heldStill, 'stepping up to the bus boards it; on the bus nothing answers');
+check(bus.inOrder && bus.steps >= 5 && bus.rideVoice && bus.rideVoice.loop, 'doors open, steps, doors close, the ride from your seat, doors open, steps, doors close, and it drives off: ' + JSON.stringify({ steps: bus.steps, ride: bus.rideVoice }));
+check(bus.landedSafe && bus.gone && bus.idleLeft === 0, 'you are left on the floor of the nearest safe zone, the bus gone and its engine with it');
 
 check(errors.length === 0, 'no page errors' + (errors.length ? ': ' + errors.slice(0, 3).join(' | ') : ''));
 await browser.close();
