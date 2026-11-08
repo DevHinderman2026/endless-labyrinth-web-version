@@ -39,6 +39,10 @@
   "tower": {
    "file": "tower-25ca806766.elpack",
    "bytes": 7006269
+  },
+  "ultimate": {
+   "file": "ultimate-99799a9470.elpack",
+   "bytes": 568905
   }
  }
 }

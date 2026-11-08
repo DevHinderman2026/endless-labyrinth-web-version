@@ -10,8 +10,8 @@
 // race you for items and throw them), battle areas (chasers you shoot) and event
 // areas (the event backgrounds; no enemies: the safe zones). It regenerates every
 // three minutes, with a spoken warning at 15
-// seconds and Battle's countdown over the last 5, fading out, a silence, and a
-// new world fading in with 5 safe seconds. There is no clock on the run: it ends
+// seconds and Battle's countdown over the last 5, fading out, and a new world
+// there at once, with 5 safe seconds. There is no clock on the run: it ends
 // when health runs out. Points come from kills, pickups and credits, times a
 // survival multiplier that rises with every world survived. Every number marked
 // "tune" is a starting value for Russell to judge by ear.
@@ -46,8 +46,8 @@ export const WARN_AT = 15;                      // "World regenerating in 15 sec
 export const COUNT_FROM = 5;                    // Battle's countdown over the last seconds
 export const NO_SPAWN_FROM = 3;                 // nothing new appears in the last seconds
 export const FADE_OUT = 2.0;                    // the old world fades over its last two seconds
-export const SILENCE = 0.6;                     // between worlds
-export const FADE_IN = 1.0;
+export const SILENCE = 0;                       // between worlds: none, the next world fills in the moment the count reaches zero (was 0.6)
+export const FADE_IN = 0.5;                     // the new world's rise (was 1.0)
 export const SAFE_SECONDS = 5.0;                // after a new world fades in
 export const EASY_SECONDS = 120;                // the easy stretch
 export const START_HP = 100;
@@ -84,6 +84,7 @@ export const HEAR_RANGE = 70.0;                 // enemies and pickups fade to n
 export const AMBIENCE_RANGE = 15.0;             // a neighbouring area's air, and its pickups, reach this far past its border or doorway (was 45)
 export const AMBIENCE_LEVEL = 0.8;
 export const DOOR_LEAK = 0.85;                  // through a doorway, against an open border
+export const KEEP_SLOTS = 2;                    // an area's air keeps running while within this many slots of yours
 export const REACH = 1.6;                       // walking into a thing: its own cell
 export const COMPASS_HOLD_MS = 1000;
 export const COMPASS_BEEP_EVERY = 0.45;
@@ -95,6 +96,10 @@ export const RIDE_MAX = 16.0;
 export const RIDE_TIME = 8.0;
 const DOORS_SHUT = 0.34; const DOORS_OPEN = 0.67; const DOORS_WIDE = 0.93;   // the ride's stages (island.js)
 const ARRIVE_CHIME_LEAD = 0.5;
+const ARRIVAL_GRACE = 3.0;             // Island Mode: seconds nothing can touch you after stepping out of the lift
+const BUBBLES_EVERY = [3.0, 5.0];     // Island Mode: your own bubbles on the seabed
+const BUBBLES_FIRST = [2.0, 4.0];
+const BREATHING_LEVEL = 0.85;         // the diver's breathing on the seabed (a web-only recording, in the ultimate pack)
 const FPS = 30;
 const RATE = 44100;
 
@@ -121,14 +126,33 @@ export const EVENT_BACKGROUNDS = ['evt_amb_bees', 'evt_amb_blizzard', 'evt_amb_c
   'evt_amb_sizzling_oil', 'evt_amb_space', 'evt_amb_spaceship', 'evt_amb_spooky', 'evt_amb_spring_birds', 'evt_amb_stadium_crowd',
   'evt_amb_storm', 'evt_amb_summer', 'evt_amb_tavern', 'evt_amb_train_station', 'evt_amb_underwater', 'evt_amb_water_drip',
   'evt_amb_waterfall', 'evt_amb_wind_trees', 'evt_amb_winter_wind', 'evt_amb_witch'];
-// Backgrounds that sound like the open air ring in the long hall, the rest in the cathedral.
-const OPEN_AIR = /bees|blizzard|cicadas|city|crickets|desert|fireworks|forest|graveyard|howling|jungle|market|marsh|medieval|morning|ocean|rain|river|spring|stadium|storm|summer|village|water|wind|winter/;
+// Each safe zone's echo is sized to its background: a cathedral, a cave or an ice
+// cave ring long (the cathedral's echo, stretched); a kitchen, a library or a
+// tavern are small rooms (the tower's short echo); the open air has a short,
+// light tail (the hall's echo, shortened). [room, stretch]
+const LARGE = ['cathedral', 1.2]; const BIG = ['cathedral', 0.9]; const HALL = ['hall', 1.0];
+const MEDIUM = ['battle', 1.0]; const SMALL = ['tower', 0.9]; const TINY = ['tower', 0.7]; const OPEN = ['hall', 0.5];
+const BACKGROUND_ROOMS = {
+  evt_amb_cathedral: LARGE, evt_amb_cathedral_organ: LARGE, evt_amb_organ: LARGE, evt_amb_dark_choir: LARGE, evt_amb_ghost_choir: LARGE,
+  evt_amb_cave_drips: BIG, evt_amb_ice_cave: BIG, evt_amb_water_drip: BIG, evt_amb_lava: BIG, evt_amb_train_station: BIG,
+  evt_amb_haunted_house: HALL, evt_amb_haunted_space: HALL, evt_amb_space: HALL, evt_amb_industrial: HALL, evt_amb_stadium_crowd: HALL,
+  evt_amb_spooky: MEDIUM, evt_amb_halloween_strings: MEDIUM, evt_amb_spaceship: MEDIUM, evt_amb_underwater: MEDIUM, evt_amb_witch: MEDIUM,
+  evt_amb_library: SMALL, evt_amb_clock: SMALL, evt_amb_ship_creak: SMALL, evt_amb_fireplace: SMALL,
+  evt_amb_kitchen: TINY, evt_amb_restaurant_kitchen: TINY, evt_amb_sizzling_oil: TINY, evt_amb_cafe: TINY, evt_amb_fast_food: TINY, evt_amb_tavern: TINY,
+};
+// Any other background is the open air.
+export function backgroundRoom(stem) { return BACKGROUND_ROOMS[stem] || OPEN; }
+// A background's own echo: light (every world has one but an island's shore and
+// the seabed); the walls of a safe zone ring softer than its room would have them.
+export const BACKGROUND_SEND = 0.15;
+export const SAFE_WALL_SEND = 0.05;
 const STEPS_STONE = ['step_stone_1', 'step_stone_2', 'step_stone_3', 'step_stone_4'];
 const STEPS_SAND = ['step_sand_1', 'step_sand_2', 'step_sand_3', 'step_sand_4'];
 
 // ------------------------------------------------------------------ helpers
 const rand = Math.random;
 const uniform = (a, b) => a + (b - a) * rand();
+const shuffle = (arr) => { for (let i = arr.length - 1; i > 0; i--) { const j = Math.floor(rand() * (i + 1)); [arr[i], arr[j]] = [arr[j], arr[i]]; } return arr; };
 const randint = (a, b) => a + Math.floor(rand() * (b - a + 1));
 const choice = (arr) => arr[Math.floor(rand() * arr.length)];
 const plural = (n, word, many = word + 's') => (n === 1 ? word : many);
@@ -324,8 +348,8 @@ const mixin = {
       else {
         const stem = pick(EVENT_BACKGROUNDS.filter((n) => this.audio.has(n)));
         a.ambience = aliasRecording(this.audio, stem, `event_amb_file_${stem}`) || 'event_amb_cathedral';
-        a.room = OPEN_AIR.test(stem) ? 'hall' : 'cathedral';
-        a.stretch = (a.room === 'hall' ? 1.3 : 1.0) * uniform(0.9, 1.2);
+        [a.room, a.stretch] = backgroundRoom(stem);
+        a.stretch *= uniform(0.95, 1.08);
       }
     }
     // Dropped in silently, somewhere at random.
@@ -335,6 +359,7 @@ const mixin = {
     this.playerFacing = [0, -1];
     this.arenaLimit = 0;
     u.area = startArea;
+    this._utListenerMix();
     // Enemies, by area; ammo, credits; the safe zones' own cartridges.
     const mul = this._utSpeedMul();
     let total = 0;
@@ -347,7 +372,11 @@ const mixin = {
       if (a.kind === 'tower') this._utSpawnTowerItem(a);
     }
     const cartridges = Math.max(AMMO_MIN, Math.ceil(total * AMMO_PER_ENEMY));
-    for (let i = 0; i < cartridges; i++) this._utSpawnPickup('ammo', choice(w.areas.filter((a) => a.kind !== 'event')));
+    // Spread across the areas: every dangerous area gets one before any gets two,
+    // so one cartridge is never mistaken for several beeping together.
+    const dangerous = w.areas.filter((a) => a.kind !== 'event');
+    const order = []; while (order.length < cartridges) order.push(...shuffle(dangerous.slice()));
+    for (let i = 0; i < cartridges; i++) this._utSpawnPickup('ammo', order[i]);
     for (const a of w.areas.filter((x) => x.kind === 'event')) this._utSpawnPickup('ammo', a, { safe: true });
     const credits = randint(CREDITS_AT_ONCE[0], CREDITS_AT_ONCE[1]);
     for (let i = 0; i < credits; i++) this._utSpawnPickup('credit', choice(w.areas));
@@ -369,15 +398,16 @@ const mixin = {
     u.lift = null;
     if (u.ride && u.ride.voice) { u.ride.voice.stop(); u.ride.voice = null; }
     u.rideMix = null;
+    this.audio.listenerMix = null;
     if (u.compass.on) this._utCompassOff(true);
     this.stride = null;
   },
 
   // A sound of this world: played, remembered, and placed.
-  _utPlay(name, pos, { loops = 0, volume = 1.0, fadeMs = 0, height = 0, direct = false } = {}) {
+  _utPlay(name, pos, { loops = 0, volume = 1.0, fadeMs = 0, height = 0, direct = false, send = null } = {}) {
     const u = this.ut;
     const rel = this._utRel(pos);
-    const v = this.audio.play(name, { loops, volume: 0.0, fadeMs, pos: pos ? rel : null, height, areaMix: pos ? this._utMixAt(pos) : null, direct });
+    const v = this.audio.play(name, { loops, volume: 0.0, fadeMs, pos: pos ? rel : null, height, areaMix: pos ? this._utMixAt(pos) : null, direct, send });
     if (!v) return null;
     if (pos) v.setSpatial(volume, rel[0], rel[1], this._behind(pos), height); else v.setVolume(volume, volume);
     if (loops === -1) u.voices.add(v);
@@ -391,6 +421,13 @@ const mixin = {
     const u = this.ut;
     if (u.place !== 'world' || !u.world) return {};
     return echoMix(u.world, pos);
+  },
+
+  // The echo where the player stands, for every sound played with no place of its
+  // own (a footstep, the countdown, a pickup's chime, the laser): set whenever the
+  // player moves or the world changes under them.
+  _utListenerMix() {
+    this.audio.listenerMix = this._utMixAt(this.playerPos);
   },
 
   // Keep a placed loop up to date: level by distance, place, behind, echo mix.
@@ -633,6 +670,8 @@ const mixin = {
     u.phase = 'silence';
     u.gap = SILENCE;
     u.worldTime = 0;
+    // No gap: the next world is there the moment the count reaches zero.
+    if (SILENCE <= 0) this._utNewWorld();
   },
 
   _utTimers(dt) {
@@ -646,7 +685,9 @@ const mixin = {
       const w = u.world;
       let area = t.area;
       if (!area) {
-        const pool = t.danger ? w.areas.filter((a) => a.kind !== 'event') : w.areas.filter((a) => a.kind !== 'event' || t.kind !== 'ammo');
+        let pool = t.danger ? w.areas.filter((a) => a.kind !== 'event') : w.areas.filter((a) => a.kind !== 'event' || t.kind !== 'ammo');
+        // A cartridge comes back in an area without one, while there is such an area.
+        if (t.kind === 'ammo') { const empty = pool.filter((a) => !u.pickups.some((p) => p.kind === 'ammo' && p.area === a)); if (empty.length) pool = empty; }
         area = choice(pool.length ? pool : w.areas);
       }
       // No spot found this time (a crowded area): tried again in a moment.
@@ -878,13 +919,15 @@ const mixin = {
     const len = Math.max(RIDE_MIN, Math.min(RIDE_MAX, own));
     u.place = 'ride';
     u.liftArmed = false;
-    u.ride = { dir, t: 0, len, area: a, chimed: false, voice: this.audio.play('elevator_ride', { direct: false }) };
+    // (Island Mode: a recording far longer than a ride should be is capped and
+    // eased out over its last second.)
+    u.ride = { dir, t: 0, len, area: a, chimed: false, capped: len < own - 0.05, faded: false, voice: this.audio.play('elevator_ride', { direct: false }) };
     if (dir === 'down') {
       // The seabed lies straight under the island's elevator, in the world's own
       // coordinates: its cell (0, 0) is the elevator's cell, so every position in
       // the mode stays in one system and nothing above is misplaced.
       const [ex, ey] = a.elevator;
-      u.seabed = { area: a, grid: makeSeabed(), origin: [ex, ey], pickups: [], under: null };
+      u.seabed = { area: a, grid: makeSeabed(), origin: [ex, ey], pickups: [], under: null, bubbleTimer: uniform(BUBBLES_FIRST[0], BUBBLES_FIRST[1]), hum: null, breath: null };
       // The seabed's own supply: a cartridge or two, and now and then a credit.
       const g = u.seabed.grid;
       const spot = () => {
@@ -900,6 +943,9 @@ const mixin = {
       u.seabed.under = this._utPlay('underwater', this.playerPos, { loops: -1, volume: 0.0, height: -6 });
     } else {
       for (const p of u.seabed.pickups) if (p.voice) { p.voice.stop(); u.voices.delete(p.voice); p.voice = null; }
+      if (u.seabed.hum) { u.seabed.hum.stop(); u.voices.delete(u.seabed.hum); u.seabed.hum = null; }
+      // Your breathing stops with the doors closing: the car has air.
+      if (u.seabed.breath) { u.seabed.breath.fadeout(600); u.voices.delete(u.seabed.breath); u.seabed.breath = null; }
     }
     this.stride = null;
   },
@@ -925,8 +971,10 @@ const mixin = {
       r.chimed = true;
       this.audio.play(r.dir === 'down' ? 'elevator_arrive_1' : 'elevator_arrive_2');
     }
+    if (r.capped && !r.faded && r.t >= L - 1.0) { r.faded = true; if (r.voice) r.voice.fadeout(1000); }
     if (r.t < L) return;
-    // Arrived.
+    // Arrived. (The ride recording, if somehow still going, goes with the ride.)
+    if (r.voice && r.voice.busy) r.voice.fadeout(200);
     u.ride = null;
     u.rideMix = null;
     if (r.dir === 'down') {
@@ -935,14 +983,24 @@ const mixin = {
       u.liftArmed = false;
       u.area = r.area;
       if (u.seabed.under) u.seabed.under.setSpatial(0.8, 0, -0.05, 0, 0);
+      // Under the water you hear yourself breathe through the regulator, in and
+      // out with the bubbles: all round you, no echo (the open sea), for as long
+      // as you are down here; there is no limit on your air in this mode.
+      if (this.audio.has('ut_diver_breathing')) u.seabed.breath = this._utPlay('ut_diver_breathing', null, { loops: -1, volume: BREATHING_LEVEL, fadeMs: 600, send: 0 });
       this._utRefreshRooms();
     } else {
+      // The water is left behind (it was already down to nothing with the ride).
+      if (u.seabed && u.seabed.under) { u.seabed.under.stop(); u.voices.delete(u.seabed.under); }
       u.place = 'world';
       u.seabed = null;
       u.area = r.area;
       this.playerPos = posOf(r.area.elevator[0], r.area.elevator[1]);
       u.liftArmed = false;
+      // Island Mode's arrival grace: nothing can touch you for a moment after
+      // stepping out of the lift.
+      u.safe = Math.max(u.safe, ARRIVAL_GRACE);
       this._utRefreshRooms();
+      this._utListenerMix();
     }
   },
 
@@ -961,10 +1019,20 @@ const mixin = {
     const d = dist2(lp, this.playerPos);
     if (d >= REACH) u.liftArmed = true;
     else if (u.liftArmed) { this._utStartRide('up'); return; }
+    // The way up calls with one tone every 1.6 seconds and hums where it stands
+    // (Island Mode's seabed); the hum is a seabed thing here, never heard from above.
     u.dingTimer -= dt;
     if (u.dingTimer <= 0) {
       u.dingTimer = 1.6;
       this._utPlay('elevator_arrive_1', lp, { volume: levelAt(d, SEABED_RANGE) });
+    }
+    if (!s.hum) s.hum = this._utPlay('elevator_hum', lp, { loops: -1, volume: 0.0 });
+    this._utFollow(s.hum, lp, levelAt(d, SEABED_RANGE));
+    // Your own bubbles now and then, as on Island Mode's seabed.
+    s.bubbleTimer -= dt;
+    if (s.bubbleTimer <= 0) {
+      s.bubbleTimer = uniform(BUBBLES_EVERY[0], BUBBLES_EVERY[1]);
+      this.audio.play('bubbles', { volume: 0.5 });
     }
   },
 
@@ -990,25 +1058,30 @@ const mixin = {
     const near = this._utNearAreas();
     const nearIds = new Set(near.map((a) => a.id));
     // Each area's air: its own area at full, a neighbour's from its border or its
-    // doorway, fading with the distance to it. Areas further off are silent, and
-    // their sounds are let go.
+    // doorway, fading with the distance to it. An area further off is silent, but
+    // its sounds are kept running while it is anywhere near (within two slots of
+    // the player's area), so crossing a border never stops and restarts a
+    // neighbour's air: an area's sound is only let go once it is well away.
+    const keep = (a) => nearIds.has(a.id) || (u.area && Math.max(Math.abs(a.ax - u.area.ax), Math.abs(a.ay - u.area.ay)) <= KEEP_SLOTS);
     for (const a of w.areas) {
       let s = u.areaSounds.get(a.id);
-      if (!nearIds.has(a.id)) {
+      if (!keep(a)) {
         if (s) { for (const v of Object.values(s)) if (v) { v.fadeout(800); u.voices.delete(v); } u.areaSounds.delete(a.id); }
         continue;
       }
       if (!s) {
         // Each background twice, in step: a wide copy for standing inside the area
         // (plain stereo, all round you), and a placed copy for hearing it from
-        // outside, through its doorway or across its border.
+        // outside, through its doorway or across its border. Every background but
+        // an island's shore rings lightly in its own room.
+        const send = a.kind === 'island' ? 0 : BACKGROUND_SEND;
         s = {
-          amb: this._utPlay(a.ambience, a.centre, { loops: -1, volume: 0.0, fadeMs: 600 }),
-          ambIn: this._utPlay(a.ambience, null, { loops: -1, volume: 0.0, fadeMs: 600 }),
+          amb: this._utPlay(a.ambience, a.centre, { loops: -1, volume: 0.0, fadeMs: 600, send }),
+          ambIn: this._utPlay(a.ambience, null, { loops: -1, volume: 0.0, fadeMs: 600, send }),
         };
         if (a.drums) {
-          s.drums = this._utPlay(a.drums, a.centre, { loops: -1, volume: 0.0, fadeMs: 600 });
-          s.drumsIn = this._utPlay(a.drums, null, { loops: -1, volume: 0.0, fadeMs: 600 });
+          s.drums = this._utPlay(a.drums, a.centre, { loops: -1, volume: 0.0, fadeMs: 600, send });
+          s.drumsIn = this._utPlay(a.drums, null, { loops: -1, volume: 0.0, fadeMs: 600, send });
         }
         if (a.kind === 'island') s.hum = this._utPlay('elevator_hum', posOf(a.elevator[0], a.elevator[1]), { loops: -1, volume: 0.0 });
         u.areaSounds.set(a.id, s);
@@ -1019,7 +1092,8 @@ const mixin = {
         if (seabed) level = 0.22;
         // On the seabed and in the car the island is straight above you.
         if (seabed || ride) from = this.playerPos; else { from = null; inside = 1; }
-      } else if (seabed) {
+      } else if (seabed || !nearIds.has(a.id)) {
+        // From the seabed, or not a neighbour: kept running, unheard.
         level = 0; from = a.centre;
       } else {
         const [, outside] = nearestPointOf(a, this.playerPos);
@@ -1096,19 +1170,21 @@ const mixin = {
   // ---------------------------------------------------------------- walking and shooting
   _utStep(g) {
     const u = this.ut;
-    if (u.place === 'ride') { this.audio.play('boundary'); return; }
+    if (u.place === 'ride') return;   // no walking while the elevator is moving (Island Mode: a swipe does nothing)
     let [nx, ny] = this.playerPos;
     if (g === 'up') { ny -= CELL; this.playerFacing = [0, -1]; }
     else if (g === 'down') { ny += CELL; this.playerFacing = [0, 1]; }
     else if (g === 'left') { nx -= CELL; this.playerFacing = [-1, 0]; }
     else { nx += CELL; this.playerFacing = [1, 0]; }
     const [cx, cy] = cellOf([nx, ny]);
-    let ok;
-    if (u.place === 'seabed') { const [sx, sy] = this._utSeabedCell([nx, ny]); ok = u.seabed.grid.floor.has(key(sx, sy)); }
-    else ok = isFloor(u.world, cx, cy);
-    if (!ok) {
-      // A wall, where it is (the world's edge is a wall too).
-      this._utPlay('wall', [nx, ny]);
+    if (u.place === 'seabed') {
+      // The seabed has no walls: its edge is the boundary buzz, as in Island Mode.
+      const [sx, sy] = this._utSeabedCell([nx, ny]);
+      if (!u.seabed.grid.floor.has(key(sx, sy))) { this.audio.play('boundary'); return; }
+    } else if (!isFloor(u.world, cx, cy)) {
+      // A wall, where it is (the world's edge is a wall too); a safe zone's walls
+      // ring softer than the room would have them.
+      this._utPlay('wall', [nx, ny], u.area && u.area.kind === 'event' ? { send: SAFE_WALL_SEND } : {});
       return;
     }
     u.steps.push([[...this.playerPos], [nx, ny]]);
@@ -1121,6 +1197,9 @@ const mixin = {
         if (u.towerCarry && u.towerCarry.area !== a.id) u.towerCarry = null;
         this._utRefreshRooms();
       }
+      this._utListenerMix();
+      // Pickups are taken the moment you step onto them, not a frame later.
+      this._utUpdatePickups();
       this.audio.play(choice(a.steps));
     }
     // (The seabed makes no sound underfoot, as in Island Mode.)
@@ -1128,7 +1207,8 @@ const mixin = {
 
   _utAttack() {
     const u = this.ut;
-    if (u.place !== 'world') { this.audio.play('empty_click'); return; }
+    if (u.place === 'ride') return;                                   // nothing fires in the car (Island Mode)
+    if (u.place !== 'world') { this.audio.play('empty_click'); return; }   // the seabed: Island Mode's click
     const a = u.area;
     // In a tower area, an item you hold is thrown first; the laser is the fallback.
     if (a.kind === 'tower' && this._utItemsHeld() > 0) { this._utThrow(); return; }
@@ -1191,7 +1271,7 @@ const mixin = {
   _utCompassToggle() {
     const u = this.ut;
     if (u.compass.on) { this._utCompassOff(); return; }
-    if (u.place === 'ride') { this.audio.play('boundary'); return; }
+    if (u.place === 'ride') { this.tts.speak('Compass not available in the elevator.', { interrupt: true }); return; }
     if (this._utInSafeZone()) {
       this.tts.speak('Compass not available. Safe zone detected.', { interrupt: true });
       return;

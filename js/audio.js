@@ -94,6 +94,10 @@ export class AudioEngine {
     this.worldGain = null;
     this.areaBuses = new Map();   // area id -> { gain, conv, room, stretch }
     this.stretched = new Map();   // 'room#take@stretch' -> AudioBuffer
+    // The echo mix where the player stands ({ areaId: weight }), kept up to date
+    // by the mode: a sound played with no place of its own (a footstep, the
+    // countdown, a pickup's chime) rings in the room the player is in.
+    this.listenerMix = null;
     // The sound's clock, sampled four times a second (see flowing).
     this._clk = [];
     setInterval(() => {
@@ -183,8 +187,12 @@ export class AudioEngine {
     const areas = [...this.areaBuses.values()].map((b) => ({ id: b.id, room: b.room, stretch: b.stretch }));
     this.areaBuses = new Map();
     this.worldIn = this.worldFilter = this.worldGain = null;
-    if (this.spatial) { this.spatialOn(); this.setAreaRooms(areas); }
+    if (this.spatial) this.spatialOn();
     for (const v of [...this.live]) v.rebind(old);
+    // The echoes come after the voices are in the new engine: setAreaRooms points
+    // every voice at its area's new bus, which must not be done to a voice whose
+    // nodes still belong to the old one.
+    if (this.spatial) this.setAreaRooms(areas);
     // The old engine is kept a moment, so a one-shot already sounding there (a
     // footstep, a shot) finishes rather than being cut off.
     setTimeout(() => { try { old.close(); } catch (e) { /* already closed */ } }, 2000);
@@ -561,6 +569,7 @@ export class AudioEngine {
   // The 3D world is over: the area echoes go, and sounds play as everywhere else.
   spatialOff() {
     this.spatial = false;
+    this.listenerMix = null;
     this.setAreaRooms([]);
     if (this.worldGain) {
       const g = this.worldGain; const f = this.worldFilter; const i = this.worldIn;
@@ -662,8 +671,10 @@ export class AudioEngine {
   // sounds dull if that spot is behind the player. Returns the Voice, or null.
   // In 3D (spatial): `pos` [x, y] (and `height`) place the sound relative to the
   // player, `areaMix` { areaId: weight } sends its echo to its area's bus, and
-  // `direct` plays it past the world's filter and fade (the compass).
-  play(name, { loops = 0, volume = 1.0, fadeMs = 0, at = null, pos = null, height = 0, areaMix = null, direct = false } = {}) {
+  // `direct` plays it past the world's filter and fade (the compass). A sound
+  // given no `areaMix` rings where the player is (listenerMix). `send` sets the
+  // sound's echo level in place of its family's (a background's light echo).
+  play(name, { loops = 0, volume = 1.0, fadeMs = 0, at = null, pos = null, height = 0, areaMix = null, direct = false, send = null } = {}) {
     const pair = this.entries.get(name);
     if (!pair || !pair.dry) return null;
     if (loops === -1) {
@@ -683,7 +694,9 @@ export class AudioEngine {
     if (this.spatial) {
       v.direct = !!direct;
       if (pos) v.pos3 = [pos[0], height, pos[1]];
-      if (areaMix) v.areaMix = { ...areaMix };
+      const mix = areaMix || (direct ? null : this.listenerMix);
+      if (mix) v.areaMix = { ...mix };
+      if (send !== null && send !== undefined) { v.send = send; v.sendSet = true; }
     }
     this.live.add(v);
     v.begin();
@@ -821,9 +834,12 @@ export class Voice {
         tap.connect(bus.gain);
         w.taps.set(id, tap);
       }
-      // The desktop's one-shot echo scale for this sound in that area's room.
+      // The desktop's one-shot echo scale for this sound in that area's room. A
+      // beacon's beep in a room stretched longer than its own keeps the echo of
+      // the plain room: a long tail on a repeating beep sounds like more beeps.
       const OS = RULES.ONCE_SCALE || {};
-      const scale = bus.conv ? ((OS[bus.conv.key] || {})[this.name] || 1) : 1;
+      let scale = bus.conv ? ((OS[bus.conv.key] || {})[this.name] || 1) : 1;
+      if (this.family === 'beacon' && bus.stretch > 1) scale /= bus.stretch;
       tap.gain.setTargetAtTime(clamp(want, 0, 1) * scale, now, 0.05);
     }
   }
@@ -856,7 +872,7 @@ export class Voice {
     const rooms = RULES.ROOMS[this.name] || [];
     const loopWet = (a.room && this.send > 0 && rooms.includes(a.room) && this.loop && !a.spatial)
       ? a._loopWet(a.room, this.name, buf) : null;
-    if (a.spatial && !this.direct && this.send > 0 && (rooms.length || this.pair.dry.made)) {
+    if (a.spatial && !this.direct && this.send > 0 && (rooms.length || this.pair.dry.made || this.sendSet)) {
       // 3D: the echo is sent to the buses of the areas the sound is in (see
       // setAreaMix), each with that area's own echo. The level is the plain
       // room's one-shot scale, as a one-shot in that room would get.

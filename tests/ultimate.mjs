@@ -48,7 +48,7 @@ const setup = await page.evaluate(async () => {
 });
 check(setup.menu.indexOf('Ultimate Test Mode') === setup.menu.indexOf('Chaos Mode') + 1, 'main menu: Ultimate Test Mode right after Chaos: ' + setup.menu.join(', '));
 check(setup.names.indexOf('Ultimate Test Mode') === setup.names.indexOf('Chaos Mode') + 1 && setup.names.indexOf('Demos, Ultimate Test Mode') > setup.names.indexOf('Demos, Chaos Mode'), 'help sections in order: ' + setup.names.join(' | '));
-check(setup.topics === 16 && setup.demos === 7, `help: ${setup.topics} topics, ${setup.demos} demos`);
+check(setup.topics === 16 && setup.demos === 8, `help: ${setup.topics} topics, ${setup.demos} demos`);
 check(setup.missing.length === 0, 'every demo sound exists' + (setup.missing.length ? ': missing ' + setup.missing.join(', ') : ''));
 check(setup.bgMissing.length === 0, 'every event background is in the packs' + (setup.bgMissing.length ? ': missing ' + setup.bgMissing.join(', ') : ''));
 check(setup.boards.includes('Ultimate Test Mode: No score yet'), 'high scores list the board: ' + setup.boards.join(' | '));
@@ -347,7 +347,7 @@ const regen = await page.evaluate(async () => {
   for (let i = 0; i < 30 * 20; i++) {
     g.updateUltimateMode(1 / 30);
     phases.add(u.phase);
-    if (u.phase === 'silence' && !atEnd) atEnd = { hp: u.hp, ammo: u.ammo };
+    if (u.phase === 'fading' && !atEnd) atEnd = { hp: u.hp, ammo: u.ammo };
     if (u.worldNo === 2 && !atStart) { atStart = { hp: u.hp, ammo: u.ammo }; firstTime = u.worldTime; }
     if (u.worldNo === 2 && u.phase === 'play') break;
     if (i % 15 === 0) await new Promise((r) => setTimeout(r, 15));
@@ -363,8 +363,8 @@ const regen = await page.evaluate(async () => {
 check(regen.worldNo === 2 && regen.newWorld && regen.worlds === 1, 'the world regenerates into world 2');
 check(regen.spoken.includes('World regenerating in 15 seconds.'), 'the voice warns with the exact words: ' + JSON.stringify(regen.spoken));
 check(regen.counts === 5, `Battle's countdown over the last five seconds (${regen.counts} beeps)`);
-check(regen.phases.includes('fading') && regen.phases.includes('silence') && regen.phases.includes('fadein'), 'fade out, silence, fade in: ' + regen.phases.join(', '));
-check(regen.levels.some(([l, s]) => l === 0 && s === 2) && regen.levels.some(([l, s]) => l === 1 && s === 1), 'the world fades out over two seconds and the new one fades in over one: ' + JSON.stringify(regen.levels));
+check(regen.phases.includes('fading') && !regen.phases.includes('silence') && regen.phases.includes('fadein'), 'fade out, then the new world at once, no silence: ' + regen.phases.join(', '));
+check(regen.levels.some(([l, s]) => l === 0 && s === 2) && regen.levels.some(([l, s]) => l === 1 && s === 0.5), 'the world fades out over two seconds and the new one rises in half a second: ' + JSON.stringify(regen.levels));
 check(regen.worldTime > 179 && regen.worldTime <= 180, `the second world lasts three minutes too (${regen.worldTime && regen.worldTime.toFixed(1)})`);
 check(regen.atEnd && regen.atStart && regen.atEnd.hp === regen.atStart.hp && regen.atEnd.ammo === regen.atStart.ammo && regen.atStart.ammo === 7, 'health and ammo carry over: ' + JSON.stringify([regen.atEnd, regen.atStart]));
 check(regen.mult === 1.5, `the multiplier is now ${regen.mult}`);

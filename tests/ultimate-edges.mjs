@@ -107,23 +107,25 @@ const between = await page.evaluate(async () => {
     rode = u.place;
   }
   u.worldTime = 2.5;
-  let compassDuringSilence = null; let saidSilence = null;
+  // The new world is there the moment the count reaches zero (no silence); the
+  // compass, turned on and off in its first rising moments, leaves it unmuffled.
+  let sawSilence = false; let compassAtRise = null; let gapAtRise = null;
   for (let i = 0; i < 30 * 12; i++) {
     g.updateUltimateMode(1 / 30);
-    if (u.phase === 'silence' && compassDuringSilence === null) {
-      g.input('hold');            // between worlds nothing answers
-      compassDuringSilence = u.compass.on;
-      g.input('up'); g.input('space'); g.input('enter');
-      saidSilence = document.getElementById('said').textContent;
+    if (u.phase === 'silence') sawSilence = true;
+    if (u.phase === 'fadein' && compassAtRise === null) {
+      gapAtRise = u.gap;
+      if (u.place === 'world' && !g._utInSafeZone()) { g.input('hold'); compassAtRise = u.compass.on; g.input('hold'); } else compassAtRise = 'n/a';
     }
     if (u.worldNo === 3 && u.phase === 'play') break;
     if (i % 15 === 0) await new Promise((r) => setTimeout(r, 10));
   }
-  await new Promise((r) => setTimeout(r, 600));
-  return { rode, worldNo: u.worldNo, place: u.place, compassDuringSilence, compassNow: u.compass.on, f: a.worldFilter.frequency.value, ride: u.ride };
+  await new Promise((r) => setTimeout(r, 900));
+  return { rode, worldNo: u.worldNo, place: u.place, sawSilence, compassAtRise, gapAtRise, compassNow: u.compass.on, f: a.worldFilter.frequency.value, ride: u.ride };
 });
 check(between.rode === null || (between.rode === 'ride' && between.ride === null && between.place === 'world'), 'a regeneration during a ride ends the ride and lands you in the new world');
-check(between.worldNo === 3 && between.compassDuringSilence === false && !between.compassNow && between.f > 19000, `between worlds the compass cannot be turned on, and the new world is not muffled (${Math.round(between.f)} Hz)`);
+check(between.worldNo === 3 && !between.sawSilence && between.gapAtRise !== null && between.gapAtRise <= 0.5, `no silence between worlds: the next one rises at once (${between.gapAtRise} s)`);
+check((between.compassAtRise === true || between.compassAtRise === 'n/a') && !between.compassNow && between.f > 19000, `the compass works in the new world's first moments and leaves it unmuffled (${Math.round(between.f)} Hz)`);
 
 // --------------------------------------------------------------- help and quitting with the compass on
 const helpQuit = await page.evaluate(async () => {
