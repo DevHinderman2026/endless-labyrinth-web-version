@@ -109,7 +109,7 @@ const w0 = await page.evaluate(async () => {
 check(w0.worldNo === 1 && w0.areas.length >= 5 && w0.areas.length <= 10, `world 1 has ${w0.areas.length} areas: ${w0.areas.join(', ')}`);
 check(w0.eventAreas >= 1, 'at least one event area (the safe zone)');
 check(w0.hp === 100 && w0.ammo === 0 && w0.points === 0, 'starts with 100 health, no ammo, no points');
-check(w0.worldTime > 298 && w0.worldTime <= 300, `the first world lasts 5 minutes (${w0.worldTime.toFixed(1)} left)`);
+check(w0.worldTime > 118 && w0.worldTime <= 120, `the first world lasts 2 minutes (${w0.worldTime.toFixed(1)} left)`);
 check(w0.labsQuiet && w0.kindsRight, 'enemies only in battle, island and tower areas; throwers in tower areas only');
 check(w0.enemies === w0.enemyAreas, `easy stretch: ${w0.enemies} enemies in ${w0.enemyAreas} enemy areas (one each: a chaser, or a tower area's one rival)`);
 check(w0.farFromEnemies, 'no enemy within 10 units of the player at the start');
@@ -246,7 +246,7 @@ const compass = await page.evaluate(async () => {
 });
 check(compass.on && /Compass on/.test(compass.saidOn), 'a held finger turns the compass on: ' + compass.saidOn);
 check(compass.stillThere, 'while the compass is on, a swipe turns the compass and the player does not move');
-check(/^Right(\.|, \d+ steps?, (then turn|and you are there)\.)$/.test(compass.saidRight), 'turning speaks the direction, with the leg\'s length when it is the way: ' + compass.saidRight);
+check(/^Right(\.|, \d+ steps?, (then turn|and you are there)\.)( (A labyrinth|An island|A tower area|A battle area|A safe zone|The edge of the world), \d+ steps? away(, then (a labyrinth|an island|a tower area|a battle area|a safe zone))?\.| Beyond it, .*\.)?$/.test(compass.saidRight), 'turning speaks the direction, with the leg\'s length when it is the way, and what lies that way: ' + compass.saidRight);
 check(compass.beeps >= 3 && compass.direct, `the compass beeps (${compass.beeps} in two seconds), played direct (never muffled)`);
 check(compass.f0 >= 19000 && compass.fOn < 2000 && compass.fOff >= 19000, `the world is muffled while the compass is on (${Math.round(compass.f0)} Hz, ${Math.round(compass.fOn)}, ${Math.round(compass.fOff)})`);
 check(compass.ammo0 === compass.ammoAfter, 'the weapon does not fire while the compass is on');
@@ -391,7 +391,7 @@ check(regen.spoken.includes('World regenerating in 15 seconds.'), 'the voice war
 check(regen.counts === 5, `Battle's countdown over the last five seconds (${regen.counts} beeps)`);
 check(regen.phases.includes('fading') && !regen.phases.includes('silence') && regen.phases.includes('fadein'), 'fade out, then the new world at once, no silence: ' + regen.phases.join(', '));
 check(regen.levels.some(([l, s]) => l === 0 && s === 2) && regen.levels.some(([l, s]) => l === 1 && s === 0.5), 'the world fades out over two seconds and the new one rises in half a second: ' + JSON.stringify(regen.levels));
-check(regen.worldTime > 299 && regen.worldTime <= 300, `the next world lasts five minutes too (${regen.worldTime && regen.worldTime.toFixed(1)})`);
+check(regen.worldTime > 119 && regen.worldTime <= 120, `the next world lasts two minutes too (${regen.worldTime && regen.worldTime.toFixed(1)})`);
 check(regen.atEnd && regen.atStart && regen.atEnd.hp === regen.atStart.hp && regen.atEnd.ammo === regen.atStart.ammo && regen.atStart.ammo === 7, 'health and ammo carry over: ' + JSON.stringify([regen.atEnd, regen.atStart]));
 check(Math.abs(regen.mult - (1 + 0.5 * regen.worlds)) < 1e-9, `the multiplier is now ${regen.mult} (${regen.worlds} worlds survived)`);
 check(regen.place === 'world' && regen.carry === null && regen.compassOff, 'on the ground, no tower items, compass off');
@@ -426,10 +426,13 @@ check(score.timers.includes('ammo:safe') && score.timers.includes('credit:danger
 // --------------------------------------------------------------- pause freezes the countdown; game over
 const end = await page.evaluate(async () => {
   const g = window.__el.game; const u = g.ut;
+  // (The safe zone above may have put us within reach of its water slide, which refuses the pause.)
+  if (u.place === 'slide') { u.slide = null; u.place = 'world'; }
   const t0 = u.worldTime;
   g.input('pause');
   for (let i = 0; i < 30; i++) g.updateUltimateMode(1 / 30);
   const frozen = u.worldTime === t0 && g.isPaused;
+  const dbg = { t0, t1: u.worldTime, paused: g.isPaused, place: u.place, phase: u.phase, state: g.state, said: document.getElementById('said').textContent.slice(0, 60) };
   g.input('pause');
   u.hp = 5; u.safe = 0; u.hitCooldown = 0;
   g._utHurt(null);
@@ -438,9 +441,9 @@ const end = await page.evaluate(async () => {
   const said = document.getElementById('said').textContent;
   const spatial = window.__el.audio.spatial;
   const score = g.scores.scores.ultimate;
-  return { frozen, state, said, spatial, score, points: u.points };
+  return { frozen, dbg, state, said, spatial, score, points: u.points };
 });
-check(end.frozen, 'the pause freezes the regeneration countdown');
+check(end.frozen, 'the pause freezes the regeneration countdown: ' + JSON.stringify(end.dbg));
 check(end.state === 'game_over', 'health at zero ends the run');
 check(/^Game Over\. You scored \d+ points?, survived .+, and made it through \d+ worlds?\./.test(end.said), 'the end says points, time survived and worlds: ' + end.said);
 check(!end.spatial, 'the 3D world closes with the run');

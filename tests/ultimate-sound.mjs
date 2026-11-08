@@ -699,6 +699,109 @@ check(hits.skipped || (hits.count === 17 && hits.both), `one reaction to every h
 check(hits.skipped || hits.elsewhere === 0, 'a hit outside a battle area draws no reaction');
 check(hits.skipped || (hits.overAtOnce && hits.fatalReact), 'the fatal hit in an arena: the crowd reacts with it, and Game Over comes at once');
 
+// The last check ended the run: back to the menu and into a new one, with the helpers' world.
+await page.evaluate(async () => {
+  const g = window.__el.game;
+  if (g.state === 'game_over') g.input('enter');
+  g.menuIndex = g.menuKeys.indexOf('ultimate'); g.input('enter');
+});
+await sleep(800);
+
+// --------------------------------------------------------------- 12. Russell's fourth report (8 Nov): island edges, the bus and the throwers, the compass survey
+const edges = await page.evaluate(async () => {
+  const g = window.__el.game; const u = g.ut; const a = window.__el.audio; const T = window.__ut; const W = T.world;
+  const out = {};
+  const bump = (area) => {
+    // Stand on a floor cell of the area whose next cell one way is not floor, and step that way.
+    for (const [cx, cy] of area.floorCells) {
+      for (const [g2, dx, dy] of [['left', -1, 0], ['right', 1, 0], ['up', 0, -1], ['down', 0, 1]]) {
+        if (W.isFloor(u.world, cx + dx, cy + dy)) continue;
+        g.playerPos = W.posOf(cx, cy); u.area = area; u.place = 'world'; g._utListenerMix();
+        const played = []; const orig = a.play.bind(a); a.play = (n, o) => { played.push(n); return orig(n, o); };
+        const before = [...g.playerPos];
+        g.input(g2);
+        a.play = orig;
+        return { played, stayed: before[0] === g.playerPos[0] && before[1] === g.playerPos[1] };
+      }
+    }
+    return null;
+  };
+  if (await T.ensureKind('island')) out.island = bump(T.goTo((x) => x.kind === 'island'));
+  if (await T.ensureKind('labyrinth')) out.lab = bump(T.goTo((x) => x.kind === 'labyrinth'));
+  return out;
+});
+check(!edges.island || (edges.island.stayed && edges.island.played.includes('boundary') && !edges.island.played.includes('wall')), 'on an island the edge is the boundary buzz, never a wall: ' + JSON.stringify(edges.island));
+check(!edges.lab || (edges.lab.stayed && edges.lab.played.includes('wall')), 'in a labyrinth a wall is still a wall: ' + JSON.stringify(edges.lab));
+
+const aboard = await page.evaluate(async () => {
+  const g = window.__el.game; const u = g.ut; const a = window.__el.audio; const T = window.__ut;
+  if (!(await T.ensureKind('tower'))) return { skipped: true };
+  const area = T.goTo((x) => x.kind === 'tower');
+  u.enemies = u.enemies.filter((e) => e.area !== area);
+  const e = g._utSpawnEnemy(area);
+  if (!e || e.kind !== 'thrower') return { skipped: true };
+  // Armed and awake: it throws at you on the floor.
+  e.items = 3; e.cooldown = 0; e.notice = 0; e.recover = 0; e.winding = 0; e.pending = 0;
+  u.safe = 0; u.hitCooldown = 0;
+  let flying = 0;
+  for (let i = 0; i < 30 * 4 && !flying; i++) { g.updateUltimateMode(1 / 30); flying = u.projectiles.length; }
+  const out = { threwOnFloor: flying > 0 };
+  // A chaser of the same area, far off, to watch its mind.
+  const foe = { kind: 'chaser', area, x: g.playerPos[0] + 40, y: g.playerPos[1], speed: 2.2, voice: null, goal: null, goalTimer: 0, soundName: 'enemy_0' };
+  u.enemies.push(foe);
+  // The bus stands beside you; step up to it.
+  u.bus = { area, pos: [g.playerPos[0] + 3, g.playerPos[1]], stage: 'waiting', t: 0, voice: null, rideVoice: null, pullVoice: null, doorVoice: null, ride: 20, steps: 100 };
+  e.items = 3; e.cooldown = 0; e.notice = 0; e.recover = 0;
+  g.input('right');
+  out.boarded = u.place === 'bus';
+  out.droppedAtBoarding = u.projectiles.length === 0;
+  const played = []; const orig = a.play.bind(a); a.play = (n, o) => { played.push(n); return orig(n, o); };
+  const d0 = Math.hypot(foe.x - g.playerPos[0], foe.y - g.playerPos[1]);
+  for (let i = 0; i < 30 * 5; i++) { g.updateUltimateMode(1 / 30); if (i % 15 === 0) await new Promise((r) => setTimeout(r, 5)); }
+  a.play = orig;
+  out.stillAboard = u.place === 'bus'; out.stage = u.bus && u.bus.stage;
+  out.throwsAboard = played.filter((n) => /^item_throw$|^enemy_windup/.test(n)).length;
+  out.projectilesAboard = u.projectiles.length;
+  out.chaserWanders = !!foe.goal; out.chaserCloser = Math.hypot(foe.x - g.playerPos[0], foe.y - g.playerPos[1]) < d0 - 8;
+  u.bus = null; u.place = 'world'; u.enemies = u.enemies.filter((x) => x !== foe);
+  return out;
+});
+check(aboard.skipped || aboard.threwOnFloor, 'a thrower with items throws at you on the floor');
+check(aboard.skipped || (aboard.boarded && aboard.droppedAtBoarding && aboard.stillAboard), `boarding the bus drops whatever was in the air (${aboard.stage})`);
+check(aboard.skipped || (aboard.throwsAboard === 0 && aboard.projectilesAboard === 0), `on the bus a thrower in your area neither winds up nor throws (${aboard.throwsAboard} sounds, ${aboard.projectilesAboard} in the air)`);
+check(aboard.skipped || (aboard.chaserWanders && !aboard.chaserCloser), 'on the bus a chaser of your area wanders instead of coming for you');
+
+const survey = await page.evaluate(async () => {
+  const g = window.__el.game; const u = g.ut; const T = window.__ut; const W = T.world;
+  const area = T.goTo((x) => x.kind !== 'event') || T.goTo(() => true);
+  const names = { labyrinth: 'a labyrinth', island: 'an island', tower: 'a tower area', battle: 'a battle area', event: 'a safe zone' };
+  const dirs = [[0, -1], [1, 0], [0, 1], [-1, 0]];
+  const [cx, cy] = W.cellOf(g.playerPos);
+  const out = { words: [], ok: true, edge: 0, neighbours: 0, beyond: 0, route: 0 };
+  for (let i = 0; i < 4; i++) {
+    const w = g._utCompassWords(i);
+    out.words.push(w);
+    const [dx, dy] = dirs[i];
+    const next = u.world.areas.find((x) => x.ax === area.ax + dx && x.ay === area.ay + dy);
+    const far = u.world.areas.find((x) => x.ax === area.ax + 2 * dx && x.ay === area.ay + 2 * dy);
+    const steps = dx > 0 ? area.x1 + 1 - cx : dx < 0 ? cx - (area.x0 - 1) : dy > 0 ? area.y1 + 1 - cy : cy - (area.y0 - 1);
+    if (/then turn|and you are there/.test(w)) out.route += 1;
+    if (!next) { out.edge += 1; if (!new RegExp(`The edge of the world, ${steps} steps away\\.$`).test(w)) out.ok = false; continue; }
+    out.neighbours += 1;
+    const head = names[next.kind]; const cap = head[0].toUpperCase() + head.slice(1);
+    let want = far ? `${cap}, ${steps} steps away, then ${names[far.kind]}.` : `${cap}, ${steps} steps away.`;
+    // When the route arrives at the safe zone that way, the zone goes unsaid twice.
+    if (/and you are there/.test(w) && next.kind === 'event') want = far ? `Beyond it, ${names[far.kind]}.` : 'and you are there.';
+    if (!w.endsWith(want)) out.ok = false;
+    if (far) out.beyond += 1;
+  }
+  // Compass on, for real: the first words carry the survey too.
+  g.input('hold'); out.said = document.getElementById('said').textContent; g.input('hold');
+  return out;
+});
+check(survey.ok && survey.neighbours >= 1 && survey.route === 1, 'each compass direction tells what lies that way, the area across the border and the one beyond, or the edge of the world, and one carries the route leg: ' + JSON.stringify(survey.words));
+check(/Compass on\. (Ahead|Right|Behind|Left)[.,].*(steps away|edge of the world|Beyond it)/.test(survey.said), 'turning the compass on says the survey for the way it faces: ' + survey.said);
+
 check(errors.length === 0, 'no page errors' + (errors.length ? ': ' + errors.slice(0, 3).join(' | ') : ''));
 await browser.close();
 console.log(failures ? `${failures} FAILED` : 'ALL PASSED');

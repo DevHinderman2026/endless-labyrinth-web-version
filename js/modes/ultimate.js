@@ -9,7 +9,7 @@
 // underfoot, an elevator down to the seabed, chasers), tower areas (throwers that
 // race you for items and throw them), battle areas (chasers you shoot) and event
 // areas (the event backgrounds; no enemies: the safe zones). It regenerates every
-// five minutes, with a spoken warning at 15
+// two minutes, with a spoken warning at 15
 // seconds and Battle's countdown over the last 5, fading out, and a new world
 // there at once, with 5 safe seconds. There is no clock on the run: it ends
 // when health runs out. Points come from kills, pickups and credits, times a
@@ -41,7 +41,7 @@ export const STATE = 'ultimate';
 export const BOARD = 'ultimate';
 
 // ------------------------------------------------------------------ the numbers (tune)
-export const WORLD_SECONDS = [300];             // every world (Russell, 8 Nov evening: five minutes throughout, so a run hardens with time; it was 180, and 150 then 120 before)
+export const WORLD_SECONDS = [120];             // every world (Russell, 8 Nov: two minutes, as in 2.0.0; five was tried in the play tests and was too long)
 export const WARN_AT = 15;                      // "World regenerating in 15 seconds."
 export const COUNT_FROM = 5;                    // Battle's countdown over the last seconds
 export const NO_SPAWN_FROM = 3;                 // nothing new appears in the last seconds
@@ -788,7 +788,7 @@ const mixin = {
     if (u.place === 'slide') {
       // On the water slide: the world goes on around you, you cannot act.
       this._utUpdateSlide(dt);
-      if (u.place === 'slide') { this._utTimers(dt); this._utUpdateEnemies(dt); if (this.state !== STATE) return; this._utUpdateSounds(dt); return; }
+      if (u.place === 'slide') { this._utTimers(dt); this._utUpdateEnemies(dt); if (this.state !== STATE) return; this._utUpdateProjectiles(dt); this._utUpdateSounds(dt); return; }
     }
     this._utUpdateBus(dt);
     if (u.place === 'bus') { this._utTimers(dt); this._utUpdateEnemies(dt); if (this.state !== STATE) return; this._utUpdateSounds(dt); return; }
@@ -860,7 +860,10 @@ const mixin = {
   _utUpdateEnemies(dt) {
     const u = this.ut;
     const steps = u.steps; u.steps = [];
-    const here = u.area;
+    // On the bus or the slide you are out of their reach and out of their minds:
+    // a thrower only races for items, a chaser wanders (Russell, 8 Nov: on the bus
+    // the throwers kept throwing).
+    const here = u.place === 'world' ? u.area : null;
     for (const e of [...u.enemies]) {
       if (e.kind === 'thrower') { this._utUpdateThrower(e, dt, e.area === here); continue; }
       const a = e.area;
@@ -982,6 +985,14 @@ const mixin = {
 
   // Thrown items in flight, the tower items and the proximity beep.
   _utUpdateTower(dt) {
+    this._utUpdateProjectiles(dt);
+    if (this.state !== STATE) return;
+    this._utUpdateTowerItem();
+  },
+
+  // Throws in the air fly on wherever you are (on the slide too, so none hangs
+  // buzzing in mid-air); a hit lands only on the floor (_utHurt).
+  _utUpdateProjectiles(dt) {
     const u = this.ut;
     for (const s of [...u.projectiles]) {
       const a = s.area;
@@ -1002,6 +1013,10 @@ const mixin = {
         if (hit) { this._utHurt(s); if (this.state !== STATE) return; }
       }
     }
+  },
+
+  _utUpdateTowerItem() {
+    const u = this.ut;
     // The item in the player's own tower area: walked onto, it is yours.
     const a = u.area;
     if (a && a.kind === 'tower') {
@@ -1136,6 +1151,8 @@ const mixin = {
   _utBoardBus() {
     const u = this.ut; const b = u.bus;
     u.place = 'bus';
+    // Whatever was in the air for you falls short: the bus is leaving.
+    for (const s of [...u.projectiles]) this._utDropProjectile(s);
     b.stage = 'boarding'; b.t = 0; b.stepped = false; b.closed = false;
     this.stride = null;
     if (b.doorVoice) b.doorVoice.fadeout(200);
@@ -1505,8 +1522,11 @@ const mixin = {
       const [sx, sy] = this._utSeabedCell([nx, ny]);
       if (!u.seabed.grid.floor.has(key(sx, sy))) { this.audio.play('boundary'); return; }
     } else if (!isFloor(u.world, cx, cy)) {
-      // A wall, where it is (the world's edge is a wall too); a safe zone's walls
-      // ring softer than the room would have them.
+      // An island has no walls: its edge is the boundary buzz, as in Island Mode
+      // (Russell, 8 Nov: no labyrinth wall on an island). Elsewhere a wall, where
+      // it is (the world's edge is a wall too); a safe zone's walls ring softer
+      // than the room would have them.
+      if (u.area && u.area.kind === 'island') { this.audio.play('boundary'); return; }
       this._utPlay('wall', [nx, ny], u.area && u.area.kind === 'event' ? { send: SAFE_WALL_SEND } : {});
       return;
     }
@@ -1651,9 +1671,33 @@ const mixin = {
     const word = ['Ahead', 'Right', 'Behind', 'Left'][idx];
     const leg = this._utRouteLeg();
     const d = COMPASS_DIRS[idx];
-    if (!leg || leg.dir[0] !== d[0] || leg.dir[1] !== d[1]) return word + '.';
-    const n = leg.steps;
-    return `${word}, ${n} ${plural(n, 'step')}, ${leg.arrives ? 'and you are there' : 'then turn'}.`;
+    const onRoute = leg && leg.dir[0] === d[0] && leg.dir[1] === d[1];
+    const n = leg ? leg.steps : 0;
+    const first = onRoute ? `${word}, ${n} ${plural(n, 'step')}, ${leg.arrives ? 'and you are there' : 'then turn'}.` : word + '.';
+    const survey = this._utCompassSurvey(idx, onRoute && leg.arrives);
+    return survey ? `${first} ${survey}` : first;
+  },
+
+  // What lies that way (Russell, 8 Nov: the compass should tell what areas are in
+  // reach and in view, as it tells the way to the safe zone): the area across the
+  // border in that direction, how many steps to that border, and the area beyond.
+  // When the route arrives that way, the safe zone itself goes unsaid twice.
+  _utCompassSurvey(idx, arriving = false) {
+    const u = this.ut; const w = u.world; const a = u.area;
+    if (!w || !a || u.place !== 'world') return '';
+    const [dx, dy] = COMPASS_DIRS[idx];
+    const [cx, cy] = cellOf(this.playerPos);
+    const toBorder = dx > 0 ? a.x1 + 1 - cx : dx < 0 ? cx - (a.x0 - 1) : dy > 0 ? a.y1 + 1 - cy : cy - (a.y0 - 1);
+    const steps = Math.max(1, toBorder);
+    const at = (k) => w.areas.find((x) => x.ax === a.ax + dx * k && x.ay === a.ay + dy * k) || null;
+    const next = at(1); const beyond = at(2);
+    if (!next) return `The edge of the world, ${steps} ${plural(steps, 'step')} away.`;
+    const name = (x) => ({ labyrinth: 'a labyrinth', island: 'an island', tower: 'a tower area', battle: 'a battle area', event: 'a safe zone' })[x.kind];
+    if (arriving && next.kind === 'event') return beyond ? `Beyond it, ${name(beyond)}.` : '';
+    const head = name(next);
+    let out = `${head[0].toUpperCase()}${head.slice(1)}, ${steps} ${plural(steps, 'step')} away`;
+    if (beyond) out += `, then ${name(beyond)}`;
+    return out + '.';
   },
 
   _utCompassTurn(g) {
