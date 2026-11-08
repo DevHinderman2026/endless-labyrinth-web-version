@@ -281,13 +281,13 @@ export function echoMix(world, pos) {
 
 // A random floor cell of an area at least `minDist` units from `from` and from
 // everything in `avoid`, or null.
-export function randomFloor(world, a, r, { from = null, minDist = 0, avoid = [], clearance = 9.0, tries = 200 } = {}) {
+export function randomFloor(world, a, r, { from = null, minDist = 0, maxDist = Infinity, avoid = [], clearance = 9.0, tries = 200 } = {}) {
   const cells = a.floorCells || areaFloor(world, a);
   if (!cells.length) return null;
   for (let i = 0; i < tries; i++) {
     const [cx, cy] = cells[Math.floor(r() * cells.length)];
     const p = posOf(cx, cy);
-    if (from && Math.hypot(p[0] - from[0], p[1] - from[1]) < minDist) continue;
+    if (from) { const d = Math.hypot(p[0] - from[0], p[1] - from[1]); if (d < minDist || d > maxDist) continue; }
     if (avoid.some((q) => Math.hypot(p[0] - q[0], p[1] - q[1]) < clearance)) continue;
     return p;
   }

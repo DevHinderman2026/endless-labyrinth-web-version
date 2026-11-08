@@ -1,4 +1,4 @@
-// Ultimate Test Mode (web 2.0.0): how it sounds, measured. Run with the site served
+// Ultimate Test Mode (web 2.1.0): how it sounds, measured. Run with the site served
 // (python3 -m http.server 8765):
 //   node --import ./tests/github-stub.mjs tests/ultimate-sound.mjs http://localhost:8765
 // Russell's second play-test: footsteps, the countdown and pickups were dry, the
@@ -412,6 +412,85 @@ const regen = await page.evaluate(async () => {
   return { newWorld: u.world !== w1, phases: [...new Set(phases)], loopsRightAfter, worldTime: u.worldTime };
 });
 check(regen.newWorld && !regen.phases.includes('silence') && regen.loopsRightAfter >= 1, 'at zero the next world is there at once, its air already running: ' + JSON.stringify(regen));
+
+// --------------------------------------------------------------- 8. reach, tower items, the rivals' ramp, the arena crowd (Russell's third report)
+const third = await page.evaluate(async () => {
+  const g = window.__el.game; const u = g.ut; const a = window.__el.audio; const T = window.__ut; const W = T.world;
+  const { EVENT_BACKGROUNDS, BATTLE_CROWD, PICKUP_REACH, ITEM_NEAR } = T.mod;
+  const out = { poolHasCrowd: EVENT_BACKGROUNDS.includes(BATTLE_CROWD), reach: PICKUP_REACH };
+  // A cartridge is taken from the square beside it, not only its own; not from the diagonal.
+  await T.ensureKind('battle');
+  const area = T.goTo((x) => x.kind === 'battle');
+  u.pickups = u.pickups.filter((p) => p.area !== area);
+  const here = g.playerPos.slice();
+  const side = { kind: 'ammo', area, safe: false, pos: [here[0] + 3, here[1]], shots: 2, beacon: 'ammo_beacon', gain: 0.55 };
+  const diag = { kind: 'ammo', area, safe: false, pos: [here[0] - 3, here[1] - 3], shots: 2, beacon: 'ammo_beacon', gain: 0.55 };
+  u.pickups.push(side, diag);
+  const ammo0 = u.ammo;
+  g._utUpdatePickups();
+  out.sideTaken = !u.pickups.includes(side); out.diagLeft = u.pickups.includes(diag); out.gained = u.ammo - ammo0;
+  u.pickups = u.pickups.filter((p) => p !== diag);
+  // A tower item appears 12 to 30 units from you while you are in its area.
+  await T.ensureKind('tower');
+  const tw = T.goTo((x) => x.kind === 'tower');
+  const dists = [];
+  for (let i = 0; i < 12; i++) { g._utSpawnTowerItem(tw); const it = u.towerItems.get(tw.id); if (it) dists.push(W.dist2 ? 0 : Math.hypot(g._utItemPos(it)[0] - g.playerPos[0], g._utItemPos(it)[1] - g.playerPos[1])); }
+  out.itemDists = dists.map((d) => Math.round(d));
+  out.itemsNear = dists.length === 12 && dists.every((d) => d >= ITEM_NEAR[0] - 0.01 && d <= ITEM_NEAR[1] + 0.01);
+  // The rival's ramp: difficulty and hits at ten minutes.
+  const el0 = u.elapsed;
+  u.elapsed = 600;
+  out.diff10 = g._utThrowerDifficulty();
+  const e = g._utSpawnEnemy(tw);
+  out.hits10 = e ? e.hitsNeeded : null;
+  if (e) { u.enemies.splice(u.enemies.indexOf(e), 1); }
+  u.elapsed = 30;
+  const e2 = g._utSpawnEnemy(tw);
+  out.hitsStart = e2 ? e2.hitsNeeded : null;
+  if (e2) u.enemies.splice(u.enemies.indexOf(e2), 1);
+  u.elapsed = el0;
+  // The crowd: every battle area has one, under its drone and drums, in its room.
+  T.goTo((x) => x.kind === 'battle');
+  T.quiet();
+  g.updateUltimateMode(1 / 30);
+  await new Promise((r) => setTimeout(r, 800));
+  const s = u.areaSounds.get(area.id);
+  out.crowd = s && s.crowdIn ? { name: s.crowdIn.name, level: s.crowdIn.l, send: s.crowdIn.send, placedToo: !!s.crowd } : null;
+  out.everyBattleHasCrowd = u.world.areas.filter((x) => x.kind === 'battle').every((x) => !!x.crowd);
+  out.safeZonesWithout = u.world.areas.filter((x) => x.kind === 'event').every((x) => !/stadium_crowd/.test(x.ambience));
+  return out;
+});
+check(third.sideTaken && third.diagLeft && third.gained === 2, `a cartridge is taken from the square beside it, not from the diagonal (reach ${third.reach})`);
+check(third.itemsNear, 'a tower item appears 12 to 30 units from you, as on a tower floor: ' + JSON.stringify(third.itemDists));
+check(third.diff10 === 14 && third.hits10 === 6 && third.hitsStart === 1, `the rival's difficulty is 14 at ten minutes and it takes 6 hits (1 at the start): ${third.diff10}, ${third.hits10}, ${third.hitsStart}`);
+// The crowd erupts right after the bang of a chaser going down in a battle area.
+const roar = await page.evaluate(async () => {
+  const g = window.__el.game; const u = g.ut; const a = window.__el.audio; const T = window.__ut;
+  const area = T.goTo((x) => x.kind === 'battle');
+  const played = []; const orig = a.play.bind(a);
+  a.play = (n, o) => { played.push([n, performance.now(), o || {}]); return orig(n, o); };
+  const e = g._utSpawnEnemy(area) || u.enemies.find((x) => x.area === area && x.kind === 'chaser');
+  if (!e) { a.play = orig; return { skipped: true }; }
+  e.x = g.playerPos[0]; e.y = g.playerPos[1] - 6;
+  g._utKillEnemy(e, 'laser');
+  await new Promise((r) => setTimeout(r, 1500));
+  a.play = orig;
+  const bang = played.find(([n]) => n === 'explosion'); const cheer = played.find(([n]) => /^ut_crowd_roar_/.test(n));
+  // A kill in a labyrinth draws no roar.
+  const lab = T.goTo((x) => x.kind !== 'battle' && x.kind !== 'event');
+  let elsewhere = null;
+  if (lab) {
+    const before = played.length; const spy = []; a.play = (n, o) => { spy.push(n); return orig(n, o); };
+    const e2 = { kind: 'chaser', area: lab, x: g.playerPos[0], y: g.playerPos[1] - 6, voice: null };
+    u.enemies.push(e2); g._utKillEnemy(e2, 'laser');
+    await new Promise((r) => setTimeout(r, 1200));
+    a.play = orig; elsewhere = spy.filter((n) => /^ut_crowd_roar_/.test(n)).length;
+  }
+  return { bang: !!bang, cheer: cheer ? { name: cheer[0], after: cheer[1] - (bang ? bang[1] : 0), placed: !!(cheer[2].pos), volume: cheer[2].volume } : null, elsewhere };
+});
+check(roar.skipped || (roar.bang && roar.cheer && roar.cheer.after > 250 && roar.cheer.after < 700 && !roar.cheer.placed), 'the crowd erupts about a third of a second after the bang, all round you: ' + JSON.stringify(roar.cheer));
+check(roar.skipped || roar.elsewhere === 0, 'a kill outside a battle area draws no roar');
+check(!third.poolHasCrowd && third.safeZonesWithout && third.everyBattleHasCrowd && third.crowd && /stadium_crowd/.test(third.crowd.name) && Math.abs(third.crowd.level - 0.8 * 0.55) < 0.02 && third.crowd.placedToo, 'the stadium crowd roars in every battle area, under the drone and drums, and in no safe zone: ' + JSON.stringify(third.crowd));
 
 check(errors.length === 0, 'no page errors' + (errors.length ? ': ' + errors.slice(0, 3).join(' | ') : ''));
 await browser.close();

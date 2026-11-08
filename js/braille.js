@@ -1,4 +1,4 @@
-// Braille keyboard and Braille display support for the web version (web 2.0.0),
+// Braille keyboard and Braille display support for the web version (web 2.1.0),
 // on a Windows computer: the port of the Windows game's braille_input.py.
 //
 // Why it is needed (the same as on Windows): on a Braille notetaker such as the

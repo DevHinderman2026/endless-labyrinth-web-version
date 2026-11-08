@@ -85,7 +85,11 @@ export const AMBIENCE_RANGE = 15.0;             // a neighbouring area's air, an
 export const AMBIENCE_LEVEL = 0.8;
 export const DOOR_LEAK = 0.85;                  // through a doorway, against an open border
 export const KEEP_SLOTS = 2;                    // an area's air keeps running while within this many slots of yours
-export const REACH = 1.6;                       // walking into a thing: its own cell
+export const REACH = 1.6;                       // walking into the elevator: its own cell
+export const PICKUP_REACH = 3.2;                // a cartridge, credit, potion or tower item: its cell or the next (Battle, Tower and Island take theirs within 3 units)
+export const ITEM_NEAR = [12.0, 30.0];          // a tower item lies this far from you when it appears, as on a tower floor (was anywhere in the area)
+export const THROWER_SECONDS = 45;              // a tower rival's difficulty rises one point this often (was 30)
+export const THROWER_HITS_MINUTES = 2;          // and the hits it takes never exceed 1 + minutes played / this
 export const COMPASS_HOLD_MS = 1000;
 export const COMPASS_BEEP_EVERY = 0.45;
 const COMPASS_DIRS = [[0, -1], [1, 0], [0, 1], [-1, 0]];   // ahead, right, behind, left
@@ -123,9 +127,16 @@ export const EVENT_BACKGROUNDS = ['evt_amb_bees', 'evt_amb_blizzard', 'evt_amb_c
   'evt_amb_howling_wind', 'evt_amb_ice_cave', 'evt_amb_industrial', 'evt_amb_jungle', 'evt_amb_kitchen', 'evt_amb_lava',
   'evt_amb_library', 'evt_amb_market', 'evt_amb_marsh_frogs', 'evt_amb_medieval_village', 'evt_amb_morning_birds',
   'evt_amb_ocean_night', 'evt_amb_organ', 'evt_amb_rain', 'evt_amb_restaurant_kitchen', 'evt_amb_river', 'evt_amb_ship_creak',
-  'evt_amb_sizzling_oil', 'evt_amb_space', 'evt_amb_spaceship', 'evt_amb_spooky', 'evt_amb_spring_birds', 'evt_amb_stadium_crowd',
+  'evt_amb_sizzling_oil', 'evt_amb_space', 'evt_amb_spaceship', 'evt_amb_spooky', 'evt_amb_spring_birds',
   'evt_amb_storm', 'evt_amb_summer', 'evt_amb_tavern', 'evt_amb_train_station', 'evt_amb_underwater', 'evt_amb_water_drip',
   'evt_amb_waterfall', 'evt_amb_wind_trees', 'evt_amb_winter_wind', 'evt_amb_witch'];
+// The arena crowd (Russell, 8 Nov): the stadium crowd is a battle area's, under its
+// drone and drums, not a safe zone's.
+export const BATTLE_CROWD = 'evt_amb_stadium_crowd';
+export const CROWD_LEVEL = 0.55;                // against the drone's 1 and the drums' 0.85
+export const ROARS = ['ut_crowd_roar_1', 'ut_crowd_roar_2'];   // the crowd erupting when a chaser goes down (web-only recordings, the ultimate pack)
+export const ROAR_LEVEL = 0.6;
+export const ROAR_AFTER = 0.35;                 // seconds after the bang
 // Each safe zone's echo is sized to its background: a cathedral, a cave or an ice
 // cave ring long (the cathedral's echo, stretched); a kitchen, a library or a
 // tavern are small rooms (the tower's short echo); the open air has a short,
@@ -288,7 +299,7 @@ const mixin = {
   // A thrower's difficulty for TowerEnemy: tower one's first floors at the start,
   // tower three's deep into a run (its hits needed and throws follow).
   _utThrowerDifficulty() {
-    return Math.max(1, Math.min(40, 1 + Math.floor(this.ut.elapsed / 30)));
+    return Math.max(1, Math.min(40, 1 + Math.floor(this.ut.elapsed / THROWER_SECONDS)));
   },
 
   _utMultiplier() { return 1 + MULTIPLIER_STEP * this.ut.worlds; },
@@ -339,7 +350,10 @@ const mixin = {
       a.stretch = { labyrinth: 0.9, battle: 1.4, tower: 1.15, island: 1, event: 1 }[a.kind] * uniform(0.9, 1.15);
       a.steps = a.kind === 'island' ? STEPS_SAND : STEPS_STONE;
       if (a.kind === 'labyrinth') a.ambience = pick(LABYRINTH_DRONES);
-      else if (a.kind === 'battle') { a.ambience = pick(BATTLE_DRONES); a.drums = pick(BATTLE_DRUMS); }
+      else if (a.kind === 'battle') {
+        a.ambience = pick(BATTLE_DRONES); a.drums = pick(BATTLE_DRUMS);
+        if (this.audio.has(BATTLE_CROWD)) a.crowd = aliasRecording(this.audio, BATTLE_CROWD, `event_amb_file_${BATTLE_CROWD}`);
+      }
       else if (a.kind === 'tower') a.ambience = pick(TOWER_DRONES);
       else if (a.kind === 'island') {
         a.ambience = pick(ISLAND_SHORES.filter((n) => this.audio.has(n)));
@@ -466,6 +480,9 @@ const mixin = {
     if (a.kind === 'tower') {
       const diff = this._utThrowerDifficulty();
       e = new TowerEnemy([0, 0], diff, randint(0, 9), ARENA, 1, 0);
+      // The hits it takes grow with the minutes, not the square root of the difficulty
+      // alone: items are won one race at a time here (tower one caps them by floor).
+      e.hitsNeeded = Math.max(1, Math.min(e.hitsNeeded, 1 + Math.floor(this.ut.elapsed / 60 / THROWER_HITS_MINUTES)));
       e.kind = 'thrower';
       e.area = a;
       [e.x, e.y] = [pos[0] - a.centre[0], pos[1] - a.centre[1]];
@@ -491,7 +508,14 @@ const mixin = {
     u.kills += 1;
     this._utScore(POINTS[e.kind]);
     const d = dist2(pos, this.playerPos);
-    this._utLater(Math.min(0.5, d * 0.015), 'explosion', pos);
+    const bang = Math.min(0.5, d * 0.015);
+    this._utLater(bang, 'explosion', pos);
+    // In a battle area the crowd erupts the moment the bang is heard (Russell, 8
+    // Nov): all round you, in the area's room.
+    if (e.area && e.area.crowd && e.area === u.area) {
+      const roar = ROARS.filter((n) => this.audio.has(n));
+      if (roar.length) this._utLater(bang + ROAR_AFTER, choice(roar), null, { volume: ROAR_LEVEL });
+    }
     if (e.kind === 'thrower') {
       // Its throws in the air go with it.
       for (const s of [...u.projectiles]) if (s.owner === e) this._utDropProjectile(s);
@@ -578,8 +602,13 @@ const mixin = {
     const u = this.ut;
     const old = u.towerItems.get(a.id);
     if (old && old.channel) { old.channel.stop(); u.voices.delete(old.channel); }
-    const pos = randomFloor(u.world, a, rand, { from: this.playerPos, minDist: 10.0,
-      avoid: u.enemies.filter((e) => e.area === a).map((e) => this._utEnemyPos(e)), clearance: 10.0 });
+    // Where a tower floor puts it: 12 to 30 units from you (from the area's middle
+    // while you are elsewhere), clear of the rival; failing that, anywhere in the area.
+    const from = u.area === a ? this.playerPos : a.centre;
+    const avoid = u.enemies.filter((e) => e.area === a).map((e) => this._utEnemyPos(e));
+    const pos = randomFloor(u.world, a, rand, { from, minDist: ITEM_NEAR[0], maxDist: ITEM_NEAR[1], avoid, clearance: 10.0 })
+      || randomFloor(u.world, a, rand, { from, minDist: ITEM_NEAR[0], maxDist: ITEM_NEAR[1] * 1.5, avoid, clearance: 6.0 })
+      || randomFloor(u.world, a, rand, { from, minDist: 10.0, avoid, clearance: 10.0 });
     if (!pos) { u.towerItems.delete(a.id); return; }
     const item = new TowerItem([0, 0], ARENA);
     [item.x, item.y] = [pos[0] - a.centre[0], pos[1] - a.centre[1]];
@@ -597,12 +626,12 @@ const mixin = {
   },
 
   // ---------------------------------------------------------------- timing
-  _utLater(delay, name, pos) {
+  _utLater(delay, name, pos, opts = {}) {
     const run = this.ut.run;
     const fire = () => {
       if (!this.ut || this.ut.run !== run || this.state !== STATE) return;
       if (this.isPaused || this.state === 'confirm_exit' || this.state === 'help') { setTimeout(fire, 250); return; }
-      this._utPlay(name, pos);
+      this._utPlay(name, pos, opts);
     };
     setTimeout(fire, Math.max(0, delay) * 1000);
   },
@@ -864,7 +893,7 @@ const mixin = {
       const item = u.towerItems.get(a.id);
       if (item) {
         const pos = this._utItemPos(item);
-        if (dist2(pos, this.playerPos) < REACH) {
+        if (dist2(pos, this.playerPos) < PICKUP_REACH) {
           if (!u.towerCarry || u.towerCarry.area !== a.id) u.towerCarry = { area: a.id, count: 0 };
           u.towerCarry.count += 1;
           this.audio.play('ammo');
@@ -891,7 +920,7 @@ const mixin = {
     const u = this.ut;
     for (const p of [...u.pickups]) {
       if (p.area !== u.area) continue;
-      if (dist2(p.pos, this.playerPos) < REACH) this._utTakePickup(p);
+      if (dist2(p.pos, this.playerPos) < PICKUP_REACH) this._utTakePickup(p);
     }
   },
 
@@ -1008,7 +1037,7 @@ const mixin = {
     const u = this.ut;
     const s = u.seabed;
     for (const p of [...s.pickups]) {
-      if (dist2(p.pos, this.playerPos) < REACH) {
+      if (dist2(p.pos, this.playerPos) < PICKUP_REACH) {
         if (p.voice) { p.voice.stop(); u.voices.delete(p.voice); }
         s.pickups.splice(s.pickups.indexOf(p), 1);
         if (p.kind === 'ammo') { u.ammo += p.shots; this.audio.play('ammo'); this._utScore(POINTS.ammo); }
@@ -1083,6 +1112,10 @@ const mixin = {
           s.drums = this._utPlay(a.drums, a.centre, { loops: -1, volume: 0.0, fadeMs: 600, send });
           s.drumsIn = this._utPlay(a.drums, null, { loops: -1, volume: 0.0, fadeMs: 600, send });
         }
+        if (a.crowd) {
+          s.crowd = this._utPlay(a.crowd, a.centre, { loops: -1, volume: 0.0, fadeMs: 600, send });
+          s.crowdIn = this._utPlay(a.crowd, null, { loops: -1, volume: 0.0, fadeMs: 600, send });
+        }
         if (a.kind === 'island') s.hum = this._utPlay('elevator_hum', posOf(a.elevator[0], a.elevator[1]), { loops: -1, volume: 0.0 });
         u.areaSounds.set(a.id, s);
       }
@@ -1113,6 +1146,7 @@ const mixin = {
       };
       pair(s.amb, s.ambIn, 1);
       pair(s.drums, s.drumsIn, 0.85);
+      pair(s.crowd, s.crowdIn, CROWD_LEVEL);
       if (s.hum) {
         const lp = posOf(a.elevator[0], a.elevator[1]);
         // The lift's hum is a thing of the ground: silent in the car and on the

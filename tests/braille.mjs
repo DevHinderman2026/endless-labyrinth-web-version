@@ -1,4 +1,4 @@
-// Braille keyboard and display support on Windows (web 2.0.0, js/braille.js), in
+// Braille keyboard and display support on Windows (web 2.1.0, js/braille.js), in
 // Chromium through Playwright with a Windows user agent. Run with the site served:
 //   node --import ./tests/github-stub.mjs tests/braille.mjs http://localhost:8765
 // A Braille driver's text is imitated the two ways a browser can see it: key
