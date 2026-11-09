@@ -109,6 +109,8 @@ export const RIDE_TIME = 8.0;
 const DOORS_SHUT = 0.34; const DOORS_OPEN = 0.67; const DOORS_WIDE = 0.93;   // the ride's stages (island.js)
 const ARRIVE_CHIME_LEAD = 0.5;
 const ARRIVAL_GRACE = 3.0;             // Island Mode: seconds nothing can touch you after stepping out of the lift
+export const ARRIVE_STEPS = [4, 6];    // Island Mode: back up on the island you step out this many steps from the lift (Island's own minimum is 12 units, four steps)
+const ARRIVE_CLEAR = 12.0;             // and, where the island allows, at least this far (units) from every chaser
 const BUBBLES_EVERY = [3.0, 5.0];     // Island Mode: your own bubbles on the seabed
 const BUBBLES_FIRST = [2.0, 4.0];
 const BREATHING_LEVEL = 0.85;         // the diver's breathing on the seabed (a web-only recording, in the ultimate pack)
@@ -1347,7 +1349,10 @@ const mixin = {
       u.place = 'world';
       u.seabed = null;
       u.area = r.area;
-      this.playerPos = posOf(r.area.elevator[0], r.area.elevator[1]);
+      // Island Mode: you step out a few steps from the lift, never onto it, so a
+      // stray swipe cannot send you straight back down.
+      this.playerPos = this._utArrivalPos(r.area);
+      this.playerFacing = [0, -1];
       u.liftArmed = false;
       // Island Mode's arrival grace: nothing can touch you for a moment after
       // stepping out of the lift.
@@ -1355,6 +1360,27 @@ const mixin = {
       this._utRefreshRooms();
       this._utListenerMix();
     }
+  },
+
+  // Where you step out on an island after the ride up: a sand square ARRIVE_STEPS
+  // from the elevator, never a pickup's square, and away from the chasers where
+  // the island allows it (else the square farthest from them).
+  _utArrivalPos(a) {
+    const u = this.ut;
+    const [ex, ey] = a.elevator;
+    const chasers = u.enemies.filter((e) => e.area === a).map((e) => this._utEnemyPos(e));
+    const things = u.pickups.filter((p) => p.area === a).map((p) => p.pos);
+    const far = (pos) => (chasers.length ? Math.min(...chasers.map((c) => dist2(c, pos))) : Infinity);
+    const pick = (lo, hi) => a.floorCells
+      .filter(([cx, cy]) => { const d = Math.hypot(cx - ex, cy - ey); return d >= lo && d <= hi; })
+      .map(([cx, cy]) => posOf(cx, cy))
+      .filter((pos) => !things.some((t) => dist2(t, pos) < PICKUP_REACH));
+    let spots = pick(ARRIVE_STEPS[0], ARRIVE_STEPS[1]);
+    if (!spots.length) spots = pick(2, AREA_CELLS);   // (a tiny island: anywhere off the lift)
+    if (!spots.length) return posOf(ex, ey);
+    const clear = spots.filter((pos) => far(pos) >= ARRIVE_CLEAR);
+    if (clear.length) return choice(clear);
+    return spots.reduce((best, pos) => (far(pos) > far(best) ? pos : best));
   },
 
   _utUpdateSeabed(dt) {

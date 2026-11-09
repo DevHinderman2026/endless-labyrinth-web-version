@@ -330,18 +330,37 @@ const island = await page.evaluate(async () => {
   for (let i = 0; i < 30 * 40 && u.place === 'ride'; i++) { g.updateUltimateMode(1 / 30); if (i % 30 === 0) await new Promise((r) => setTimeout(r, 5)); }
   const backUp = u.place;
   const safeAfter = u.safe;
+  const outCell = W2.cellOf(g.playerPos);
+  const outSteps = Math.hypot(outCell[0] - isl.elevator[0], outCell[1] - isl.elevator[1]);
+  const outOnSand = isl.floorCells.some(([x, y]) => x === outCell[0] && y === outCell[1]);
+  const outFacing = g.playerFacing.slice();
+  // One step back toward the lift does not ride you down unless it lands on the lift.
+  const outArmed = u.liftArmed;
+  // The rule itself, many times over, with chasers on the island: a few steps
+  // out, on the sand, never on a pickup, clear of the chasers wherever possible.
+  const rule = [];
+  for (let i = 0; i < 60; i++) {
+    const pos = g._utArrivalPos(isl);
+    const c = W2.cellOf(pos);
+    const near = Math.min(Infinity, ...u.enemies.filter((e) => e.area === isl).map((e) => Math.hypot(g._utEnemyPos(e)[0] - pos[0], g._utEnemyPos(e)[1] - pos[1])));
+    const onPickup = u.pickups.some((p) => p.area === isl && Math.hypot(p.pos[0] - pos[0], p.pos[1] - pos[1]) < 3.2);
+    rule.push({ steps: Math.hypot(c[0] - isl.elevator[0], c[1] - isl.elevator[1]), sand: isl.floorCells.some(([x, y]) => x === c[0] && y === c[1]), near, onPickup });
+  }
   await new Promise((r) => setTimeout(r, 300));
   const waterLeft = [...a.live].filter((v) => v.name === 'underwater' && v.busy).length;
   await new Promise((r) => setTimeout(r, 700));
   const breathLeft = [...a.live].filter((v) => v.name === 'ut_diver_breathing' && v.busy).length;
   a.play = orig; g.tts.speak = os;
-  return { inCar, playedInCar, spoken, compassInCar, onSeabed, edgeSound, stepsOnSeabed, trail: trail.slice(0, 12), rideStill, seabedHum, breathing, bubbles, rodeUp, backUp, safeAfter, waterLeft, breathLeft };
+  return { inCar, playedInCar, spoken, compassInCar, onSeabed, edgeSound, stepsOnSeabed, trail: trail.slice(0, 12), rideStill, seabedHum, breathing, bubbles, rodeUp, backUp, safeAfter, waterLeft, breathLeft, outSteps, outOnSand, outFacing, outArmed, rule, chasers: u.enemies.filter((e) => e.area === isl).length };
 });
 check(island.skipped || island.rideStill === 0, `the ride recording is eased out by the time you arrive (${island.rideStill} still playing)`);
 check(island.skipped || (island.seabedHum !== null && island.seabedHum > 0), `on the seabed the way up hums where it stands (level ${island.seabedHum && island.seabedHum.toFixed(2)})`);
 check(island.skipped || (island.breathing && island.breathing.loop && island.breathing.busy && Math.abs(island.breathing.level - 0.85) < 0.01 && island.breathing.send === 0 && !island.breathing.wet && !island.breathing.placed), 'on the seabed the diver\'s breathing loops all round you, with no echo: ' + JSON.stringify(island.breathing));
 check(island.skipped || island.bubbles >= 1, `your own bubbles come now and then on the seabed (${island.bubbles} in six seconds)`);
 check(island.skipped || (island.rodeUp === 'ride' && island.backUp === 'world' && island.safeAfter >= 2.5 && island.waterLeft === 0 && island.breathLeft === 0), 'the ride up lands you on the island with Island Mode\'s arrival grace, the water and the breathing left behind: ' + JSON.stringify({ rodeUp: island.rodeUp, backUp: island.backUp, safe: island.safeAfter, waterLeft: island.waterLeft, breathLeft: island.breathLeft }));
+check(island.skipped || (island.outOnSand && island.outSteps >= 4 && island.outSteps <= 6 && island.outFacing[0] === 0 && island.outFacing[1] === -1), `back up, you step out on the sand a few steps from the lift, facing ahead, as in Island Mode (${island.outSteps && island.outSteps.toFixed(1)} steps)`);
+check(island.skipped || island.rule.every((r) => r.sand && r.steps >= 4 && r.steps <= 6 && !r.onPickup), 'every step-out square is sand, 4 to 6 steps from the lift, never a pickup\'s square (60 draws)');
+check(island.skipped || island.chasers === 0 || island.rule.filter((r) => r.near >= 12).length >= 54, `the step-out square keeps clear of the chasers (${island.chasers} on the island; ${island.rule ? island.rule.filter((r) => r.near >= 12).length : 0} of 60 at least four steps from every one)`);
 check(!island.skipped, 'a world with an island was found');
 check(island.skipped || (island.inCar === 'ride' && island.playedInCar.length === 0), 'in the elevator car every swipe, the shot and the throw are silent (Island Mode): played ' + JSON.stringify(island.playedInCar));
 check(island.skipped || (island.compassInCar === false && island.spoken.some((t) => /Compass not available in the elevator/.test(t))), 'a hold in the car says the compass is not available there: ' + JSON.stringify(island.spoken));

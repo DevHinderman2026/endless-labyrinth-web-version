@@ -296,7 +296,8 @@ const island = await page.evaluate(async () => {
     g.updateUltimateMode(1 / 30);
     if (i % 30 === 0) await new Promise((r) => setTimeout(r, 20));
   }
-  return { skipped: false, riding, blocked, held, place, under, pickups, routeSeabed, route2, upRide, back: u.place, area: u.area.kind, at: g.playerPos, lift: isl.elevator.map((c) => c * 3), buses: a.areaBuses.size };
+  const atCell = [Math.round(g.playerPos[0] / 3), Math.round(g.playerPos[1] / 3)];
+  return { skipped: false, riding, blocked, held, place, under, pickups, routeSeabed, route2, upRide, back: u.place, area: u.area.kind, at: g.playerPos, lift: isl.elevator.map((c) => c * 3), steps: Math.hypot(atCell[0] - isl.elevator[0], atCell[1] - isl.elevator[1]), onSand: isl.floorCells.some(([x, y]) => x === atCell[0] && y === atCell[1]), armed: u.liftArmed, buses: a.areaBuses.size };
 });
 if (island.skipped) console.log('SKIP no island in this world');
 else {
@@ -304,7 +305,7 @@ else {
   check(island.place === 'seabed' && island.under === 'underwater', 'the ride arrives on the seabed, with the water');
   check(island.pickups.filter((k) => k === 'ammo').length >= 1, 'the seabed holds ammo: ' + island.pickups.join(', '));
   check(island.routeSeabed === null && JSON.stringify(island.route2) === JSON.stringify([0, 1]), 'on the seabed the compass points to the elevator');
-  check(island.upRide === 'ride' && island.back === 'world' && island.area === 'island' && island.at[0] === island.lift[0] && island.at[1] === island.lift[1], 'the elevator up brings you back onto the island, at the lift');
+  check(island.upRide === 'ride' && island.back === 'world' && island.area === 'island' && island.onSand && island.steps >= 4 && island.steps <= 6, `the elevator up brings you back onto the island, on the sand a few steps from the lift, as in Island Mode (${island.steps.toFixed(1)} steps)`);
 }
 
 // --------------------------------------------------------------- a tower area: items only, never the laser
