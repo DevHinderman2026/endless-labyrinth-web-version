@@ -71,7 +71,7 @@ export const BACK_STEPS_PER_MINUTE = 200;
 const S = {
   MENU: 'menu', HELP: 'help', STANDARD: 'standard', BATTLE: 'battle', GAME_OVER: 'game_over',
   HIGH_SCORES: 'high_scores', CONFIRM_EXIT: 'confirm_exit', CONFIRM_RESET: 'confirm_reset', PRACTICE: 'practice',
-  KEY_TEST: 'key_test',   // Windows (web 2.1.0): the Braille key test (js/braille.js)
+  KEY_TEST: 'key_test',   // Windows (web 3.0.0): the Braille key test (js/braille.js)
 };
 const PLAYING = [S.STANDARD, S.BATTLE];
 

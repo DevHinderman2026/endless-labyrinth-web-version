@@ -21,7 +21,7 @@ const shown = $('said');
 const statusLine = $('status');
 const store = new Store();
 const keyboard = keyboardDevice();
-// Windows (web 2.1.0): the Braille keyboard translator and the Braille display's
+// Windows (web 3.0.0): the Braille keyboard translator and the Braille display's
 // view of the game (js/braille.js); on every other device it does nothing.
 const braille = new Braille({ field: $('console'), store, enabled: windowsOnly(), emit: (g) => onGesture(g), speak: (t) => speech.speak(t) });
 const speech = new Speech({ show: (t) => { shown.textContent = t; braille.show(t); }, rateLevel: store.settings.speechRate, words: keyboard ? keyWords : null, muted: () => braille.speechMuted });

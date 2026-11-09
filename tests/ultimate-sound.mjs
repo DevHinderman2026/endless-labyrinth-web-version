@@ -1,4 +1,4 @@
-// Ultimate Mode (web 2.1.0): how it sounds, measured. Run with the site served
+// Ultimate Mode (web 3.0.0): how it sounds, measured. Run with the site served
 // (python3 -m http.server 8765):
 //   node --import ./tests/github-stub.mjs tests/ultimate-sound.mjs http://localhost:8765
 // Russell's second play-test: footsteps, the countdown and pickups were dry, the
