@@ -362,6 +362,33 @@ check(island.skipped || (island.outOnSand && island.outSteps >= 4 && island.outS
 check(island.skipped || island.rule.every((r) => r.sand && r.steps >= 4 && r.steps <= 6 && !r.onPickup), 'every step-out square is sand, 4 to 6 steps from the lift, never a pickup\'s square (60 draws)');
 check(island.skipped || island.chasers === 0 || island.rule.filter((r) => r.near >= 12).length >= 54, `the step-out square keeps clear of the chasers (${island.chasers} on the island; ${island.rule ? island.rule.filter((r) => r.near >= 12).length : 0} of 60 at least four steps from every one)`);
 check(!island.skipped, 'a world with an island was found');
+
+// The island elevator's hum belongs to its island: silent from a neighbouring area,
+// however near the border, and heard once you are on the island.
+const hum = await page.evaluate(async () => {
+  const g = window.__el.game; const u = g.ut; const T = window.__ut; const W = T.world;
+  if (!u.world) return { skipped: 'no run' };
+  await T.ensureKind('island');
+  const isl = u.world.areas.find((x) => x.kind === 'island');
+  if (!isl) return { skipped: 'no island' };
+  const bd = isl.borders.find((b) => b.a === isl.id || b.b === isl.id);
+  if (!bd) return { skipped: 'no neighbour' };
+  const nb = u.world.areas.find((x) => x.id === (bd.a === isl.id ? bd.b : bd.a));
+  const lp = W.posOf(isl.elevator[0], isl.elevator[1]);
+  const near = nb.floorCells.map(([x, y]) => W.posOf(x, y)).reduce((b, p) => (Math.hypot(p[0] - lp[0], p[1] - lp[1]) < Math.hypot(b[0] - lp[0], b[1] - lp[1]) ? p : b));
+  u.place = 'world'; u.safe = 99;
+  const at = (area, pos) => { u.area = area; g.playerPos = pos; g._utRefreshRooms(); g._utListenerMix(); for (let i = 0; i < 6; i++) g.updateUltimateMode(1 / 30); };
+  at(nb, near);
+  const s = u.areaSounds.get(isl.id);
+  const outside = s && s.hum ? s.hum.l : null;
+  const fromLift = Math.hypot(near[0] - lp[0], near[1] - lp[1]) / 3;
+  // On the island, the same distance from the lift.
+  const inCell = isl.floorCells.map(([x, y]) => W.posOf(x, y)).find((p) => Math.abs(Math.hypot(p[0] - lp[0], p[1] - lp[1]) / 3 - Math.min(fromLift, 14)) < 1);
+  at(isl, inCell || W.posOf(isl.elevator[0], isl.elevator[1] + 3));
+  const inside = s && s.hum ? s.hum.l : null;
+  return { outside, inside, fromLift, nb: nb.kind };
+});
+check((hum.skipped && hum.skipped !== 'no run') || (hum.outside === 0 && hum.inside > 0), `the island elevator's hum is silent from the ${hum.nb || 'next'} area beside the island (${hum.fromLift ? hum.fromLift.toFixed(1) : '?'} steps from the lift: ${hum.outside}) and heard on the island (${hum.inside && hum.inside.toFixed(2)})` + (hum.skipped ? ' [skipped: ' + hum.skipped + ']' : ''));
 check(island.skipped || (island.inCar === 'ride' && island.playedInCar.length === 0), 'in the elevator car every swipe, the shot and the throw are silent (Island Mode): played ' + JSON.stringify(island.playedInCar));
 check(island.skipped || (island.compassInCar === false && island.spoken.some((t) => /Compass not available in the elevator/.test(t))), 'a hold in the car says the compass is not available there: ' + JSON.stringify(island.spoken));
 check(island.skipped || (island.onSeabed === 'seabed' && island.edgeSound === 'boundary'), `the seabed's edge is the boundary buzz, not a wall (${island.edgeSound})` + (island.edgeSound === 'boundary' ? '' : ' ' + JSON.stringify(island.trail)));

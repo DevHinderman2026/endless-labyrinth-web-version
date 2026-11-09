@@ -1511,8 +1511,9 @@ const mixin = {
       if (s.hum) {
         const lp = posOf(a.elevator[0], a.elevator[1]);
         // The lift's hum is a thing of the ground: silent in the car and on the
-        // seabed, as Island Mode stops it when the ride begins.
-        const hl = onWorld ? levelAt(dist2(lp, this.playerPos)) : 0;
+        // seabed, as Island Mode stops it when the ride begins. Like its chime, it
+        // belongs to its own island: silent from any other area, however near.
+        const hl = onWorld && u.area === a ? levelAt(dist2(lp, this.playerPos)) : 0;
         this._utFollow(s.hum, lp, hl, aboveHeight);
       }
     }
