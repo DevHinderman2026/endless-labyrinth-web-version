@@ -82,7 +82,7 @@ const w0 = await page.evaluate(async () => {
   const placed = [...a.live].filter((v) => v.loop && v.placed).length;
   return {
     worldNo: u.worldNo, areas: kinds, hp: u.hp, ammo: u.ammo, points: u.points, worldTime: u.worldTime, safe: u.safe,
-    enemies: u.enemies.length, enemyAreas: enemyAreas.length, perArea, labsQuiet: u.enemies.every((e) => e.area.kind !== 'labyrinth' && e.area.kind !== 'event'),
+    enemies: u.enemies.length, enemyAreas: enemyAreas.length, perArea, easyOk: enemyAreas.every((x) => { const n = perArea[x.id] || 0; return x.kind === 'tower' ? n === 1 : n >= 1 && n <= 2; }), labsQuiet: u.enemies.every((e) => e.area.kind !== 'labyrinth' && e.area.kind !== 'event'),
     kindsRight: u.enemies.every((e) => (e.kind === 'thrower') === (e.area.kind === 'tower')),
     pickups: u.pickups.map((p) => p.kind), safeAmmo: u.pickups.filter((p) => p.safe).length, eventAreas: kinds.filter((k) => k === 'event').length,
     loops: near.length, placed, buses: a.areaBuses.size, said: document.getElementById('said').textContent,
@@ -111,7 +111,7 @@ check(w0.eventAreas >= 1, 'at least one event area (the safe zone)');
 check(w0.hp === 100 && w0.ammo === 0 && w0.points === 0, 'starts with 100 health, no ammo, no points');
 check(w0.worldTime > 58 && w0.worldTime <= 240, `the first world lasts somewhere between one and four minutes (${w0.worldTime.toFixed(1)} left)`);
 check(w0.labsQuiet && w0.kindsRight, 'enemies only in battle, island and tower areas; throwers in tower areas only');
-check(w0.enemies === w0.enemyAreas, `easy stretch: ${w0.enemies} enemies in ${w0.enemyAreas} enemy areas (one each: a chaser, or a tower area's one rival)`);
+check(w0.easyOk, `easy stretch: ${w0.enemies} enemies in ${w0.enemyAreas} enemy areas (one or two chasers in each battle or island area, one rival in each tower area): ` + JSON.stringify(w0.perArea));
 check(w0.farFromEnemies, 'no enemy within 10 units of the player at the start');
 check(w0.pickups.filter((k) => k === 'ammo').length >= 3 && w0.safeAmmo === w0.eventAreas, `ammo scattered (${w0.pickups.filter((k) => k === 'ammo').length}), one in each safe zone`);
 check(w0.pickups.filter((k) => k === 'credit').length >= 2 && w0.pickups.filter((k) => k === 'credit').length <= 3, 'two or three credits');

@@ -46,7 +46,12 @@ await page.evaluate(async () => {
     u.area = area; u.safe = 0;
     // (No bus and no slide underfoot: a check that walks must not be carried off.)
     u.bus = null; u.busAt = null; u.slide = null; u.slides = []; u.place = 'world';
-    g.playerPos = [(area.x0 + 16) * 3, (area.y0 + 16) * 3];
+    // The middle of the area, or the open square nearest it: in a labyrinth the
+    // very middle is sometimes a wall, and a check made from inside a wall fails.
+    const mx = area.x0 + 16; const my = area.y0 + 16;
+    const [cx, cy] = world.isFloor(u.world, mx, my) ? [mx, my]
+      : area.floorCells.reduce((b, c) => (Math.hypot(c[0] - mx, c[1] - my) < Math.hypot(b[0] - mx, b[1] - my) ? c : b));
+    g.playerPos = [cx * 3, cy * 3];
     g._utRefreshRooms(); g._utListenerMix();
     g.updateUltimateMode(1 / 30);
     return area;
@@ -148,7 +153,7 @@ const unplaced = await page.evaluate(async () => {
   out.laser = lv ? { taps: lv.wet && lv.wet.taps ? lv.wet.taps.size : 0, ...(await T.measure(lv, area.id)) } : null;
   return out;
 });
-const rings = (r) => r && r.taps >= 1 && r.wet > 0.003 && r.dry > 0.01;   // (0.003: under load the analyser can miss a short echo's peak; a silent echo reads 0)
+const rings = (r) => r && r.taps >= 1 && r.wet > 0.001 && r.dry > 0.005 && r.send / r.dry > 0.1;   // (by its share of the sound: under load the analyser can catch less of a short sound, echo and all, so absolute levels wander; a silent echo reads 0 and sends 0)
 check(unplaced.skipped || (unplaced.mix && Object.keys(unplaced.mix).length >= 1), 'the engine knows the echo mix where the player stands: ' + JSON.stringify(unplaced.mix));
 check(unplaced.skipped || rings(unplaced.step), `a footstep rings in the room (${unplaced.room}): ` + JSON.stringify(unplaced.step));
 check(unplaced.skipped || rings(unplaced.countdown), 'the countdown beep rings in the room: ' + JSON.stringify(unplaced.countdown));
@@ -493,6 +498,13 @@ const third = await page.evaluate(async () => {
   const e = g._utSpawnEnemy(tw);
   out.hits10 = e ? e.hitsNeeded : null;
   if (e) { u.enemies.splice(u.enemies.indexOf(e), 1); }
+  u.elapsed = 300;
+  out.diff5 = g._utThrowerDifficulty();
+  const e5 = g._utSpawnEnemy(tw);
+  out.hits5 = e5 ? e5.hitsNeeded : null;
+  if (e5) u.enemies.splice(u.enemies.indexOf(e5), 1);
+  u.elapsed = 60 * 120;
+  out.diffMax = g._utThrowerDifficulty();
   u.elapsed = 30;
   const e2 = g._utSpawnEnemy(tw);
   out.hitsStart = e2 ? e2.hitsNeeded : null;
@@ -512,7 +524,7 @@ const third = await page.evaluate(async () => {
 });
 check(third.sideTaken && third.diagLeft && third.gained === 2, `a cartridge is taken from the square beside it, not from the diagonal (reach ${third.reach})`);
 check(third.itemsNear, 'a tower item appears 12 to 30 units from you, as on a tower floor: ' + JSON.stringify(third.itemDists));
-check(third.diff10 === 14 && third.hits10 === 6 && third.hitsStart === 1, `the rival's difficulty is 14 at ten minutes and it takes 6 hits (1 at the start): ${third.diff10}, ${third.hits10}, ${third.hitsStart}`);
+check(third.diff10 === 6 && third.hits10 === 3 && third.hitsStart === 1 && third.diff5 === 3 && third.hits5 === 2 && third.diffMax === 20, `the rival grows hard slowly (Russell, 9 Nov): difficulty 3 and 2 hits at five minutes, 6 and 3 hits at ten (14 and 6 before), 1 hit at the start, never above 20: ${third.diff5}/${third.hits5}, ${third.diff10}/${third.hits10}, ${third.hitsStart}, ${third.diffMax}`);
 // The crowd erupts right after the bang of a chaser going down in a battle area.
 const roar = await page.evaluate(async () => {
   const g = window.__el.game; const u = g.ut; const a = window.__el.audio; const T = window.__ut;
@@ -974,6 +986,75 @@ const crowdRoom = await page.evaluate(async () => {
 check(crowdRoom.skipped || (crowdRoom.each.length === 13 && crowdRoom.each.every((e) => e.taps >= 1 && e.ratio !== null && e.ratio > 0.2 && e.ratio < 0.8)), 'all thirteen crowd recordings send into the arena\'s room, each between a fifth and four fifths of its dry level: ' + JSON.stringify(crowdRoom.each.map((e) => [e.name.replace('ut_crowd_', ''), e.ratio])));
 check(crowdRoom.skipped || crowdRoom.each.filter((e) => e.send === crowdRoom.closeSend).every((e) => e.ratio > (crowdRoom.footstep || 0) * 0.8), `the close-up recordings carry at least as much room as a footstep does (footstep ${crowdRoom.footstep})`);
 check(crowdRoom.skipped || (crowdRoom.crowdLoop && Math.abs(crowdRoom.crowdLoop.send - 0.15) < 0.001), 'the background stadium crowd keeps its light send: ' + JSON.stringify(crowdRoom.crowdLoop));
+
+// --------------------------------------------------------------- 16. a kinder aim and more chasers (Russell, 9 Nov; web 3.1.0)
+const aim = await page.evaluate(async () => {
+  const g = window.__el.game; const u = g.ut; const T = window.__ut;
+  if (!u.world) return { skipped: 'no run' };
+  await T.ensureKind('battle');
+  const area = T.goTo((x) => x.kind === 'battle');
+  if (!area) return { skipped: 'no battle area' };
+  const mine = u.enemies.filter((e) => e.area === area);
+  const saved = mine.map((e) => [e.x, e.y]);
+  u.enemies = u.enemies.filter((e) => e.area !== area || e === mine[0]);
+  const e = mine[0];
+  const [px, py] = g.playerPos;
+  const at = (deg, steps) => { const r = steps * 3; const t = deg * Math.PI / 180; e.x = px + Math.sin(t) * r; e.y = py - Math.cos(t) * r; return g._utLocked() === e; };
+  const out = {
+    ahead: at(0, 8), behind: at(180, 8),
+    at50: at(50, 8), at55: at(55, 8), behind55: at(180 - 55, 8),
+    at65: at(65, 8), side90: at(90, 8),
+    closeSide: at(90, 1.5), closeDiag: at(75, 1.9), notClose: at(90, 2.5),
+  };
+  u.enemies.push(...mine.slice(1));
+  mine.forEach((m, i) => { [m.x, m.y] = saved[i]; });
+  // The counts: one or two in the easy stretch, up to eight later.
+  const el0 = u.elapsed;
+  const easy = new Set(); for (let i = 0; i < 200; i++) { u.elapsed = 30; easy.add(g._utEnemyCount()); }
+  let most = 0; for (let i = 0; i < 400; i++) { u.elapsed = 60 * 40; most = Math.max(most, g._utEnemyCount()); }
+  u.elapsed = el0;
+  out.easy = [...easy].sort(); out.most = most;
+  return out;
+});
+check(!aim.skipped && aim.ahead && aim.behind && aim.at50 && aim.at55 && aim.behind55, 'a shot takes a chaser roughly in front or behind: straight, 50 and 55 degrees off, ahead and behind: ' + JSON.stringify(aim));
+check(!aim.skipped && !aim.at65 && !aim.side90, 'a chaser well off to the side and out of reach is not taken (65 and 90 degrees, eight steps away)');
+check(!aim.skipped && aim.closeSide && aim.closeDiag && !aim.notClose, 'a chaser within two steps is hit whatever side it is on; at two and a half steps to the side it is not');
+check(!aim.skipped && aim.easy.join() === '1,2' && aim.most === 8, `battle and island areas hold one or two chasers in the easy stretch and up to eight later: ${aim.easy}, ${aim.most}`);
+
+// --------------------------------------------------------------- 17. beacons over the arena, and cartridges that do not grow (Russell, 9 Nov; web 3.1.0)
+const loud = await page.evaluate(async () => {
+  const g = window.__el.game; const u = g.ut; const T = window.__ut;
+  if (!u.world) return { skipped: 'no run' };
+  const out = {};
+  // Every cartridge holds three to six shots, early or late.
+  const el0 = u.elapsed; const shots = [];
+  for (const t of [30, 600, 2400]) { u.elapsed = t; for (let i = 0; i < 100; i++) shots.push(g._utShotsPerCartridge()); }
+  u.elapsed = el0;
+  out.minShots = Math.min(...shots); out.maxShots = Math.max(...shots);
+  // The same cartridge beacon, five steps away, in a battle area and in a labyrinth.
+  const levelIn = async (kind) => {
+    await T.ensureKind(kind);
+    const area = T.goTo((x) => x.kind === kind);
+    if (!area) return null;
+    u.safe = 99;
+    const W = T.world; const [cx, cy] = W.cellOf(g.playerPos);
+    const cell = area.floorCells.find(([x, y]) => Math.abs(Math.hypot(x - cx, y - cy) - 5) < 0.6 && W.isFloor(u.world, x, y));
+    if (!cell) return null;
+    const p = g._utSpawnPickup('ammo', area, { pos: W.posOf(cell[0], cell[1]) });
+    if (!p) return null;
+    for (let i = 0; i < 4; i++) g.updateUltimateMode(1 / 30);
+    const d = Math.hypot(p.pos[0] - g.playerPos[0], p.pos[1] - g.playerPos[1]);
+    const level = p.voice ? p.voice.l : null;
+    if (p.voice) { p.voice.stop(); u.voices.delete(p.voice); }
+    u.pickups.splice(u.pickups.indexOf(p), 1);
+    return level === null ? null : level / (Math.max(0, 1 - d / 70) * 0.55);
+  };
+  out.battle = await levelIn('battle');
+  out.labyrinth = await levelIn('labyrinth');
+  return out;
+});
+check(!loud.skipped && loud.minShots === 3 && loud.maxShots === 6, `every cartridge holds three to six shots at half a minute, ten minutes and forty (${loud.minShots} to ${loud.maxShots})`);
+check(!loud.skipped && loud.battle !== null && Math.abs(loud.battle - 2) < 0.05 && loud.labyrinth !== null && Math.abs(loud.labyrinth - 1) < 0.05, `a cartridge's beacon plays twice as loud in a battle area as in a labyrinth (battle ×${loud.battle && loud.battle.toFixed(2)}, labyrinth ×${loud.labyrinth && loud.labyrinth.toFixed(2)})`);
 
 check(errors.length === 0, 'no page errors' + (errors.length ? ': ' + errors.slice(0, 3).join(' | ') : ''));
 await browser.close();

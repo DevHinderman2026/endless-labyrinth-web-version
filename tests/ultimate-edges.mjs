@@ -224,22 +224,52 @@ else {
 // again in it, with its buses, and the placed loops carry on, placed.
 const recovered = await page.evaluate(async () => {
   const g = window.__el.game; const u = g.ut; const a = window.__el.audio;
+  const W = await import('./js/modes/ultimate/world.js');
+  u.worldTime = 200; u.safe = 99;   // (no regeneration and no hit while we wait)
   const before = { loops: [...a.live].filter((v) => v.loop).length, buses: a.areaBuses.size };
   const oldCtx = a.ctx;
   a.recover();
-  await new Promise((r) => setTimeout(r, 600));
-  for (let i = 0; i < 10; i++) g.updateUltimateMode(1 / 30);
+  // A loop whose long recording is still being decoded for the new engine starts
+  // there when it is ready (Voice.rebind): wait for that, up to five seconds,
+  // rather than a fixed moment, which a slow machine with many loops can miss.
+  const ready = (x) => x.ctx === a.ctx && x.dry && x.dry.panner;
+  let waited = 0;
+  for (; waited < 5000; waited += 100) {
+    await new Promise((r) => setTimeout(r, 100));
+    g.updateUltimateMode(1 / 30);
+    if (waited >= 500 && [...a.live].filter((x) => x.loop && x.pos3).every(ready)) break;
+  }
   const live = [...a.live].filter((v) => v.loop);
-  const moved = live.filter((v) => v.pos3).every((v) => v.ctx === a.ctx && v.dry && v.dry.panner);
-  // Placed sounds move with the player: a step changes a loop's panner position.
-  const v = live.find((x) => x.pos3 && x.dry && x.dry.panner && x.name.startsWith('obstacle_')) || live.find((x) => x.pos3 && x.dry && x.dry.panner);
+  const moved = live.filter((v) => v.pos3).every(ready);
+  const notMoved = live.filter((x) => x.pos3 && !ready(x)).map((x) => ({ name: x.name, sameEngine: x.ctx === a.ctx, dry: !!x.dry, panner: !!(x.dry && x.dry.panner), stopped: !!x.stopped, level: x.l }));
+  // Placed sounds move with the player: a step changes a placed sound's position
+  // relative to you. Measured on something with a fixed place in the world: a
+  // chaser, else a cartridge beacon set down a few steps ahead. (An area's own
+  // background sits at your head, and a neighbour's comes from the nearest point
+  // of its border, which slides along with you: neither moves when you step.)
+  const c0 = W.cellOf(g.playerPos);
+  let v = live.find((x) => x.pos3 && ready(x) && x.name.startsWith('obstacle_'));
+  if (!v) {
+    const cell = u.area.floorCells.find(([x, y]) => y < c0[1] && Math.hypot(x - c0[0], y - c0[1]) >= 4 && Math.hypot(x - c0[0], y - c0[1]) <= 8);
+    const p = cell && g._utSpawnPickup('ammo', u.area, { pos: W.posOf(cell[0], cell[1]) });
+    for (let i = 0; i < 3; i++) g.updateUltimateMode(1 / 30);
+    v = p && p.voice;
+  }
+  // Step whichever way is open, and expect the sound to shift the other way.
+  const ways = [['left', -1, 0], ['right', 1, 0], ['up', 0, -1], ['down', 0, 1]];
+  const [dir, dx, dy] = ways.find(([, x, y]) => W.isFloor(u.world, c0[0] + x, c0[1] + y)) || ways[0];
   const p0 = v ? v.pos3.slice() : null;
-  g.input('left'); g.updateUltimateMode(1 / 30);
+  const at0 = g.playerPos.slice();
+  g.input(dir); g.updateUltimateMode(1 / 30);
   const p1 = v ? v.pos3.slice() : null;
-  return { before, newCtx: a.ctx !== oldCtx, spatial: a.spatial, world: !!(a.worldIn && a.worldGain), buses: a.areaBuses.size, loops: live.length, moved, p0, p1 };
+  const step = { dir, voice: v && v.name, area: u.area && u.area.kind, place: u.place, movedX: g.playerPos[0] - at0[0], movedY: g.playerPos[1] - at0[1] };
+  // Relative position: x is to your right; for a step ahead/behind it is z.
+  const shift = p0 && p1 ? (dx ? p1[0] - p0[0] : p1[2] - p0[2]) : null;
+  const want = -3 * (dx || dy);
+  return { before, newCtx: a.ctx !== oldCtx, spatial: a.spatial, world: !!(a.worldIn && a.worldGain), buses: a.areaBuses.size, loops: live.length, moved, notMoved, waited, p0, p1, shift, want, step };
 });
-check(recovered.newCtx && recovered.spatial && recovered.world && recovered.buses >= 1 && recovered.loops >= 1 && recovered.moved, `a fresh engine keeps the 3D world: ${recovered.loops} loops rebound and placed, ${recovered.buses} buses`);
-check(recovered.p0 && recovered.p1 && Math.abs((recovered.p1[0] - recovered.p0[0]) - 3) < 0.3, `a step left moves a placed sound three units right relative to you: ${JSON.stringify(recovered.p0)} -> ${JSON.stringify(recovered.p1)}`);
+check(recovered.newCtx && recovered.spatial && recovered.world && recovered.buses >= 1 && recovered.loops >= 1 && recovered.moved, `a fresh engine keeps the 3D world: ${recovered.loops} loops rebound and placed within ${recovered.waited + 100} ms, ${recovered.buses} buses (new engine ${recovered.newCtx}, 3D ${recovered.spatial}, world chain ${recovered.world}, every placed loop on the new engine ${recovered.moved})` + (recovered.moved ? '' : ': ' + JSON.stringify(recovered.notMoved)));
+check(recovered.shift !== null && Math.abs(recovered.shift - recovered.want) < 0.3, `a step moves a placed sound three units the other way relative to you: ${JSON.stringify(recovered.p0)} -> ${JSON.stringify(recovered.p1)} ` + JSON.stringify(recovered.step));
 
 // A pause during the fade holds the world where it is; resuming carries on to the new world.
 const fadePause = await page.evaluate(async () => {

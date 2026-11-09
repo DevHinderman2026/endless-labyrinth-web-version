@@ -56,8 +56,8 @@ export const START_HP = 100;
 export const DAMAGE_START = 5;                  // a hit in the easy stretch
 export const DAMAGE_CAP = 25;                   // Tower's cap: death takes at least four hits
 export const DAMAGE_PER_MINUTE = 1.5;           // after the easy stretch, toward the cap
-export const ENEMIES_EASY = [1, 1];             // chasers per battle or island area in the easy stretch (was 1 to 2)
-export const ENEMIES_MAX = 6;                   // chasers in one area (was 10); a tower area always has one thrower
+export const ENEMIES_EASY = [1, 2];             // chasers per battle or island area in the easy stretch (1 to 1 until 9 Nov; Russell: a bit more)
+export const ENEMIES_MAX = 8;                   // chasers in one area (10, then 6 until 9 Nov); a tower area always has one thrower
 export const ENEMIES_PER_MINUTE = 1.0;          // the base count rises this fast after the easy stretch
 export const SPEED_RISE = 0.25;                 // speed multiplier added over SPEED_RISE_MINUTES
 export const SPEED_RISE_MINUTES = 10;
@@ -72,7 +72,8 @@ export const HIT_COOLDOWN = 2.0;                // between strikes (was 1.0)
 export const RESPAWN_ENEMY = [8, 15];           // seconds after a kill
 export const RESPAWN_PICKUP = [10, 20];         // ammo and credits, out in the world
 export const SAFE_AMMO_EVERY = 15;              // a safe zone's one cartridge comes back after this long
-export const AMMO_SHOTS = [3, 6];
+export const AMMO_SHOTS = [3, 6];               // shots in every cartridge, the whole run (Russell, 9 Nov: they grew with the minutes and ammo piled up past 400)
+export const BATTLE_BEACON_BOOST = 2.0;         // cartridge and credit beacons in a battle area, over the drums, drone and crowd (Russell, 9 Nov: hard to hear)
 export const AMMO_PER_ENEMY = 0.6;              // cartridges in the world per enemy, never under AMMO_MIN
 export const AMMO_MIN = 3;
 export const CREDITS_AT_ONCE = [2, 3];
@@ -94,8 +95,9 @@ export const KEEP_SLOTS = 2;                    // an area's air keeps running w
 export const REACH = 1.6;                       // walking into the elevator: its own cell
 export const PICKUP_REACH = 3.2;                // a cartridge, credit, potion or tower item: its cell or the next (Battle, Tower and Island take theirs within 3 units)
 export const ITEM_NEAR = [12.0, 30.0];          // a tower item lies this far from you when it appears, as on a tower floor (was anywhere in the area)
-export const THROWER_SECONDS = 45;              // a tower rival's difficulty rises one point this often (was 30)
-export const THROWER_HITS_MINUTES = 2;          // and the hits it takes never exceed 1 + minutes played / this
+export const THROWER_SECONDS = 120;             // a tower rival's difficulty rises one point this often (30, then 45 until 9 Nov: Russell, even 5 to 10 minutes in it should not be that hard)
+export const THROWER_HITS_MINUTES = 4;          // and the hits it takes never exceed 1 + minutes played / this (was 2)
+export const THROWER_MAX = 20;                  // its difficulty never goes above this here (tower mode's own cap is 40)
 export const COMPASS_HOLD_MS = 1000;
 export const COMPASS_BEEP_EVERY = 0.45;
 const COMPASS_DIRS = [[0, -1], [1, 0], [0, 1], [-1, 0]];   // ahead, right, behind, left
@@ -238,7 +240,12 @@ const choice = (arr) => arr[Math.floor(rand() * arr.length)];
 const plural = (n, word, many = word + 's') => (n === 1 ? word : many);
 const dist2 = (a, b) => Math.hypot(a[0] - b[0], a[1] - b[1]);
 const levelAt = (d, range = HEAR_RANGE) => Math.max(0, 1 - d / range);
-const BATTLE_AIM_PAN = 0.72;
+// Aiming (Russell, 9 Nov): battle mode's 0.72 (about 46 degrees either side of
+// straight ahead or behind) made close chasers easy to step past, since one
+// sideways step swings a near one from one ear to the other. Here the cone is
+// about 58 degrees either side, and a chaser within two steps is hit wherever it is.
+export const AIM_PAN = 0.85;
+export const AIM_CLOSE = 6.0;                   // units: two steps
 
 function pointToSegment(x, y, a, b) {
   const [ax, ay] = a; const [bx, by] = b;
@@ -401,14 +408,16 @@ const mixin = {
   // A thrower's difficulty for TowerEnemy: tower one's first floors at the start,
   // tower three's deep into a run (its hits needed and throws follow).
   _utThrowerDifficulty() {
-    return Math.max(1, Math.min(40, 1 + Math.floor(this.ut.elapsed / THROWER_SECONDS)));
+    return Math.max(1, Math.min(THROWER_MAX, 1 + Math.floor(this.ut.elapsed / THROWER_SECONDS)));
   },
 
   _utMultiplier() { return 1 + MULTIPLIER_STEP * this.ut.worlds; },
 
+  // Every cartridge holds AMMO_SHOTS, early or late: the number of cartridges
+  // already rises with the enemies (AMMO_PER_ENEMY), so growing each one as well
+  // counted the rise twice and ammo piled up without end.
   _utShotsPerCartridge() {
-    const load = this._utEasy() ? 0 : Math.floor((this.ut.elapsed - EASY_SECONDS) / 60 * ENEMIES_PER_MINUTE);
-    return randint(AMMO_SHOTS[0], AMMO_SHOTS[1]) + Math.floor(load / 3);
+    return randint(AMMO_SHOTS[0], AMMO_SHOTS[1]);
   },
 
   // Points earned now: nothing in a safe zone, nothing while the compass is on.
@@ -1537,7 +1546,7 @@ const mixin = {
     };
     for (const p of u.pickups) {
       const d = dist2(p.pos, this.playerPos);
-      const level = reach(p.area, p.pos) * p.gain * (onWorld ? 1 : (ride ? ride.above * 0.6 : 0));
+      const level = reach(p.area, p.pos) * p.gain * (p.area.kind === 'battle' ? BATTLE_BEACON_BOOST : 1) * (onWorld ? 1 : (ride ? ride.above * 0.6 : 0));
       if (!p.voice && level > 0.01) p.voice = this._utPlay(p.beacon, p.pos, { loops: -1, volume: 0.0 });
       else if (p.voice && level <= 0.001 && d > HEAR_RANGE + 10) { p.voice.stop(); u.voices.delete(p.voice); p.voice = null; }
       if (p.voice) this._utFollow(p.voice, p.pos, level, aboveHeight, dullOf(p.area));
@@ -1666,7 +1675,7 @@ const mixin = {
       const pos = this._utEnemyPos(e);
       const dx = pos[0] - this.playerPos[0]; const dy = pos[1] - this.playerPos[1];
       const d = Math.hypot(dx, dy);
-      if (d > 0 && Math.abs(dx / d) < BATTLE_AIM_PAN && d < bestD) { best = e; bestD = d; }
+      if (d > 0 && (Math.abs(dx / d) < AIM_PAN || d <= AIM_CLOSE) && d < bestD) { best = e; bestD = d; }
     }
     if (!best) return;
     best.hitsTaken += 1;
@@ -1675,7 +1684,8 @@ const mixin = {
   },
 
   // What a shot takes: the nearest enemy of the player's own area that sits
-  // centred between the ears, in front or behind, within hearing.
+  // centred between the ears (within AIM_PAN), in front or behind, within
+  // hearing, or any within AIM_CLOSE whatever side it is on.
   _utLocked() {
     const u = this.ut;
     let best = null; let bestD = Infinity;
@@ -1685,7 +1695,7 @@ const mixin = {
       const dx = pos[0] - this.playerPos[0]; const dy = pos[1] - this.playerPos[1];
       const d = Math.hypot(dx, dy);
       if (d <= 0 || d > HEAR_RANGE) continue;
-      if (Math.abs(dx / d) < BATTLE_AIM_PAN && d < bestD) { best = e; bestD = d; }
+      if ((Math.abs(dx / d) < AIM_PAN || d <= AIM_CLOSE) && d < bestD) { best = e; bestD = d; }
     }
     return best;
   },
