@@ -301,7 +301,7 @@ export class Game {
     // A Windows computer (web 2.0.0): Ultimate Mode, the scores and the
     // settings; the other modes and the events are the Windows game's.
     // Its Braille settings: the game's own voice on or off, and a key test for a
-    // new device (3.1.0: the Braille Keyboard setting is gone; js/braille.js).
+    // new device (3.2.0: the Braille Keyboard setting is gone; js/braille.js).
     if (windowsOnly()) return ['ultimate', 'scores', 'speech', 'keytest', 'rate', 'leave'];
     return ['standard', 'battle', ...this._menuItems().map((i) => i.key), 'scores', ...practice, 'rate', 'leave'];
   }

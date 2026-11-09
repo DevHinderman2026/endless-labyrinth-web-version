@@ -1,5 +1,5 @@
 // Braille display and Braille keyboard support for the web version, on a Windows
-// computer (web 3.0.0; reworked in 3.1.0 after Russell's test on his BrailleNote
+// computer (web 3.0.0; reworked in 3.2.0 after Russell's test on his BrailleNote
 // Evolve, 9 November 2026).
 //
 // The keyboard focus: NVDA and JAWS read a page in browse mode, where letters and

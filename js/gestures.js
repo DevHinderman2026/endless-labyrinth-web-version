@@ -275,7 +275,7 @@ export class Gestures {
       if (map[e.key]) e.preventDefault();
       return;
     }
-    // Windows (3.1.0): a Braille notetaker's key held down arrives as a stream of
+    // Windows (3.2.0): a Braille notetaker's key held down arrives as a stream of
     // whole, separate presses with no repeat flag (the BrailleNote Evolve's arrows
     // walked the player on and on). A press of the same key within HELD_GAP of the
     // one before it, counted or not, is part of that hold, so the whole stream is

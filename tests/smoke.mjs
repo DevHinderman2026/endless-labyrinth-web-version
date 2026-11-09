@@ -105,7 +105,7 @@ await page.waitForFunction(() => document.querySelector('#faq button.topic-toggl
   check(await page.locator('footer.site nav a[href="faq.html"]').count() === 0, 'the footer no longer links to the old questions page');
 }
 await page.goto(base + '/history.html');
-check((await page.locator('main h2').allTextContents()).join(' | ').startsWith('3.1.0 (9 November 2026), web only | 3.0.0 (8 November 2026), web only | 2.0.0 (8 November 2026), web only'), 'the Update History lists the newest version first, 2.1.0 then 2.0.0, marked web only');
+check((await page.locator('main h2').allTextContents()).join(' | ').startsWith('3.2.0 (9 November 2026), web only | 3.1.0 (9 November 2026), web only | 3.0.0 (8 November 2026), web only | 2.0.0 (8 November 2026), web only'), 'the Update History lists the newest version first, 2.1.0 then 2.0.0, marked web only');
 await page.goto(base + '/credits.html');
 check((await page.locator('ul.credits li').count()) === 333, 'credits list the recordings');
 

@@ -987,7 +987,7 @@ check(crowdRoom.skipped || (crowdRoom.each.length === 13 && crowdRoom.each.every
 check(crowdRoom.skipped || crowdRoom.each.filter((e) => e.send === crowdRoom.closeSend).every((e) => e.ratio > (crowdRoom.footstep || 0) * 0.8), `the close-up recordings carry at least as much room as a footstep does (footstep ${crowdRoom.footstep})`);
 check(crowdRoom.skipped || (crowdRoom.crowdLoop && Math.abs(crowdRoom.crowdLoop.send - 0.15) < 0.001), 'the background stadium crowd keeps its light send: ' + JSON.stringify(crowdRoom.crowdLoop));
 
-// --------------------------------------------------------------- 16. a kinder aim and more chasers (Russell, 9 Nov; web 3.1.0)
+// --------------------------------------------------------------- 16. a kinder aim and more chasers (Russell, 9 Nov; web 3.2.0)
 const aim = await page.evaluate(async () => {
   const g = window.__el.game; const u = g.ut; const T = window.__ut;
   if (!u.world) return { skipped: 'no run' };
@@ -1021,7 +1021,7 @@ check(!aim.skipped && !aim.at65 && !aim.side90, 'a chaser well off to the side a
 check(!aim.skipped && aim.closeSide && aim.closeDiag && !aim.notClose, 'a chaser within two steps is hit whatever side it is on; at two and a half steps to the side it is not');
 check(!aim.skipped && aim.easy.join() === '1,2' && aim.most === 8, `battle and island areas hold one or two chasers in the easy stretch and up to eight later: ${aim.easy}, ${aim.most}`);
 
-// --------------------------------------------------------------- 17. beacons over the arena, and cartridges that do not grow (Russell, 9 Nov; web 3.1.0)
+// --------------------------------------------------------------- 17. beacons over the arena, and cartridges that do not grow (Russell, 9 Nov; web 3.2.0)
 const loud = await page.evaluate(async () => {
   const g = window.__el.game; const u = g.ut; const T = window.__ut;
   if (!u.world) return { skipped: 'no run' };

@@ -1,5 +1,5 @@
 // Braille display and Braille keyboard support on Windows (js/braille.js; web
-// 3.0.0, reworked in 3.1.0 after Russell's test on his BrailleNote Evolve), in
+// 3.0.0, reworked in 3.2.0 after Russell's test on his BrailleNote Evolve), in
 // Chromium through Playwright with a Windows user agent. Run with the site served:
 //   node --import ./tests/github-stub.mjs tests/braille.mjs http://localhost:8765
 // A Braille driver's typed text is imitated as key presses with no key code

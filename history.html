@@ -8,7 +8,7 @@
   <link rel="icon" href="icons/icon-192.png">
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
   <meta name="theme-color" content="#0c0f14">
-  <link rel="stylesheet" href="css/site.css">
+  <link rel="stylesheet" href="css/site.css?v=3.2.0">
 </head>
 <body>
   <header class="site">
@@ -20,23 +20,33 @@
     <p>This page lists the web version. For the Windows version, see its <a href="https://github.com/DevHinderman2026/Endless-Labyrinth/blob/main/Credits%20and%20Version%20History/CHANGELOG.md">changelog</a> on GitHub.</p>
     <p>The game updates by itself: the next time you open it, you have the latest version. Only a sound pack that has changed is downloaded again, and your high scores are kept. Events are not listed here: they appear in the Events menu as they open.</p>
 
-    <h2>3.1.0 (9 November 2026), web only</h2>
-    <p>Ultimate Mode after its sixth play test: healing lives in the safe zones, worlds last a random time and give no warning, the arena crowd rings in the arena, and a run leaves nothing behind when it ends. And on Windows, a Braille notetaker's keys now reach the game at once. Web only: the Windows game is unchanged.</p>
+    <h2>3.2.0 (9 November 2026), web only</h2>
+    <p>Ultimate Mode after more play testing: you step out away from the elevator, tower areas grow hard far more slowly, there are a few more chasers, the aim is kinder, the arena's beacons are louder and ammo no longer piles up. On Windows, a Braille notetaker's keys now reach the game at once. And a new version of the site now shows as soon as it is published. Web only: the Windows game is unchanged.</p>
     <h3>Changed: Ultimate Mode</h3>
     <ul>
-      <li><strong>Potions live in the safe zones.</strong> While your health is under 75, every safe zone in the world holds one health potion, so whichever safe zone you reach will heal you, and the compass names the nearest in its briefing. Drink one and you are back to 100; the potions in the other zones disappear until you are hurt again, and the zone you drank from has another ten seconds later if you still need it. No potion appears anywhere else any more (it used to turn up anywhere in the world once health fell below fifty).</li>
-      <li><strong>Worlds last a random time, with no warning.</strong> Every world is given a length of its own, anywhere from one minute to four, drawn afresh each time; nothing says how long is left, the spoken "World regenerating in 15 seconds" is gone, and the status report keeps quiet too. The only warning is the five-second countdown. Worlds used to last a fixed two minutes.</li>
-      <li><strong>The crowd rings in the arena.</strong> Every roar and every reaction of the arena crowd now sends into the battle area's echo, the close-up recordings more than the two cut from a live stadium, which carry the stadium's own; some of them had no echo at all and sounded dry. The stadium crowd in the background is as it was.</li>
       <li><strong>Back up from the seabed, you step out a few steps from the elevator.</strong> As in Island Mode, the ride up leaves you on the sand four to six steps from the lift, never on it, on a square clear of any pickup and away from the chasers wherever the island allows; before, you came out on the lift itself, one step from going straight back down. The three seconds in which nothing can touch you are unchanged.</li>
       <li><strong>Tower areas grow hard far more slowly, battle areas hold a few more chasers, and the aim is kinder.</strong> A thrower's difficulty now rises one point every two minutes of the run instead of every forty-five seconds, never goes above a middling tower floor, and the hits it takes rise by one every four minutes at most, so ten minutes in it takes about three hits instead of six. Battle and island areas start with one or two chasers instead of one and can hold up to eight instead of six. And a shot or a throw now takes what is roughly in front of you or behind you, a wider aim than battle mode's, and any chaser within two steps of you whatever side it is on, so a close one can no longer be stepped straight past.</li>
       <li><strong>Beacons carry over the arena, and ammo no longer piles up.</strong> Cartridges and credits lying in a battle area now play their beacons twice as loud, so they can be heard over the drums, the drone and the crowd. And every cartridge now holds three to six shots for the whole run: they used to hold more and more the longer you played, on top of there being more of them, so a long run ended with hundreds of shots and nothing to spend them on. There are still more cartridges as the enemies grow more numerous.</li>
     </ul>
     <h3>Fixed</h3>
     <ul>
-      <li><strong>A run leaves nothing behind.</strong> When a run of Ultimate Mode ended, its whole last world stayed in memory until the next run began: some thirty sounds with their 3D placement and up to twenty long decoded recordings, the areas' backgrounds. On a phone, three runs of that could be more than the browser would carry. Now everything of a run is released the moment it ends, the 3D sound chain and the echoes with it. A new test plays several games in every mode back to back and watches for anything left over.</li>
       <li><strong>The island elevator hums only on its island.</strong> Its chime was already heard only on the island, but its low hum carried into the areas beside it, so you heard an elevator before you had reached the island it stands on. Now the hum, like the chime, begins when you step onto the island.</li>
       <li><strong>Braille keyboards on Windows: letters reach the game at once.</strong> The game kept the keyboard focus in a text box, and in a text box a screen reader holds what you braille until you press the space, so on a BrailleNote Evolve the letter H reached the game only after a space. The game now keeps the focus in a game area that is not a text box: every letter arrives the moment you braille it, and everything the game says still appears on your Braille display and stays there until the next message. The Braille Keyboard setting is gone: a web page cannot see a Braille display, and a notetaker such as the BrailleNote sends its keys just as a keyboard does, so there is nothing to switch on; Braille typed as text by other screen readers is still turned back into the keys it stands for. The Speech setting, which silences the game's own voice, is now always on the main menu.</li>
       <li><strong>A key held down on a Braille notetaker is one press.</strong> Holding one of the BrailleNote's arrow keys walked the player on and on, because the notetaker sends a held key as a quick stream of separate presses. On Windows, presses of the same key that close together now count as one, as a held key does on a keyboard. The Braille Key Test also reports a key held down: how many times it arrived and how far apart.</li>
+      <li><strong>A new version shows at once.</strong> After an update was published, a browser could go on showing the old version of the site and the game for up to ten minutes, because it kept its copies of the files that long. Every page now asks for its files by addresses that carry the version number, and a page that turns out to be an old copy opens itself afresh, once, as soon as it is opened (the play page only before you press Start). Your scores, settings and event scores are never touched by it: they are kept apart from the files, and stay exactly as they were.</li>
+    </ul>
+
+    <h2>3.1.0 (9 November 2026), web only</h2>
+    <p>Ultimate Mode after its sixth play test: healing lives in the safe zones, worlds last a random time and give no warning, the arena crowd rings in the arena, and a run leaves nothing behind when it ends. Web only: the Windows game is unchanged.</p>
+    <h3>Changed: Ultimate Mode</h3>
+    <ul>
+      <li><strong>Potions live in the safe zones.</strong> While your health is under 75, every safe zone in the world holds one health potion, so whichever safe zone you reach will heal you, and the compass names the nearest in its briefing. Drink one and you are back to 100; the potions in the other zones disappear until you are hurt again, and the zone you drank from has another ten seconds later if you still need it. No potion appears anywhere else any more (it used to turn up anywhere in the world once health fell below fifty).</li>
+      <li><strong>Worlds last a random time, with no warning.</strong> Every world is given a length of its own, anywhere from one minute to four, drawn afresh each time; nothing says how long is left, the spoken "World regenerating in 15 seconds" is gone, and the status report keeps quiet too. The only warning is the five-second countdown. Worlds used to last a fixed two minutes.</li>
+      <li><strong>The crowd rings in the arena.</strong> Every roar and every reaction of the arena crowd now sends into the battle area's echo, the close-up recordings more than the two cut from a live stadium, which carry the stadium's own; some of them had no echo at all and sounded dry. The stadium crowd in the background is as it was.</li>
+    </ul>
+    <h3>Fixed</h3>
+    <ul>
+      <li><strong>A run leaves nothing behind.</strong> When a run of Ultimate Mode ended, its whole last world stayed in memory until the next run began: some thirty sounds with their 3D placement and up to twenty long decoded recordings, the areas' backgrounds. On a phone, three runs of that could be more than the browser would carry. Now everything of a run is released the moment it ends, the 3D sound chain and the echoes with it. A new test plays several games in every mode back to back and watches for anything left over.</li>
     </ul>
 
     <h2>3.0.0 (8 November 2026), web only</h2>
@@ -245,6 +255,55 @@
     </ul>
   </main>
   <footer class="site"></footer>
-  <script type="module" src="js/site.js"></script>
+  <!-- versions: written by tools/stamp-version.mjs from version.json -->
+  <script type="importmap">
+  {
+    "imports": {
+      "./js/accessibility.js": "./js/accessibility.js?v=3.2.0",
+      "./js/audio.js": "./js/audio.js?v=3.2.0",
+      "./js/backup.js": "./js/backup.js?v=3.2.0",
+      "./js/backups-page.js": "./js/backups-page.js?v=3.2.0",
+      "./js/braille.js": "./js/braille.js?v=3.2.0",
+      "./js/calendar.js": "./js/calendar.js?v=3.2.0",
+      "./js/device.js": "./js/device.js?v=3.2.0",
+      "./js/display.js": "./js/display.js?v=3.2.0",
+      "./js/game.js": "./js/game.js?v=3.2.0",
+      "./js/gestures.js": "./js/gestures.js?v=3.2.0",
+      "./js/help-data.js": "./js/help-data.js?v=3.2.0",
+      "./js/help-page.js": "./js/help-page.js?v=3.2.0",
+      "./js/keywords.js": "./js/keywords.js?v=3.2.0",
+      "./js/main.js": "./js/main.js?v=3.2.0",
+      "./js/modes/chaos.js": "./js/modes/chaos.js?v=3.2.0",
+      "./js/modes/driving.js": "./js/modes/driving.js?v=3.2.0",
+      "./js/modes/events/engine.js": "./js/modes/events/engine.js?v=3.2.0",
+      "./js/modes/events/feed.js": "./js/modes/events/feed.js?v=3.2.0",
+      "./js/modes/events/help.js": "./js/modes/events/help.js?v=3.2.0",
+      "./js/modes/events/missions.js": "./js/modes/events/missions.js?v=3.2.0",
+      "./js/modes/events/py.js": "./js/modes/events/py.js?v=3.2.0",
+      "./js/modes/events/schema.js": "./js/modes/events/schema.js?v=3.2.0",
+      "./js/modes/events/sign.js": "./js/modes/events/sign.js?v=3.2.0",
+      "./js/modes/events/sounds.js": "./js/modes/events/sounds.js?v=3.2.0",
+      "./js/modes/events/wording.js": "./js/modes/events/wording.js?v=3.2.0",
+      "./js/modes/events.js": "./js/modes/events.js?v=3.2.0",
+      "./js/modes/index.js": "./js/modes/index.js?v=3.2.0",
+      "./js/modes/island.js": "./js/modes/island.js?v=3.2.0",
+      "./js/modes/tower.js": "./js/modes/tower.js?v=3.2.0",
+      "./js/modes/ultimate/help.js": "./js/modes/ultimate/help.js?v=3.2.0",
+      "./js/modes/ultimate/world.js": "./js/modes/ultimate/world.js?v=3.2.0",
+      "./js/modes/ultimate.js": "./js/modes/ultimate.js?v=3.2.0",
+      "./js/packs.js": "./js/packs.js?v=3.2.0",
+      "./js/site.js": "./js/site.js?v=3.2.0",
+      "./js/sound-rules.js": "./js/sound-rules.js?v=3.2.0",
+      "./js/speech.js": "./js/speech.js?v=3.2.0",
+      "./js/stats.js": "./js/stats.js?v=3.2.0",
+      "./js/storage.js": "./js/storage.js?v=3.2.0",
+      "./js/update-alert.js": "./js/update-alert.js?v=3.2.0",
+      "./js/version.js": "./js/version.js?v=3.2.0",
+      "./js/wetworker.js": "./js/wetworker.js?v=3.2.0"
+    }
+  }
+  </script>
+  <!-- end of versions -->
+  <script type="module" src="js/site.js?v=3.2.0"></script>
 </body>
 </html>

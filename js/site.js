@@ -12,6 +12,7 @@
 
 import { deviceKind } from './device.js';
 import { applyDisplay, followDisplay } from './display.js';
+import { freshen } from './version.js';
 
 // The site links, in order. Each page is added here when it is built.
 export const NAV = [
@@ -157,6 +158,8 @@ export function buildFooter() {
 // Any page that still carries the contact address in its own text.
 for (const node of document.querySelectorAll('[data-contact]')) node.replaceChildren(contactLink());
 
+// An old kept copy of this page opens itself afresh once (js/version.js).
+freshen();
 applyDisplay();
 followDisplay();
 const kind = deviceKind();

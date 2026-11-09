@@ -9,6 +9,7 @@ import { Game } from './game.js';
 import { deviceKind, isApple, isComputer, keyboardDevice, screenReaderName, deviceWord, windowsOnly } from './device.js';
 import { keyWords } from './keywords.js';
 import { applyDisplay, followDisplay } from './display.js';
+import { freshen } from './version.js';
 import { Braille } from './braille.js';
 
 const $ = (id) => document.getElementById(id);
@@ -173,6 +174,10 @@ const gestures = new Gestures($('stage'), onGesture);
 gestures.braille = braille;
 
 $('start').addEventListener('click', start);
+
+// An old kept copy of the play page opens itself afresh once, and only while Start
+// has not been pressed (js/version.js); the saved scores are never touched.
+freshen({ stillOk: () => !audio });
 
 document.addEventListener('visibilitychange', () => {
   if (document.hidden) { if (game) game.autoPause(); }

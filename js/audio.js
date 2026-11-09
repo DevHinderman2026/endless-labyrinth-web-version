@@ -500,7 +500,8 @@ export class AudioEngine {
   _renderLoopWet(ir, dry) {
     if (!this._wetWorker) {
       try {
-        this._wetWorker = new Worker(new URL('./wetworker.js', import.meta.url));
+        // (Its address carries this file's version, as the modules' do: js/version.js.)
+        this._wetWorker = new Worker(new URL('./wetworker.js' + new URL(import.meta.url).search, import.meta.url));
       } catch (e) { return Promise.resolve(null); }
       this._wetJobs = new Map();
       this._wetSeq = 0;
