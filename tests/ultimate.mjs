@@ -109,7 +109,7 @@ const w0 = await page.evaluate(async () => {
 check(w0.worldNo === 1 && w0.areas.length >= 5 && w0.areas.length <= 10, `world 1 has ${w0.areas.length} areas: ${w0.areas.join(', ')}`);
 check(w0.eventAreas >= 1, 'at least one event area (the safe zone)');
 check(w0.hp === 100 && w0.ammo === 0 && w0.points === 0, 'starts with 100 health, no ammo, no points');
-check(w0.worldTime > 118 && w0.worldTime <= 120, `the first world lasts 2 minutes (${w0.worldTime.toFixed(1)} left)`);
+check(w0.worldTime > 58 && w0.worldTime <= 240, `the first world lasts somewhere between one and four minutes (${w0.worldTime.toFixed(1)} left)`);
 check(w0.labsQuiet && w0.kindsRight, 'enemies only in battle, island and tower areas; throwers in tower areas only');
 check(w0.enemies === w0.enemyAreas, `easy stretch: ${w0.enemies} enemies in ${w0.enemyAreas} enemy areas (one each: a chaser, or a tower area's one rival)`);
 check(w0.farFromEnemies, 'no enemy within 10 units of the player at the start');
@@ -363,7 +363,7 @@ else {
 const regen = await page.evaluate(async () => {
   const g = window.__el.game; const u = g.ut; const a = window.__el.audio;
   const world1 = u.world; const no1 = u.worldNo; const worlds1 = u.worlds;
-  u.worldTime = 15.5; u.warned = false;
+  u.worldTime = 15.5;
   const played = [];
   const orig = a.play.bind(a);
   a.play = (name, opts) => { played.push(name); return orig(name, opts); };
@@ -386,17 +386,33 @@ const regen = await page.evaluate(async () => {
   a.play = orig; g.tts.speak = origSpeak; a.setWorldLevel = origLevel;
   await new Promise((r) => setTimeout(r, 1200));
   return {
-    worldNo: u.worldNo, no1, worlds: u.worlds, worlds1, newWorld: u.world !== world1, phases: [...phases], spoken, counts: played.filter((n) => n === 'countdown_high').length,
+    worldNo: u.worldNo, no1, worlds: u.worlds, worlds1, newWorld: u.world !== world1, phases: [...phases], spoken, counts: played.filter((n) => n === 'countdown_high').length, worldLen: u.worldLen,
     levels, safe: u.safe, atEnd, atStart, worldTime: firstTime, mult: g._utMultiplier(),
     compassOff: !u.compass.on, place: u.place, carry: u.towerCarry, areas: u.world.areas.length, loops: [...a.live].filter((v) => v.loop).length,
   };
 });
 check(regen.worldNo === regen.no1 + 1 && regen.newWorld && regen.worlds === regen.worlds1 + 1, `the world regenerates into world ${regen.no1 + 1}`);
-check(regen.spoken.includes('World regenerating in 15 seconds.'), 'the voice warns with the exact words: ' + JSON.stringify(regen.spoken));
+check(!regen.spoken.some((t) => /regenerat/i.test(t)), 'nothing is said about the time left or the regeneration (web 3.1.0): ' + JSON.stringify(regen.spoken));
 check(regen.counts === 5, `Battle's countdown over the last five seconds (${regen.counts} beeps)`);
 check(regen.phases.includes('fading') && !regen.phases.includes('silence') && regen.phases.includes('fadein'), 'fade out, then the new world at once, no silence: ' + regen.phases.join(', '));
 check(regen.levels.some(([l, s]) => l === 0 && s === 2) && regen.levels.some(([l, s]) => l === 1 && s === 0.5), 'the world fades out over two seconds and the new one rises in half a second: ' + JSON.stringify(regen.levels));
-check(regen.worldTime > 119 && regen.worldTime <= 120, `the next world lasts two minutes too (${regen.worldTime && regen.worldTime.toFixed(1)})`);
+check(regen.worldTime > 59 && regen.worldTime <= 240 && Math.abs(regen.worldTime - regen.worldLen) < 1.5, `the next world's length is drawn afresh between one and four minutes (${regen.worldTime && regen.worldTime.toFixed(1)} of ${regen.worldLen && regen.worldLen.toFixed(1)})`);
+// Many worlds: the lengths vary, all within the range, and the status report never tells the time left.
+const lengths = await page.evaluate(async () => {
+  const g = window.__el.game; const u = g.ut;
+  const out = { lens: [], statusLeaks: 0 };
+  for (let n = 0; n < 8; n++) {
+    u.worldTime = 0.05;
+    for (let i = 0; i < 40; i++) g.updateUltimateMode(1 / 30);
+    out.lens.push(+u.worldLen.toFixed(1));
+    u.worldTime = 12;
+    if (/regenerat|\d+ seconds/i.test(g.mode.status(g))) out.statusLeaks += 1;
+    await new Promise((r) => setTimeout(r, 30));
+  }
+  return out;
+});
+check(lengths.lens.every((l) => l >= 60 && l <= 240) && new Set(lengths.lens).size >= 5 && Math.max(...lengths.lens) - Math.min(...lengths.lens) > 30, 'world lengths are random within one to four minutes: ' + lengths.lens.join(', '));
+check(lengths.statusLeaks === 0, 'the status report does not tell how long the world has left');
 check(regen.atEnd && regen.atStart && regen.atEnd.hp === regen.atStart.hp && regen.atEnd.ammo === regen.atStart.ammo && regen.atStart.ammo === 7, 'health and ammo carry over: ' + JSON.stringify([regen.atEnd, regen.atStart]));
 check(Math.abs(regen.mult - (1 + 0.5 * regen.worlds)) < 1e-9, `the multiplier is now ${regen.mult} (${regen.worlds} worlds survived)`);
 check(regen.place === 'world' && regen.carry === null && regen.compassOff, 'on the ground, no tower items, compass off');

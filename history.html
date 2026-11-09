@@ -20,6 +20,19 @@
     <p>This page lists the web version. For the Windows version, see its <a href="https://github.com/DevHinderman2026/Endless-Labyrinth/blob/main/Credits%20and%20Version%20History/CHANGELOG.md">changelog</a> on GitHub.</p>
     <p>The game updates by itself: the next time you open it, you have the latest version. Only a sound pack that has changed is downloaded again, and your high scores are kept. Events are not listed here: they appear in the Events menu as they open.</p>
 
+    <h2>3.1.0 (9 November 2026), web only</h2>
+    <p>Ultimate Mode after its sixth play test: healing lives in the safe zones, worlds last a random time and give no warning, the arena crowd rings in the arena, and a run leaves nothing behind when it ends. Web only: the Windows game is unchanged.</p>
+    <h3>Changed: Ultimate Mode</h3>
+    <ul>
+      <li><strong>Potions live in the safe zones.</strong> While your health is under 75, every safe zone in the world holds one health potion, so whichever safe zone you reach will heal you, and the compass names the nearest in its briefing. Drink one and you are back to 100; the potions in the other zones disappear until you are hurt again, and the zone you drank from has another ten seconds later if you still need it. No potion appears anywhere else any more (it used to turn up anywhere in the world once health fell below fifty).</li>
+      <li><strong>Worlds last a random time, with no warning.</strong> Every world is given a length of its own, anywhere from one minute to four, drawn afresh each time; nothing says how long is left, the spoken "World regenerating in 15 seconds" is gone, and the status report keeps quiet too. The only warning is the five-second countdown. Worlds used to last a fixed two minutes.</li>
+      <li><strong>The crowd rings in the arena.</strong> Every roar and every reaction of the arena crowd now sends into the battle area's echo, the close-up recordings more than the two cut from a live stadium, which carry the stadium's own; some of them had no echo at all and sounded dry. The stadium crowd in the background is as it was.</li>
+    </ul>
+    <h3>Fixed</h3>
+    <ul>
+      <li><strong>A run leaves nothing behind.</strong> When a run of Ultimate Mode ended, its whole last world stayed in memory until the next run began: some thirty sounds with their 3D placement and up to twenty long decoded recordings, the areas' backgrounds. On a phone, three runs of that could be more than the browser would carry. Now everything of a run is released the moment it ends, the 3D sound chain and the echoes with it. A new test plays several games in every mode back to back and watches for anything left over.</li>
+    </ul>
+
     <h2>3.0.0 (8 November 2026), web only</h2>
     <p>Ultimate Mode rebuilt after five play tests in one day: a compass that guides you through the whole world, water parks, buses, an arena crowd, a sound engine that survives a busy regeneration, eighteen new recordings in a new sound pack, and Braille support on Windows. Web only again: the Windows game is unchanged, apart from its credits, which list the recordings the web version now carries. A new major number because so much of 2.0.0's mode has changed: areas, timings, the compass, what a safe zone and a bus do.</p>
     <h3>Changed: Ultimate Mode</h3>

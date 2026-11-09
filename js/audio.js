@@ -569,15 +569,35 @@ export class AudioEngine {
   }
 
   // The 3D world is over: the area echoes go, and sounds play as everywhere else.
-  spatialOff() {
+  spatialOff({ now = false } = {}) {
     this.spatial = false;
     this.listenerMix = null;
-    this.setAreaRooms([]);
+    this.setAreaRooms([], { now });
     if (this.worldGain) {
       const g = this.worldGain; const f = this.worldFilter; const i = this.worldIn;
       this.worldIn = this.worldFilter = this.worldGain = null;
-      // Anything still ringing (an explosion's echo) is let finish.
-      setTimeout(() => { for (const n of [i, f, g]) { try { n.disconnect(); } catch (e) { /* gone */ } } }, 5000);
+      // Anything still ringing (an explosion's echo) is let finish; at a game over
+      // (`now`) every sound of the world has been stopped, so the chain goes at once.
+      const drop = () => { for (const n of [i, f, g]) { try { n.disconnect(); } catch (e) { /* gone */ } } };
+      if (now) drop(); else setTimeout(drop, 5000);
+    }
+  }
+
+  // Let go of the long decoded recordings that nothing plays, down to BIG_KEEP
+  // (a run of Ultimate Mode can leave twenty of them in memory; a phone minds).
+  trimBig() {
+    const pinned = new Set(this.pins.values());
+    const playing = new Set();
+    for (const v of this.live) { playing.add('dry:' + v.name); playing.add('dull:' + v.name); }
+    const free = [...this.bigUsed.keys()].filter((k) => !pinned.has(k) && !playing.has(k))
+      .sort((a, b) => this.bigUsed.get(a) - this.bigUsed.get(b));
+    let n = [...this.bigUsed.keys()].filter((k) => !pinned.has(k)).length;
+    for (const k of free) {
+      if (n <= BIG_KEEP) break;
+      this.bigUsed.delete(k);
+      this.buffers.delete(k);
+      if (k.startsWith('dry:')) this._releaseWets(k.slice(4));
+      n -= 1;
     }
   }
 

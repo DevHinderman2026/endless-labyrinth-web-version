@@ -855,6 +855,80 @@ check(regenLoad.skipped || (regenLoad.atOnce.crowd === 0 && regenLoad.later.crow
 check(regenLoad.skipped || (regenLoad.later.shotsStopped === 0 && regenLoad.later.live <= regenLoad.later.max), `finished one-shots are forgotten and the voices stay under the ceiling (${regenLoad.later && regenLoad.later.live} of ${regenLoad.later && regenLoad.later.max})`);
 check(regenLoad.skipped || (regenLoad.pile.live <= regenLoad.later.max && regenLoad.pile.loops === regenLoad.pile.loopsBefore && regenLoad.pile.culled > 0), `ninety bangs at once: the ceiling holds (${regenLoad.pile && regenLoad.pile.live} voices), the loops all stay (${regenLoad.pile && regenLoad.pile.loops}), the oldest bangs gave way (${regenLoad.pile && regenLoad.pile.culled})`);
 
+// --------------------------------------------------------------- 14. potions live in the safe zones (Russell, 8 Nov; web 3.1.0)
+const potions = await page.evaluate(async () => {
+  const g = window.__el.game; const u = g.ut; const T = window.__ut;
+  const { POTION_BELOW, POTION_REFILL } = T.mod;
+  const zones = () => u.world.areas.filter((a) => a.kind === 'event');
+  const pots = () => u.pickups.filter((p) => p.kind === 'potion');
+  const out = { below: POTION_BELOW };
+  u.hp = 100; g._utPotions(0);
+  out.noneAtFull = pots().length === 0;
+  // One hit below the line: every safe zone has a potion at once, and nowhere else does.
+  u.hp = POTION_BELOW - 1; g._utPotions(0);
+  out.zones = zones().length; out.potions = pots().length;
+  out.oneEach = zones().every((z) => pots().filter((p) => p.area === z).length === 1);
+  out.onlySafe = pots().every((p) => p.area.kind === 'event');
+  // Drinking one: full health, the rest vanish, nothing comes back while health holds.
+  const z = zones()[0]; const p = pots().find((x) => x.area === z);
+  g.playerPos = [...p.pos]; u.area = z; u.place = 'world';
+  g._utUpdatePickups();
+  out.hpAfter = u.hp; g.updateUltimateMode(1 / 30); out.afterDrink = pots().length;
+  for (let i = 0; i < 60; i++) g.updateUltimateMode(1 / 30);
+  out.stillNone = pots().length === 0;
+  // Low again: they are back, but the zone just drunk from waits its refill.
+  u.hp = POTION_BELOW - 10; g._utPotions(0);
+  out.backElsewhere = zones().filter((x) => x !== z).every((x) => pots().some((q) => q.area === x));
+  out.drunkZoneWaits = !pots().some((q) => q.area === z) && u.potionDue.get(z.id) > 0;
+  for (let i = 0; i < 30 * (POTION_REFILL + 0.5); i++) g.updateUltimateMode(1 / 30);
+  out.refilled = pots().some((q) => q.area === z);
+  // Healed by other means: gone again.
+  u.hp = 100; for (let i = 0; i < 3; i++) g.updateUltimateMode(1 / 30);
+  out.goneWhenWell = pots().length === 0;
+  return out;
+});
+check(potions.below === 75 && potions.noneAtFull, 'at full health there is no potion anywhere');
+check(potions.potions === potions.zones && potions.oneEach && potions.onlySafe && potions.zones >= 1, `below 75 every safe zone holds one potion and nowhere else does (${potions.potions} in ${potions.zones} zones)`);
+check(potions.hpAfter === 100 && potions.afterDrink === 0 && potions.stillNone, 'drinking one restores full health and the others disappear: ' + JSON.stringify({ hp: potions.hpAfter, left: potions.afterDrink, still: potions.stillNone }));
+check(potions.backElsewhere && potions.drunkZoneWaits && potions.refilled, 'low again: the other zones have theirs at once, the zone drunk from refills after its wait: ' + JSON.stringify({ e: potions.backElsewhere, w: potions.drunkZoneWaits, r: potions.refilled }));
+check(potions.goneWhenWell, 'healed above the line, they disappear again');
+
+// --------------------------------------------------------------- 15. the crowd rings in the arena (Russell, 8 Nov; web 3.1.0)
+const crowdRoom = await page.evaluate(async () => {
+  const g = window.__el.game; const u = g.ut; const a = window.__el.audio; const T = window.__ut;
+  if (!(await T.ensureKind('battle'))) return { skipped: true };
+  const area = T.goTo((x) => x.kind === 'battle');
+  const { ROARS, HIT_REACTIONS, ROAR_LEVEL, HIT_REACT_LEVEL, CROWD_SEND, CROWD_SEND_LIVE, CROWD_LIVE_RECORDED } = T.mod;
+  const out = { each: [] };
+  // Each recording, played as the game plays it, measured through the arena's echo.
+  for (const name of [...ROARS, ...HIT_REACTIONS]) {
+    if (!a.has(name)) continue;
+    const send = CROWD_LIVE_RECORDED.includes(name) ? CROWD_SEND_LIVE : CROWD_SEND;
+    const v = g._utPlay(name, null, { volume: ROARS.includes(name) ? ROAR_LEVEL : HIT_REACT_LEVEL, send });
+    await new Promise((r) => setTimeout(r, 60));
+    const m = await T.measure(v, area.id, 500);
+    v.stop();
+    // (The share of the sound that goes into the room: its own send against its dry
+    // level. The room's output itself carries every sound in the arena, so it is
+    // not a measure of this one.)
+    out.each.push({ name, send, taps: v.wet && v.wet.taps ? v.wet.taps.size : 0, ratio: m.dry > 0 ? +(m.send / m.dry).toFixed(3) : null, dry: +m.dry.toFixed(3), room: +m.wet.toFixed(3) });
+    await new Promise((r) => setTimeout(r, 150));
+  }
+  // The background crowd loop is as it was: the light background send.
+  const s = u.areaSounds.get(area.id);
+  out.crowdLoop = s && s.crowdIn ? { send: s.crowdIn.send, sendSet: !!s.crowdIn.sendSet } : null;
+  // For comparison, a footstep's ratio in the same room.
+  const fs = a.play('step_stone_1', { volume: 0.3 });
+  await new Promise((r) => setTimeout(r, 40));
+  const fm = fs ? await T.measure(fs, area.id, 400) : null;
+  out.footstep = fm && fm.dry > 0 ? +(fm.send / fm.dry).toFixed(3) : null;
+  out.closeSend = CROWD_SEND;
+  return out;
+});
+check(crowdRoom.skipped || (crowdRoom.each.length === 13 && crowdRoom.each.every((e) => e.taps >= 1 && e.ratio !== null && e.ratio > 0.2 && e.ratio < 0.8)), 'all thirteen crowd recordings send into the arena\'s room, each between a fifth and four fifths of its dry level: ' + JSON.stringify(crowdRoom.each.map((e) => [e.name.replace('ut_crowd_', ''), e.ratio])));
+check(crowdRoom.skipped || crowdRoom.each.filter((e) => e.send === crowdRoom.closeSend).every((e) => e.ratio > (crowdRoom.footstep || 0) * 0.8), `the close-up recordings carry at least as much room as a footstep does (footstep ${crowdRoom.footstep})`);
+check(crowdRoom.skipped || (crowdRoom.crowdLoop && Math.abs(crowdRoom.crowdLoop.send - 0.15) < 0.001), 'the background stadium crowd keeps its light send: ' + JSON.stringify(crowdRoom.crowdLoop));
+
 check(errors.length === 0, 'no page errors' + (errors.length ? ': ' + errors.slice(0, 3).join(' | ') : ''));
 await browser.close();
 console.log(failures ? `${failures} FAILED` : 'ALL PASSED');

@@ -41,8 +41,10 @@ export const STATE = 'ultimate';
 export const BOARD = 'ultimate';
 
 // ------------------------------------------------------------------ the numbers (tune)
-export const WORLD_SECONDS = [120];             // every world (Russell, 8 Nov: two minutes, as in 2.0.0; five was tried in the play tests and was too long)
-export const WARN_AT = 15;                      // "World regenerating in 15 seconds."
+// How long a world lasts: drawn at random for every world, between these (Russell,
+// 8 Nov, web 3.1.0: no fixed length, and nothing says how long is left; the only
+// warning is the five-second countdown. Two, three and five minutes were tried).
+export const WORLD_SECONDS = [60, 240];
 export const COUNT_FROM = 5;                    // Battle's countdown over the last seconds
 export const NO_SPAWN_FROM = 3;                 // nothing new appears in the last seconds
 export const FADE_OUT = 2.0;                    // the old world fades over its last two seconds
@@ -75,8 +77,12 @@ export const AMMO_PER_ENEMY = 0.6;              // cartridges in the world per e
 export const AMMO_MIN = 3;
 export const CREDITS_AT_ONCE = [2, 3];
 export const CREDIT_VALUES = [40, 50, 60];
-export const POTION_BELOW = 50;
-export const POTION_DELAY = [3, 8];
+// Potions (Russell, 8 Nov, web 3.1.0): healing has a place to go. While your
+// health is under POTION_BELOW every safe zone holds one potion; drink it and that
+// zone has another after POTION_REFILL seconds if you are still under; back at
+// or above the line, they all disappear. None appears anywhere else.
+export const POTION_BELOW = 75;
+export const POTION_REFILL = 10;
 export const LOW_AMMO_FROM = 5;
 export const POINTS = { chaser: 10, thrower: 20, ammo: 5, potion: 10 };
 export const MULTIPLIER_STEP = 0.5;             // times 1, 1.5, 2 ... by world
@@ -144,6 +150,14 @@ export const ROAR_AFTER = 0.35;                 // seconds after the bang
 // Disappointment Reaction" and "Crowd Shocked Reaction" (Pixabay).
 export const HIT_REACTIONS = ['ut_crowd_hit_1', 'ut_crowd_hit_2', 'ut_crowd_hit_3', 'ut_crowd_hit_4', 'ut_crowd_hit_5', 'ut_crowd_hit_6'];   // groans, gasps, awws and boos; never the same twice running
 export const HIT_REACT_LEVEL = 0.6;
+// The crowd's roars and reactions ring in the arena's room (Russell, 8 Nov: some
+// sounded dry). The web-only recordings have no room list in the sound rules, so
+// without a send of their own they had no echo at all. The two roars cut from a
+// live stadium recording carry the stadium's own echo and get less; the close-up
+// recordings get more. The stadium crowd loop in the background is unchanged.
+export const CROWD_SEND = 0.5;
+export const CROWD_SEND_LIVE = 0.3;
+export const CROWD_LIVE_RECORDED = ['ut_crowd_roar_1', 'ut_crowd_roar_2'];
 export const HIT_REACT_AFTER = 0.15;            // seconds after the hit sound
 // The water park (Russell, 8 Nov): a safe zone whose background is water has a
 // water slide. Its beacon is Tower Mode's staircase; reach it and you climb by
@@ -345,10 +359,10 @@ const mixin = {
     this.audio.prepare('elevator_ride');
     const u = this.ut = {
       run: this.runId,
-      worldNo: 0, worlds: 0, elapsed: 0.0, worldTime: 0.0, phase: 'play', gap: 0.0, safe: 0.0, warned: false, lastCount: -1,
+      worldNo: 0, worlds: 0, elapsed: 0.0, worldTime: 0.0, worldLen: 0.0, phase: 'play', gap: 0.0, safe: 0.0, lastCount: -1,
       hp: START_HP, ammo: 0, points: 0, worldPoints: 0, worldDamage: 0, kills: 0, speedBonus: 1.0,
       world: null, area: null, areaSounds: new Map(), enemies: [], projectiles: [], towerItems: new Map(), towerCarry: null,
-      pickups: [], timers: [], respawn: new Map(), potionPending: 0, hitCooldown: 0, lowWarned: false,
+      pickups: [], timers: [], respawn: new Map(), potionDue: new Map(), hitCooldown: 0, lowWarned: false,
       place: 'world', ride: null, seabed: null, lift: null, liftArmed: false, dingTimer: 0,
       compass: { on: false, dir: 0, t: 0 }, prox: 0, steps: [],
       voices: new Set(), shots: new Set(),
@@ -415,13 +429,14 @@ const mixin = {
     u.worldNo += 1;
     u.world = makeWorld();
     const w = u.world;
-    u.worldTime = WORLD_SECONDS[Math.min(WORLD_SECONDS.length - 1, u.worldNo - 1)];
-    u.warned = false; u.lastCount = -1;
+    u.worldLen = uniform(WORLD_SECONDS[0], WORLD_SECONDS[1]);
+    u.worldTime = u.worldLen;
+    u.lastCount = -1;
     u.phase = first ? 'play' : 'fadein';
     u.gap = first ? 0 : FADE_IN;
     u.safe = SAFE_SECONDS + (first ? 0 : FADE_IN);
     u.enemies = []; u.projectiles = []; u.pickups = []; u.timers = []; u.respawn = new Map();
-    u.towerItems = new Map(); u.towerCarry = null; u.potionPending = 0;
+    u.towerItems = new Map(); u.towerCarry = null; u.potionDue = new Map();
     u.place = 'world'; u.ride = null; u.rideMix = null; u.seabed = null; u.lift = null; u.liftArmed = false; u.dingTimer = 0; u.slide = null; u.slides = []; u.bus = null; u.busAt = null; u.shSafe = 0; u.shBus = 0;
     this._utCompassOff(true);
     u.worldPoints = 0; u.worldDamage = 0;
@@ -494,7 +509,7 @@ const mixin = {
     u.busAt = (rand() < BUS_CHANCE && u.worldTime > BUS_APPEARS[0] + BUS_APPEARS[1] + 10) ? uniform(BUS_APPEARS[0], u.worldTime - BUS_APPEARS[1]) : null;
     u.busElapsed = 0;
     this._utRefreshRooms();
-    this._utMaybePotion();     // already below fifty: the new world gets its potion too
+    this._utPotions(0);        // already low: the new world's safe zones have their potions from the start
     if (!first) this.audio.setWorldLevel(1, FADE_IN);
   },
 
@@ -636,7 +651,7 @@ const mixin = {
     // Nov): all round you, in the area's room.
     if (e.area && e.area.crowd && e.area === u.area) {
       const roar = ROARS.filter((n) => this.audio.has(n));
-      if (roar.length) this._utLater(bang + ROAR_AFTER, this._utFresh(roar, 'lastRoar'), null, { volume: ROAR_LEVEL });
+      if (roar.length) { const name = this._utFresh(roar, 'lastRoar'); this._utLater(bang + ROAR_AFTER, name, null, { volume: ROAR_LEVEL, send: crowdSend(name) }); }
     }
     if (e.kind === 'thrower') {
       // Its throws in the air go with it.
@@ -670,11 +685,11 @@ const mixin = {
     const crowd = !!(u.area && u.area.crowd && u.place === 'world');
     const react = HIT_REACTIONS.filter((n) => this.audio.has(n));
     if (u.hp <= 0) {
-      if (crowd && react.length) this._utPlay(this._utFresh(react, 'lastReact'), null, { volume: HIT_REACT_LEVEL });
+      if (crowd && react.length) { const name = this._utFresh(react, 'lastReact'); this._utPlay(name, null, { volume: HIT_REACT_LEVEL, send: crowdSend(name) }); }
       this._utGameOver();
       return;
     }
-    if (crowd && react.length) this._utLater(HIT_REACT_AFTER, this._utFresh(react, 'lastReact'), null, { volume: HIT_REACT_LEVEL });
+    if (crowd && react.length) { const name = this._utFresh(react, 'lastReact'); this._utLater(HIT_REACT_AFTER, name, null, { volume: HIT_REACT_LEVEL, send: crowdSend(name) }); }
     // Tower's low-health warning, with its words and its threshold.
     const low = Math.max(35, 2 * dmg);
     if (u.hp <= low && !u.lowWarned) {
@@ -682,13 +697,33 @@ const mixin = {
       this.audio.play('health_low');
       this.tts.speak(`Health low. ${u.hp}.`, { interrupt: true });
     }
-    this._utMaybePotion();
+    this._utPotions(0);
   },
 
-  _utMaybePotion() {
+  // The potions, every frame: one in every safe zone while health is low (a
+  // drunk one back after a wait), none once it is not.
+  _utPotions(dt) {
     const u = this.ut;
-    if (u.hp >= POTION_BELOW || u.potionPending > 0 || u.pickups.some((p) => p.kind === 'potion')) return;
-    u.potionPending = uniform(POTION_DELAY[0], POTION_DELAY[1]);
+    if (!u.world) return;
+    // A zone's refill wait runs on whatever the health does.
+    for (const [id, due] of u.potionDue) { if (due - dt <= 0) u.potionDue.delete(id); else u.potionDue.set(id, due - dt); }
+    if (u.hp >= POTION_BELOW) {
+      for (const p of u.pickups.filter((x) => x.kind === 'potion')) this._utRemovePickup(p);
+      return;
+    }
+    for (const a of u.world.areas) {
+      if (a.kind !== 'event') continue;
+      if (u.pickups.some((p) => p.kind === 'potion' && p.area === a)) continue;
+      if (u.potionDue.has(a.id)) continue;
+      if (!this._utSpawnPickup('potion', a, { safe: true })) u.potionDue.set(a.id, 1.0);
+    }
+  },
+
+  _utRemovePickup(p) {
+    const u = this.ut;
+    if (p.voice) { p.voice.stop(); u.voices.delete(p.voice); p.voice = null; }
+    const i = u.pickups.indexOf(p);
+    if (i >= 0) u.pickups.splice(i, 1);
   },
 
   // ---------------------------------------------------------------- pickups
@@ -726,6 +761,7 @@ const mixin = {
       u.lowWarned = false;
       this.audio.play('potion_drink');
       if (!safe) this._utScore(POINTS.potion);
+      u.potionDue.set(p.area.id, POTION_REFILL);   // this zone's next, if health is low again by then
     }
   },
 
@@ -787,10 +823,7 @@ const mixin = {
     if (u.hitCooldown > 0) u.hitCooldown -= dt;
     // The regeneration countdown runs whatever else is happening (the compass too).
     u.worldTime -= dt;
-    if (!u.warned && u.worldTime <= WARN_AT) {
-      u.warned = true;
-      this.tts.speak(`World regenerating in ${WARN_AT} seconds.`, { interrupt: true });
-    }
+    // Nothing says how long is left: the five-second count is the only warning.
     const left = Math.ceil(u.worldTime);
     if (left >= 1 && left <= COUNT_FROM && left !== u.lastCount) {
       u.lastCount = left;
@@ -871,14 +904,8 @@ const mixin = {
         this._utSpawnEnemy(u.world.areas[id]);
       }
     }
-    // The potion, once health is low.
-    if (u.potionPending > 0) {
-      u.potionPending -= dt;
-      if (u.potionPending <= 0 && !noSpawn) {
-        u.potionPending = 0;
-        if (!this._utSpawnPickup('potion', choice(u.world.areas))) u.potionPending = 2.0;
-      }
-    }
+    // The potions in the safe zones, while health is low.
+    if (!noSpawn) this._utPotions(dt);
   },
 
   // ---------------------------------------------------------------- enemies, every frame
@@ -1852,6 +1879,8 @@ const mixin = {
   },
 };
 
+function crowdSend(name) { return CROWD_LIVE_RECORDED.includes(name) ? CROWD_SEND_LIVE : CROWD_SEND; }
+
 // The first leg of a route: how far it runs straight, and which way it turns.
 function legOf(path, fromCell) {
   if (!path || !path.length) return null;
@@ -1887,15 +1916,27 @@ function reset(game) {
 // The run is over (or quit): its sounds stop and the 3D world closes. What the run
 // scored is kept for finish(); the next run's reset clears it.
 function stopAll(game) {
-  if (game.ut) {
-    for (const v of [...game.ut.voices]) v.stop();
-    game.ut.voices.clear();
-    for (const v of [...game.ut.shots]) v.stop();
-    game.ut.shots.clear();
-    if (game.ut.ride && game.ut.ride.voice) game.ut.ride.voice.stop();
-    if (game.ut.compass.on) { game.ut.compass.on = false; game.audio.setMuffle(false, 0.01); }
+  const u = game.ut;
+  if (u) {
+    for (const v of [...u.voices]) v.stop();
+    u.voices.clear();
+    for (const v of [...u.shots]) v.stop();
+    u.shots.clear();
+    if (u.ride && u.ride.voice) u.ride.voice.stop();
+    if (u.bus && u.bus.pullVoice) u.bus.pullVoice.stop();
+    if (u.compass.on) { u.compass.on = false; game.audio.setMuffle(false, 0.01); }
+    // The finished run's world is let go of at once, not kept until the next
+    // run replaces it (Russell, 8 Nov: the game crashed after three games). Every
+    // placed sound of a world holds two HRTF panners and the areas' sounds held
+    // some thirty voices; the run's score and times stay for the Game Over words.
+    u.areaSounds.clear(); u.enemies = []; u.projectiles = []; u.pickups = []; u.slides = []; u.slide = null;
+    u.bus = null; u.towerItems.clear(); u.towerCarry = null; u.ride = null; u.seabed = null; u.lift = null;
+    u.world = null; u.area = null;
   }
-  if (game.audio && game.audio.spatial) game.audio.spatialOff();
+  if (game.audio && game.audio.spatial) game.audio.spatialOff({ now: true });
+  // The long recordings this run decoded (the areas' backgrounds, up to twenty of
+  // them) are released now that nothing plays, down to the engine's usual few.
+  if (game.audio && game.audio.trimBig) game.audio.trimBig();
 }
 
 function input(game, g) {
@@ -1967,7 +2008,6 @@ export default {
     const bits = [`Ultimate Mode. World ${u.worldNo}.`, `Health ${u.hp}.`, `${u.points} points.`, `${u.ammo} shots.`];
     if (u.place === 'seabed') bits.push('Seabed.');
     if (u.compass.on) bits.push('Compass on.');
-    if (u.worldTime <= WARN_AT) bits.push(`Regenerating in ${Math.max(0, Math.ceil(u.worldTime))}.`);
     return bits.join(' ');
   },
   boards: [{ key: BOARD, label: 'Ultimate Mode', fmt: (v) => `${v} ${v === 1 ? 'point' : 'points'}` }],
