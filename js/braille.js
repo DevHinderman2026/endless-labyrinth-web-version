@@ -1,36 +1,35 @@
-// Braille keyboard and Braille display support for the web version (web 3.0.0),
-// on a Windows computer: the port of the Windows game's braille_input.py.
+// Braille display and Braille keyboard support for the web version, on a Windows
+// computer (web 3.0.0; reworked in 3.1.0 after Russell's test on his BrailleNote
+// Evolve, 9 November 2026).
 //
-// Why it is needed (the same as on Windows): on a Braille notetaker such as the
-// BrailleNote Evolve, or a computer with a Braille display that has its own
-// keyboard, the Braille keys do not reach the page as ordinary key presses. The
-// screen reader translates each chord first and types the result as text. Arrow
-// keys skip that step; letters do not. A letter on its own, in contracted (grade
-// 2) Braille, is a wordsign, so H arrives as "have", T as "that", Y as "you".
-// What this file does is catch what comes out the other end and turn it back into
-// the key the player meant.
+// The keyboard focus: NVDA and JAWS read a page in browse mode, where letters and
+// arrows are their own commands and never reach the page. So on Windows the game
+// keeps the keyboard focus in a game area of its own (#console, role application)
+// from the moment the sounds are loaded: the screen reader stays in focus mode
+// there and every key reaches the game. It is not a text box: in an editable field
+// a screen reader holds Braille keyboard input until the space is pressed, so on
+// the BrailleNote the letter H reached the game only after a space (3.0.0 had a
+// text box); outside one, each letter is sent the moment it is brailled.
 //
-// How a browser differs from the Windows game:
-// - A page cannot see the devices, so Auto detects a Braille keyboard by how the
-//   keys arrive: text typed by a screen reader's Braille driver carries no key
-//   code (KeyboardEvent.code is empty, or the text comes as an input event that no
-//   key press announced), which an ordinary keyboard never does.
-// - NVDA and JAWS read a page in browse mode, where letters and arrows are their
-//   own commands and never reach the page. So on Windows the game keeps the
-//   keyboard focus in a text box of its own (#console) from the moment the sounds
-//   are loaded: a focused text box puts the screen reader in focus (forms) mode,
-//   every key reaches the game, and the box is also the Braille display's view of
-//   the game: everything the game says is written into it and stays there until
-//   the next message (Russell's choice over a flashing live region), so a Braille
-//   display tethered to the focus shows it and can pan through a long sentence.
-// - "Speech: Off, Braille only" turns the game's own voice off (the messages still
-//   go to the box). It can only be set while Braille keyboard mode is on, so a
-//   player can never be left with neither speech nor Braille.
+// The display: everything the game says becomes the game area's name, which the
+// screen reader shows on the Braille display and keeps there until the next
+// message (Test 1 of the 9 November test page; an announcement, Test 3, worked too
+// but shows only for a moment; a Braille-only label and a read-only text box did
+// not work). The screen reader also speaks a name change, which is why the game
+// asks Windows players to turn their screen reader's speech off: the game speaks
+// for itself. "Speech: Off" turns the game's own voice off instead, for a player
+// who keeps the screen reader's speech on, or reads on the display alone.
+//
+// The keys: the BrailleNote sends its Braille keys exactly as a keyboard does, with
+// real key codes (its Key Test said "Key h"), so a page cannot tell them apart, and
+// nothing needs translating. Some screen readers instead type Braille as text with
+// no key code, and in contracted Braille a letter on its own then arrives as a word
+// (have for H, that for T). That text is turned back into the letter here, always:
+// an ordinary keyboard never sends it, so it does no harm. There is no setting and
+// no detection any more (3.0.0's Auto could never notice the BrailleNote: a browser
+// cannot see a Braille display).
 //
 // Nothing in here does anything on a phone, a tablet, a Mac or a Chromebook.
-
-export const MODES = ['auto', 'on', 'off'];
-export const MODE_NAMES = { auto: 'Auto', on: 'On', off: 'Off' };
 
 // Contracted Braille alphabetic wordsigns: a letter on its own means one of these
 // words, so a screen reader set to contracted input types the word. UEB and the
@@ -46,16 +45,17 @@ export const WORDSIGNS = {
 // Characters from one chord, or one contracted word, arrive in a quick burst. A
 // gap longer than this ends the burst.
 export const BURST_GAP = 80;
-// How long a real key press stays on record, so the same press arriving again as
-// typed text is not counted a second time.
-const DEDUPE_WINDOW = 500;
-// One press of Enter can reach the page twice (a key and a line break typed).
-const CONTROL_DEDUPE = 120;
 
 const CONTROL_NAMES = { Enter: 'Enter', Escape: 'Escape', Backspace: 'Backspace', Tab: 'Tab', ' ': 'Space' };
 
+// The key test: the same key again within this long is the same hold (a Braille
+// notetaker sends a held key as a stream of separate presses); the hold is
+// reported, with how many times the key arrived and how far apart, once the stream
+// has been quiet this long.
+export const HOLD_REPORT_GAP = 400;
+
 export class Braille {
-  // field: the text box the game keeps focused on Windows; store: the settings;
+  // field: the game area the game keeps focused on Windows; store: the settings;
   // emit(gesture): hands a key to the game as gestures.js does.
   constructor({ field = null, store = null, emit = () => {}, speak = () => {}, enabled = true } = {}) {
     this.field = field;
@@ -63,87 +63,44 @@ export class Braille {
     this.emit = emit;
     this.speak = speak;
     this.enabled = enabled;              // false anywhere but a Windows computer
-    this.mode = this._loadMode();
-    this.speechOff = !!(store && store.settings && store.settings.speech === 'off');
-    this.detected = false;               // text has arrived the way a Braille driver sends it
+    this.speechOff = !!(this.enabled && store && store.settings && store.settings.speech === 'off');
     this.keyTest = false;
     this.onKeyTestEnd = null;
-    this.announcement = (this.enabled && this.mode === 'on') ? 'Braille keyboard mode is on.' : null;
+    this.held = null;                    // the key test: the key being held, and its arrivals
     this.buffer = '';
     this.flushTimer = null;
-    this.recentKeys = [];                // [char, time] from key presses with a key code
-    this.recentText = [];                // [char, time] from text already fed
-    this.lastControl = {};
-    this.holding = false;                // keeping the focus in the field
+    this.holding = false;                // keeping the focus in the game area
     this.lastShown = '';
     if (this.field && this.enabled) {
-      // Nothing a Braille driver or a keyboard types is ever kept in the box: the
-      // box shows what the game says. The typed text is read here first.
-      this.field.addEventListener('beforeinput', (e) => this._beforeInput(e));
       this.field.addEventListener('blur', () => { if (this.holding) setTimeout(() => this.focus(), 50); });
     }
   }
 
   // ---------------------------------------------------------------- settings
-  _loadMode() {
-    const m = this.store && this.store.settings && this.store.settings.brailleKeyboard;
-    return MODES.includes(m) ? m : 'auto';
-  }
-
   _save() {
     if (!this.store) return;
-    this.store.settings.brailleKeyboard = this.mode;
     this.store.settings.speech = this.speechOff ? 'off' : 'on';
     this.store.save();
   }
 
-  get active() { return this.enabled && (this.mode === 'on' || (this.mode === 'auto' && this.detected)); }
+  // The main menu entry (Windows only).
+  speechLabel() { return this.speechOff ? 'Speech: Off, screen reader and Braille only' : 'Speech: On'; }
 
-  // The main menu entries (Windows only).
-  label() {
-    if (this.mode === 'auto') return `Braille Keyboard: Auto, ${this.detected ? 'Braille device found' : 'no Braille device yet'}`;
-    return `Braille Keyboard: ${MODE_NAMES[this.mode]}`;
-  }
-
-  speechLabel() {
-    if (!this.active) return 'Speech: On, no Braille output';
-    return this.speechOff ? 'Speech: Off, Braille only' : 'Speech: On';
-  }
-
-  // Auto, On, Off: returns the sentence to speak.
-  cycle(step = 1) {
-    this.mode = MODES[(MODES.indexOf(this.mode) + step + MODES.length) % MODES.length];
-    if (!this.active && this.speechOff) this.speechOff = false;   // never silent with no Braille
-    this._save();
-    if (this.mode === 'on') return 'Braille keyboard, On. Braille letters and Enter are always translated.';
-    if (this.mode === 'off') return 'Braille keyboard, Off. Only an ordinary keyboard is used.';
-    return 'Braille keyboard, Auto. It turns itself on when a Braille device is found.';
-  }
-
-  // Speech on or off (Braille only): returns the sentence to speak (it is spoken
-  // even when speech is being turned off, so the player hears the change).
+  // The game's own voice on or off: returns the sentence to speak (it is spoken
+  // even when the voice is being turned off, so the player hears the change).
   toggleSpeech() {
-    if (!this.active) {
-      return 'Speech stays on. No Braille output was found. Turn Braille keyboard mode on, or type a letter on your Braille keyboard so the game finds it, then try again.';
-    }
     this.speechOff = !this.speechOff;
     this._save();
-    return this.speechOff ? 'Speech off. Everything the game says now appears in Braille only.' : 'Speech on.';
+    return this.speechOff
+      ? 'Speech off. The game\'s own voice is silent; everything it says still goes to your screen reader and your Braille display. Turn your screen reader\'s speech on to hear it.'
+      : 'Speech on. The game speaks for itself; keep your screen reader\'s speech off so you do not hear everything twice.';
   }
 
-  // Whether the game's own voice is silenced: only while Braille is in use.
-  get speechMuted() { return this.speechOff && this.active; }
-
-  takeAnnouncement() { const a = this.announcement; this.announcement = null; return a; }
-
-  describeStatus() {
-    const state = this.active ? 'Braille keyboard mode is on.' : 'Braille keyboard mode is off.';
-    const found = this.detected ? 'A Braille device was found by the way its keys arrive.' : 'No Braille device found yet.';
-    return `${state} ${found}`;
-  }
+  // Whether the game's own voice is silenced.
+  get speechMuted() { return this.enabled && this.speechOff; }
 
   // ---------------------------------------------------------------- the focus and the display
-  // Keep the keyboard focus in the game's text box (focus mode for NVDA and JAWS).
+  // Keep the keyboard focus in the game area (focus mode for NVDA and JAWS).
   hold(on = true) {
     this.holding = on && this.enabled && !!this.field;
     if (this.holding) this.focus();
@@ -155,15 +112,14 @@ export class Braille {
     try { this.field.focus({ preventScroll: true }); } catch (e) { /* not focusable yet */ }
   }
 
-  // Put one message on the display: it becomes the text box's whole content, with
-  // the caret at its start so the display shows it from its first word.
+  // Put one message on the display: it becomes the game area's name, which the
+  // screen reader shows until the next message.
   show(text) {
     if (!this.field || !this.enabled) return;
     const t = String(text || '').trim();
     if (!t || t === this.lastShown) return;
     this.lastShown = t;
-    this.field.value = t;
-    try { this.field.setSelectionRange(0, 0); } catch (e) { /* fine */ }
+    this.field.setAttribute('aria-label', t);
   }
 
   // ---------------------------------------------------------------- the keys
@@ -172,95 +128,35 @@ export class Braille {
   keydown(e) {
     if (!this.enabled) return false;
     const now = performance.now();
-    this._expire(now);
     const key = e.key || '';
     const printable = key.length === 1;
     const codeless = !e.code;               // typed by software: a Braille driver, never a keyboard
     if (this.keyTest) {
       if (key === 'Escape') { this.endKeyTest(); e.preventDefault(); if (this.holding) setTimeout(() => this.refocus(), 60); return true; }
-      if (printable && codeless) { this._noteText(key, now); this._feed(key, now); }
-      else this.speak(this._describeKey(e));
+      if (printable && codeless) this._feed(key, now);
+      else this._testKey(e, now);
       e.preventDefault();
       return true;
     }
     if (printable && codeless) {
-      // A Braille driver's text: it may be a wordsign ("have" for H), so it goes
-      // through the burst. Any mode: this is how a Braille keyboard is found.
-      if (!this.detected) {
-        this.detected = true;
-        if (this.mode === 'auto') this.announcement = 'Braille device detected. Braille keyboard mode is on.';
-      }
-      if (!this.active) return false;     // Off: the game takes the letters as they come
-      this._noteText(key, now);
+      // Braille typed as text: it may be a wordsign ("have" for H), so it goes
+      // through the burst and comes out as the letter meant.
       this._feed(key, now);
       e.preventDefault();
       return true;
     }
-    if (printable) {
-      // An ordinary key: the game acts on it now; the same character typed into the
-      // box right after is the same press.
-      this.recentKeys.push([key.toLowerCase(), now]);
-      return false;
-    }
-    if (key === 'Enter') this.lastControl.Enter = now;
-    // Escape takes NVDA and JAWS out of focus mode (letters would become their own
-    // commands again): the focus is put back into the box a moment later, a fresh
-    // focus event, so they return to focus mode on their own.
+    // Escape can take NVDA and JAWS out of focus mode (letters would become their
+    // own commands again): the focus is put back into the game area a moment
+    // later, a fresh focus event, so they return to focus mode on their own.
     if (key === 'Escape' && this.holding) setTimeout(() => this.refocus(), 60);
     return false;
   }
 
-  // Leave the box and come straight back: a new focus event for the screen reader.
+  // Leave the game area and come straight back: a new focus event for the screen reader.
   refocus() {
     if (!this.holding || !this.field) return;
     try { this.field.blur(); } catch (e) { /* fine */ }
     setTimeout(() => this.focus(), 20);
-  }
-
-  // Text about to be typed into the box: nothing ever is, but a Braille driver's
-  // word that came with no key presses is read from here.
-  _beforeInput(e) {
-    e.preventDefault();
-    if (!this.enabled) return;
-    const now = performance.now();
-    this._expire(now);
-    const type = e.inputType || '';
-    if (type === 'insertLineBreak' || type === 'insertParagraph') {
-      if (this.keyTest) { this.speak('Enter, typed.'); return; }
-      if (now - (this.lastControl.Enter || -1e9) < CONTROL_DEDUPE) return;
-      this.lastControl.Enter = now;
-      if (this.buffer) this._flush();
-      this.emit('enter');
-      return;
-    }
-    if (type !== 'insertText' && type !== 'insertCompositionText' && type !== 'insertFromPaste') return;
-    const data = e.data || '';
-    for (const ch of data) {
-      const low = ch.toLowerCase();
-      if (this._consume(this.recentKeys, low) || this._consume(this.recentText, low)) continue;   // the same press, already handled
-      // Text with no key press behind it: a Braille driver's.
-      if (!this.detected) {
-        this.detected = true;
-        if (this.mode === 'auto' && !this.keyTest) this.announcement = 'Braille device detected. Braille keyboard mode is on.';
-      }
-      if (!this.active && !this.keyTest) continue;
-      this._feed(ch, now);
-    }
-  }
-
-  _noteText(ch, now) { this.recentText.push([ch.toLowerCase(), now]); }
-
-  _expire(now) {
-    for (const list of [this.recentKeys, this.recentText]) {
-      while (list.length && now - list[0][1] > DEDUPE_WINDOW) list.shift();
-    }
-  }
-
-  _consume(list, ch) {
-    const i = list.findIndex(([c]) => c === ch);
-    if (i < 0) return false;
-    list.splice(i, 1);
-    return true;
   }
 
   // One character of Braille text into the burst; the burst is read BURST_GAP
@@ -313,11 +209,43 @@ export class Braille {
   }
 
   endKeyTest() {
+    clearTimeout(this.heldTimer);
+    this.held = null;
     this.keyTest = false;
     this.buffer = '';
     const end = this.onKeyTestEnd;
     this.onKeyTestEnd = null;
     if (end) end();
+  }
+
+  // The key test: name a key the moment it arrives; if it keeps arriving, say so
+  // once the stream stops, with how many times and how far apart.
+  _testKey(e, now) {
+    const id = (e.key || '') + '|' + (e.code || '');
+    const h = this.held;
+    if (h && h.id === id && now - h.last < HOLD_REPORT_GAP) {
+      h.count += 1;
+      if (e.repeat) h.repeats += 1;
+      h.gaps.push(now - h.last);
+      h.last = now;
+    } else {
+      this._reportHeld();
+      this.speak(this._describeKey(e));
+      this.held = { id, name: this._describeKey(e).replace(/\.$/, ''), count: 1, repeats: 0, last: now, gaps: [] };
+    }
+    clearTimeout(this.heldTimer);
+    this.heldTimer = setTimeout(() => this._reportHeld(), HOLD_REPORT_GAP);
+  }
+
+  _reportHeld() {
+    clearTimeout(this.heldTimer);
+    const h = this.held;
+    this.held = null;
+    if (!h || h.count < 2 || !this.keyTest) return;
+    const every = Math.round(h.gaps.reduce((a, b) => a + b, 0) / h.gaps.length);
+    // A keyboard's own repeat is flagged as such; a notetaker's stream is not.
+    const how = h.repeats === h.count - 1 ? 'as a key held down' : h.repeats === 0 ? 'as separate presses' : 'partly as separate presses';
+    this.speak(`${h.name}, held: it arrived ${h.count} times, about every ${every} milliseconds, ${how}.`);
   }
 
   _describeKey(e) {

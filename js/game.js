@@ -100,12 +100,12 @@ const WINDOWS_HELP = ['General', 'Ultimate Mode', 'Demos, Ultimate Mode'];
 // Windows only: how the game works with a Braille display and a Braille keyboard
 // (js/braille.js), added to the General section.
 export const BRAILLE_HELP = { title: 'General Braille Keyboard and Display', sound: null, desc: 'On a Windows computer the game works with a Braille display and a Braille keyboard, through NVDA or JAWS, as the Windows version does. '
-  + 'From the moment the sounds are loaded the game keeps the keyboard focus in a text box of its own, so your screen reader stays in focus mode and every key reaches the game. Everything the game says is written into that box as well, so a Braille display shows it and it stays there until the next message; a long message can be panned through. '
-  + 'Escape, which the game uses to go back, takes NVDA and JAWS out of focus mode; the game puts the focus back into its box at once, so they return to it by themselves. '
-  + 'A Braille keyboard, such as the BrailleNote Evolve\'s, does not send letters as keys: the screen reader translates each chord and types the result, and in contracted Braille a letter on its own arrives as a word, have for H, that for T, you for Y. The game turns that back into the letter you meant, and Enter, Escape, the arrows and the space work as they are. '
-  + 'Three settings on the main menu are the Windows game\'s: Braille Keyboard, Auto, On or Off. Auto turns the translation on the moment text arrives the way a Braille driver sends it, and says so; On keeps it on; Off uses only an ordinary keyboard. '
-  + 'Speech: On, or Off, Braille only, which silences the game\'s voice so that you read the game on the display alone; it can only be turned off while Braille keyboard mode is on, so you are never left with neither. '
-  + 'And the Braille Key Test, which names every key or Braille word that arrives, and the letter the game understands, until you press Escape: try it first with a new device.' };
+  + 'From the moment the sounds are loaded the game keeps the keyboard focus in a game area of its own, so your screen reader stays in focus mode and every key reaches the game. Everything the game says becomes the name of that game area, so your Braille display shows it and it stays there until the next message; a long message can be panned through. '
+  + 'Your screen reader would speak each message too, so turn its speech off while you play and let the game speak for itself; or, if you would rather hear your screen reader, turn the game\'s own voice off with the Speech setting on the main menu. '
+  + 'Escape, which the game uses to go back, can take NVDA and JAWS out of focus mode; the game puts the focus back into its game area at once, so they return to it by themselves. '
+  + 'The game area is not a text box, so a Braille keyboard\'s letters reach the game the moment you braille them, with no need to press the space. A Braille notetaker such as the BrailleNote Evolve sends its keys just as a keyboard does. Some screen readers instead type Braille as text, and in contracted Braille a letter on its own then arrives as a word, have for H, that for T, you for Y: the game turns that back into the letter you meant. Enter, Escape, the arrows and the space work as they are. '
+  + 'A key held down on a Braille notetaker counts as one press, as on a keyboard, even though the notetaker sends it again and again. '
+  + 'Two settings on the main menu are for Windows: Speech, On, or Off, which silences the game\'s own voice, so that your screen reader speaks instead or you read on the display alone; and the Braille Key Test, which names every key or Braille word that arrives, and the letter the game understands, until you press Escape: try it first with a new device.' };
 export function gameHelp() {
   if (!windowsOnly()) return HELP;
   return HELP.filter(([name]) => WINDOWS_HELP.includes(name)).map(([name, items]) => (name === 'General' ? [name, [...items, BRAILLE_HELP]] : [name, items]));
@@ -300,9 +300,9 @@ export class Game {
     const practice = keyboardDevice() ? [] : ['practice'];
     // A Windows computer (web 2.0.0): Ultimate Mode, the scores and the
     // settings; the other modes and the events are the Windows game's.
-    // Its Braille settings are the Windows game's: the keyboard mode, speech off
-    // for Braille only, and a key test for a new device.
-    if (windowsOnly()) return ['ultimate', 'scores', 'braille', 'speech', 'keytest', 'rate', 'leave'];
+    // Its Braille settings: the game's own voice on or off, and a key test for a
+    // new device (3.1.0: the Braille Keyboard setting is gone; js/braille.js).
+    if (windowsOnly()) return ['ultimate', 'scores', 'speech', 'keytest', 'rate', 'leave'];
     return ['standard', 'battle', ...this._menuItems().map((i) => i.key), 'scores', ...practice, 'rate', 'leave'];
   }
 
@@ -313,7 +313,7 @@ export class Game {
     return {
       standard: 'Standard Mode', battle: 'Battle Mode', scores: 'High Scores', practice: 'Gesture Practice',
       rate: `Speech Rate: ${this.tts.rateLevel} of ${RATES.length}`, leave: 'Leave Game',
-      braille: br ? br.label() : 'Braille Keyboard', speech: br ? br.speechLabel() : 'Speech', keytest: 'Braille Key Test',
+      speech: br ? br.speechLabel() : 'Speech', keytest: 'Braille Key Test',
     }[k];
   }
 
@@ -329,7 +329,6 @@ export class Game {
       line += 'On this Windows computer the web version plays Ultimate Mode, in binaural 3D sound. '
         + 'The other modes and the events are played in the Windows version of Endless Labyrinth; the play page links to its download. ';
     }
-    if (this.braille) { const a = this.braille.takeAnnouncement(); if (a) line = a + ' ' + line; }
     if (!this.scores.settings.practiced) line += 'New here? Try Gesture Practice, on this menu. ';
     const ios = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
     const standalone = window.navigator.standalone || (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches);
@@ -1223,8 +1222,6 @@ export class Game {
       this.tts.speak(this.menuOptions[this.menuIndex]);
     } else if ((g === 'left' || g === 'right') && k === 'rate') {
       this._changeRate(g === 'left' ? -1 : 1, false);
-    } else if ((g === 'left' || g === 'right') && k === 'braille' && this.braille) {
-      this._brailleSetting(g === 'left' ? -1 : 1);
     } else if (g === 'enter') {
       this.audio.play('menu_move');
       if (k === 'standard') this.startGame(S.STANDARD);
@@ -1236,7 +1233,6 @@ export class Game {
       } else if (k === 'practice') this._startPractice();
       else if (this._menuItems().some((i) => i.key === k)) this._menuItems().find((i) => i.key === k).select(this);
       else if (k === 'rate') this._changeRate(1, true);
-      else if (k === 'braille' && this.braille) this._brailleSetting(1);
       else if (k === 'speech' && this.braille) {
         const said = this.braille.toggleSpeech();
         this._refreshMenu();
@@ -1249,21 +1245,13 @@ export class Game {
     }
   }
 
-  // Windows: Auto, On, Off for the Braille keyboard (js/braille.js).
-  _brailleSetting(step) {
-    const said = this.braille.cycle(step);
-    this._refreshMenu();
-    this.audio.play('menu_move');
-    this.tts.speak(said);
-  }
-
   // Windows: the Braille key test. Every key or Braille word that arrives is named,
   // until Escape; the game itself takes nothing meanwhile.
   _startKeyTest() {
     this.state = S.KEY_TEST;
     this.tts.speak('Braille key test. Press any key, or type on your Braille keyboard: the game says what arrives and what it understands. '
-      + 'A letter typed in contracted Braille arrives as a word, such as have for H, and is read back with the letter it stands for. Press Escape to finish. '
-      + this.braille.describeStatus());
+      + 'A letter typed in contracted Braille arrives as a word, such as have for H, and is read back with the letter it stands for. '
+      + 'A key held down is reported once you let go, with how many times it arrived. Press Escape to finish.');
     this.braille.startKeyTest(() => {
       if (this.state !== S.KEY_TEST) return;
       this.state = S.MENU;
@@ -1710,11 +1698,6 @@ export class Game {
   // -------------------------------------------------------------- one frame
   frame(dt) {
     this._countStats(dt);
-    if (this.braille && this.braille.announcement && this.state === S.MENU) {
-      const a = this.braille.takeAnnouncement();
-      this._refreshMenu();
-      this.tts.speak(a, { interrupt: false });
-    }
     const md = this.mode;
     const gm = md && md.gestureMode ? md.gestureMode(this) : null;
     this.gestures.setMode(this.playing && !this.isPaused ? (gm || 'run') : this.state === S.PRACTICE ? 'practice' : 'menu');

@@ -72,7 +72,7 @@ function offInstructions() {
     // Freedom Scientific's JAWS keystroke list.
     return 'Now turn your screen reader\'s speech off. With NVDA, press the NVDA key plus S, which cycles the speech mode off and back on. '
       + 'With JAWS, press Insert plus Space, then S, which switches between full speech and speech on demand (Caps Lock plus Space, then S, in the laptop layout); the same again turns full speech back on. '
-      + 'The game speaks for itself, with your computer\'s own voice, and everything it says also appears in the text box that now has the focus, for a Braille display; keep the focus there. '
+      + 'The game speaks for itself, with your computer\'s own voice, and everything it says also appears on your Braille display, through the game area that now has the focus; keep the focus there. '
       + 'When your screen reader is quiet, press Enter to begin. When you leave the game, turn its speech back on the same way.';
   }
   if (keyboard) {
@@ -119,9 +119,9 @@ async function start() {
   const text = 'Sounds loaded. ' + offInstructions();
   setText('lead', text);
   if (windowsOnly()) {
-    // From here the keyboard focus lives in the game's text box: NVDA and JAWS go
-    // to focus mode there, so Enter and every key reach the game, and a Braille
-    // display shows what the game says.
+    // From here the keyboard focus lives in the game area: NVDA and JAWS go to
+    // focus mode there, so Enter and every key reach the game, and a Braille
+    // display shows what the game says (its name is each message).
     $('console').hidden = false;
     braille.hold(true);
   }

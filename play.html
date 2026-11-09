@@ -25,11 +25,13 @@
     </div>
     <p id="status"></p>
     <p id="said"></p>
-    <!-- Windows (web 3.0.0): the game keeps the keyboard focus here, so NVDA and
-         JAWS stay in focus mode and every key reaches the game; what the game says
-         is written here too, for a Braille display (js/braille.js). Hidden until a
-         Windows computer starts the game. -->
-    <textarea id="console" class="console" aria-label="Endless Labyrinth" rows="2" autocomplete="off" autocapitalize="off" spellcheck="false" hidden></textarea>
+    <!-- Windows (web 3.0.0, a game area since 3.1.0): the game keeps the keyboard
+         focus here, so NVDA and JAWS stay in focus mode and every key reaches the
+         game; what the game says becomes its name, for a Braille display
+         (js/braille.js). Not a text box: in an editable field the screen reader
+         holds Braille keys until the space. Hidden until a Windows computer starts
+         the game. -->
+    <div id="console" class="console" role="application" tabindex="0" aria-label="Endless Labyrinth" hidden>Endless Labyrinth</div>
   </main>
   <script type="module" src="js/main.js"></script>
 </body>

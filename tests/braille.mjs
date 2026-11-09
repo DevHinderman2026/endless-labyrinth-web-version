@@ -1,11 +1,13 @@
-// Braille keyboard and display support on Windows (web 3.0.0, js/braille.js), in
+// Braille display and Braille keyboard support on Windows (js/braille.js; web
+// 3.0.0, reworked in 3.1.0 after Russell's test on his BrailleNote Evolve), in
 // Chromium through Playwright with a Windows user agent. Run with the site served:
 //   node --import ./tests/github-stub.mjs tests/braille.mjs http://localhost:8765
-// A Braille driver's text is imitated the two ways a browser can see it: key
-// presses with no key code (Windows' VK_PACKET, what Chrome makes of a screen
-// reader typing a character) and text typed into the box with no key press behind
-// it (beforeinput). Nothing here can hear or touch a real display: the key test on
-// the BrailleNote Evolve is for Russell.
+// A Braille driver's typed text is imitated as key presses with no key code
+// (Windows' VK_PACKET, what Chrome makes of a screen reader typing a character);
+// a Braille notetaker's held key as a quick stream of separate key presses with
+// real key codes (what the BrailleNote's arrows sent). Nothing here can hear or
+// touch a real display: what a screen reader does with the game area's name was
+// tried by Russell on his BrailleNote (a test page, 9 November 2026: Test 1).
 
 import { chromium } from 'playwright';
 
@@ -28,193 +30,169 @@ page.on('console', (m) => { if (m.type() === 'error') errors.push(m.text()); });
 await page.goto(base + '/play.html');
 await page.evaluate(() => localStorage.clear());
 await page.reload();
-const beforeStart = await page.evaluate(() => ({ hidden: document.getElementById('console').hidden, enabled: window.__el.braille.enabled, mode: window.__el.braille.mode }));
-check(beforeStart.hidden && beforeStart.enabled && beforeStart.mode === 'auto', 'before Start the box is hidden; Braille is enabled on Windows, mode Auto');
+const beforeStart = await page.evaluate(() => {
+  const el = document.getElementById('console');
+  return { hidden: el.hidden, enabled: window.__el.braille.enabled, tag: el.tagName, role: el.getAttribute('role'), editable: el.isContentEditable || 'value' in el, tabindex: el.getAttribute('tabindex') };
+});
+check(beforeStart.hidden && beforeStart.enabled, 'before Start the game area is hidden; Braille is enabled on Windows');
+check(beforeStart.tag === 'DIV' && beforeStart.role === 'application' && !beforeStart.editable && beforeStart.tabindex === '0', 'the game area is a focusable application, not a text box (in a text box the screen reader holds Braille keys until the space): ' + JSON.stringify(beforeStart));
 await page.click('#start');
 await page.waitForFunction(() => /Sounds loaded/.test(document.getElementById('lead').textContent), null, { timeout: 90000 });
 await sleep(200);
 
-// --------------------------------------------------------------- the focus lives in the box
+// --------------------------------------------------------------- the focus lives in the game area
+const name = () => document.getElementById('console').getAttribute('aria-label');
 const loaded = await page.evaluate(() => ({
   hidden: document.getElementById('console').hidden, focused: document.activeElement && document.activeElement.id,
-  lead: document.getElementById('lead').textContent, value: document.getElementById('console').value,
+  lead: document.getElementById('lead').textContent, name: document.getElementById('console').getAttribute('aria-label'),
 }));
-check(!loaded.hidden && loaded.focused === 'console', 'when the sounds are loaded the game\'s text box is shown and has the focus');
-check(/text box that now has the focus/.test(loaded.lead) && loaded.value === loaded.lead.replace(/\s+/g, ' ').trim().slice(0, loaded.value.length) && loaded.value.length > 40, 'the instructions mention the box, and are written into it for the display');
+check(!loaded.hidden && loaded.focused === 'console', 'when the sounds are loaded the game area is shown and has the focus');
+check(/game area that now has the focus/.test(loaded.lead) && !/text box/.test(loaded.lead) && loaded.name === loaded.lead.replace(/\s+/g, ' ').trim(), 'the instructions mention the game area, and become its name for the display');
 await page.evaluate(() => document.body.focus());
 await page.evaluate(() => document.getElementById('said').focus());
 await sleep(150);
-check((await page.evaluate(() => document.activeElement && document.activeElement.id)) === 'console', 'the focus comes back to the box when something else takes it');
+check((await page.evaluate(() => document.activeElement && document.activeElement.id)) === 'console', 'the focus comes back to the game area when something else takes it');
 
 // Enter begins (a Braille keyboard's Enter is a real key press).
 await page.keyboard.press('Enter');
 await page.waitForFunction(() => window.__el.game && window.__el.game.state === 'menu');
 await sleep(300);
-const menu = await page.evaluate(() => {
+const menu = await page.evaluate((nameSrc) => {
   const g = window.__el.game;
-  return { menu: g.menuOptions.slice(), said: document.getElementById('said').textContent, value: document.getElementById('console').value, focused: document.activeElement.id };
+  return { menu: g.menuOptions.slice(), keys: g.menuKeys.slice(), said: document.getElementById('said').textContent, name: document.getElementById('console').getAttribute('aria-label'), focused: document.activeElement.id };
 });
-check(menu.menu.some((m) => /^Braille Keyboard: Auto, no Braille device yet$/.test(m)) && menu.menu.includes('Speech: On, no Braille output') && menu.menu.includes('Braille Key Test'), 'the menu carries the Windows game\'s Braille settings: ' + menu.menu.join(' | '));
-check(menu.value === menu.said && /Welcome to Endless Labyrinth/.test(menu.value) && menu.focused === 'console', 'the welcome is on the display (the box holds what was said) and the focus stays in the box');
+check(menu.keys.join() === 'ultimate,scores,speech,keytest,rate,leave' && menu.menu.includes('Speech: On') && menu.menu.includes('Braille Key Test') && !menu.menu.some((m) => /Braille Keyboard/.test(m)), 'the Windows menu: Speech and the Braille Key Test, no Braille Keyboard setting: ' + menu.menu.join(' | '));
+check(menu.name === menu.said && /Welcome to Endless Labyrinth/.test(menu.name) && !/Braille device/.test(menu.name) && menu.focused === 'console', 'the welcome is the game area\'s name (on the display), with no detection announcement, and the focus stays there');
 
-// --------------------------------------------------------------- helpers: a Braille driver's text
+// --------------------------------------------------------------- helpers
 await page.evaluate(() => {
   const field = document.getElementById('console');
   // A character typed by software: a key press with no key code (Chrome's VK_PACKET).
   window.__typeCodeless = (text) => {
     for (const ch of text) field.dispatchEvent(new KeyboardEvent('keydown', { key: ch, code: '', bubbles: true, cancelable: true }));
   };
-  // Text arriving with no key press at all (an input event).
-  window.__inputText = (text) => {
-    field.dispatchEvent(new InputEvent('beforeinput', { inputType: 'insertText', data: text, bubbles: true, cancelable: true }));
-  };
-  window.__ordinaryKey = (key, code) => {
-    field.dispatchEvent(new KeyboardEvent('keydown', { key, code, bubbles: true, cancelable: true }));
+  window.__key = (key, code, repeat = false) => {
+    field.dispatchEvent(new KeyboardEvent('keydown', { key, code, repeat, bubbles: true, cancelable: true }));
+    if (!repeat) field.dispatchEvent(new KeyboardEvent('keyup', { key, code, bubbles: true, cancelable: true }));
   };
 });
+const stream = async (key, code, n, gap, repeat = false) => {
+  for (let i = 0; i < n; i++) {
+    await page.evaluate(([k, c, r]) => window.__key(k, c, r && true), [key, code, repeat && i > 0]);
+    await sleep(gap);
+  }
+};
 
-// --------------------------------------------------------------- Auto: the first Braille text turns the mode on
+// --------------------------------------------------------------- Braille typed as text is always translated
 const spoken = [];
 await page.exposeFunction('__noteSpoken', (t) => spoken.push(t));
 await page.evaluate(() => { const s = window.__el.speech; const orig = s.speak.bind(s); s.speak = (t, o) => { window.__noteSpoken(String(t || '')); return orig(t, o); }; });
-// "have" typed by the driver as four code-less key presses: H, help opens.
 await page.evaluate(() => window.__typeCodeless('have'));
 await sleep(400);
-const afterHave = await page.evaluate(() => ({ state: window.__el.game.state, detected: window.__el.braille.detected, active: window.__el.braille.active, value: document.getElementById('console').value }));
-check(afterHave.detected && afterHave.active, 'text with no key code marks a Braille device found; Auto turns the translation on');
-check(afterHave.state === 'help', 'the wordsign "have" is the letter H: help opens');
+check((await page.evaluate(() => window.__el.game.state)) === 'help', 'the wordsign "have", typed as text with no key codes, is the letter H: help opens (no setting, no detection)');
 await page.keyboard.press('Escape'); await sleep(300);
-check((await page.evaluate(() => window.__el.game.state)) === 'menu' && spoken.some((t) => /Braille device detected\. Braille keyboard mode is on\./.test(t)), 'back at the menu, and the detection was announced: ' + spoken.filter((t) => /Braille/.test(t)).slice(-1));
-const labels = await page.evaluate(() => window.__el.game.menuOptions.slice());
-check(labels.includes('Braille Keyboard: Auto, Braille device found') && labels.includes('Speech: On'), 'the menu now says a Braille device was found, and speech can be set: ' + labels.join(' | '));
-
-// A single letter, with the contracted input's trailing space, is that letter; a
-// space alone is the space; letters that make no key do nothing.
 await page.evaluate(() => { window.__el.game.menuIndex = 0; });
 await page.evaluate(() => window.__typeCodeless('h '));
 await sleep(300);
-const h = await page.evaluate(() => window.__el.game.state);
-check(h === 'help', '"h " (a letter and the space that ends it) is H');
+check((await page.evaluate(() => window.__el.game.state)) === 'help', '"h " (a letter and the space that ends it) is H');
 await page.keyboard.press('Escape'); await sleep(300);
 await page.evaluate(() => window.__typeCodeless('xyz'));
 await sleep(300);
 check((await page.evaluate(() => window.__el.game.state)) === 'menu', 'a burst that is no letter and no wordsign does nothing');
 
-// Text that arrives as an input event with no key press behind it.
-await page.evaluate(() => window.__inputText('have'));
-await sleep(300);
-check((await page.evaluate(() => window.__el.game.state)) === 'help', 'the same word typed straight into the box (no key presses) is H too');
-await page.keyboard.press('Escape'); await sleep(300);
-
-// An ordinary key acts at once, and the same character typed into the box right
-// after it is the same press, not a second one.
-let helpOpens = 0;
+// An ordinary H (a real key code) acts at once, once.
 await page.evaluate(() => { window.__helpOpens = 0; const g = window.__el.game; const o = g._openHelp.bind(g); g._openHelp = () => { window.__helpOpens += 1; return o(); }; });
-await page.evaluate(() => { window.__ordinaryKey('h', 'KeyH'); window.__inputText('h'); });
+await page.evaluate(() => window.__key('h', 'KeyH'));
 await sleep(300);
-helpOpens = await page.evaluate(() => window.__helpOpens);
-check(helpOpens === 1 && (await page.evaluate(() => window.__el.game.state)) === 'help', `an ordinary H opens help once, its echo as typed text is ignored (${helpOpens})`);
-await page.keyboard.press('Escape'); await sleep(300);
+check((await page.evaluate(() => window.__helpOpens)) === 1 && (await page.evaluate(() => window.__el.game.state)) === 'help', 'an ordinary H opens help, once');
+await page.keyboard.press('Escape'); await sleep(400);
 
-// Enter typed as a line break counts once, even with the key press beside it.
-await page.evaluate(() => { window.__enters = 0; const g = window.__el.game; const oi = g.input.bind(g); g.input = (x) => { if (x === 'enter') window.__enters += 1; return oi(x); }; });
-await page.evaluate(() => { window.__el.game.menuIndex = window.__el.game.menuKeys.indexOf('scores'); });
-await page.evaluate(() => {
-  const field = document.getElementById('console');
-  field.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', code: '', bubbles: true, cancelable: true }));
-  field.dispatchEvent(new InputEvent('beforeinput', { inputType: 'insertLineBreak', bubbles: true, cancelable: true }));
-});
+// --------------------------------------------------------------- a key held down on a notetaker is one press
+await page.evaluate(() => { window.__moves = []; const g = window.__el.game; const oi = g.input.bind(g); g.input = (x, o) => { window.__moves.push(x); return oi(x, o); }; g.menuIndex = 0; });
+await stream('ArrowDown', 'ArrowDown', 12, 40);          // the BrailleNote's held arrow: whole presses every 40 ms
 await sleep(300);
-const enters = await page.evaluate(() => ({ n: window.__enters, state: window.__el.game.state }));
-check(enters.n === 1 && enters.state === 'high_scores', 'Enter arriving as a key and as a typed line break is one Enter: ' + JSON.stringify(enters));
-await page.keyboard.press('Escape'); await sleep(300);
-// A line break with no key press at all is an Enter of its own.
-await page.evaluate(() => { window.__enters = 0; window.__el.game.menuIndex = window.__el.game.menuKeys.indexOf('scores'); });
+const held = await page.evaluate(() => ({ downs: window.__moves.filter((x) => x === 'down').length, index: window.__el.game.menuIndex }));
+check(held.downs === 1 && held.index === 1, `twelve presses of one arrow 40 ms apart, as a notetaker sends a held key, are one press: ${JSON.stringify(held)}`);
+await page.evaluate(() => { window.__moves = []; window.__el.game.menuIndex = 0; });
+await stream('ArrowDown', 'ArrowDown', 3, 220);          // three deliberate presses, about four a second
 await sleep(200);
-await page.evaluate(() => document.getElementById('console').dispatchEvent(new InputEvent('beforeinput', { inputType: 'insertLineBreak', bubbles: true, cancelable: true })));
+const paced = await page.evaluate(() => ({ downs: window.__moves.filter((x) => x === 'down').length, index: window.__el.game.menuIndex }));
+check(paced.downs === 3 && paced.index === 3, `three deliberate presses 220 ms apart are three: ${JSON.stringify(paced)}`);
+await page.evaluate(() => { window.__moves = []; window.__el.game.menuIndex = 0; });
+await page.evaluate(() => { window.__key('ArrowDown', 'ArrowDown'); window.__key('ArrowUp', 'ArrowUp'); });
+await sleep(100);
+check((await page.evaluate(() => window.__moves.join())) === 'down,up', 'two different keys close together are both counted');
+await sleep(300);   // (a press of the same key within 150 ms of the last would belong to that hold)
+await page.evaluate(() => { window.__moves = []; window.__el.game.menuIndex = 0; });
+await stream('ArrowDown', 'ArrowDown', 8, 35, true);     // an ordinary keyboard's own repeat, flagged
 await sleep(200);
-check((await page.evaluate(() => window.__enters)) === 1 && (await page.evaluate(() => window.__el.game.state)) === 'high_scores', 'a typed line break with no key press is Enter');
-await page.keyboard.press('Escape'); await sleep(300);
+check((await page.evaluate(() => window.__moves.filter((x) => x === 'down').length)) === 1, 'an ordinary keyboard\'s flagged repeat is still one press');
 await page.evaluate(() => { window.__el.game.menuIndex = 0; });
-check((await page.evaluate(() => window.__el.game.state)) === 'menu', 'back at the menu');
 
-// --------------------------------------------------------------- Speech: Off, Braille only
+// --------------------------------------------------------------- Speech: the game's own voice off
 const sp = await page.evaluate(async () => {
-  const g = window.__el.game; const b = window.__el.braille; const s = window.__el.speech;
-  const state0 = g.state;
+  const g = window.__el.game; const s = window.__el.speech;
   g.menuIndex = g.menuKeys.indexOf('speech');
   g.input('enter');
-  const off = { state0, state1: g.state, label: g.menuOptions[g.menuIndex], muted: s.muted(), setting: g.scores.settings.speech };
-  // Something said while muted still reaches the box, and what follows it still runs.
+  const off = { label: g.menuOptions[g.menuIndex], muted: s.muted(), setting: g.scores.settings.speech };
   let ran = false;
   s.speak('Testing the display.', { after: () => { ran = true; } });
   await new Promise((r) => setTimeout(r, 1200));
-  const shown = document.getElementById('console').value;
+  const shown = document.getElementById('console').getAttribute('aria-label');
   g.input('enter');
-  const on = { label: g.menuOptions[g.menuIndex], muted: s.muted() };
+  const on = { label: g.menuOptions[g.menuIndex], muted: s.muted(), setting: g.scores.settings.speech };
   return { off, on, shown, ran };
 });
-check(sp.off.label === 'Speech: Off, Braille only' && sp.off.muted && sp.off.setting === 'off', 'Speech can be turned off for Braille only once a Braille device is found: ' + JSON.stringify(sp.off));
-check(sp.shown === 'Testing the display.' && sp.ran, 'with speech off a message still goes to the display, and what follows it still runs');
-check(sp.on.label === 'Speech: On' && !sp.on.muted, 'and back on');
-
-// Speech cannot be turned off while Braille is off (never speechless and Brailleless).
-const guard = await page.evaluate(() => {
-  const g = window.__el.game; const b = window.__el.braille;
-  g.menuIndex = g.menuKeys.indexOf('braille');
-  g.input('right'); g.input('right');          // Auto -> On -> Off
-  const modeLabel = g.menuOptions[g.menuIndex];
-  g.menuIndex = g.menuKeys.indexOf('speech');
-  g.input('enter');
-  const said = document.getElementById('said').textContent;
-  const speechLabel = g.menuOptions[g.menuIndex];
-  g.menuIndex = g.menuKeys.indexOf('braille');
-  g.input('right');                             // Off -> Auto
-  return { modeLabel, said, speechLabel, muted: window.__el.speech.muted(), mode: b.mode, saved: g.scores.settings.brailleKeyboard, active: b.active };
-});
-check(guard.modeLabel === 'Braille Keyboard: Off' && /Speech stays on/.test(guard.said) && guard.speechLabel === 'Speech: On, no Braille output' && !guard.muted, 'with the Braille keyboard Off, speech stays on: ' + guard.said);
-check(guard.mode === 'auto' && guard.saved === 'auto' && guard.active, 'the setting cycles Auto, On, Off and is saved; Auto with a device found is on');
-
-// With the keyboard Off, a Braille letter goes to the game as the letters it came as.
-await page.evaluate(() => { const g = window.__el.game; g.menuIndex = g.menuKeys.indexOf('braille'); g.input('right'); g.input('right'); g.menuIndex = 0; });
-await page.evaluate(() => window.__typeCodeless('that'));
-await sleep(300);
-const offState = await page.evaluate(() => ({ state: window.__el.game.state, active: window.__el.braille.active }));
-check(!offState.active && offState.state === 'help', 'Off: no translation, the letters t, h, a, t reach the game one by one (so the h of "that" opens help: the very trouble the mode is for)');
-await page.keyboard.press('Escape'); await sleep(300);
-await page.evaluate(() => { const g = window.__el.game; g.menuIndex = g.menuKeys.indexOf('braille'); g.input('right'); g.menuIndex = 0; });   // back to Auto
+check(sp.off.label === 'Speech: Off, screen reader and Braille only' && sp.off.muted && sp.off.setting === 'off', 'the game\'s own voice can be turned off at any time, with no Braille device to find first: ' + JSON.stringify(sp.off));
+check(sp.shown === 'Testing the display.' && sp.ran, 'with the voice off a message still becomes the game area\'s name (screen reader and display), and what follows it still runs');
+check(sp.on.label === 'Speech: On' && !sp.on.muted && sp.on.setting === 'on', 'and back on, saved');
 
 // --------------------------------------------------------------- the key test
 spoken.length = 0;
 await page.evaluate(() => { const g = window.__el.game; g.menuIndex = g.menuKeys.indexOf('keytest'); g.input('enter'); });
 await sleep(200);
-await page.evaluate(() => { window.__ordinaryKey('ArrowUp', 'ArrowUp'); window.__typeCodeless('you'); });
-await sleep(300);
-await page.evaluate(() => window.__inputText('can'));
+await page.evaluate(() => { window.__key('ArrowUp', 'ArrowUp'); window.__typeCodeless('you'); });
+await sleep(500);
+await page.evaluate(() => window.__typeCodeless('can'));
 await sleep(300);
 await page.evaluate(() => window.__typeCodeless(' '));
 await sleep(300);
+await stream('ArrowLeft', 'ArrowLeft', 8, 50);           // a notetaker's held arrow
+await sleep(600);
+await stream('ArrowRight', 'ArrowRight', 6, 40, true);   // a keyboard's held arrow, its repeats flagged
+await sleep(600);
 const test = await page.evaluate(() => ({ state: window.__el.game.state, status: document.getElementById('status').textContent }));
+const named = spoken.filter((t) => /^(Key|Braille key)/.test(t));
 check(test.state === 'key_test' && /Braille Key Test/.test(test.status), 'the key test runs as its own state');
-check(spoken.some((t) => /^Braille key test\./.test(t)) && spoken.some((t) => t === 'Key ArrowUp.') && spoken.some((t) => t === 'Braille key you, the letter Y.') && spoken.some((t) => t === 'Braille key can, the letter C.') && spoken.some((t) => t === 'Braille key Space.'), 'it names a key, two wordsigns with their letters, and the space: ' + JSON.stringify(spoken.filter((t) => /^(Key|Braille key)/.test(t))));
+check(spoken.some((t) => /^Braille key test\./.test(t) && /held down/.test(t)) && named.includes('Key ArrowUp.') && named.includes('Braille key you, the letter Y.') && named.includes('Braille key can, the letter C.') && named.includes('Braille key Space.'), 'it names a key, two wordsigns with their letters, and the space: ' + JSON.stringify(named));
+const leftHeld = named.find((t) => /^Key ArrowLeft, held/.test(t)) || '';
+const rightHeld = named.find((t) => /^Key ArrowRight, held/.test(t)) || '';
+const leftEvery = Number((leftHeld.match(/about every (\d+) milliseconds/) || [])[1]);
+check(named.filter((t) => t === 'Key ArrowLeft.').length === 1 && /^Key ArrowLeft, held: it arrived 8 times, about every \d+ milliseconds, as separate presses\.$/.test(leftHeld) && leftEvery >= 40 && leftEvery <= 150, 'a notetaker\'s held arrow is named once, then reported as held, with how many times, how far apart, and as separate presses: ' + leftHeld);
+check(/^Key ArrowRight, held: it arrived 6 times, about every \d+ milliseconds, as a key held down\.$/.test(rightHeld), 'a keyboard\'s held arrow is reported as a key held down: ' + rightHeld);
 await page.keyboard.press('Escape'); await sleep(300);
 check((await page.evaluate(() => window.__el.game.state)) === 'menu' && spoken.some((t) => /Key test finished\. Main menu\./.test(t)), 'Escape ends the key test and returns to the menu');
 
-// --------------------------------------------------------------- in a run: the box follows the game, a Braille C is the compass
+// --------------------------------------------------------------- in a run: a Braille C is the compass; a held arrow is one step
 await page.evaluate(() => { const g = window.__el.game; g.menuIndex = g.menuKeys.indexOf('ultimate'); g.input('enter'); });
 await sleep(800);
 await page.evaluate(() => window.__typeCodeless('can'));
 await sleep(300);
-const run = await page.evaluate(() => ({ state: window.__el.game.state, on: window.__el.game.ut.compass.on, said: document.getElementById('said').textContent, value: document.getElementById('console').value, focused: document.activeElement.id }));
+const run = await page.evaluate(() => ({ state: window.__el.game.state, on: window.__el.game.ut.compass.on, said: document.getElementById('said').textContent, name: document.getElementById('console').getAttribute('aria-label'), focused: document.activeElement.id }));
 check(run.state === 'ultimate' && (run.on || /Compass not available/.test(run.said)), 'in a run the wordsign "can" is C, the compass: ' + run.said);
-check(run.value === run.said && run.focused === 'console', 'what the game says is on the display, and the focus is still in the box');
+check(run.name === run.said && run.focused === 'console', 'what the game says is the game area\'s name, and the focus is still there');
+if (run.on) { await page.evaluate(() => window.__typeCodeless('c')); await sleep(300); }
+await page.evaluate(() => { window.__steps = []; const g = window.__el.game; const oi = g.input.bind(g); g.input = (x, o) => { if (['up', 'down', 'left', 'right'].includes(x)) window.__steps.push(x); return oi(x, o); }; });
+await stream('ArrowLeft', 'ArrowLeft', 15, 40);
+await sleep(300);
+check((await page.evaluate(() => window.__steps.length)) === 1, 'in a run, a notetaker\'s held arrow is one step: ' + (await page.evaluate(() => window.__steps.join())));
 await page.keyboard.press('Escape'); await sleep(200); await page.keyboard.press('y'); await sleep(300);
 check((await page.evaluate(() => window.__el.game.state)) === 'menu', 'Escape then Y returns to the menu');
-// Escape leaves the focus in the box (blurred and refocused, for the screen reader's focus mode).
+// Escape leaves the focus in the game area (blurred and refocused, for the screen reader's focus mode).
 await page.evaluate(() => { window.__focusEvents = 0; document.getElementById('console').addEventListener('focus', () => { window.__focusEvents += 1; }); });
 await page.keyboard.press('Escape'); await sleep(250);
 const esc = await page.evaluate(() => ({ focused: document.activeElement.id, events: window.__focusEvents }));
-check(esc.focused === 'console' && esc.events >= 1, 'after Escape the box is focused afresh (a new focus event for NVDA and JAWS): ' + JSON.stringify(esc));
+check(esc.focused === 'console' && esc.events >= 1, 'after Escape the game area is focused afresh (a new focus event for NVDA and JAWS): ' + JSON.stringify(esc));
 
 // --------------------------------------------------------------- not Windows: nothing of this
 {
@@ -222,11 +200,8 @@ check(esc.focused === 'console' && esc.events >= 1, 'after Escape the box is foc
   await stub(mac);
   const p2 = await mac.newPage();
   await p2.goto(base + '/play.html');
-  const m = await p2.evaluate(() => ({ enabled: window.__el.braille.enabled, hidden: document.getElementById('console').hidden }));
-  check(!m.enabled && m.hidden, 'on a Mac the Braille module is off and the box stays hidden');
-  await p2.evaluate(() => { document.getElementById('console').dispatchEvent(new KeyboardEvent('keydown', { key: 'h', code: '', bubbles: true })); });
-  const d = await p2.evaluate(() => window.__el.braille.detected);
-  check(!d, 'and text without a key code is not taken for a Braille device there');
+  const m = await p2.evaluate(() => ({ enabled: window.__el.braille.enabled, hidden: document.getElementById('console').hidden, muted: window.__el.braille.speechMuted, gestures: !!(window.__el.gestures.braille && window.__el.gestures.braille.enabled) }));
+  check(!m.enabled && m.hidden && !m.muted && !m.gestures, 'on a Mac the Braille module is off, the game area stays hidden, and the held-key rule does not apply: ' + JSON.stringify(m));
   await mac.close();
 }
 

@@ -46,6 +46,10 @@ const TAP_TIME = 350;       // ms a tap may last
 const TAP_GAP = 330;        // ms between taps of one count
 const MULTI_START = 220;    // ms within which the fingers of a multi-finger tap must land
 
+// Windows: presses of one key closer together than this are a key held down on a
+// Braille notetaker (see _key).
+export const HELD_GAP = 150;
+
 export class Gestures {
   constructor(el, onGesture) {
     this.el = el;
@@ -58,6 +62,7 @@ export class Gestures {
     this.holdCompass = false;   // Ultimate Mode: a still finger is the compass
     this.holdTimer = null;
     this.braille = null;        // Windows: the Braille keyboard translator (main.js sets it)
+    this.lastPress = new Map(); // Windows: when each key last arrived, held or not
     this.g = null;              // the gesture in progress
     const opts = { passive: false };
     el.addEventListener('touchstart', (e) => this._start(e), opts);
@@ -269,6 +274,17 @@ export class Gestures {
     if (e.repeat && !(e.key === 'ArrowUp' && this.mode === 'drive')) {
       if (map[e.key]) e.preventDefault();
       return;
+    }
+    // Windows (3.1.0): a Braille notetaker's key held down arrives as a stream of
+    // whole, separate presses with no repeat flag (the BrailleNote Evolve's arrows
+    // walked the player on and on). A press of the same key within HELD_GAP of the
+    // one before it, counted or not, is part of that hold, so the whole stream is
+    // one press, as on a keyboard. Nobody presses one key on purpose that fast.
+    if (this.braille && this.braille.enabled && map[e.key] && !(e.key === 'ArrowUp' && this.mode === 'drive')) {
+      const now = performance.now();
+      const last = this.lastPress.get(e.key);
+      this.lastPress.set(e.key, now);
+      if (last !== undefined && now - last < HELD_GAP) { e.preventDefault(); return; }
     }
     if (e.key === 'ArrowUp' && this.mode === 'drive') {
       // The held up arrow is the throttle; its repeats change nothing.
