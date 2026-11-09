@@ -34,7 +34,7 @@ import { addMade, aliasRecording, ensureCopies } from './events/sounds.js';
 import { HELP_SECTIONS, HELP_DEMOS } from './ultimate/help.js';
 import {
   makeWorld, makeSeabed, CELL, AREA_CELLS, key, cellOf, posOf, isFloor, areaAt, nearestPointOf, leakPoint, echoMix,
-  randomFloor, firstLegToward, routeToward,
+  randomFloor, routeToward,
 } from './ultimate/world.js';
 
 export const STATE = 'ultimate';
@@ -93,6 +93,8 @@ export const THROWER_HITS_MINUTES = 2;          // and the hits it takes never e
 export const COMPASS_HOLD_MS = 1000;
 export const COMPASS_BEEP_EVERY = 0.45;
 const COMPASS_DIRS = [[0, -1], [1, 0], [0, 1], [-1, 0]];   // ahead, right, behind, left
+export const COMPASS_NEAR_RANGE = 60;           // units: how far the compass briefing looks for things to pick up
+export const COMPASS_NEAR_COUNT = 3;            // how many it names
 export const ARENA = (AREA_CELLS - 1) / 2 * CELL;   // an area, as a tower floor sees it: 31.5 each way
 export const SEABED_RANGE = 30.0;
 export const RIDE_MIN = 4.0;
@@ -134,13 +136,13 @@ export const EVENT_BACKGROUNDS = ['evt_amb_bees', 'evt_amb_blizzard', 'evt_amb_c
 // drone and drums, not a safe zone's.
 export const BATTLE_CROWD = 'evt_amb_stadium_crowd';
 export const CROWD_LEVEL = 0.55;                // against the drone's 1 and the drums' 0.85
-export const ROARS = ['ut_crowd_roar_1', 'ut_crowd_roar_2'];   // the crowd erupting when a chaser goes down (web-only recordings, the ultimate pack)
+export const ROARS = ['ut_crowd_roar_1', 'ut_crowd_roar_2', 'ut_crowd_roar_3', 'ut_crowd_roar_4', 'ut_crowd_roar_5', 'ut_crowd_roar_6', 'ut_crowd_roar_7'];   // the crowd erupting when a chaser goes down (web-only recordings, the ultimate pack; seven, never the same twice running: Russell, 8 Nov, two were repetitive)
 export const ROAR_LEVEL = 0.6;
 export const ROAR_AFTER = 0.35;                 // seconds after the bang
 // When a chaser strikes you in a battle area the crowd reacts (Russell, 8 Nov):
 // a groan or a gasp, all round you, in the arena's room. Universfield's "Crowd
 // Disappointment Reaction" and "Crowd Shocked Reaction" (Pixabay).
-export const HIT_REACTIONS = ['ut_crowd_hit_1', 'ut_crowd_hit_2'];
+export const HIT_REACTIONS = ['ut_crowd_hit_1', 'ut_crowd_hit_2', 'ut_crowd_hit_3', 'ut_crowd_hit_4', 'ut_crowd_hit_5', 'ut_crowd_hit_6'];   // groans, gasps, awws and boos; never the same twice running
 export const HIT_REACT_LEVEL = 0.6;
 export const HIT_REACT_AFTER = 0.15;            // seconds after the hit sound
 // The water park (Russell, 8 Nov): a safe zone whose background is water has a
@@ -349,7 +351,7 @@ const mixin = {
       pickups: [], timers: [], respawn: new Map(), potionPending: 0, hitCooldown: 0, lowWarned: false,
       place: 'world', ride: null, seabed: null, lift: null, liftArmed: false, dingTimer: 0,
       compass: { on: false, dir: 0, t: 0 }, prox: 0, steps: [],
-      voices: new Set(),
+      voices: new Set(), shots: new Set(),
     };
     this.tts.speak('', { interrupt: true });   // the menu's words stop; the world says the rest
     this._utNewWorld(true);
@@ -501,6 +503,10 @@ const mixin = {
     const u = this.ut;
     for (const v of [...u.voices]) { if (fadeMs > 0) v.fadeout(fadeMs); else v.stop(); }
     u.voices.clear();
+    // The world's one-shots too (a crowd's roar, a door, the slide): a sound of the
+    // old world must not fade back in with the new one (Russell, 8 Nov).
+    for (const v of [...u.shots]) { if (fadeMs > 0) v.fadeout(fadeMs); else v.stop(); }
+    u.shots.clear();
     u.areaSounds.clear();
     for (const e of u.enemies) e.voice = null;
     for (const p of u.pickups) p.voice = null;
@@ -523,8 +529,25 @@ const mixin = {
     const v = this.audio.play(name, { loops, volume: 0.0, fadeMs, pos: pos ? rel : null, height, areaMix: pos ? this._utMixAt(pos) : null, direct, send });
     if (!v) return null;
     if (pos) v.setSpatial(volume, rel[0], rel[1], this._behind(pos), height); else v.setVolume(volume, volume);
-    if (loops === -1) u.voices.add(v);
+    if (loops === -1) u.voices.add(v); else u.shots.add(v);
     return v;
+  },
+
+  // One of a list, never the one heard last (so a crowd of seven roars is not
+  // heard to repeat itself).
+  _utFresh(list, memo) {
+    const u = this.ut;
+    const pool = list.length > 1 ? list.filter((n) => n !== u[memo]) : list;
+    const n = choice(pool);
+    u[memo] = n;
+    return n;
+  },
+
+  // The world's one-shots that have finished are forgotten (a few at a time).
+  _utPruneShots() {
+    const u = this.ut;
+    if (u.shots.size === 0) return;
+    for (const v of u.shots) if (!v.busy) u.shots.delete(v);
   },
 
   // Where a position is, relative to the player (x east, z south).
@@ -613,7 +636,7 @@ const mixin = {
     // Nov): all round you, in the area's room.
     if (e.area && e.area.crowd && e.area === u.area) {
       const roar = ROARS.filter((n) => this.audio.has(n));
-      if (roar.length) this._utLater(bang + ROAR_AFTER, choice(roar), null, { volume: ROAR_LEVEL });
+      if (roar.length) this._utLater(bang + ROAR_AFTER, this._utFresh(roar, 'lastRoar'), null, { volume: ROAR_LEVEL });
     }
     if (e.kind === 'thrower') {
       // Its throws in the air go with it.
@@ -647,11 +670,11 @@ const mixin = {
     const crowd = !!(u.area && u.area.crowd && u.place === 'world');
     const react = HIT_REACTIONS.filter((n) => this.audio.has(n));
     if (u.hp <= 0) {
-      if (crowd && react.length) this.audio.play(choice(react), { volume: HIT_REACT_LEVEL });
+      if (crowd && react.length) this._utPlay(this._utFresh(react, 'lastReact'), null, { volume: HIT_REACT_LEVEL });
       this._utGameOver();
       return;
     }
-    if (crowd && react.length) this._utLater(HIT_REACT_AFTER, choice(react), null, { volume: HIT_REACT_LEVEL });
+    if (crowd && react.length) this._utLater(HIT_REACT_AFTER, this._utFresh(react, 'lastReact'), null, { volume: HIT_REACT_LEVEL });
     // Tower's low-health warning, with its words and its threshold.
     const low = Math.max(35, 2 * dmg);
     if (u.hp <= low && !u.lowWarned) {
@@ -735,9 +758,11 @@ const mixin = {
 
   // ---------------------------------------------------------------- timing
   _utLater(delay, name, pos, opts = {}) {
-    const run = this.ut.run;
+    const run = this.ut.run; const worldNo = this.ut.worldNo;
     const fire = () => {
-      if (!this.ut || this.ut.run !== run || this.state !== STATE) return;
+      // Only in the run and the world it was meant for: a roar due as the world
+      // ends is not heard in the next one.
+      if (!this.ut || this.ut.run !== run || this.ut.worldNo !== worldNo || this.state !== STATE) return;
       if (this.isPaused || this.state === 'confirm_exit' || this.state === 'help') { setTimeout(fire, 250); return; }
       this._utPlay(name, pos, opts);
     };
@@ -810,7 +835,7 @@ const mixin = {
     u.worlds += 1;
     this._utStopWorld();
     this.audio.setWorldLevel(0, 0.01);
-    this.audio.setAreaRooms([]);
+    this.audio.setAreaRooms([], { now: true });   // the old rooms go at once: nothing of them is heard again
     u.phase = 'silence';
     u.gap = SILENCE;
     u.worldTime = 0;
@@ -1104,7 +1129,7 @@ const mixin = {
     const steps = () => { for (let i = 0; i < 3; i++) this._utLater(i * BUS_STEP_GAP, choice(STEPS_STONE), null); };
     const door = (name, pos) => {
       if (b.doorVoice) b.doorVoice.fadeout(200);
-      b.doorVoice = pos ? this._utPlay(name, pos) : this.audio.play(name);
+      b.doorVoice = this._utPlay(name, pos || null);
       b.doorAt = b.t;
     };
     if (b.doorVoice && b.t - b.doorAt >= BUS_DOOR_CUT) { b.doorVoice.fadeout(400); b.doorVoice = null; }
@@ -1156,7 +1181,7 @@ const mixin = {
     b.stage = 'boarding'; b.t = 0; b.stepped = false; b.closed = false;
     this.stride = null;
     if (b.doorVoice) b.doorVoice.fadeout(200);
-    b.doorVoice = this.audio.play('ut_bus_doors_open'); b.doorAt = 0;
+    b.doorVoice = this._utPlay('ut_bus_doors_open', null); b.doorAt = 0;
   },
 
   // ---------------------------------------------------------------- the water park
@@ -1169,7 +1194,7 @@ const mixin = {
     u.slide = { sl, t: 0, stage: 'climb' };
     if (sl.voice) { sl.voice.stop(); u.voices.delete(sl.voice); sl.voice = null; }
     this.stride = null;
-    this.audio.play('stairs_climb');
+    this._utPlay('stairs_climb', null);
   },
 
   _utUpdateSlide(dt) {
@@ -1180,10 +1205,10 @@ const mixin = {
     if (r.stage === 'climb' && r.t >= SLIDE_CLIMB) {
       r.stage = 'down';
       r.t = 0;
-      if (this.audio.has('ut_slide')) this.audio.play('ut_slide', { volume: 0.9 });
+      if (this.audio.has('ut_slide')) this._utPlay('ut_slide', null, { volume: 0.9 });
     } else if (r.stage === 'down' && r.t >= SLIDE_DOWN) {
       // The splash, the points, and up somewhere else in the park.
-      if (this.audio.has('evt_water_splash')) this.audio.play('evt_water_splash');
+      if (this.audio.has('evt_water_splash')) this._utPlay('evt_water_splash', null);
       const a = r.sl.area;
       const spot = randomFloor(u.world, a, rand, { from: r.sl.pos, minDist: SLIDE_LAND_AWAY, avoid: u.pickups.map((p) => p.pos), clearance: 3.0 })
         || randomFloor(u.world, a, rand, { from: r.sl.pos, minDist: 8.0 });
@@ -1349,6 +1374,7 @@ const mixin = {
     const u = this.ut;
     const w = u.world;
     if (!w) return;
+    this._utPruneShots();
     const onWorld = u.place === 'world' || u.place === 'slide';
     const ride = u.rideMix;
     const seabed = u.place === 'seabed';
@@ -1616,23 +1642,22 @@ const mixin = {
   },
 
   // ---------------------------------------------------------------- the compass
+  // (Russell, 8 Nov, fourth and fifth reports: the compass costs time to use, so
+  // every use should earn it. It now works in a safe zone too, where it leads to
+  // the way out; turning it on gives a briefing, and each turn says the leg with
+  // its turn, or what lies that way: walls, the border, the areas beyond.)
   _utCompassToggle() {
     const u = this.ut;
     if (u.compass.on) { this._utCompassOff(); return; }
     if (u.place === 'ride') { this.tts.speak('Compass not available in the elevator.', { interrupt: true }); return; }
     if (u.place === 'slide') { this.tts.speak('Compass not available on the slide.', { interrupt: true }); return; }
     if (u.place === 'bus') { this.tts.speak('Compass not available on the bus.', { interrupt: true }); return; }
-    const bus = this._utBusWaiting();
-    if (this._utInSafeZone() && !bus) {
-      this.tts.speak('Compass not available. Safe zone detected.', { interrupt: true });
-      return;
-    }
     u.compass.on = true;
     u.compass.dir = 0;
     u.compass.t = 0;
     this.stride = null;
     this.audio.setMuffle(true, 0.4);
-    this.tts.speak((bus ? 'Compass on, to the bus. ' : 'Compass on. ') + this._utCompassWords(0), { interrupt: true });
+    this.tts.speak(`Compass on. ${this._utCompassBriefing()} ${this._utCompassWords(0)}`, { interrupt: true });
   },
 
   _utCompassOff(quiet = false) {
@@ -1643,61 +1668,157 @@ const mixin = {
     if (!quiet) this.tts.speak('Compass off.', { interrupt: true });
   },
 
-  // The route's first leg: { dir (one of four directions), steps (how far it runs
-  // straight before the route turns), arrives }, or null: already there, or no way.
-  _utRouteLeg() {
+  // Where the compass leads: a waiting bus; from inside a safe zone, the way out
+  // of it; otherwise the nearest safe zone. (On the seabed, the way up: below.)
+  _utRouteTarget() {
+    const u = this.ut;
+    const bus = this._utBusWaiting();
+    if (bus) return { name: 'the bus', isGoal: null, goalCell: cellOf(bus.pos) };
+    if (this._utInSafeZone()) { const here = u.area; return { name: 'the way out', isGoal: (a) => a !== here, goalCell: null }; }
+    return { name: 'the safe zone', isGoal: (a) => a.kind === 'event', goalCell: null };
+  },
+
+  // The route and its first leg: { target, path, leg }, leg = { dir, steps,
+  // arrives, next (the direction of the leg after, or null) }, or leg null when
+  // already there or there is no way.
+  _utRoute() {
     const u = this.ut;
     if (u.place === 'seabed') {
       const [cx, cy] = this._utSeabedCell(this.playerPos);
-      if (!cx && !cy) return null;
+      const target = { name: 'the way up' };
+      if (!cx && !cy) return { target, path: null, leg: null };
       const along = Math.abs(cx) >= Math.abs(cy);
       const dir = along ? [-Math.sign(cx), 0] : [0, -Math.sign(cy)];
       const steps = along ? Math.abs(cx) : Math.abs(cy);
-      return { dir, steps, arrives: along ? cy === 0 : cx === 0 };
+      const arrives = along ? cy === 0 : cx === 0;
+      const next = arrives ? null : (along ? [0, -Math.sign(cy)] : [-Math.sign(cx), 0]);
+      return { target, path: null, leg: { dir, steps, arrives, next } };
     }
-    // A bus waiting is where the compass points; otherwise the nearest safe zone.
-    const bus = this._utBusWaiting();
-    return firstLegToward(u.world, cellOf(this.playerPos), (a) => a.kind === 'event', bus ? cellOf(bus.pos) : null);
+    const target = this._utRouteTarget();
+    const from = cellOf(this.playerPos);
+    const path = routeToward(u.world, from, target.isGoal, target.goalCell);
+    return { target, path, leg: legOf(path, from) };
   },
+
+  _utRouteLeg() { return this._utRoute().leg; },
 
   _utBusWaiting() { const b = this.ut.bus; return b && b.stage === 'waiting' ? b : null; },
 
   _utRouteStep() { const leg = this._utRouteLeg(); return leg ? leg.dir : null; },
 
-  // What the compass says for a direction: the word, and, when it is the way to
-  // go, how far that leg runs before the route turns (Russell, after the first
-  // play test: the first step alone was not enough to walk by in a labyrinth).
-  _utCompassWords(idx) {
-    const word = ['Ahead', 'Right', 'Behind', 'Left'][idx];
-    const leg = this._utRouteLeg();
-    const d = COMPASS_DIRS[idx];
-    const onRoute = leg && leg.dir[0] === d[0] && leg.dir[1] === d[1];
-    const n = leg ? leg.steps : 0;
-    const first = onRoute ? `${word}, ${n} ${plural(n, 'step')}, ${leg.arrives ? 'and you are there' : 'then turn'}.` : word + '.';
-    const survey = this._utCompassSurvey(idx, onRoute && leg.arrives);
-    return survey ? `${first} ${survey}` : first;
+  // The briefing when the compass comes on: where you are, how far the goal is
+  // and which way to start, and the nearest things worth walking to.
+  _utCompassBriefing() {
+    const u = this.ut;
+    const parts = [];
+    if (u.place === 'seabed') {
+      parts.push('You are on the seabed.');
+      const { leg } = this._utRoute();
+      parts.push(leg ? `The way up is ${this._utDistanceWords(leg)}.` : 'The way up is here.');
+      return parts.join(' ');
+    }
+    const a = u.area;
+    const where = { labyrinth: 'in a labyrinth', island: 'on an island', tower: 'in a tower area', battle: 'in a battle area', event: 'in a safe zone' }[a ? a.kind : ''] || 'in the world';
+    parts.push(`You are ${where}.`);
+    const { target, path, leg } = this._utRoute();
+    const cap = (s) => s[0].toUpperCase() + s.slice(1);
+    if (!leg) {
+      const from = cellOf(this.playerPos);
+      const here = target.goalCell ? (target.goalCell[0] === from[0] && target.goalCell[1] === from[1]) : (a && target.isGoal && target.isGoal(a));
+      parts.push(here ? `${cap(target.name)} is here.` : `No way to ${target.name} from here.`);
+    } else parts.push(`${cap(target.name)} is ${path.length} ${plural(path.length, 'step')} away, starting ${dirWord(leg.dir).toLowerCase()}.`);
+    const near = this._utCompassNearby();
+    parts.push(near.length ? `Nearby: ${near.join('; ')}.` : 'Nothing to pick up nearby.');
+    return parts.join(' ');
   },
 
-  // What lies that way (Russell, 8 Nov: the compass should tell what areas are in
-  // reach and in view, as it tells the way to the safe zone): the area across the
-  // border in that direction, how many steps to that border, and the area beyond.
-  // When the route arrives that way, the safe zone itself goes unsaid twice.
-  _utCompassSurvey(idx, arriving = false) {
+  // The nearest things worth walking to, by the walking route: cartridges,
+  // credits, potions, a tower item, the water slide, the island's elevator, up to
+  // three, each with its route length and the way to start.
+  _utCompassNearby() {
     const u = this.ut; const w = u.world; const a = u.area;
-    if (!w || !a || u.place !== 'world') return '';
+    if (!w || !a) return [];
+    const from = cellOf(this.playerPos);
+    const things = [];
+    for (const p of u.pickups) {
+      const name = p.kind === 'ammo' ? 'ammo' : p.kind === 'credit' ? `a ${p.value} credit` : p.kind === 'potion' ? 'a potion' : null;
+      if (name) things.push({ name, pos: p.pos });
+    }
+    const item = a.kind === 'tower' ? u.towerItems.get(a.id) : null;
+    if (item) things.push({ name: 'a tower item', pos: this._utItemPos(item) });
+    for (const sl of u.slides || []) if (sl.area === a) things.push({ name: 'the water slide', pos: sl.pos });
+    if (a.kind === 'island' && a.elevator && u.place === 'world') things.push({ name: 'the elevator', pos: posOf(a.elevator[0], a.elevator[1]) });
+    // The six nearest as the crow flies, then the three shortest walks among them.
+    const byAir = things.map((t) => ({ ...t, d: dist2(t.pos, this.playerPos) })).filter((t) => t.d < COMPASS_NEAR_RANGE)
+      .sort((x, y) => x.d - y.d).slice(0, 6);
+    const walked = [];
+    for (const t of byAir) {
+      const goal = cellOf(t.pos);
+      if (goal[0] === from[0] && goal[1] === from[1]) { walked.push({ ...t, steps: 0, leg: null }); continue; }
+      const path = routeToward(w, from, null, goal);
+      if (!path) continue;
+      walked.push({ ...t, steps: path.length, leg: legOf(path, from) });
+    }
+    walked.sort((x, y) => x.steps - y.steps);
+    return walked.slice(0, COMPASS_NEAR_COUNT).map((t) => t.steps === 0 ? `${t.name}, right here` : `${t.name}, ${this._utDistanceWords(t)}`);
+  },
+
+  // "6 steps, starting left" for a route of that many steps whose first leg goes
+  // that way.
+  _utDistanceWords(t) {
+    const steps = t.steps !== undefined ? t.steps : t.path ? t.path.length : null;
+    const leg = t.leg || t;
+    const n = steps !== null && steps !== undefined ? steps : leg.steps;
+    return `${n} ${plural(n, 'step')} away, starting ${dirWord(leg.dir).toLowerCase()}`;
+  },
+
+  // What the compass says for a direction. The way to go: the leg and its turn
+  // ("Right, 6 steps, then left", or "Right, 9 steps to the safe zone"). Any other
+  // direction: how far it is open, what stops you, and what lies beyond.
+  _utCompassWords(idx) {
+    const word = dirWord(COMPASS_DIRS[idx]);
+    const d = COMPASS_DIRS[idx];
+    const { target, leg } = this._utRoute();
+    if (leg && leg.dir[0] === d[0] && leg.dir[1] === d[1]) {
+      const n = leg.steps;
+      if (leg.arrives) return `${word}, ${n} ${plural(n, 'step')} to ${target.name}.`;
+      return `${word}, ${n} ${plural(n, 'step')}, then ${dirWord(leg.next).toLowerCase()}.`;
+    }
+    const way = this._utCompassWay(idx);
+    return way ? `${word}: ${way}` : `${word}.`;
+  },
+
+  // That way from here: open for how many steps, what stops you (a wall, the
+  // island's edge, the border), and the areas beyond (in reach, then in view).
+  _utCompassWay(idx) {
+    const u = this.ut; const w = u.world; const a = u.area;
     const [dx, dy] = COMPASS_DIRS[idx];
+    if (u.place === 'seabed') {
+      const [cx, cy] = this._utSeabedCell(this.playerPos);
+      const half = u.seabed.grid.half;
+      const open = dx ? (dx > 0 ? half - cx : half + cx) : (dy > 0 ? half - cy : half + cy);
+      return open > 0 ? `open for ${open} ${plural(open, 'step')}, then the edge.` : 'the edge.';
+    }
+    if (!w || !a || u.place !== 'world') return '';
     const [cx, cy] = cellOf(this.playerPos);
-    const toBorder = dx > 0 ? a.x1 + 1 - cx : dx < 0 ? cx - (a.x0 - 1) : dy > 0 ? a.y1 + 1 - cy : cy - (a.y0 - 1);
-    const steps = Math.max(1, toBorder);
-    const at = (k) => w.areas.find((x) => x.ax === a.ax + dx * k && x.ay === a.ay + dy * k) || null;
-    const next = at(1); const beyond = at(2);
-    if (!next) return `The edge of the world, ${steps} ${plural(steps, 'step')} away.`;
-    const name = (x) => ({ labyrinth: 'a labyrinth', island: 'an island', tower: 'a tower area', battle: 'a battle area', event: 'a safe zone' })[x.kind];
-    if (arriving && next.kind === 'event') return beyond ? `Beyond it, ${name(beyond)}.` : '';
-    const head = name(next);
-    let out = `${head[0].toUpperCase()}${head.slice(1)}, ${steps} ${plural(steps, 'step')} away`;
-    if (beyond) out += `, then ${name(beyond)}`;
-    return out + '.';
+    let open = 0; let x = cx; let y = cy; let stop = 'wall';
+    for (let i = 0; i < AREA_CELLS + 2; i++) {
+      x += dx; y += dy;
+      if (!isFloor(w, x, y)) { stop = 'wall'; break; }
+      if (areaAt(w, posOf(x, y)) !== a) { stop = 'border'; break; }
+      open += 1;
+    }
+    const toBorder = Math.max(1, dx > 0 ? a.x1 + 1 - cx : dx < 0 ? cx - (a.x0 - 1) : dy > 0 ? a.y1 + 1 - cy : cy - (a.y0 - 1));
+    const next = w.areas.find((o) => o.ax === a.ax + dx && o.ay === a.ay + dy) || null;
+    const beyond = w.areas.find((o) => o.ax === a.ax + 2 * dx && o.ay === a.ay + 2 * dy) || null;
+    const name = (o) => ({ labyrinth: 'a labyrinth', island: 'an island', tower: 'a tower area', battle: 'a battle area', event: 'a safe zone' })[o.kind];
+    const then = beyond ? `, then ${name(beyond)}` : '';
+    const steps = (n) => `${n} ${plural(n, 'step')}`;
+    if (stop === 'border') return `open to the border, ${steps(open)}, into ${name(next)}${then}.`;
+    const blocker = a.kind === 'island' ? "the island's edge" : 'a wall';
+    if (!next) return open ? `open for ${steps(open)}, then ${blocker}; the edge of the world is ${steps(toBorder)} away.` : `${blocker}; the edge of the world is ${steps(toBorder)} away.`;
+    const beyondWords = `Beyond, ${name(next)}, ${steps(toBorder)} away${then}.`;
+    return open ? `open for ${steps(open)}, then ${blocker}. ${beyondWords}` : `${blocker}. ${beyondWords}`;
   },
 
   _utCompassTurn(g) {
@@ -1731,11 +1852,32 @@ const mixin = {
   },
 };
 
+// The first leg of a route: how far it runs straight, and which way it turns.
+function legOf(path, fromCell) {
+  if (!path || !path.length) return null;
+  const dir = [path[0][0] - fromCell[0], path[0][1] - fromCell[1]];
+  let steps = 1;
+  for (let i = 1; i < path.length; i++) {
+    const d = [path[i][0] - path[i - 1][0], path[i][1] - path[i - 1][1]];
+    if (d[0] !== dir[0] || d[1] !== dir[1]) break;
+    steps += 1;
+  }
+  const next = steps < path.length ? [path[steps][0] - path[steps - 1][0], path[steps][1] - path[steps - 1][1]] : null;
+  return { dir, steps, arrives: steps === path.length, next };
+}
+
+function dirWord(d) {
+  const i = COMPASS_DIRS.findIndex((c) => c[0] === d[0] && c[1] === d[1]);
+  return ['Ahead', 'Right', 'Behind', 'Left'][i] || 'Ahead';
+}
+
 // ------------------------------------------------------------------ the mode
 function reset(game) {
   if (game.ut) {
     for (const v of [...game.ut.voices]) v.stop();
     game.ut.voices.clear();
+    for (const v of [...game.ut.shots]) v.stop();
+    game.ut.shots.clear();
     if (game.ut.compass.on) game.audio.setMuffle(false, 0.01);
   }
   if (game.audio && game.audio.spatial) game.audio.spatialOff();
@@ -1748,6 +1890,8 @@ function stopAll(game) {
   if (game.ut) {
     for (const v of [...game.ut.voices]) v.stop();
     game.ut.voices.clear();
+    for (const v of [...game.ut.shots]) v.stop();
+    game.ut.shots.clear();
     if (game.ut.ride && game.ut.ride.voice) game.ut.ride.voice.stop();
     if (game.ut.compass.on) { game.ut.compass.on = false; game.audio.setMuffle(false, 0.01); }
   }

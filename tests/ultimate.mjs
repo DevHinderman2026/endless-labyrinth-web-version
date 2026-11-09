@@ -210,6 +210,7 @@ if (!hit.skipped) {
 // --------------------------------------------------------------- the compass
 const compass = await page.evaluate(async () => {
   const g = window.__el.game; const u = g.ut; const a = window.__el.audio;
+  const W = await import('./js/modes/ultimate/world.js');
   // Stand somewhere outside a safe zone.
   const away = u.world.areas.find((x) => x.kind !== 'event');
   const cell = away.floorCells[0];
@@ -234,25 +235,29 @@ const compass = await page.evaluate(async () => {
   const off = u.compass.on;
   await new Promise((r) => setTimeout(r, 600));
   const fOff = a.worldFilter.frequency.value;
-  // In a safe zone: refused, with the exact words.
+  // In a safe zone it works, and leads to the way out (Russell, 8 Nov; it used to refuse).
   const safe = u.world.areas.find((x) => x.kind === 'event');
   const sc = safe.floorCells[Math.floor(safe.floorCells.length / 2)];
   g.playerPos = [sc[0] * 3, sc[1] * 3]; u.area = safe;
   g.input('hold');
   const saidSafe = document.getElementById('said').textContent;
   const onInSafe = u.compass.on;
+  const outRoute = g._utRoute();
+  const outLands = outRoute.path ? W.areaAt(u.world, W.posOf(...outRoute.path[outRoute.path.length - 1])) !== safe : null;
+  g.input('hold');
   const beeps = played.filter(([n]) => /^ut_compass_\d$/.test(n));
-  return { on, saidOn, stillThere, saidRight, beeps: beeps.length, direct: beeps.every(([, o]) => o && o.direct), f0, fOn, fOff, ammo0, ammoAfter, route, off, saidSafe, onInSafe };
+  return { on, saidOn, stillThere, saidRight, beeps: beeps.length, direct: beeps.every(([, o]) => o && o.direct), f0, fOn, fOff, ammo0, ammoAfter, route, off, saidSafe, onInSafe, outTarget: outRoute.target.name, outLands };
 });
 check(compass.on && /Compass on/.test(compass.saidOn), 'a held finger turns the compass on: ' + compass.saidOn);
 check(compass.stillThere, 'while the compass is on, a swipe turns the compass and the player does not move');
-check(/^Right(\.|, \d+ steps?, (then turn|and you are there)\.)( (A labyrinth|An island|A tower area|A battle area|A safe zone|The edge of the world), \d+ steps? away(, then (a labyrinth|an island|a tower area|a battle area|a safe zone))?\.| Beyond it, .*\.)?$/.test(compass.saidRight), 'turning speaks the direction, with the leg\'s length when it is the way, and what lies that way: ' + compass.saidRight);
+check(/^Right(, \d+ steps?, then (ahead|right|behind|left)\.|, \d+ steps? to the (safe zone|bus|way out)\.|: (a wall|the island's edge|open for \d+ steps?, then (a wall|the island's edge)|open to the border, \d+ steps?, into .*)[.;].*)$/.test(compass.saidRight), 'turning speaks the direction: the leg and its turn when it is the way, else how far it is open and what lies beyond: ' + compass.saidRight);
 check(compass.beeps >= 3 && compass.direct, `the compass beeps (${compass.beeps} in two seconds), played direct (never muffled)`);
 check(compass.f0 >= 19000 && compass.fOn < 2000 && compass.fOff >= 19000, `the world is muffled while the compass is on (${Math.round(compass.f0)} Hz, ${Math.round(compass.fOn)}, ${Math.round(compass.fOff)})`);
 check(compass.ammo0 === compass.ammoAfter, 'the weapon does not fire while the compass is on');
 check(Array.isArray(compass.route) && compass.route.length === 2, 'the route to the nearest safe zone has a first step: ' + JSON.stringify(compass.route));
 check(!compass.off, 'C turns the compass off');
-check(compass.saidSafe === 'Compass not available. Safe zone detected.' && !compass.onInSafe, 'in a safe zone: "' + compass.saidSafe + '"');
+check(compass.onInSafe && compass.outTarget === 'the way out' && compass.outLands === true && /^Compass on\. You are in a safe zone\. The way out is \d+ steps? away, starting (ahead|right|behind|left)\. /.test(compass.saidSafe), 'in a safe zone the compass works and leads out of it, to a cell of another area: ' + compass.saidSafe);
+check(/^Compass on\. You are (in|on) (a labyrinth|an island|a tower area|a battle area|a safe zone)\. (The safe zone|The bus|The way out) is \d+ steps? away, starting (ahead|right|behind|left)\. (Nearby: .*|Nothing to pick up nearby\.) Ahead[,:.].*$/.test(compass.saidOn), 'turning the compass on gives the briefing: where you are, the goal and the way to start, what is nearby, then the way ahead: ' + compass.saidOn);
 
 // --------------------------------------------------------------- the island elevator and the seabed
 const island = await page.evaluate(async () => {

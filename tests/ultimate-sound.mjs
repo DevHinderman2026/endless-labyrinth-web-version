@@ -482,6 +482,10 @@ const roar = await page.evaluate(async () => {
   await new Promise((r) => setTimeout(r, 1500));
   a.play = orig;
   const bang = played.find(([n]) => n === 'explosion'); const cheer = played.find(([n]) => /^ut_crowd_roar_/.test(n));
+  // Seven roars, all in the pack, never the same twice running.
+  const roars = T.mod.ROARS.filter((n) => a.has(n)).length;
+  const picks = []; for (let i = 0; i < 40; i++) picks.push(g._utFresh(T.mod.ROARS, 'lastRoar'));
+  const roarVariety = { inPack: roars, distinct: new Set(picks).size, repeat: picks.some((n, i) => i > 0 && picks[i - 1] === n) };
   // A kill in a labyrinth draws no roar.
   const lab = T.goTo((x) => x.kind !== 'battle' && x.kind !== 'event');
   let elsewhere = null;
@@ -492,10 +496,11 @@ const roar = await page.evaluate(async () => {
     await new Promise((r) => setTimeout(r, 1200));
     a.play = orig; elsewhere = spy.filter((n) => /^ut_crowd_roar_/.test(n)).length;
   }
-  return { bang: !!bang, cheer: cheer ? { name: cheer[0], after: cheer[1] - (bang ? bang[1] : 0), placed: !!(cheer[2].pos), volume: cheer[2].volume } : null, elsewhere };
+  return { roarVariety, bang: !!bang, cheer: cheer ? { name: cheer[0], after: cheer[1] - (bang ? bang[1] : 0), placed: !!(cheer[2].pos), volume: cheer[2].volume } : null, elsewhere };
 });
 check(roar.skipped || (roar.bang && roar.cheer && roar.cheer.after > 250 && roar.cheer.after < 700 && !roar.cheer.placed), 'the crowd erupts about a third of a second after the bang, all round you: ' + JSON.stringify(roar.cheer));
 check(roar.skipped || roar.elsewhere === 0, 'a kill outside a battle area draws no roar');
+check(roar.skipped || (roar.roarVariety.inPack === 7 && roar.roarVariety.distinct >= 5 && !roar.roarVariety.repeat), `seven roars in the pack (${roar.roarVariety && roar.roarVariety.inPack}), ${roar.roarVariety && roar.roarVariety.distinct} different ones in forty picks, never the same twice running`);
 check(!third.poolHasCrowd && third.safeZonesWithout && third.everyBattleHasCrowd && third.crowd && /stadium_crowd/.test(third.crowd.name) && Math.abs(third.crowd.level - 0.8 * 0.55) < 0.02 && third.crowd.placedToo, 'the stadium crowd roars in every battle area, under the drone and drums, and in no safe zone: ' + JSON.stringify(third.crowd));
 
 // --------------------------------------------------------------- 9. the water park
@@ -580,6 +585,7 @@ const bus = await page.evaluate(async () => {
   const leg = g._utRouteLeg();
   const busCell = W.cellOf(b.pos); const here = W.cellOf(g.playerPos);
   out.legTowardBus = leg ? Math.sign(busCell[0] - here[0]) === leg.dir[0] || Math.sign(busCell[1] - here[1]) === leg.dir[1] : null;
+  out.routeDbg = (() => { const r = g._utRoute(); const gc = W.cellOf(b.pos); return { t: r.target.name, p: r.path && r.path.length, from: here, goal: gc, goalFloor: W.isFloor(u.world, gc[0], gc[1]), fromFloor: W.isFloor(u.world, here[0], here[1]), place: u.place, stage: b.stage }; })();
   g.input('hold'); out.compassSaid = document.getElementById('said').textContent; g.input('hold');
   // Walk onto it.
   g.playerPos = [b.pos[0] + 3, b.pos[1]]; g._utListenerMix();
@@ -646,7 +652,7 @@ check(bus.pulling && bus.pulling.stage === 'coming' && bus.pulling.sound && bus.
 check(bus.came && bus.chime && bus.outsideSafe && bus.near >= 10 && bus.near <= 40, `when a safe zone is far (${bus.realSteps} steps here, told 100) a bus pulls up near you with its chime: ` + JSON.stringify({ near: bus.near && bus.near.toFixed(1), ride: bus.ride }));
 check(bus.ride && Math.abs(bus.ride - (15 + 15 * (100 - 45) / 105)) < 0.01, `the ride's length follows the walk it saves (${bus.ride && bus.ride.toFixed(1)} s for 100 steps)`);
 check(bus.engine && bus.engine.name === 'ut_bus_idle' && bus.engine.placed && bus.engine.level > 0.3, 'its engine idles where it stands: ' + JSON.stringify(bus.engine));
-check(bus.legTowardBus && /Compass on, to the bus/.test(bus.compassSaid), 'the compass points to the waiting bus and says so: ' + bus.compassSaid);
+check(bus.legTowardBus && /^Compass on\. You are (in|on) .*\. The bus is \d+ steps? away, starting (ahead|right|behind|left)\. /.test(bus.compassSaid), 'the compass points to the waiting bus and says so: ' + bus.compassSaid + ' ' + JSON.stringify(bus.routeDbg));
 check(bus.boarded && bus.heldStill, 'stepping up to the bus boards it; on the bus nothing answers');
 check(bus.inOrder && bus.steps >= 5 && bus.rideVoice && bus.rideVoice.loop, 'doors open, steps, doors close, the ride from your seat, doors open, steps, doors close, and it drives off: ' + JSON.stringify({ steps: bus.steps, ride: bus.rideVoice }));
 check(bus.landedSafe && bus.gone && bus.idleLeft === 0, 'you are left on the floor of the nearest safe zone, the bus gone and its engine with it');
@@ -675,7 +681,7 @@ const hits = await page.evaluate(async () => {
   for (let i = 0; i < 16; i++) strike();
   await new Promise((r) => setTimeout(r, 600));
   const names = played.filter(([n]) => /^ut_crowd_hit_/.test(n)).map(([n]) => n);
-  out.count = names.length; out.both = names.includes('ut_crowd_hit_1') && names.includes('ut_crowd_hit_2');
+  out.count = names.length; out.distinct = new Set(names).size; out.repeat = names.some((n, i) => i > 0 && names[i - 1] === n);
   // Not outside a battle area.
   const lab = T.goTo((x) => x.kind !== 'battle' && x.kind !== 'event');
   if (lab) {
@@ -695,7 +701,7 @@ const hits = await page.evaluate(async () => {
 });
 check(hits.annNames === 0 && hits.has, `the announcer's lines are gone from the pack (${hits.annNames}) and the crowd's groan and gasp are in it`);
 check(hits.skipped || (hits.first && hits.first.after > 100 && hits.first.after < 450 && !hits.first.placed && hits.first.room), 'a hit in a battle area: the crowd reacts just after the hit sound, all round you, in the room: ' + JSON.stringify(hits.first));
-check(hits.skipped || (hits.count === 17 && hits.both), `one reaction to every hit (${hits.count} of 17), the groan and the gasp both heard`);
+check(hits.skipped || (hits.count === 17 && hits.distinct >= 3 && !hits.repeat), `one reaction to every hit (${hits.count} of 17), ${hits.distinct} different ones heard, never the same twice running`);
 check(hits.skipped || hits.elsewhere === 0, 'a hit outside a battle area draws no reaction');
 check(hits.skipped || (hits.overAtOnce && hits.fatalReact), 'the fatal hit in an arena: the crowd reacts with it, and Game Over comes at once');
 
@@ -775,32 +781,79 @@ const survey = await page.evaluate(async () => {
   const g = window.__el.game; const u = g.ut; const T = window.__ut; const W = T.world;
   const area = T.goTo((x) => x.kind !== 'event') || T.goTo(() => true);
   const names = { labyrinth: 'a labyrinth', island: 'an island', tower: 'a tower area', battle: 'a battle area', event: 'a safe zone' };
+  const words4 = ['Ahead', 'Right', 'Behind', 'Left'];
   const dirs = [[0, -1], [1, 0], [0, 1], [-1, 0]];
   const [cx, cy] = W.cellOf(g.playerPos);
-  const out = { words: [], ok: true, edge: 0, neighbours: 0, beyond: 0, route: 0 };
+  const out = { words: [], ok: true, route: 0, wanted: [] };
+  const plural = (n, w) => `${n} ${w}${n === 1 ? '' : 's'}`;
   for (let i = 0; i < 4; i++) {
     const w = g._utCompassWords(i);
     out.words.push(w);
     const [dx, dy] = dirs[i];
-    const next = u.world.areas.find((x) => x.ax === area.ax + dx && x.ay === area.ay + dy);
-    const far = u.world.areas.find((x) => x.ax === area.ax + 2 * dx && x.ay === area.ay + 2 * dy);
-    const steps = dx > 0 ? area.x1 + 1 - cx : dx < 0 ? cx - (area.x0 - 1) : dy > 0 ? area.y1 + 1 - cy : cy - (area.y0 - 1);
-    if (/then turn|and you are there/.test(w)) out.route += 1;
-    if (!next) { out.edge += 1; if (!new RegExp(`The edge of the world, ${steps} steps away\\.$`).test(w)) out.ok = false; continue; }
-    out.neighbours += 1;
-    const head = names[next.kind]; const cap = head[0].toUpperCase() + head.slice(1);
-    let want = far ? `${cap}, ${steps} steps away, then ${names[far.kind]}.` : `${cap}, ${steps} steps away.`;
-    // When the route arrives at the safe zone that way, the zone goes unsaid twice.
-    if (/and you are there/.test(w) && next.kind === 'event') want = far ? `Beyond it, ${names[far.kind]}.` : 'and you are there.';
-    if (!w.endsWith(want)) out.ok = false;
-    if (far) out.beyond += 1;
+    if (/, \d+ steps?, then (ahead|right|behind|left)\.$|, \d+ steps? to the (safe zone|bus|way out)\.$/.test(w)) { out.route += 1; out.wanted.push('(route)'); continue; }
+    // Walk that way ourselves: how far it is open, and what stops us.
+    let open = 0; let x = cx; let y = cy; let stop = 'wall';
+    for (let k = 0; k < 40; k++) {
+      x += dx; y += dy;
+      if (!W.isFloor(u.world, x, y)) { stop = 'wall'; break; }
+      if (W.areaAt(u.world, W.posOf(x, y)) !== area) { stop = 'border'; break; }
+      open += 1;
+    }
+    const next = u.world.areas.find((o) => o.ax === area.ax + dx && o.ay === area.ay + dy);
+    const far = u.world.areas.find((o) => o.ax === area.ax + 2 * dx && o.ay === area.ay + 2 * dy);
+    const toBorder = Math.max(1, dx > 0 ? area.x1 + 1 - cx : dx < 0 ? cx - (area.x0 - 1) : dy > 0 ? area.y1 + 1 - cy : cy - (area.y0 - 1));
+    const then = far ? `, then ${names[far.kind]}` : '';
+    const blocker = area.kind === 'island' ? "the island's edge" : 'a wall';
+    let want;
+    if (stop === 'border') want = `${words4[i]}: open to the border, ${plural(open, 'step')}, into ${names[next.kind]}${then}.`;
+    else if (!next) want = open ? `${words4[i]}: open for ${plural(open, 'step')}, then ${blocker}; the edge of the world is ${plural(toBorder, 'step')} away.` : `${words4[i]}: ${blocker}; the edge of the world is ${plural(toBorder, 'step')} away.`;
+    else want = (open ? `${words4[i]}: open for ${plural(open, 'step')}, then ${blocker}. ` : `${words4[i]}: ${blocker}. `) + `Beyond, ${names[next.kind]}, ${plural(toBorder, 'step')} away${then}.`;
+    out.wanted.push(want);
+    if (w !== want) out.ok = false;
   }
-  // Compass on, for real: the first words carry the survey too.
+  // Compass on, for real: the briefing, then the way ahead.
   g.input('hold'); out.said = document.getElementById('said').textContent; g.input('hold');
   return out;
 });
-check(survey.ok && survey.neighbours >= 1 && survey.route === 1, 'each compass direction tells what lies that way, the area across the border and the one beyond, or the edge of the world, and one carries the route leg: ' + JSON.stringify(survey.words));
-check(/Compass on\. (Ahead|Right|Behind|Left)[.,].*(steps away|edge of the world|Beyond it)/.test(survey.said), 'turning the compass on says the survey for the way it faces: ' + survey.said);
+check(survey.ok && survey.route === 1, 'each compass direction says how far it is open, what stops you and what lies beyond, and one carries the route leg with its turn: ' + JSON.stringify(survey.words) + (survey.ok ? '' : ' wanted ' + JSON.stringify(survey.wanted)));
+check(/^Compass on\. You are (in|on) (a labyrinth|an island|a tower area|a battle area|a safe zone)\. (The safe zone|The bus|The way out) is \d+ steps? away, starting (ahead|right|behind|left)\. (Nearby: [^.]*(steps? away, starting (ahead|right|behind|left)|right here)[^.]*\.|Nothing to pick up nearby\.) (Ahead)[,:.].*$/.test(survey.said), 'turning the compass on gives the briefing, then the way ahead: ' + survey.said);
+
+// --------------------------------------------------------------- 13. regeneration under a pile of sounds (Russell, 8 Nov: roars carried over; a crash)
+const regenLoad = await page.evaluate(async () => {
+  const g = window.__el.game; const u = g.ut; const a = window.__el.audio; const T = window.__ut;
+  const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+  if (!(await T.ensureKind('battle'))) return { skipped: true };
+  const area = T.goTo((x) => x.kind === 'battle');
+  const out = { culledBefore: a.culled };
+  // A fight: eight chasers fall within a second, a strike lands, the crowd roars and groans.
+  u.enemies = u.enemies.filter((e) => e.area !== area);
+  for (let i = 0; i < 8; i++) u.enemies.push({ kind: 'chaser', area, x: g.playerPos[0] + 4 + i, y: g.playerPos[1], speed: 2.2, voice: null, goal: null, goalTimer: 0, soundName: 'enemy_0' });
+  u.safe = 0; u.hitCooldown = 0; u.hp = 100;
+  for (const e of [...u.enemies].filter((e) => e.area === area)) g._utKillEnemy(e, 'laser');
+  g._utHurt({ kind: 'chaser', area, x: g.playerPos[0], y: g.playerPos[1] });
+  await sleep(500);   // bangs and the first roars are sounding; more roars are due
+  out.roaring = [...a.live].filter((v) => /^ut_crowd_/.test(v.name)).length;
+  out.shotsBefore = u.shots.size;
+  const oldWorld = u.worldNo;
+  // The world ends now.
+  u.worldTime = 0.05;
+  for (let i = 0; i < 45; i++) { g.updateUltimateMode(1 / 30); if (i % 15 === 0) await sleep(5); }
+  out.newWorld = u.worldNo === oldWorld + 1;
+  out.atOnce = { crowd: [...a.live].filter((v) => /^ut_crowd_|^explosion$/.test(v.name) && v.busy).length, oldBuses: 0 };
+  await sleep(1200);   // every roar that was due has had its moment
+  for (let i = 0; i < 30; i++) g.updateUltimateMode(1 / 30);
+  out.later = { crowd: [...a.live].filter((v) => /^ut_crowd_|^explosion$/.test(v.name) && v.busy).length, shotsStopped: [...u.shots].filter((v) => !v.busy).length, live: a.live.size, max: a.maxLive };
+  // A pile of one-shots at once: the ceiling holds and the loops stay.
+  const loopsBefore = [...a.live].filter((v) => v.loop).length;
+  for (let i = 0; i < 90; i++) g._utPlay('explosion', [g.playerPos[0] + (i % 7), g.playerPos[1] + 2]);
+  out.pile = { live: a.live.size, loops: [...a.live].filter((v) => v.loop).length, loopsBefore, culled: a.culled - out.culledBefore };
+  await sleep(300);
+  return out;
+});
+check(regenLoad.skipped || (regenLoad.roaring >= 1 && regenLoad.newWorld), `a fight in the arena had the crowd going (${regenLoad.roaring} crowd sounds) when the world ended`);
+check(regenLoad.skipped || (regenLoad.atOnce.crowd === 0 && regenLoad.later.crowd === 0), `no roar, groan or bang of the old world is heard in the new one, not at once (${regenLoad.atOnce && regenLoad.atOnce.crowd}) and not when its timers come due (${regenLoad.later && regenLoad.later.crowd})`);
+check(regenLoad.skipped || (regenLoad.later.shotsStopped === 0 && regenLoad.later.live <= regenLoad.later.max), `finished one-shots are forgotten and the voices stay under the ceiling (${regenLoad.later && regenLoad.later.live} of ${regenLoad.later && regenLoad.later.max})`);
+check(regenLoad.skipped || (regenLoad.pile.live <= regenLoad.later.max && regenLoad.pile.loops === regenLoad.pile.loopsBefore && regenLoad.pile.culled > 0), `ninety bangs at once: the ceiling holds (${regenLoad.pile && regenLoad.pile.live} voices), the loops all stay (${regenLoad.pile && regenLoad.pile.loops}), the oldest bangs gave way (${regenLoad.pile && regenLoad.pile.culled})`);
 
 check(errors.length === 0, 'no page errors' + (errors.length ? ': ' + errors.slice(0, 3).join(' | ') : ''));
 await browser.close();

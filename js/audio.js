@@ -84,6 +84,8 @@ export class AudioEngine {
     this.roomGain = 1.0;
     this.roomLean = 0.0;
     this.live = new Set();        // every Voice still playing
+    this.maxLive = 56;            // a ceiling on voices at once: past it the oldest one-shot gives way (a phone's audio thread has limits)
+    this.culled = 0;              // how many a full house has stopped early (for the tests)
     this.sourceEffect = null;     // set by the game: position -> [gain, lean]
     this.behindOf = null;         // set by the game: position -> 0..1
     this.demoVoice = null;
@@ -630,17 +632,20 @@ export class AudioEngine {
   // drops off the list keeps ringing for a moment, then its convolver goes. A
   // room with no impulse (null: the open air of an island) gets a bus with no
   // echo, so the sends simply go nowhere.
-  setAreaRooms(areas) {
+  setAreaRooms(areas, { now = false } = {}) {
     const keep = new Set(areas.map((a) => a.id));
     for (const [id, b] of [...this.areaBuses]) {
       if (keep.has(id)) continue;
       this.areaBuses.delete(id);
       const retire = () => {
-        if ([...this.live].some((v) => v.areaMix && v.areaMix[id])) { setTimeout(retire, 4000); return; }
+        if (!now && [...this.live].some((v) => v.areaMix && v.areaMix[id])) { setTimeout(retire, 4000); return; }
         try { b.gain.disconnect(); } catch (e) { /* gone */ }
         if (b.conv) { try { b.conv.disconnect(); } catch (e) { /* gone */ } }
       };
-      setTimeout(retire, 5000);
+      // `now`: the world has ended and is muted, so the old rooms go at once
+      // instead of ringing on beside the next world's (a convolver each: on a
+      // phone, twenty of them at a regeneration is a load it may not carry).
+      if (now) retire(); else setTimeout(retire, 5000);
     }
     for (const a of areas) {
       let b = this.areaBuses.get(a.id);
@@ -690,6 +695,15 @@ export class AudioEngine {
     let behind = 0.0;
     if (at && this.sourceEffect) { try { src = this.sourceEffect(at); } catch (e) { src = null; } }
     if (at && this.behindOf) { try { behind = this.behindOf(at); } catch (e) { behind = 0.0; } }
+    if (this.live.size >= this.maxLive) {
+      // A full house: the oldest one-shot still playing gives way (a loop is part
+      // of the world and stays). With only loops playing, a new one-shot is not
+      // started at all; a new loop is.
+      let oldest = null;
+      for (const o of this.live) { if (!o.loop && !o.direct) { oldest = o; break; } }
+      if (oldest) { oldest.stop(); this.culled += 1; }
+      else if (loops !== -1) { this.culled += 1; return null; }
+    }
     const v = new Voice(this, name, pair, { loop: loops === -1, volume, fadeMs, src, behind });
     if (this.spatial) {
       v.direct = !!direct;
