@@ -204,6 +204,35 @@ const smash = await page.evaluate(async () => {
   out.hum = c.voice ? { name: c.voice.name, placed: !!c.voice.placed, level: c.voice.l, loops: c.voice.loops } : null;
   // The compass's nearby list names it.
   out.nearby = g._utCompassNearby().join('; ');
+  // Its ping (web 4.1.1): from where it stands, highest when you face it, lower
+  // off to the side and lowest behind you; faster the closer you are; not from
+  // beyond its range.
+  {
+    const { CASE_PING_RANGE, casePingName } = T.mod;
+    const pings = []; const op = a.play.bind(a);
+    a.play = (n, o) => { if (/^ut_case_ping_\d$/.test(n)) pings.push([n, o && o.pos ? o.pos.map((x) => +x.toFixed(2)) : null]); return op(n, o); };
+    const listen = (seconds) => { pings.length = 0; for (let i = 0; i < 30 * seconds; i++) g.updateUltimateMode(1 / 30); return pings.map((x) => x[0]); };
+    const toCase = Math.atan2(-dx, dy);          // the way to the case from where we stand (it lies the other way from the open squares)
+    const at = (deg) => { g._utTurnStop(); g._utFace(toCase + deg * Math.PI / 180, true); return listen(2); };
+    const ahead = at(0);
+    out.ping = { ahead, placed: pings[0] ? pings[0][1] : null, want: [-dx * 18, -dy * 18].map((x) => +x.toFixed(2)), has: [0, 8].every((k) => a.has(casePingName(k))) && a.has('ut_case_ping_demo') };
+    out.ping.byAngle = [0, 7, 15, 30, -30, 45, 90, -90, 120, 180].map((deg) => [deg, [...new Set(at(deg))].join(',')]);
+    out.ping.count18 = at(0).length;
+    g.playerPos = [c.pos[0] + dx * 6, c.pos[1] + dy * 6]; g._utListenerMix();
+    out.ping.count6 = at(0).length;
+    // Beyond its range, and from the next area, nothing.
+    g.playerPos = [c.pos[0] + dx * 18, c.pos[1] + dy * 18]; g._utListenerMix();
+    const keepPos = [c.pos[0], c.pos[1]];
+    c.pos = [g.playerPos[0] - dx * (CASE_PING_RANGE + 1), g.playerPos[1] - dy * (CASE_PING_RANGE + 1)];
+    out.ping.beyond = at(0).length;
+    c.pos = keepPos;
+    const here = u.area; u.area = u.world.areas.find((x) => x !== area); out.ping.otherArea = listen(2).length; u.area = here;
+    // With the compass on it carries on (the hum does too).
+    a.play = op;
+    g._utTurnStop(); g._utFace({ north: 0, east: 1, south: 2, west: 3 }[back] * Math.PI / 2, true);
+    g.playerPos = [c.pos[0] + dx * 18, c.pos[1] + dy * 18]; g._utListenerMix();
+    for (let i = 0; i < 5; i++) g.updateUltimateMode(1 / 30);
+  }
   // Out of reach, the attack is the laser, as ever.
   const L = T.listen();
   u.ammo = 5;
@@ -257,6 +286,8 @@ const smash = await page.evaluate(async () => {
   for (let i = 0; i < Math.ceil(30 * (HUNTER_QUIET + HUNTER_RISE)); i++) g.updateUltimateMode(1 / 30);
   out.heardLater = hs.filter((e) => u.enemies.includes(e)).some((e) => e.voice && e.voice.l > 0.05);
   out.stillThere = hs.filter((e) => u.enemies.includes(e)).length;
+  // (Through those four seconds beside it, the smashed case never pinged.)
+  out.pingAfter = L.played.filter((n) => /^ut_case_ping_/.test(n)).length;
   // The glass on the floor: it crunches within two steps of where the case stood.
   L.played.length = 0;
   const stepsOf = () => L.played.filter((n) => /^(step_|ut_glass_step_|ut_water_step_)/.test(n));
@@ -289,6 +320,14 @@ if (smash.found) {
   check(smash.sounds, 'the hum, the chime, the smash and the four glass steps are loaded');
   check(smash.hum && smash.hum.name === 'evt_crystal_hum' && smash.hum.placed && smash.hum.level > 0.3, 'a case hums where it stands (the crystal hum, placed): ' + JSON.stringify(smash.hum));
   check(/a glass case/.test(smash.nearby), 'the compass names it among the things nearby: ' + smash.nearby);
+  const pg = smash.ping; const stepOf = Object.fromEntries(pg.byAngle);
+  check(pg.has && pg.ahead.length >= 2 && pg.ahead.every((n) => n === 'ut_case_ping_8') && pg.placed && Math.abs(pg.placed[0] - pg.want[0]) < 0.01 && Math.abs(pg.placed[1] - pg.want[1]) < 0.01,
+    `a case pings from where it stands, at its highest pitch when you face it (${pg.ahead.length} pings in two seconds from six squares off)`);
+  check(stepOf[0] === 'ut_case_ping_8' && stepOf[7] === 'ut_case_ping_8' && stepOf[15] === 'ut_case_ping_7' && stepOf[30] === 'ut_case_ping_6' && stepOf[-30] === 'ut_case_ping_6'
+    && stepOf[45] === 'ut_case_ping_5' && stepOf[90] === 'ut_case_ping_2' && stepOf[-90] === 'ut_case_ping_2' && stepOf[120] === 'ut_case_ping_0' && stepOf[180] === 'ut_case_ping_0',
+    'the ping drops a step for every 15 degrees the case is off to either side, to its lowest behind you: ' + JSON.stringify(pg.byAngle));
+  check(pg.count6 > pg.count18 && pg.count18 >= 2, `it repeats faster as you close: ${pg.count18} in two seconds from six squares, ${pg.count6} from two`);
+  check(pg.beyond === 0 && pg.otherArea === 0, 'no ping from beyond twelve steps, nor from another area');
   check(smash.farShot.laser && smash.farShot.ammo === 4 && !smash.farShot.smashed, 'out of reach of it, the attack is the laser as ever');
   check(smash.chimedOnce && smash.approach.every(([d, n]) => (d < smash.rearm[0]) === (n === 1)) && smash.reach < smash.rearm[0],
     'the chime rings once, as you come within a step of it: ' + JSON.stringify(smash.approach));
@@ -310,6 +349,7 @@ if (smash.found) {
     `they come fast: ${smash.closing.join(', ')} units nearer in a second`);
   check(smash.quietAtFirst && (smash.heardLater || smash.stillThere === 0), 'they are not heard at once, and are heard a few seconds on');
   check(smash.second.laser && !smash.second.smashAgain, 'a smashed case cannot be smashed again');
+  check(smash.pingAfter === 0, 'a smashed case no longer pings');
   check(smash.glass === 1 && smash.glassSteps.length === 4 && smash.glassSteps.slice(0, 3).every((n) => /^ut_glass_step_/.test(n)) && smash.areaSteps.includes(smash.glassSteps[3]),
     'broken glass crunches underfoot for two steps round where the case stood, and not beyond: ' + JSON.stringify(smash.glassSteps));
   check(!/a glass case/.test(smash.nearbyAfter), 'the compass no longer names a smashed case');

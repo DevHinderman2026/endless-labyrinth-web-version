@@ -312,6 +312,17 @@ export const CASE_SMASH = 'ut_glass_smash';
 export const CASE_GAIN = 0.75;
 export const CASE_REACH = 4.5;                  // units: the squares beside it and the ones at its corners
 export const CASE_REARM = 9.0;                  // go this far from it and it will chime again when you come back
+// The ping (web 4.1.1; Russell, 11 November 2026: the hum alone is not enough to
+// centre a case). On top of the hum, a short glassy ping from where the case
+// stands, made by the game itself. Its pitch says how squarely you face the case:
+// highest when it is straight ahead, a step lower for every 15 degrees it is off
+// to either side, lowest behind you. It repeats faster as you come closer.
+export const CASE_PING_RANGE = 36.0;            // units: twelve steps; no ping from further off, nor from another area
+export const CASE_PING_EVERY = [0.16, 0.9];     // seconds between pings: beside the case, and at the edge of the range
+export const CASE_PING_LEVEL = [0.3, 0.7];      // its level: at the edge of the range, and beside the case
+export const CASE_PING_HZ = [1175, 2349];       // its pitch: the case behind you, and straight ahead (an octave)
+export const CASE_PING_PER_STEP = 15 * DEG;     // one of its nine pitches for every 15 degrees off straight ahead
+export function casePingName(step) { return `ut_case_ping_${step}`; }   // step 0 (lowest) to 8 (straight ahead)
 export const CASE_HUNTERS = [[2, 0.35], [3, 0.40], [4, 0.15], [5, 0.10]];   // how many come, and how often: mostly two or three, five if you are very unlucky
 export const HUNTER_FROM = [70, 60, 50, 40, 30, 20, 14];   // units: they start as far from you as the area has floor, trying the furthest first (70 is out of earshot)
 export const HUNTER_QUIET = 1.2;                // seconds before one can be heard at all, wherever it started ...
@@ -446,6 +457,17 @@ export function makeSounds(audio) {
   }), 0.3));
   addMade(audio, 'ut_slide', slideRush(SLIDE_DOWN));
   addMade(audio, 'ut_bus_chime', joined([tone(BUS_CHIME_HZ[0], 0.5, 0.4), tone(BUS_CHIME_HZ[1], 0.7, 0.4)], 0.05));
+  // A glass case's ping (web 4.1.1): a short clear note with a fainter one high
+  // above it, as struck glass has; nine of them, an octave from lowest to highest.
+  const ping = (s) => {
+    const hz = CASE_PING_HZ[0] * Math.pow(CASE_PING_HZ[1] / CASE_PING_HZ[0], s / 8);
+    const a = tone(hz, 0.11, 0.26); const b = tone(hz * 2.76, 0.07, 0.09);
+    for (let i = 0; i < b[0].length; i++) { a[0][i] += b[0][i]; a[1][i] += b[1][i]; }
+    return a;
+  };
+  for (let s = 0; s <= 8; s++) addMade(audio, casePingName(s), ping(s));
+  // The demo: turning toward a case, from behind you to straight ahead.
+  addMade(audio, 'ut_case_ping_demo', joined([0, 2, 4, 6, 7, 8, 8, 8].map((s) => ping(s)), 0.28));
   // The ticks of a turn (web 4.0.0): one as you pass east, south or west, a
   // higher one for north.
   addMade(audio, 'ut_tick', tone(TICK_HZ[0], 0.07, 0.3));
@@ -456,7 +478,7 @@ export function makeSounds(audio) {
   // direction's tick, click, click, and north's higher tick.
   { const c = () => tone(CLICK_HZ, 0.05, 0.3 * CLICK_LEVEL / TICK_LEVEL);
     addMade(audio, 'ut_tick_demo', joined([c(), c(), tone(TICK_HZ[0], 0.07, 0.3), c(), c(), tone(TICK_HZ[1], 0.07, 0.3)], 0.4)); }
-  for (const n of ['ut_low_ammo_demo', 'ut_compass_demo', 'ut_slide', 'ut_bus_chime', 'ut_tick_demo']) ensureCopies(audio, n);
+  for (const n of ['ut_low_ammo_demo', 'ut_compass_demo', 'ut_slide', 'ut_bus_chime', 'ut_tick_demo', 'ut_case_ping_demo']) ensureCopies(audio, n);
 }
 
 // The rush of a water slide: noise through a resonant band that falls from a
@@ -2028,6 +2050,14 @@ const mixin = {
       if (!c.voice && level > 0.01) c.voice = this._utPlay(CASE_SOUND, c.pos, { loops: -1, volume: 0.0, fadeMs: 300 });
       else if (c.voice && level <= 0.001 && d > HEAR_RANGE + 10) { c.voice.stop(); u.voices.delete(c.voice); c.voice = null; }
       if (c.voice) this._utFollow(c.voice, c.pos, level, aboveHeight, dullOf(c.area));
+      // Its ping (web 4.1.1), in your own area and within twelve steps: from where
+      // the case stands, higher the more squarely you face it, faster as you close.
+      c.pingT = Math.max(0, (c.pingT || 0) - dt);
+      if (onWorld && c.area === u.area && d < CASE_PING_RANGE && c.pingT <= 0) {
+        const near = 1 - d / CASE_PING_RANGE;
+        c.pingT = CASE_PING_EVERY[1] + (CASE_PING_EVERY[0] - CASE_PING_EVERY[1]) * near;
+        this._utPlay(casePingName(this._utCasePingStep(c)), c.pos, { volume: CASE_PING_LEVEL[0] + (CASE_PING_LEVEL[1] - CASE_PING_LEVEL[0]) * near });
+      }
     }
     for (const it of u.towerItems.values()) {
       const pos = this._utItemPos(it);
@@ -2075,6 +2105,19 @@ const mixin = {
     if (this._utInPool(this.playerPos)) name = pick(this.strideStepping === 'up' ? SWIM_STROKES : STEPS_WATER);
     else if (this._utOnGlass(this.playerPos)) name = pick(STEPS_GLASS);
     return name || choice(a.steps);
+  },
+
+  // Which of its nine pings a case gives now: 8 when it is straight ahead (within
+  // seven and a half degrees), one lower for every 15 degrees further off to
+  // either side, 0 from 113 degrees round to straight behind you. Standing on the
+  // case itself, it is ahead whichever way you face.
+  _utCasePingStep(c) {
+    const f = this._utForward();
+    const dx = c.pos[0] - this.playerPos[0]; const dy = c.pos[1] - this.playerPos[1];
+    const d = Math.hypot(dx, dy);
+    if (d < 0.5) return 8;
+    const off = Math.acos(Math.max(-1, Math.min(1, (dx * f[0] + dy * f[1]) / d)));
+    return Math.max(0, 8 - Math.round(off / CASE_PING_PER_STEP));
   },
 
   // The glass case within reach, if there is one: in your area, not yet smashed.
