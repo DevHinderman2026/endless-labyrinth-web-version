@@ -8,7 +8,7 @@
   <link rel="icon" href="icons/icon-192.png">
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
   <meta name="theme-color" content="#0c0f14">
-  <link rel="stylesheet" href="css/site.css?v=3.3.0">
+  <link rel="stylesheet" href="css/site.css?v=4.0.0">
 </head>
 <body>
   <header class="site">
@@ -20,6 +20,23 @@
     <p>This page lists the web version. For the Windows version, see its <a href="https://github.com/DevHinderman2026/Endless-Labyrinth/blob/main/Credits%20and%20Version%20History/CHANGELOG.md">changelog</a> on GitHub.</p>
     <p>The game updates by itself: the next time you open it, you have the latest version. Only a sound pack that has changed is downloaded again, and your high scores are kept. Events are not listed here: they appear in the Events menu as they open.</p>
 
+    <h2>4.0.0 (11 November 2026), web only</h2>
+    <p>Ultimate Mode turns with you. Until now north was always ahead, and a swipe both faced you and stepped you. Now you turn where you stand and the whole world sweeps round you, you walk exactly where you face, and you aim by facing your enemy. It is the biggest change the mode has had. Every other mode is as it was. Web only: the Windows game is unchanged.</p>
+    <h3>Changed: Ultimate Mode</h3>
+    <ul>
+      <li><strong>The world turns with you.</strong> A swipe left or right is now a turn, not a step: a quick turn to the next main direction, north, east, south or west, swept round in a quarter of a second, so two swipes turn you right round, and if you had stopped in between, a swipe squares you up again. A swipe is a quick turn however fast or slowly you make it, even if your finger pauses for an instant before it lifts. Slide left or right and hold, and you turn freely for as long as you hold: slowly at first, so a short hold is a small nudge for aiming, then faster, up to a full circle in about two and a half seconds. You stop exactly where you lift. Every sound around you sweeps round with the turn, the ones already sounding included; nothing in the world has moved, you have.</li>
+      <li><strong>You walk where you face.</strong> A swipe up is one step the way you are facing and a swipe down is one step straight back, at any angle, so you can face a beacon by ear and walk straight to it. Running and walking backwards go the same way. Squarely into a wall you stop, as before. At a slant you slide along it, with the wall heard quietly beside you. Squared up with a quick turn, a labyrinth's corridors work exactly as they did.</li>
+      <li><strong>A tick at each main direction.</strong> As you turn, a soft tick marks east, south and west as you pass them or land on them, and a higher tick marks north, so there is always one fixed point to map the world by. The game makes these sounds itself.</li>
+      <li><strong>The aim is the quarter in front of you.</strong> A shot or a throw takes the nearest enemy within 45 degrees either side of straight ahead, so one a little to the side still counts, and nothing behind you; a chaser within two steps is still hit wherever it is. Before, a shot took whatever was roughly ahead of you or behind you. Quick turns alone are always enough to bring any enemy in front of you.</li>
+      <li><strong>The compass turns you for real.</strong> With the compass on, your turns are your own turns: the beep rises as you face the way to go and falls as you turn away, and it beeps faster while you hold a turn. Each time you land on a main direction it says what lies ahead and where the way is: for example, This way, 6 steps, then left; or, Open for 4 steps, then a wall. The way is to your right. Turn the compass off and you are already facing the way you chose. Before, the compass had a pointer of its own and never turned you.</li>
+      <li><strong>The report says the way you face.</strong> It now ends with one of eight words: for example, 100 health. 0 points. 10 shots. 3 items. Facing north-east. The line on the screen says it too.</li>
+      <li><strong>On a computer, the arrows can be held.</strong> In Ultimate Mode the left and right arrows turn you, a press for a quick turn and a hold to turn freely, and the up and down arrows step forward and back. Held down, they run and walk backwards, which a keyboard could not do before, and you can turn while you run. A Braille notetaker, which cannot hold a key, makes one quick turn or one step with each press.</li>
+      <li><strong>Smaller things.</strong> You step out of an island's elevator with your back to it, so walking on takes you away from it. Stepping anywhere onto the elevator's square starts the ride. A new world leaves you facing as you were, and a new run begins facing north. Gesture Practice names the new slide and hold, and the help topic on sounds behind you says that Ultimate Mode is now the exception to "north is always ahead". And the first time you start Ultimate Mode after this update, the game says once, in a few sentences, that turning has changed; nothing can hurt you while it does, and it is never said again on that device.</li>
+    </ul>
+    <h3>Corrected in the help</h3>
+    <ul>
+      <li><strong>Two sentences that were out of date.</strong> The help said that from the next area you still hear a battle area's chasers; you hear an area's enemies only while you are inside it. And the demo of the regeneration countdown mentioned a spoken warning at fifteen seconds, which was removed in 3.1.0: the countdown is the only warning.</li>
+    </ul>
     <h2>3.3.0 (10 November 2026), web only</h2>
     <p>Ultimate Mode, made fairer and more dependable: every run begins with a few shots and a few tower items, the items are now yours to keep as ammo is, the report says how many you hold, and in a crowded world the bus's chime can no longer go missing. Web only: the Windows game is unchanged.</p>
     <h3>Changed: Ultimate Mode</h3>
@@ -272,51 +289,51 @@
   <script type="importmap">
   {
     "imports": {
-      "./js/accessibility.js": "./js/accessibility.js?v=3.3.0",
-      "./js/audio.js": "./js/audio.js?v=3.3.0",
-      "./js/backup.js": "./js/backup.js?v=3.3.0",
-      "./js/backups-page.js": "./js/backups-page.js?v=3.3.0",
-      "./js/braille.js": "./js/braille.js?v=3.3.0",
-      "./js/calendar.js": "./js/calendar.js?v=3.3.0",
-      "./js/device.js": "./js/device.js?v=3.3.0",
-      "./js/display.js": "./js/display.js?v=3.3.0",
-      "./js/game.js": "./js/game.js?v=3.3.0",
-      "./js/gestures.js": "./js/gestures.js?v=3.3.0",
-      "./js/help-data.js": "./js/help-data.js?v=3.3.0",
-      "./js/help-page.js": "./js/help-page.js?v=3.3.0",
-      "./js/keywords.js": "./js/keywords.js?v=3.3.0",
-      "./js/main.js": "./js/main.js?v=3.3.0",
-      "./js/modes/chaos.js": "./js/modes/chaos.js?v=3.3.0",
-      "./js/modes/driving.js": "./js/modes/driving.js?v=3.3.0",
-      "./js/modes/events/engine.js": "./js/modes/events/engine.js?v=3.3.0",
-      "./js/modes/events/feed.js": "./js/modes/events/feed.js?v=3.3.0",
-      "./js/modes/events/help.js": "./js/modes/events/help.js?v=3.3.0",
-      "./js/modes/events/missions.js": "./js/modes/events/missions.js?v=3.3.0",
-      "./js/modes/events/py.js": "./js/modes/events/py.js?v=3.3.0",
-      "./js/modes/events/schema.js": "./js/modes/events/schema.js?v=3.3.0",
-      "./js/modes/events/sign.js": "./js/modes/events/sign.js?v=3.3.0",
-      "./js/modes/events/sounds.js": "./js/modes/events/sounds.js?v=3.3.0",
-      "./js/modes/events/wording.js": "./js/modes/events/wording.js?v=3.3.0",
-      "./js/modes/events.js": "./js/modes/events.js?v=3.3.0",
-      "./js/modes/index.js": "./js/modes/index.js?v=3.3.0",
-      "./js/modes/island.js": "./js/modes/island.js?v=3.3.0",
-      "./js/modes/tower.js": "./js/modes/tower.js?v=3.3.0",
-      "./js/modes/ultimate/help.js": "./js/modes/ultimate/help.js?v=3.3.0",
-      "./js/modes/ultimate/world.js": "./js/modes/ultimate/world.js?v=3.3.0",
-      "./js/modes/ultimate.js": "./js/modes/ultimate.js?v=3.3.0",
-      "./js/packs.js": "./js/packs.js?v=3.3.0",
-      "./js/site.js": "./js/site.js?v=3.3.0",
-      "./js/sound-rules.js": "./js/sound-rules.js?v=3.3.0",
-      "./js/speech.js": "./js/speech.js?v=3.3.0",
-      "./js/stats.js": "./js/stats.js?v=3.3.0",
-      "./js/storage.js": "./js/storage.js?v=3.3.0",
-      "./js/update-alert.js": "./js/update-alert.js?v=3.3.0",
-      "./js/version.js": "./js/version.js?v=3.3.0",
-      "./js/wetworker.js": "./js/wetworker.js?v=3.3.0"
+      "./js/accessibility.js": "./js/accessibility.js?v=4.0.0",
+      "./js/audio.js": "./js/audio.js?v=4.0.0",
+      "./js/backup.js": "./js/backup.js?v=4.0.0",
+      "./js/backups-page.js": "./js/backups-page.js?v=4.0.0",
+      "./js/braille.js": "./js/braille.js?v=4.0.0",
+      "./js/calendar.js": "./js/calendar.js?v=4.0.0",
+      "./js/device.js": "./js/device.js?v=4.0.0",
+      "./js/display.js": "./js/display.js?v=4.0.0",
+      "./js/game.js": "./js/game.js?v=4.0.0",
+      "./js/gestures.js": "./js/gestures.js?v=4.0.0",
+      "./js/help-data.js": "./js/help-data.js?v=4.0.0",
+      "./js/help-page.js": "./js/help-page.js?v=4.0.0",
+      "./js/keywords.js": "./js/keywords.js?v=4.0.0",
+      "./js/main.js": "./js/main.js?v=4.0.0",
+      "./js/modes/chaos.js": "./js/modes/chaos.js?v=4.0.0",
+      "./js/modes/driving.js": "./js/modes/driving.js?v=4.0.0",
+      "./js/modes/events/engine.js": "./js/modes/events/engine.js?v=4.0.0",
+      "./js/modes/events/feed.js": "./js/modes/events/feed.js?v=4.0.0",
+      "./js/modes/events/help.js": "./js/modes/events/help.js?v=4.0.0",
+      "./js/modes/events/missions.js": "./js/modes/events/missions.js?v=4.0.0",
+      "./js/modes/events/py.js": "./js/modes/events/py.js?v=4.0.0",
+      "./js/modes/events/schema.js": "./js/modes/events/schema.js?v=4.0.0",
+      "./js/modes/events/sign.js": "./js/modes/events/sign.js?v=4.0.0",
+      "./js/modes/events/sounds.js": "./js/modes/events/sounds.js?v=4.0.0",
+      "./js/modes/events/wording.js": "./js/modes/events/wording.js?v=4.0.0",
+      "./js/modes/events.js": "./js/modes/events.js?v=4.0.0",
+      "./js/modes/index.js": "./js/modes/index.js?v=4.0.0",
+      "./js/modes/island.js": "./js/modes/island.js?v=4.0.0",
+      "./js/modes/tower.js": "./js/modes/tower.js?v=4.0.0",
+      "./js/modes/ultimate/help.js": "./js/modes/ultimate/help.js?v=4.0.0",
+      "./js/modes/ultimate/world.js": "./js/modes/ultimate/world.js?v=4.0.0",
+      "./js/modes/ultimate.js": "./js/modes/ultimate.js?v=4.0.0",
+      "./js/packs.js": "./js/packs.js?v=4.0.0",
+      "./js/site.js": "./js/site.js?v=4.0.0",
+      "./js/sound-rules.js": "./js/sound-rules.js?v=4.0.0",
+      "./js/speech.js": "./js/speech.js?v=4.0.0",
+      "./js/stats.js": "./js/stats.js?v=4.0.0",
+      "./js/storage.js": "./js/storage.js?v=4.0.0",
+      "./js/update-alert.js": "./js/update-alert.js?v=4.0.0",
+      "./js/version.js": "./js/version.js?v=4.0.0",
+      "./js/wetworker.js": "./js/wetworker.js?v=4.0.0"
     }
   }
   </script>
   <!-- end of versions -->
-  <script type="module" src="js/site.js?v=3.3.0"></script>
+  <script type="module" src="js/site.js?v=4.0.0"></script>
 </body>
 </html>

@@ -48,7 +48,7 @@ export function mergeStats(a, b) {
 export class Store {
   constructor() {
     this.scores = { ...DEFAULT_SCORES };
-    this.settings = { speechRate: 3, practiced: false, homeTipSaid: false };
+    this.settings = { speechRate: 3, practiced: false, homeTipSaid: false, turnTold: false };   // (turnTold, web 4.0.0: Ultimate Mode has said once that the world now turns with you)
     this.readFailed = false;   // the save is there but could not be read: never overwrite it
     this.resetAt = 0;          // when the boards were last reset, in any copy of the game
     this.stats = emptyStats();  // seconds played and runs started, per mode (web 1.1.0)

@@ -98,6 +98,7 @@ export class AudioEngine {
     this.demoVoice = null;
     // Binaural 3D (Ultimate Mode): see spatialOn / spatialOff.
     this.spatial = false;
+    this.facing = 0;              // the way the listener faces in the 3D world, radians clockwise from north (setFacing)
     this.worldIn = null;          // GainNode: the world's sounds, before the filter and fade
     this.worldFilter = null;
     this.worldGain = null;
@@ -549,9 +550,10 @@ export class AudioEngine {
 
   // ---------------------------------------------------------------- binaural 3D (Ultimate Mode)
   // Turn the 3D world on: from now on a Voice played with `pos` is placed by the
-  // HRTF panner (the listener stays at the origin, facing north: the world never
-  // turns), and everything but a 'direct' sound passes through the world's filter
-  // and gain. Idempotent; made again for a fresh engine by recover().
+  // HRTF panner (the listener stays at the origin; the way it faces is setFacing's,
+  // north until told otherwise), and everything but a 'direct' sound passes through
+  // the world's filter and gain. Idempotent; made again for a fresh engine by
+  // recover(), which keeps the facing.
   spatialOn() {
     this.spatial = true;
     if (this.worldIn) return;
@@ -569,17 +571,37 @@ export class AudioEngine {
     const l = ctx.listener;
     try {
       if (l.positionX) { l.positionX.value = 0; l.positionY.value = 0; l.positionZ.value = 0; }
-      if (l.forwardX) {
-        l.forwardX.value = 0; l.forwardY.value = 0; l.forwardZ.value = -1;
-        l.upX.value = 0; l.upY.value = 1; l.upZ.value = 0;
-      } else if (l.setOrientation) l.setOrientation(0, 0, -1, 0, 1, 0);
+      if (l.upX) { l.upX.value = 0; l.upY.value = 1; l.upZ.value = 0; }
     } catch (e) { /* the defaults are the same */ }
+    this.setFacing(this.facing || 0, true);
+  }
+
+  // The way the listener faces, in radians clockwise from north (web 4.0.0:
+  // Ultimate Mode's world turns with you). Every placed sound turns with it at
+  // once, those already sounding included; how loud each one is stays the game's
+  // own business. A turn is a string of small changes, each glided to, so the
+  // world sweeps round without a zip; `instant` is for being put down facing a
+  // new way (a fresh run, stepping out of the lift).
+  setFacing(theta, instant = false) {
+    this.facing = theta;
+    if (!this.ctx) return;
+    const l = this.ctx.listener;
+    const fx = Math.sin(theta); const fz = -Math.cos(theta);
+    try {
+      if (l.forwardX) {
+        const now = this.ctx.currentTime;
+        for (const [p, v] of [[l.forwardX, fx], [l.forwardY, 0], [l.forwardZ, fz]]) {
+          if (instant) { p.cancelScheduledValues(now); p.setValueAtTime(v, now); } else p.setTargetAtTime(v, now, 0.015);
+        }
+      } else if (l.setOrientation) l.setOrientation(fx, 0, fz, 0, 1, 0);   // (browsers without the listener's own parameters)
+    } catch (e) { /* the listener stays as it was */ }
   }
 
   // The 3D world is over: the area echoes go, and sounds play as everywhere else.
   spatialOff({ now = false } = {}) {
     this.spatial = false;
     this.listenerMix = null;
+    this.setFacing(0, true);     // north again, for whatever comes next
     this.setAreaRooms([], { now });
     if (this.worldGain) {
       const g = this.worldGain; const f = this.worldFilter; const i = this.worldIn;

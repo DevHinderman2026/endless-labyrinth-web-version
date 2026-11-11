@@ -312,6 +312,18 @@ await down(); await wait(800);
 const before = await said();
 await up(); await wait(150);
 check(!/Holding still/.test(await said()) && (await said()) === before, `practice: a finger held still says nothing: ${await said()}`);
+// Web 4.0.0: a swipe to the side and a slide to the side that is held are told
+// apart (in Ultimate Mode the first is a quick turn, the second a held turn).
+await down(); await move(165, 400); await move(130, 400); await up(130, 400);
+await wait(150);
+check((await said()) === 'Swipe left. In Ultimate Mode, that turns you to the left.', `practice: a quick slide left is a swipe left: ${await said()}`);
+await down(); await move(240, 400); await move(262, 400); await wait(500);
+check(/^Slide right and hold\. In Ultimate Mode only, you keep turning right until you lift your finger\.$/.test(await said()), `practice: slide right and hold is named: ${await said()}`);
+await up(262, 400); await wait(100);
+check(/^Lifted\. In Ultimate Mode, that stops your turn exactly there\.$/.test(await said()), `practice: lifting after it is named: ${await said()}`);
+await down(); await move(160, 400); await wait(500); await up(160, 400); await wait(100);
+const turnLog = (await log()).map(([x]) => x).filter((x) => /turn|left|right/.test(x));
+check(turnLog.slice(-2).join() === 'turn_left_start,turn_end', `practice: a slide left that is held is a held turn, not a swipe as well: ${turnLog.slice(-4).join(' ')}`);
 check(errors.length === 0, `no page errors ${errors}`);
 
 await browser.close();

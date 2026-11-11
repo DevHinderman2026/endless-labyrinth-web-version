@@ -38,6 +38,26 @@
 // (holdCompass), one finger held still for HOLD_MS emits 'hold'; that finger then
 // does nothing more until it lifts. In every other mode a still finger still does
 // nothing. On a keyboard, C emits 'compass'.
+//
+// Turning (web 4.0.0, Ultimate Mode only, Russell's design: the world turns with
+// you). While the game asks for it (turnHold):
+//   swipe left or right     'left' or 'right' when the finger lifts: a quick turn
+//   slide left or right     'turn_left_start' or 'turn_right_start' once the
+//   and hold                finger has come to rest (or has been sliding a good
+//                           while): you turn until it lifts, then 'turn_end'
+// A slide is a swipe for as long as the finger keeps moving, however slowly, and
+// becomes a hold when it rests; so a quick turn never depends on how fast you
+// swipe. A hold that ends almost as soon as it began (a finger that paused before
+// lifting) was a swipe after all: 'turn_end', then 'left' or 'right', so a swipe
+// always ends squared up, with its tick. Only lifting ends a held turn, and a
+// second finger does nothing.
+// On a keyboard there (run mode): a left or right arrow let go at once is 'left'
+// or 'right'; held past KEY_HOLD_MS it is the held turn, until the key is let go
+// (and let go within KEY_BRIEF_MS of that, it was a slow press: a quick turn).
+// The up and down arrows send 'run_start' and 'back_start' when pressed and
+// 'stride_end' when let go, so a press is one step and a hold runs or walks back;
+// an arrow may be held with another, which curves a run. A Braille notetaker's
+// held key (a stream of presses, see _key) is still one press: one turn, one step.
 
 const SWIPE_MIN = 30;       // pixels a finger must travel for a swipe
 const HOLD_MS = 1000;       // a finger still this long is the compass
@@ -45,6 +65,12 @@ const TAP_MOVE = 22;        // more than this and it is not a tap
 const TAP_TIME = 350;       // ms a tap may last
 const TAP_GAP = 330;        // ms between taps of one count
 const MULTI_START = 220;    // ms within which the fingers of a multi-finger tap must land
+const TURN_REST_MS = 110;   // a sliding finger still this long has come to rest: the slide is a hold
+const TURN_WAIT_MS = 280;   // and one that has slid on this long without lifting is a hold too
+const TURN_STILL = 8;       // pixels: less movement than this is rest
+const TURN_BRIEF_MS = 200;  // a hold that ends this soon after it began was a swipe after all: one quick turn
+export const KEY_HOLD_MS = 180;    // an arrow key down this long is held
+export const KEY_BRIEF_MS = 170;   // and one let go this soon after that was a press after all: one quick turn
 
 // Windows: presses of one key closer together than this are a key held down on a
 // Braille notetaker (see _key).
@@ -61,6 +87,10 @@ export class Gestures {
     this.tapTimer = null;
     this.holdCompass = false;   // Ultimate Mode: a still finger is the compass
     this.holdTimer = null;
+    this.turnHold = false;      // Ultimate Mode: sliding left or right and holding turns you, and held arrows turn and run
+    this.turnTimer = null;
+    this.turnKey = null;        // the arrow key that is turning, or waiting to: { key, dir, on, timer }
+    this.strideKey = null;      // the arrow key that is running or walking back
     this.braille = null;        // Windows: the Braille keyboard translator (main.js sets it)
     this.lastPress = new Map(); // Windows: when each key last arrived, held or not
     this.g = null;              // the gesture in progress
@@ -71,6 +101,8 @@ export class Gestures {
     el.addEventListener('touchcancel', (e) => this._cancel(e), opts);
     document.addEventListener('keydown', (e) => this._key(e));
     document.addEventListener('keyup', (e) => this._keyUp(e));
+    // A key still down when the page loses the keyboard is never heard to come up.
+    window.addEventListener('blur', () => this._releaseKeys());
   }
 
   setMode(mode) {
@@ -82,6 +114,8 @@ export class Gestures {
       // A pause, a menu or a driving road ends a run or a backward walk; the finger
       // still down does nothing more until it lifts.
       this._endStride(true);
+      this._endTurn(true);
+      this._releaseKeys();
       this._cancelHold();
       this.mode = mode;
       this._resetTaps();
@@ -127,6 +161,59 @@ export class Gestures {
     } else if (g && dead) g.strideDone = true;
   }
 
+  // A slide left or right has begun (turnHold): a swipe until the finger rests.
+  _armTurn(g, dir, id, p) {
+    const now = performance.now();
+    g.turn = { dir, id, on: false, at: now, movedAt: now, x: p.x, y: p.y, onAt: 0 };
+    const watch = () => {
+      this.turnTimer = null;
+      const t = g.turn;
+      if (this.g !== g || !t || t.on) return;
+      const at = performance.now();
+      if (at - t.movedAt >= TURN_REST_MS || at - t.at >= TURN_WAIT_MS) {
+        t.on = true; t.onAt = at;
+        this.emit(`turn_${t.dir}_start`);
+        return;
+      }
+      this.turnTimer = setTimeout(watch, 25);
+    };
+    clearTimeout(this.turnTimer);
+    this.turnTimer = setTimeout(watch, 25);
+  }
+
+  // The turning finger has lifted (or the run is paused or over: `dead`). A slide
+  // that never came to rest was a swipe: one quick turn.
+  _endTurn(dead = false) {
+    const g = this.g;
+    if (!g || !g.turn) return;
+    const t = g.turn;
+    g.turn = null;
+    g.strideDone = true;       // that finger does nothing more
+    clearTimeout(this.turnTimer);
+    this.turnTimer = null;
+    if (t.on) {
+      this.emit('turn_end');
+      // (So brief a hold was a swipe after all, by a finger that paused before it
+      // lifted: it goes on to the next main direction, as a swipe does.)
+      if (!dead && performance.now() - t.onAt < TURN_BRIEF_MS) this.emit(t.dir);
+    } else if (!dead) this.emit(t.dir);
+  }
+
+  // Whatever arrow keys were turning or running are let go of (a pause, a menu,
+  // the page losing the keyboard).
+  _releaseKeys() {
+    const t = this.turnKey;
+    if (t) {
+      this.turnKey = null;
+      clearTimeout(t.timer);
+      if (t.on) this.emit('turn_end', { keyboard: true });
+    }
+    if (this.strideKey) {
+      this.strideKey = null;
+      this.emit('stride_end', { keyboard: true });
+    }
+  }
+
   // Buttons and links on the page keep working as buttons and links.
   static _native(e) { return e.target && e.target.closest && e.target.closest('button, a, [data-native]'); }
 
@@ -144,9 +231,9 @@ export class Gestures {
     this.g.max = Math.max(this.g.max, this.g.touches.size);
     if (this.g.max > 1 && now - this.g.start > MULTI_START) this.g.moved = true;   // not one tap
     const g = this.g;
-    // A second finger: a finger already running or walking back carries on, and
-    // the new finger does nothing (lift to shoot).
-    if (g.max > 1 && g.stride) g.moved = true;
+    // A second finger: a finger already running, walking back or turning carries
+    // on, and the new finger does nothing (lift to shoot).
+    if (g.max > 1 && (g.stride || g.turn)) g.moved = true;
     if (g.max === 1) this._armHold(); else this._cancelHold();
   }
 
@@ -165,6 +252,15 @@ export class Gestures {
       if (d > TAP_MOVE) { g.moved = true; this._cancelHold(); }
       if (g.held) continue;        // the compass finger: nothing more until it lifts
       if (g.stride) continue;      // running or walking back: only lifting stops it
+      if (g.turn) {
+        // Turning, or a slide that may yet be a swipe: while the finger keeps
+        // moving it has not come to rest. Only lifting ends it.
+        const tn = g.turn;
+        if (tn.id === t.identifier && Math.hypot(p.x - tn.x, p.y - tn.y) >= TURN_STILL) {
+          tn.x = p.x; tn.y = p.y; tn.movedAt = performance.now();
+        }
+        continue;
+      }
       if (g.accelId === t.identifier) {
         // The accelerating finger: sliding back down from its highest point lets
         // go of the throttle and brakes once.
@@ -178,8 +274,12 @@ export class Gestures {
       if (g.max === 1 && !g.swiped && d >= SWIPE_MIN) {
         g.swiped = true;
         this._resetTaps();
-        if (Math.abs(dx) > Math.abs(dy)) this.emit(dx > 0 ? 'right' : 'left');
-        else if (dy < 0 && this.mode === 'drive') {
+        if (Math.abs(dx) > Math.abs(dy)) {
+          // Left or right: a swipe; where the game asks (Ultimate Mode), a slide
+          // that may become a held turn, so it waits for the finger to lift or rest.
+          if (this.turnHold && this._holds() && !g.strideDone) this._armTurn(g, dx > 0 ? 'right' : 'left', t.identifier, p);
+          else this.emit(dx > 0 ? 'right' : 'left');
+        } else if (dy < 0 && this.mode === 'drive') {
           // Slide up and hold: the throttle stays on while this finger stays down.
           g.accelId = t.identifier;
           p.top = p.y;
@@ -204,6 +304,7 @@ export class Gestures {
     for (const t of e.changedTouches) {
       g.touches.delete(t.identifier);
       if (g.accelId === t.identifier) this._releaseAccel();
+      if (g.turn && g.turn.id === t.identifier) this._endTurn();     // the turning finger itself
     }
     if (g.touches.size > 0) return;
     this._cancelHold();
@@ -221,6 +322,7 @@ export class Gestures {
     if (this.g && this.g.accelId !== undefined && this.g.accelId !== null) this._releaseAccel();
     this._cancelHold();
     this._endStride();
+    this._endTurn(true);
     this.g = null;
   }
 
@@ -296,6 +398,37 @@ export class Gestures {
       }
       return;
     }
+    if (this.turnHold && this.mode === 'run' && (e.key === 'ArrowLeft' || e.key === 'ArrowRight')) {
+      // Ultimate Mode: a turn. Let go at once it is a quick turn (see _keyUp);
+      // still down after KEY_HOLD_MS it is a held turn, until the key is let go.
+      e.preventDefault();
+      const dir = e.key === 'ArrowRight' ? 'right' : 'left';
+      const was = this.turnKey;
+      if (was) {
+        // The other arrow was down: its turn ends here (a quick one, if it had
+        // not yet become a hold).
+        this.turnKey = null;
+        clearTimeout(was.timer);
+        this.emit(was.on ? 'turn_end' : was.dir, { keyboard: true });
+      }
+      const tk = { key: e.key, dir, on: false, onAt: 0, timer: null };
+      tk.timer = setTimeout(() => {
+        if (this.turnKey !== tk) return;
+        tk.on = true; tk.onAt = performance.now();
+        this.emit(`turn_${dir}_start`, { keyboard: true });
+      }, KEY_HOLD_MS);
+      this.turnKey = tk;
+      return;
+    }
+    if (this.turnHold && this.mode === 'run' && (e.key === 'ArrowUp' || e.key === 'ArrowDown')) {
+      // Ultimate Mode: a step at once, and more for as long as the key is held
+      // (the touch screen's slide and hold).
+      e.preventDefault();
+      if (this.strideKey) this.emit('stride_end', { keyboard: true });
+      this.strideKey = e.key;
+      this.emit(e.key === 'ArrowUp' ? 'run_start' : 'back_start', { keyboard: true });
+      return;
+    }
     const g = map[e.key];
     if (!g) return;
     e.preventDefault();
@@ -303,6 +436,26 @@ export class Gestures {
   }
 
   _keyUp(e) {
+    // Ultimate Mode's arrows: the turn ends, or was a quick one; the run stops.
+    const tk = this.turnKey;
+    if (tk && e.key === tk.key) {
+      e.preventDefault();
+      this.turnKey = null;
+      clearTimeout(tk.timer);
+      if (!tk.on) this.emit(tk.dir, { keyboard: true });
+      else {
+        this.emit('turn_end', { keyboard: true });
+        // (Held only a moment: a slow press, so a quick turn after all.)
+        if (performance.now() - tk.onAt < KEY_BRIEF_MS) this.emit(tk.dir, { keyboard: true });
+      }
+      return;
+    }
+    if (this.strideKey && e.key === this.strideKey) {
+      e.preventDefault();
+      this.strideKey = null;
+      this.emit('stride_end', { keyboard: true });
+      return;
+    }
     if (e.key !== 'ArrowUp' || this.accelBy !== 'key') return;
     e.preventDefault();
     this.accelHeld = false;

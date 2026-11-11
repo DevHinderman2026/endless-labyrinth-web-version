@@ -23,6 +23,15 @@
 // the nearest safe zone with a centred beep, highest toward the way to go, while
 // the world is muffled and nothing can move; it says how far the leg runs.
 //
+// Web 4.0.0 (Russell, 11 November 2026): the world turns with you. Until then
+// north was always ahead, and a swipe both faced you and stepped you. Now the
+// facing is an angle: a swipe left or right is a quick turn to the next main
+// direction, a held turn is free and stops where you let go, a step goes exactly
+// where you face (walls stop you; at a slant you slide along them), the aim is
+// the front quarter, and the compass turns you for real. The sound engine turns
+// the listener (AudioEngine.setFacing), so every placed sound sweeps round with
+// the turn. See "turning" below.
+//
 // Russell's first play test (8 November 2026, night) set: every world three
 // minutes; areas one and a half times bigger with neighbours heard only near their
 // borders; one rival per tower area; one chaser per battle or island area at first,
@@ -33,6 +42,7 @@
 import { TowerEnemy, TowerItem, TowerProjectile, volleySpread, TOWER_DRONES } from './tower.js';
 import { addMade, aliasRecording, ensureCopies } from './events/sounds.js';
 import { HELP_SECTIONS, HELP_DEMOS } from './ultimate/help.js';
+import { RULES } from '../sound-rules.js';
 import {
   makeWorld, makeSeabed, CELL, AREA_CELLS, key, cellOf, posOf, isFloor, areaAt, nearestPointOf, leakPoint, echoMix,
   randomFloor, routeToward,
@@ -102,7 +112,7 @@ export const KEEP_SLOTS = 2;                    // an area's air keeps running w
 export const PARK_BELOW = 0.0005;               // an area's air quieter than this is unheard ...
 export const PARK_AFTER = 1.5;                  // ... and after this many seconds unheard its loops are held where they are (see _utUpdateSounds)
 const AREA_LOOPS = ['amb', 'ambIn', 'drums', 'drumsIn', 'crowd', 'crowdIn'];   // an area's air: each background's placed copy and its wide one
-export const REACH = 1.6;                       // walking into the elevator: its own cell
+export const REACH = 1.6;                       // (until web 4.0.0: walking into the elevator was coming this near its middle; now it is stepping onto its square)
 export const PICKUP_REACH = 3.2;                // a cartridge, credit, potion or tower item: its cell or the next (Battle, Tower and Island take theirs within 3 units)
 export const ITEM_NEAR = [12.0, 30.0];          // a tower item lies this far from you when it appears, as on a tower floor (was anywhere in the area)
 export const THROWER_SECONDS = 120;             // a tower rival's difficulty rises one point this often (30, then 45 until 9 Nov: Russell, even 5 to 10 minutes in it should not be that hard)
@@ -110,7 +120,38 @@ export const THROWER_HITS_MINUTES = 4;          // and the hits it takes never e
 export const THROWER_MAX = 20;                  // its difficulty never goes above this here (tower mode's own cap is 40)
 export const COMPASS_HOLD_MS = 1000;
 export const COMPASS_BEEP_EVERY = 0.45;
-const COMPASS_DIRS = [[0, -1], [1, 0], [0, 1], [-1, 0]];   // ahead, right, behind, left
+export const COMPASS_BEEP_TURNING = 0.16;       // while you turn with the compass on, so the pitch follows the turn
+const COMPASS_DIRS = [[0, -1], [1, 0], [0, 1], [-1, 0]];   // the main directions: north, east, south, west (exact, so a squared-up step is cell to cell)
+// ---- turning (web 4.0.0). The facing is an angle, clockwise from north.
+const DEG = Math.PI / 180;
+const TWO_PI = Math.PI * 2;
+export const QUARTER = Math.PI / 2;
+export const TURN_SLOW = 30 * DEG;              // a held turn begins this slowly (a second), so a short hold is a small nudge for aiming
+export const TURN_FAST = 150 * DEG;             // and comes up to this: a full circle in 2.4 seconds
+export const TURN_EASE = [0.25, 0.85];          // seconds held: slow until the first, at full speed by the second
+export const TURN_QUICK = 360 * DEG;            // a quick turn sweeps at this rate: a quarter turn in a quarter of a second
+export const TURN_LIMIT = 30;                   // seconds: no held turn lasts longer (a finger or a key whose lifting never arrived)
+export const TURN_BRIEF = 0.3;                  // seconds: a held turn let go within this may have been a swipe after all (gestures.js says so by sending the swipe at once)
+export const TICK_LEVEL = 0.5;                  // the tick at each main direction, as you turn
+export const AIM_HALF = 45.5 * DEG;             // the aim: this far either side of straight ahead (the front quarter; the half degree over is so that an enemy exactly on a diagonal is in two quarters, never in none)
+export const SLIDE_MIN = 0.75;                  // units: a blocked step still slides along the wall when its part along the wall is at least this
+export const WALL_TOUCH = 0.45;                 // the wall's level when you slide along it instead of stopping at it
+export const STEP_SAMPLE = 0.25;                // units: how finely a step's path is checked against the walls
+export const FACING_WORDS = ['north', 'north-east', 'east', 'south-east', 'south', 'south-west', 'west', 'north-west'];
+// ---- the first run after web 4.0.0, once on each device: the game says that the
+// controls have changed (Russell, 11 November 2026). Nothing can hurt you until
+// it has been said. Written for touch; keywords.js has its keyboard wording.
+export const NOTICE_SAFE = 20;                  // seconds nothing can hurt you from the moment the notice begins
+export const NOTICE_AFTER = 3;                  // and this long after it has been said, if saying it takes longer
+export const NOTICE_LIMIT = 45;                 // but never longer than this in all (a voice whose end is never heard of)
+export const TURN_NOTICE = 'New in version 4: you now turn where you stand, and the whole world turns with you. '
+  + 'Nothing can hurt you while you hear this. '
+  + 'Swipe left or right for a quick turn. '
+  + 'Slide left or right and hold to keep turning. '
+  + 'Swipe up to walk the way you are facing. ';
+// (A Windows computer may be a Braille notetaker, whose held key is a string of presses.)
+export const TURN_NOTICE_WINDOWS = 'On a Braille notetaker, each press is one quick turn or one step. ';
+export const TURN_NOTICE_END = 'The help for Ultimate Mode explains more.';
 export const COMPASS_NEAR_RANGE = 60;           // units: how far the compass briefing looks for things to pick up
 export const COMPASS_NEAR_COUNT = 3;            // how many it names
 export const ARENA = (AREA_CELLS - 1) / 2 * CELL;   // an area, as a tower floor sees it: 31.5 each way
@@ -250,12 +291,61 @@ const choice = (arr) => arr[Math.floor(rand() * arr.length)];
 const plural = (n, word, many = word + 's') => (n === 1 ? word : many);
 const dist2 = (a, b) => Math.hypot(a[0] - b[0], a[1] - b[1]);
 const levelAt = (d, range = HEAR_RANGE) => Math.max(0, 1 - d / range);
-// Aiming (Russell, 9 Nov): battle mode's 0.72 (about 46 degrees either side of
-// straight ahead or behind) made close chasers easy to step past, since one
-// sideways step swings a near one from one ear to the other. Here the cone is
-// about 58 degrees either side, and a chaser within two steps is hit wherever it is.
-export const AIM_PAN = 0.85;
+// Aiming. Until web 4.0.0 a shot took what sat centred between the ears, in
+// front or behind, within about 58 degrees (Russell, 9 Nov: a kinder aim than
+// battle mode's). Now that you turn to face an enemy, a shot or a throw takes the
+// nearest one in the front quarter (AIM_HALF either side of straight ahead) and
+// nothing behind you; a chaser within two steps is still hit wherever it is.
 export const AIM_CLOSE = 6.0;                   // units: two steps
+
+const wrapAngle = (a) => { a %= TWO_PI; return a < 0 ? a + TWO_PI : a; };
+// Which main direction an angle is (0 north, 1 east, 2 south, 3 west), or -1 when
+// it lies between two of them.
+function mainIndex(angle) {
+  const q = wrapAngle(angle) / QUARTER;
+  const k = Math.round(q);
+  return Math.abs(q - k) < 1e-6 ? k % 4 : -1;
+}
+
+// One step's walk over the floor: from `from`, `len` units along `dir` (a unit
+// vector), wherever `open(pos)` says there is floor. Clear all the way: there.
+// Something in the way: along it instead, by the part of the step that runs along
+// it, when that part is worth taking (SLIDE_MIN); otherwise nowhere. So squared up
+// against a wall you stop, as you always did, and at a slant you slide. Returns
+// { pos, moved, hit }: hit is the first place found shut (where the wall's sound
+// belongs), or null when nothing was in the way.
+export function walkStep(from, dir, len, open) {
+  // The square you stand in never stops you leaving it. You are always on floor,
+  // so this changes nothing; but if a fault ever put you inside a wall, you could
+  // still walk out of it, as you could when a step was square to square.
+  const home = cellOf(from);
+  const clear = (p) => { const c = cellOf(p); return (c[0] === home[0] && c[1] === home[1]) || open(p); };
+  const shutAt = (vx, vy) => {
+    const n = Math.max(1, Math.ceil(Math.hypot(vx, vy) / STEP_SAMPLE));
+    let prev = from;
+    for (let i = 1; i <= n; i++) {
+      // (The last look is at the very place the step would end, to the last digit.)
+      const p = i === n ? [from[0] + vx, from[1] + vy] : [from[0] + vx * i / n, from[1] + vy * i / n];
+      if (!clear(p)) return p;
+      // Never between two shut squares that meet at a corner.
+      const a = cellOf(prev); const b = cellOf(p);
+      if (a[0] !== b[0] && a[1] !== b[1] && !clear(posOf(b[0], a[1])) && !clear(posOf(a[0], b[1]))) return p;
+      prev = p;
+    }
+    return null;
+  };
+  const vx = dir[0] * len; const vy = dir[1] * len;
+  const hit = shutAt(vx, vy);
+  if (!hit) return { pos: [from[0] + vx, from[1] + vy], moved: len, hit: null };
+  // Along it: the bigger part of the step first.
+  const parts = Math.abs(vx) >= Math.abs(vy) ? [[vx, 0], [0, vy]] : [[0, vy], [vx, 0]];
+  for (const [sx, sy] of parts) {
+    const part = Math.abs(sx) + Math.abs(sy);
+    if (part < SLIDE_MIN) continue;
+    if (!shutAt(sx, sy)) return { pos: [from[0] + sx, from[1] + sy], moved: part, hit };
+  }
+  return { pos: [from[0], from[1]], moved: 0, hit };
+}
 
 function pointToSegment(x, y, a, b) {
   const [ax, ay] = a; const [bx, by] = b;
@@ -296,6 +386,7 @@ function joined(parts, gapSeconds) {
   return [L, Float64Array.from(L)];
 }
 export const COMPASS_HZ = [392, 1046];   // the beep, lowest away from the route, highest toward it
+export const TICK_HZ = [1320, 1980];     // the tick of a turn at east, south and west, and at north
 export function compassName(step) { return `ut_compass_${step}`; }   // step 0..8
 export function makeSounds(audio) {
   if (audio.has('ut_low_ammo_1')) return;
@@ -311,7 +402,12 @@ export function makeSounds(audio) {
   }), 0.3));
   addMade(audio, 'ut_slide', slideRush(SLIDE_DOWN));
   addMade(audio, 'ut_bus_chime', joined([tone(BUS_CHIME_HZ[0], 0.5, 0.4), tone(BUS_CHIME_HZ[1], 0.7, 0.4)], 0.05));
-  for (const n of ['ut_low_ammo_demo', 'ut_compass_demo', 'ut_slide', 'ut_bus_chime']) ensureCopies(audio, n);
+  // The ticks of a turn (web 4.0.0): one as you pass east, south or west, a
+  // higher one for north.
+  addMade(audio, 'ut_tick', tone(TICK_HZ[0], 0.07, 0.3));
+  addMade(audio, 'ut_tick_north', tone(TICK_HZ[1], 0.07, 0.3));
+  addMade(audio, 'ut_tick_demo', joined([TICK_HZ[0], TICK_HZ[0], TICK_HZ[0], TICK_HZ[1]].map((hz) => tone(hz, 0.07, 0.3)), 0.45));
+  for (const n of ['ut_low_ammo_demo', 'ut_compass_demo', 'ut_slide', 'ut_bus_chime', 'ut_tick_demo']) ensureCopies(audio, n);
 }
 
 // The rush of a water slide: noise through a resonant band that falls from a
@@ -384,11 +480,24 @@ const mixin = {
       world: null, area: null, areaSounds: new Map(), enemies: [], projectiles: [], towerItems: new Map(),
       pickups: [], timers: [], respawn: new Map(), potionDue: new Map(), hitCooldown: 0, lowWarned: false,
       place: 'world', ride: null, seabed: null, lift: null, liftArmed: false, dingTimer: 0,
-      compass: { on: false, dir: 0, t: 0 }, prox: 0, steps: [],
+      compass: { on: false, t: 0 }, prox: 0, steps: [],
+      face: 0, turn: null, turnWas: null,   // the way you face (radians clockwise from north), the turn in progress, if any, and a held turn only just let go (_utTurnEnd)
+      notice: null,              // the first run's notice while it is being said (startUltimate)
       voices: new Set(), shots: new Set(),
     };
-    this.tts.speak('', { interrupt: true });   // the menu's words stop; the world says the rest
+    // The menu's words stop; the world says the rest. Except once on each device,
+    // the first run after web 4.0.0, which says that the controls have changed.
+    const tell = !this.scores.settings.turnTold;
+    this.tts.speak(tell ? TURN_NOTICE + (this.braille && this.braille.enabled ? TURN_NOTICE_WINDOWS : '') + TURN_NOTICE_END : '', { interrupt: true });
     this._utNewWorld(true);
+    if (tell) {
+      this.scores.settings.turnTold = true;
+      this.scores.save();
+      // Nothing can hurt you until it has been said (see updateUltimateMode); read
+      // on a Braille display with the voice off, it has the longest wait there is.
+      u.notice = { said: this.tts.current, t: 0 };
+      u.safe = Math.max(u.safe, this.tts.muted && this.tts.muted() ? NOTICE_LIMIT : NOTICE_SAFE);
+    }
   },
 
   // ---------------------------------------------------------------- difficulty (tune)
@@ -494,7 +603,8 @@ const mixin = {
     const startArea = choice(w.areas);
     const startCell = choice(startArea.floorCells.filter(([cx, cy]) => !(startArea.elevator && cx === startArea.elevator[0] && cy === startArea.elevator[1])));
     this.playerPos = posOf(startCell[0], startCell[1]);
-    this.playerFacing = [0, -1];
+    // (You face as you did: nothing turns you. A new run begins facing north.)
+    this._utFace(u.face, true);
     this.arenaLimit = 0;
     u.area = startArea;
     this._utListenerMix();
@@ -590,7 +700,143 @@ const mixin = {
   },
 
   // Where a position is, relative to the player (x east, z south).
+  // Where a thing is from where you stand, in the world's own directions (east,
+  // south): the listener's turning (AudioEngine.setFacing) does the rest.
   _utRel(pos) { return pos ? [pos[0] - this.playerPos[0], pos[1] - this.playerPos[1]] : [0, 0]; },
+
+  // ---------------------------------------------------------------- turning (web 4.0.0)
+  // The way you face, as a unit vector in the world ([east, south]). Squared up it
+  // is exact, so a step is cell to cell with nothing left over.
+  _utForward() {
+    const k = mainIndex(this.ut.face);
+    if (k >= 0) return COMPASS_DIRS[k];
+    return [Math.sin(this.ut.face), -Math.cos(this.ut.face)];
+  },
+
+  // Face a new way: the listener turns, and every placed sound with it.
+  _utFace(angle, instant = false) {
+    const u = this.ut;
+    const k = mainIndex(angle);
+    u.face = k >= 0 ? k * QUARTER : wrapAngle(angle);   // exactly, when squared up
+    this.playerFacing = this._utForward();
+    this.audio.setFacing(u.face, instant);
+  },
+
+  // Whether a place is in front of you: within AIM_HALF of the way you face.
+  _utInFront(pos) {
+    const f = this._utForward();
+    const dx = pos[0] - this.playerPos[0]; const dy = pos[1] - this.playerPos[1];
+    const d = Math.hypot(dx, dy);
+    return d > 0 && (dx * f[0] + dy * f[1]) / d >= Math.cos(AIM_HALF);
+  },
+
+  // Which way a direction of the world lies from the way you face: 'ahead',
+  // 'right', 'behind' or 'left', whichever is nearest.
+  _utSide(dir) {
+    const rel = wrapAngle(Math.atan2(dir[0], -dir[1]) - this.ut.face);
+    return ['ahead', 'right', 'behind', 'left'][Math.round(rel / QUARTER) % 4];
+  },
+
+  // You can turn on the ground and on the seabed: not on a ride, and not between worlds.
+  _utCanTurn() {
+    const u = this.ut;
+    return !!u && u.phase !== 'silence' && (u.place === 'world' || u.place === 'seabed');
+  },
+
+  // A quick turn (a swipe, one press of an arrow): to the next main direction
+  // that way. Squared up, a quarter turn; in between, it squares you up.
+  _utTurnQuick(dir) {
+    const u = this.ut;
+    const was = u.turnWas;
+    u.turnWas = null;
+    if (!this._utCanTurn()) return;
+    if (u.turn && u.turn.quick) {
+      // A second swipe before the first has landed carries on from where that one
+      // is going (two swipes are a half turn; one each way brings you back).
+      const target = (Math.round(u.turn.target / QUARTER) + dir) * QUARTER;
+      u.turn = { quick: true, at: u.turn.at, target, dir: target >= u.turn.at ? 1 : -1 };
+      return;
+    }
+    // A swipe that began as a hold (the finger paused before it lifted, or the key
+    // was let go a moment late) counts from where that hold began, so the little
+    // it had already turned never carries it past the direction it was going to.
+    let from = u.face; let at = u.face;
+    if (was && was.dir === dir) { from = was.from; at = was.from + dir * wrapAngle((u.face - was.from) * dir); }
+    const q = from / QUARTER;
+    const k = dir > 0 ? Math.floor(q + 1e-6) + 1 : Math.ceil(q - 1e-6) - 1;
+    u.turn = { quick: true, at, target: k * QUARTER, dir };
+  },
+
+  // A held turn: free, slow at first and then faster, until it is let go; you stop
+  // exactly there.
+  _utTurnStart(dir) {
+    const u = this.ut;
+    if (!this._utCanTurn()) return;
+    if (u.turn && u.turn.quick) this._utFace(u.turn.target);    // (a hold on top of a quick turn: that one lands first)
+    u.turn = { free: true, dir, t: 0, from: u.face };
+    u.turnWas = null;
+  },
+
+  _utTurnEnd() {
+    const u = this.ut;
+    if (!u || !u.turn || !u.turn.free) return;
+    // (Let go almost at once, it may have been a swipe: remembered until the next
+    // frame, in case the swipe follows; see _utTurnQuick.)
+    u.turnWas = u.turn.t < TURN_BRIEF ? { from: u.turn.from, dir: u.turn.dir } : null;
+    u.turn = null;
+  },
+
+  // Whatever turn is under way ends now (a pause, help, a ride): a quick turn
+  // lands where it was going, a held one stops where it is.
+  _utTurnStop() {
+    const u = this.ut;
+    if (!u) return;
+    u.turnWas = null;
+    if (!u.turn) return;
+    if (u.turn.quick) this._utFace(u.turn.target, true);
+    u.turn = null;
+  },
+
+  // The tick of a main direction, as you pass it or land on it: north the higher one.
+  _utTick(k) {
+    this.audio.play(((k % 4) + 4) % 4 === 0 ? 'ut_tick_north' : 'ut_tick', { direct: true, volume: TICK_LEVEL });
+  },
+
+  // The turn, every frame.
+  _utUpdateTurn(dt) {
+    const u = this.ut;
+    const t = u.turn;
+    u.turnWas = null;      // (a swipe that follows a brief hold arrives with its end, never a frame later)
+    if (!t) return;
+    if (!this._utCanTurn()) { this._utTurnStop(); return; }
+    if (t.quick) {
+      const step = TURN_QUICK * dt;
+      const left = (t.target - t.at) * t.dir;
+      if (left > step + 1e-9) { t.at += t.dir * step; this._utFace(t.at); return; }
+      // Landed, squared up: its tick (unless a brief hold had already carried you
+      // just past it, and ticked there), and with the compass on, what lies ahead.
+      u.turn = null;
+      this._utFace(t.target);
+      const k = mainIndex(u.face);
+      if (left > -1e-9) this._utTick(k);
+      if (u.compass.on) {
+        u.compass.t = COMPASS_BEEP_EVERY;   // a beep at once, for the new way
+        this.tts.speak(this._utCompassWords(k), { interrupt: true });
+      }
+      return;
+    }
+    t.t += dt;
+    if (t.t > TURN_LIMIT) { u.turn = null; return; }
+    const ease = Math.min(1, Math.max(0, (t.t - TURN_EASE[0]) / (TURN_EASE[1] - TURN_EASE[0])));
+    const speed = TURN_SLOW + (TURN_FAST - TURN_SLOW) * ease;
+    const a = u.face / QUARTER;
+    const to = u.face + t.dir * speed * dt;
+    const b = to / QUARTER;
+    // A tick for each main direction passed (not for the one you set off from).
+    if (t.dir > 0) { for (let m = Math.floor(a + 1e-9) + 1; m <= Math.floor(b + 1e-9); m++) this._utTick(m); }
+    else { for (let m = Math.ceil(a - 1e-9) - 1; m >= Math.ceil(b - 1e-9); m--) this._utTick(m); }
+    this._utFace(to);
+  },
 
   _utMixAt(pos) {
     const u = this.ut;
@@ -844,6 +1090,13 @@ const mixin = {
     }
     if (u.phase === 'silence') return;
     u.elapsed += dt;
+    // The first run's notice: for as long as it is being said, nothing can hurt
+    // you, and for a moment after. (Cut off by a report or a pause, it is over.)
+    if (u.notice) {
+      u.notice.t += dt;
+      if (u.notice.t > NOTICE_LIMIT || !(this.tts.speaking && this.tts.current === u.notice.said)) u.notice = null;
+      else u.safe = Math.max(u.safe, NOTICE_AFTER);
+    }
     if (u.safe > 0) u.safe -= dt;
     if (u.hitCooldown > 0) u.hitCooldown -= dt;
     // The regeneration countdown runs whatever else is happening (the compass too).
@@ -862,6 +1115,7 @@ const mixin = {
       this._utEndWorld();
       return;
     }
+    this._utUpdateTurn(dt);
     if (u.compass.on) {
       this._utCompassTick(dt);
       this._utUpdateSounds(dt);   // the world keeps breathing under the muffle
@@ -1233,6 +1487,7 @@ const mixin = {
   _utBoardBus() {
     const u = this.ut; const b = u.bus;
     u.place = 'bus';
+    this._utTurnStop();
     // Whatever was in the air for you falls short: the bus is leaving.
     for (const s of [...u.projectiles]) this._utDropProjectile(s);
     b.stage = 'boarding'; b.t = 0; b.stepped = false; b.closed = false;
@@ -1247,6 +1502,7 @@ const mixin = {
   // somewhere else in the park; the slide is where it was, to be found again.
   _utStartSlide(sl) {
     const u = this.ut;
+    this._utTurnStop();
     u.place = 'slide';
     u.slide = { sl, t: 0, stage: 'climb' };
     if (sl.voice) { sl.voice.stop(); u.voices.delete(sl.voice); sl.voice = null; }
@@ -1285,7 +1541,11 @@ const mixin = {
     if (!a || a.kind !== 'island') { u.liftArmed = false; return; }
     const lp = posOf(a.elevator[0], a.elevator[1]);
     const d = dist2(lp, this.playerPos);
-    if (d >= REACH) u.liftArmed = true;
+    // Walking into the elevator is stepping onto its square, anywhere on it (web
+    // 4.0.0: you walk at any angle, so you may cross the square off its middle;
+    // until then it was coming within REACH of the middle).
+    const [cx, cy] = cellOf(this.playerPos);
+    if (cx !== a.elevator[0] || cy !== a.elevator[1]) u.liftArmed = true;
     else if (u.liftArmed) { this._utStartRide('down'); return; }
     u.dingTimer -= dt;
     if (u.dingTimer <= 0) {
@@ -1302,6 +1562,7 @@ const mixin = {
     const len = Math.max(RIDE_MIN, Math.min(RIDE_MAX, own));
     u.place = 'ride';
     u.liftArmed = false;
+    this._utTurnStop();
     // (Island Mode: a recording far longer than a ride should be is capped and
     // eased out over its last second.)
     u.ride = { dir, t: 0, len, area: a, chimed: false, capped: len < own - 0.05, faded: false, voice: this.audio.play('elevator_ride', { direct: false, keep: true }) };
@@ -1348,7 +1609,7 @@ const mixin = {
     if (r.dir === 'down') { above = (1 - shut * 0.7) * (1 - move); water = move * (0.75 + 0.25 * wide); height = -6 * (1 - move); }
     else { water = (1 - shut * 0.7) * (1 - move); above = move * (0.75 + 0.25 * wide); height = 6 * (1 - move); }
     u.rideMix = { above, water, height };
-    if (u.seabed && u.seabed.under) u.seabed.under.setSpatial(0.8 * water, 0, -0.05, 0, height);
+    if (u.seabed && u.seabed.under) this._utPlaceWater(0.8 * water, height);
     this._utUpdateSounds(dt);
     if (!r.chimed && r.t >= DOORS_OPEN * L - ARRIVE_CHIME_LEAD) {
       r.chimed = true;
@@ -1365,7 +1626,7 @@ const mixin = {
       this.playerPos = posOf(r.area.elevator[0], r.area.elevator[1]);   // in the car, under the lift
       u.liftArmed = false;
       u.area = r.area;
-      if (u.seabed.under) u.seabed.under.setSpatial(0.8, 0, -0.05, 0, 0);
+      if (u.seabed.under) this._utPlaceWater(0.8, 0);
       // Under the water you hear yourself breathe through the regulator, in and
       // out with the bubbles: all round you, no echo (the open sea), for as long
       // as you are down here; there is no limit on your air in this mode.
@@ -1380,7 +1641,10 @@ const mixin = {
       // Island Mode: you step out a few steps from the lift, never onto it, so a
       // stray swipe cannot send you straight back down.
       this.playerPos = this._utArrivalPos(r.area);
-      this.playerFacing = [0, -1];
+      // You step out with your back to the lift, squared up, so walking on takes
+      // you away from it.
+      const lift = posOf(r.area.elevator[0], r.area.elevator[1]);
+      if (dist2(lift, this.playerPos) > 0.1) this._utFace(Math.round(Math.atan2(this.playerPos[0] - lift[0], lift[1] - this.playerPos[1]) / QUARTER) * QUARTER, true);
       u.liftArmed = false;
       // Island Mode's arrival grace: nothing can touch you for a moment after
       // stepping out of the lift.
@@ -1411,9 +1675,18 @@ const mixin = {
     return spots.reduce((best, pos) => (far(pos) > far(best) ? pos : best));
   },
 
+  // The water: under you on the ride, and on the seabed a hair in front of your
+  // face, whichever way you are facing, so it does not swing round your head as
+  // you turn (it is all about you, not a thing in a place).
+  _utPlaceWater(level, height) {
+    const f = this._utForward();
+    this.ut.seabed.under.setSpatial(level, f[0] * 0.05, f[1] * 0.05, 0, height);
+  },
+
   _utUpdateSeabed(dt) {
     const u = this.ut;
     const s = u.seabed;
+    if (s.under) this._utPlaceWater(0.8, 0);
     for (const p of [...s.pickups]) {
       if (dist2(p.pos, this.playerPos) < PICKUP_REACH) {
         if (p.voice) { p.voice.stop(); u.voices.delete(p.voice); }
@@ -1424,7 +1697,8 @@ const mixin = {
     }
     const lp = posOf(s.origin[0], s.origin[1]);
     const d = dist2(lp, this.playerPos);
-    if (d >= REACH) u.liftArmed = true;
+    const [sx, sy] = this._utSeabedCell(this.playerPos);     // (the lift's own square, as above)
+    if (sx !== 0 || sy !== 0) u.liftArmed = true;
     else if (u.liftArmed) { this._utStartRide('up'); return; }
     // The way up calls with one tone every 1.6 seconds and hums where it stands
     // (Island Mode's seabed); the hum is a seabed thing here, never heard from above.
@@ -1597,7 +1871,7 @@ const mixin = {
       else if (bus.voice && level <= 0.001 && d > HEAR_RANGE + 10) { bus.voice.stop(); u.voices.delete(bus.voice); bus.voice = null; }
       if (bus.voice) {
         if (bus.stage === 'waiting') this._utFollow(bus.voice, bus.pos, level, aboveHeight, dullOf(bus.area));
-        else bus.voice.setSpatial(level, 0, -1.5, 0, 0);    // at the door, right in front of you
+        else { const f = this._utForward(); bus.voice.setSpatial(level, f[0] * 1.5, f[1] * 1.5, 0, 0); }    // at the door, right in front of you
       }
     }
     if (bus && bus.stage === 'coming' && bus.pullVoice) {
@@ -1635,30 +1909,37 @@ const mixin = {
   },
 
   // ---------------------------------------------------------------- walking and shooting
+  // One step: three units exactly where you face, or straight back (web 4.0.0;
+  // until then a swipe stepped north, east, south or west and faced you that
+  // way). What is in the way stops you, or at a slant lets you slide along it
+  // (walkStep).
   _utStep(g) {
     const u = this.ut;
     if (u.place === 'ride' || u.place === 'slide' || u.place === 'bus') return;   // no walking in the elevator (Island Mode: a swipe does nothing), on the slide or on the bus
-    let [nx, ny] = this.playerPos;
-    if (g === 'up') { ny -= CELL; this.playerFacing = [0, -1]; }
-    else if (g === 'down') { ny += CELL; this.playerFacing = [0, 1]; }
-    else if (g === 'left') { nx -= CELL; this.playerFacing = [-1, 0]; }
-    else { nx += CELL; this.playerFacing = [1, 0]; }
-    const [cx, cy] = cellOf([nx, ny]);
-    if (u.place === 'seabed') {
-      // The seabed has no walls: its edge is the boundary buzz, as in Island Mode.
-      const [sx, sy] = this._utSeabedCell([nx, ny]);
-      if (!u.seabed.grid.floor.has(key(sx, sy))) { this.audio.play('boundary'); return; }
-    } else if (!isFloor(u.world, cx, cy)) {
-      // An island has no walls: its edge is the boundary buzz, as in Island Mode
+    if (g !== 'up' && g !== 'down') return;
+    const f = this._utForward();
+    const dir = g === 'up' ? f : [-f[0], -f[1]];
+    const seabed = u.place === 'seabed';
+    const open = seabed
+      ? (p) => { const [sx, sy] = this._utSeabedCell(p); return u.seabed.grid.floor.has(key(sx, sy)); }
+      : (p) => { const [cx, cy] = cellOf(p); return isFloor(u.world, cx, cy); };
+    const from = [this.playerPos[0], this.playerPos[1]];
+    const w = walkStep(from, dir, CELL, open);
+    if (w.hit) {
+      // Stopped, or sliding along it (then it is quieter). The seabed has no walls:
+      // its edge is the boundary buzz, as in Island Mode; so is an island's edge
       // (Russell, 8 Nov: no labyrinth wall on an island). Elsewhere a wall, where
       // it is (the world's edge is a wall too); a safe zone's walls ring softer
       // than the room would have them.
-      if (u.area && u.area.kind === 'island') { this.audio.play('boundary'); return; }
-      this._utPlay('wall', [nx, ny], u.area && u.area.kind === 'event' ? { send: SAFE_WALL_SEND } : {});
-      return;
+      // The wall is heard where it stands: the middle of the square that was in
+      // your way, so one you slide along is to that side of you, not ahead.
+      const level = w.moved > 0 ? WALL_TOUCH : 1.0;
+      if (seabed || (u.area && u.area.kind === 'island')) this.audio.play('boundary', { volume: level });
+      else this._utPlay('wall', posOf(...cellOf(w.hit)), { volume: level, ...(u.area && u.area.kind === 'event' ? { send: SAFE_WALL_SEND } : {}) });
     }
-    u.steps.push([[...this.playerPos], [nx, ny]]);
-    this.playerPos = [nx, ny];
+    if (w.moved <= 0) return;
+    u.steps.push([from, w.pos]);
+    this.playerPos = w.pos;
     if (u.place === 'world') {
       const a = areaAt(u.world, this.playerPos);
       if (a !== u.area) {
@@ -1705,13 +1986,12 @@ const mixin = {
     if (!throwers.length) { this.audio.play('empty_click'); return; }
     u.items -= 1;
     this.audio.play('item_throw');
-    // Battle's aiming rule: the nearest thrower centred between the ears.
+    // The aim: the nearest thrower in front of you (or within two steps).
     let best = null; let bestD = Infinity;
     for (const e of throwers) {
       const pos = this._utEnemyPos(e);
-      const dx = pos[0] - this.playerPos[0]; const dy = pos[1] - this.playerPos[1];
-      const d = Math.hypot(dx, dy);
-      if (d > 0 && (Math.abs(dx / d) < AIM_PAN || d <= AIM_CLOSE) && d < bestD) { best = e; bestD = d; }
+      const d = dist2(pos, this.playerPos);
+      if (d > 0 && (this._utInFront(pos) || d <= AIM_CLOSE) && d < bestD) { best = e; bestD = d; }
     }
     if (!best) return;
     best.hitsTaken += 1;
@@ -1719,9 +1999,9 @@ const mixin = {
     else this._utLater(Math.min(0.4, bestD * 0.012), 'enemy_hit', this._utEnemyPos(best));
   },
 
-  // What a shot takes: the nearest enemy of the player's own area that sits
-  // centred between the ears (within AIM_PAN), in front or behind, within
-  // hearing, or any within AIM_CLOSE whatever side it is on.
+  // What a shot takes: the nearest enemy of the player's own area that is in
+  // front of you (within AIM_HALF of the way you face) and within hearing, or any
+  // within AIM_CLOSE whatever side it is on.
   _utLocked() {
     const u = this.ut;
     let best = null; let bestD = Infinity;
@@ -1731,7 +2011,7 @@ const mixin = {
       const dx = pos[0] - this.playerPos[0]; const dy = pos[1] - this.playerPos[1];
       const d = Math.hypot(dx, dy);
       if (d <= 0 || d > HEAR_RANGE) continue;
-      if ((Math.abs(dx / d) < AIM_PAN || d <= AIM_CLOSE) && d < bestD) { best = e; bestD = d; }
+      if ((this._utInFront(pos) || d <= AIM_CLOSE) && d < bestD) { best = e; bestD = d; }
     }
     return best;
   },
@@ -1739,14 +2019,23 @@ const mixin = {
   _utReport() {
     const u = this.ut;
     // (Shots, then items: what the attack has to work with, wherever you are.)
-    this.tts.speak(`${u.hp} health. ${u.points} ${plural(u.points, 'point')}. ${u.ammo} ${plural(u.ammo, 'shot')}. ${u.items} ${plural(u.items, 'item')}.`, { interrupt: true });
+    // Last, the way you face, as one of eight words (web 4.0.0: you can stop at any angle).
+    this.tts.speak(`${u.hp} health. ${u.points} ${plural(u.points, 'point')}. ${u.ammo} ${plural(u.ammo, 'shot')}. ${u.items} ${plural(u.items, 'item')}. Facing ${this._utFacingWord()}.`, { interrupt: true });
   },
+
+  // The way you face, to the nearest of eight.
+  _utFacingWord() { return FACING_WORDS[Math.round(this.ut.face / (QUARTER / 2)) % 8]; },
 
   // ---------------------------------------------------------------- the compass
   // (Russell, 8 Nov, fourth and fifth reports: the compass costs time to use, so
   // every use should earn it. It now works in a safe zone too, where it leads to
   // the way out; turning it on gives a briefing, and each turn says the leg with
   // its turn, or what lies that way: walls, the border, the areas beyond.)
+  // Web 4.0.0: the compass turns you for real. With it on, a turn is your own
+  // turn: the beep rises as you face the way to go, and landing on a main
+  // direction says what lies ahead of you now. Turn it off and you are already
+  // facing the way you chose. (Until then it had a pointer of its own with four
+  // positions, and the world never turned.)
   _utCompassToggle() {
     const u = this.ut;
     if (u.compass.on) { this._utCompassOff(); return; }
@@ -1754,11 +2043,13 @@ const mixin = {
     if (u.place === 'slide') { this.tts.speak('Compass not available on the slide.', { interrupt: true }); return; }
     if (u.place === 'bus') { this.tts.speak('Compass not available on the bus.', { interrupt: true }); return; }
     u.compass.on = true;
-    u.compass.dir = 0;
     u.compass.t = 0;
     this.stride = null;
     this.audio.setMuffle(true, 0.4);
-    this.tts.speak(`Compass on. ${this._utCompassBriefing()} ${this._utCompassWords(0)}`, { interrupt: true });
+    // The briefing, then what lies ahead of you (when you are squared up: a slant
+    // has no leg and no wall of its own to describe).
+    const k = mainIndex(u.face);
+    this.tts.speak(`Compass on. ${this._utCompassBriefing()}${k >= 0 ? ' ' + this._utCompassWords(k) : ''}`, { interrupt: true });
   },
 
   _utCompassOff(quiet = false) {
@@ -1827,7 +2118,7 @@ const mixin = {
       const from = cellOf(this.playerPos);
       const here = target.goalCell ? (target.goalCell[0] === from[0] && target.goalCell[1] === from[1]) : (a && target.isGoal && target.isGoal(a));
       parts.push(here ? `${cap(target.name)} is here.` : `No way to ${target.name} from here.`);
-    } else parts.push(`${cap(target.name)} is ${path.length} ${plural(path.length, 'step')} away, starting ${dirWord(leg.dir).toLowerCase()}.`);
+    } else parts.push(`${cap(target.name)} is ${path.length} ${plural(path.length, 'step')} away, starting ${this._utSide(leg.dir)}.`);
     const near = this._utCompassNearby();
     parts.push(near.length ? `Nearby: ${near.join('; ')}.` : 'Nothing to pick up nearby.');
     return parts.join(' ');
@@ -1865,28 +2156,34 @@ const mixin = {
   },
 
   // "6 steps, starting left" for a route of that many steps whose first leg goes
-  // that way.
+  // that way, counted from the way you face.
   _utDistanceWords(t) {
     const steps = t.steps !== undefined ? t.steps : t.path ? t.path.length : null;
     const leg = t.leg || t;
     const n = steps !== null && steps !== undefined ? steps : leg.steps;
-    return `${n} ${plural(n, 'step')} away, starting ${dirWord(leg.dir).toLowerCase()}`;
+    return `${n} ${plural(n, 'step')} away, starting ${this._utSide(leg.dir)}`;
   },
 
-  // What the compass says for a direction. The way to go: the leg and its turn
-  // ("Right, 6 steps, then left", or "Right, 9 steps to the safe zone"). Any other
-  // direction: how far it is open, what stops you, and what lies beyond.
+  // What the compass says when you face a main direction (0 north, 1 east, 2
+  // south, 3 west). The way to go: the leg and its turn ("This way, 6 steps, then
+  // left", or "This way, 9 steps to the safe zone"). Any other way: how far it is
+  // open, what stops you and what lies beyond, and then where the way to go is
+  // from here ("The way is to your right").
   _utCompassWords(idx) {
-    const word = dirWord(COMPASS_DIRS[idx]);
     const d = COMPASS_DIRS[idx];
     const { target, leg } = this._utRoute();
     if (leg && leg.dir[0] === d[0] && leg.dir[1] === d[1]) {
       const n = leg.steps;
-      if (leg.arrives) return `${word}, ${n} ${plural(n, 'step')} to ${target.name}.`;
-      return `${word}, ${n} ${plural(n, 'step')}, then ${dirWord(leg.next).toLowerCase()}.`;
+      if (leg.arrives) return `This way, ${n} ${plural(n, 'step')} to ${target.name}.`;
+      // (Clockwise from the leg to the one after it is a turn to the right.)
+      const right = leg.dir[0] * leg.next[1] - leg.dir[1] * leg.next[0] > 0;
+      return `This way, ${n} ${plural(n, 'step')}, then ${right ? 'right' : 'left'}.`;
     }
     const way = this._utCompassWay(idx);
-    return way ? `${word}: ${way}` : `${word}.`;
+    const said = way ? way[0].toUpperCase() + way.slice(1) : '';
+    if (!leg) return said || 'Nothing to say this way.';
+    const side = { right: 'to your right', left: 'to your left', behind: 'behind you', ahead: 'ahead' }[this._utSide(leg.dir)];
+    return `${said}${said ? ' ' : ''}The way is ${side}.`;
   },
 
   // That way from here: open for how many steps, what stops you (a wall, the
@@ -1922,25 +2219,27 @@ const mixin = {
     return open ? `open for ${steps(open)}, then ${blocker}. ${beyondWords}` : `${blocker}. ${beyondWords}`;
   },
 
-  _utCompassTurn(g) {
+  // Swipe up with the compass on: what lies ahead, said again (or, at a slant,
+  // the way you face).
+  _utCompassAgain() {
     const u = this.ut;
-    const idx = { up: 0, right: 1, down: 2, left: 3 }[g];
-    if (idx === undefined) return;
-    u.compass.dir = idx;
-    u.compass.t = COMPASS_BEEP_EVERY;   // a beep at once, for the new direction
-    this.tts.speak(this._utCompassWords(idx), { interrupt: true });
+    const k = mainIndex(u.face);
+    u.compass.t = COMPASS_BEEP_EVERY;   // and a beep at once
+    this.tts.speak(k >= 0 ? this._utCompassWords(k) : `Facing ${this._utFacingWord()}.`, { interrupt: true });
   },
 
+  // The beep: highest when you face the way to go, lowest with your back to it,
+  // and quicker while you turn, so the pitch follows the turn.
   _utCompassTick(dt) {
     const u = this.ut;
     u.compass.t += dt;
-    if (u.compass.t < COMPASS_BEEP_EVERY) return;
+    if (u.compass.t < (u.turn ? COMPASS_BEEP_TURNING : COMPASS_BEEP_EVERY)) return;
     u.compass.t = 0;
     const route = this._utRouteStep();
-    const d = COMPASS_DIRS[u.compass.dir];
     let step = 0;
     if (route) {
-      const dot = d[0] * route[0] + d[1] * route[1];   // 1 toward, 0 across, -1 away
+      const f = this._utForward();
+      const dot = f[0] * route[0] + f[1] * route[1];   // 1 toward, 0 across, -1 away
       step = Math.round((dot + 1) / 2 * 8);
     }
     this.audio.play(compassName(step), { direct: true, volume: 0.6 });
@@ -1967,11 +2266,6 @@ function legOf(path, fromCell) {
   }
   const next = steps < path.length ? [path[steps][0] - path[steps - 1][0], path[steps][1] - path[steps - 1][1]] : null;
   return { dir, steps, arrives: steps === path.length, next };
-}
-
-function dirWord(d) {
-  const i = COMPASS_DIRS.findIndex((c) => c[0] === d[0] && c[1] === d[1]);
-  return ['Ahead', 'Right', 'Behind', 'Left'][i] || 'Ahead';
 }
 
 // ------------------------------------------------------------------ the mode
@@ -2019,16 +2313,19 @@ function input(game, g) {
   if (g === 'clock') return;   // no clock in this mode
   if (u.phase === 'silence') return;   // between worlds nothing answers
   if (g === 'hold' || g === 'compass') { game._utCompassToggle(); return; }
+  // A swipe left or right, or one press of an arrow: a quick turn (the compass
+  // on or off; a held turn arrives through turnInput, below).
+  if (g === 'left' || g === 'right') { game._utTurnQuick(g === 'right' ? 1 : -1); return; }
   if (u.compass.on) {
-    // Only the compass turns; nothing else moves.
-    if (['up', 'down', 'left', 'right'].includes(g)) game._utCompassTurn(g);
+    // You turn, and nothing else moves.
+    if (g === 'up') game._utCompassAgain();
     else if (g === 'enter') game._utReport();
     else if (g === 'space') game.audio.play('empty_click');
     return;
   }
   if (g === 'enter') { game._utReport(); return; }
   if (g === 'space') { game._utAttack(); return; }
-  if (['up', 'down', 'left', 'right'].includes(g)) game._utStep(g);
+  if (g === 'up' || g === 'down') game._utStep(g);
 }
 
 export default {
@@ -2050,12 +2347,42 @@ export default {
   blockPause(game) { return !!(game.ut && (game.ut.place === 'ride' || game.ut.place === 'slide' || game.ut.place === 'bus')) && !game.isPaused; },
   // A finger held still turns the compass (gestures.js emits 'hold' only when asked).
   holdGesture(game) { return !!(game.ut && game.ut.place !== 'ride'); },
+  // Sliding left or right and holding, or holding an arrow key, turns you until
+  // it is let go; on a keyboard, holding up or down runs or walks back (web
+  // 4.0.0; gestures.js does these only when asked).
+  turnGesture(game) { return !!game.ut; },
+  // The start and the end of a held turn. The end is taken whatever else is
+  // going on (a finger may lift during a pause); a start only in play.
+  turnInput(game, g) {
+    const u = game.ut;
+    if (!u) return;
+    if (g === 'turn_end') { game._utTurnEnd(); return; }
+    if (game.state !== STATE || game.isPaused) return;
+    game._utTurnStart(g === 'turn_right_start' ? 1 : -1);
+  },
+  // A run carries on for as long as a step moves you, wherever you are facing
+  // (sliding along a wall counts; stopped by one, the run ends).
+  strideMoved(game, before) { const d = dist2(before, game.playerPos); return d > 0.5 && d < 3.5; },
+  // How far behind you a place is (0 in front, 1 straight behind), for its dull
+  // copy: by the way you face.
+  behind(game, pos) {
+    if (!game.ut) return undefined;
+    const f = game._utForward();
+    const dx = pos[0] - game.playerPos[0]; const dy = pos[1] - game.playerPos[1];
+    const d = Math.hypot(dx, dy);
+    if (d <= 1e-6) return 0.0;
+    const back = -(dx * f[0] + dy * f[1]) / d;
+    return back <= 0 ? 0.0 : Math.min(1.0, Math.pow(back, RULES.BEHIND_CURVE));   // (the curve every mode uses)
+  },
+  // The quit question holds the run: a turn under way ends.
+  hold(game, on) { if (on && game.ut) game._utTurnStop(); },
   // Help opens: the compass goes off, so the help's demos are not heard muffled.
-  interrupted(game) { if (game.ut) game._utCompassOff(true); },
-  // A pause in the last two seconds of a world holds the fade where it is; the
-  // fade carries on from there when the run resumes.
+  interrupted(game) { if (game.ut) { game._utTurnStop(); game._utCompassOff(true); } },
+  // A pause ends a turn under way. A pause in the last two seconds of a world
+  // holds the fade where it is; the fade carries on from there when the run resumes.
   paused(game, on) {
     const u = game.ut; const a = game.audio;
+    if (u && on) game._utTurnStop();
     if (!u || u.phase !== 'fading' || !a.worldGain) return;
     if (on) a.setWorldLevel(a.worldGain.gain.value, 0.01);
     else a.setWorldLevel(0, Math.max(0.05, u.worldTime));
@@ -2079,7 +2406,7 @@ export default {
   status(game) {
     const u = game.ut;
     if (!u) return 'Ultimate Mode.';
-    const bits = [`Ultimate Mode. World ${u.worldNo}.`, `Health ${u.hp}.`, `${u.points} ${plural(u.points, 'point')}.`, `${u.ammo} ${plural(u.ammo, 'shot')}.`, `${u.items} ${plural(u.items, 'item')}.`];
+    const bits = [`Ultimate Mode. World ${u.worldNo}.`, `Health ${u.hp}.`, `${u.points} ${plural(u.points, 'point')}.`, `${u.ammo} ${plural(u.ammo, 'shot')}.`, `${u.items} ${plural(u.items, 'item')}.`, `Facing ${game._utFacingWord()}.`];
     if (u.place === 'seabed') bits.push('Seabed.');
     if (u.compass.on) bits.push('Compass on.');
     return bits.join(' ');

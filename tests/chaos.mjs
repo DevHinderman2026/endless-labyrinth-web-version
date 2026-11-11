@@ -320,13 +320,20 @@ const playRun = () => page.evaluate(async (seq) => {
       out.battleExit.push(r);
     }
     // ---- a tower floor won: the stairs, the credit gone, the clock still
-    if (now === 'tower' && g.towerStairsActive && !towerDone) {
+    // (Only on a floor won with a credit lying there. Now and then a floor is won
+    // with none, the one this test lays down not being there at that moment, and
+    // then there is nothing to see go: about one run in thirty, measured on web
+    // 3.3.0, where this check then failed. The run's next tower floor is watched
+    // instead.)
+    if (now === 'tower' && g.towerStairsActive && !towerDone && credit) {
       towerDone = true;
       g.frame(1 / 30);
       const r = { credit: !!credit && credit.channel.stopped && g.timeCredit === null && !('credit' in g.towerLoops) };
+      r.saw = { had: !!credit, stopped: !!credit && !!credit.channel.stopped, busy: !!credit && !!credit.channel.busy, gone: g.timeCredit === null, loop: 'credit' in g.towerLoops, state: g.state };
       const t0 = g.timeLeft;
       for (let k = 0; k < 15 && g.state === 'tower'; k++) g.frame(1 / 30);
       r.clockStill = g.timeLeft === t0;
+      r.saw.t0 = t0; r.saw.t1 = g.timeLeft; r.saw.after = g.state;
       out.towerStairs.push(r);
     }
     // ---- a road won: no credits once the quota is shot; the exit, the clock still
@@ -434,7 +441,7 @@ const be = run.battleExit[0] || {};
 check(be.morse && be.click && be.noBeep, 'a won chaos battle: the Morse exit sounds, the laser only clicks, no locating beep');
 check(be.credit && be.noNewCredit && be.clockStill, 'from the Morse exit on, the credit lying there goes, no new one comes, and the clock waits');
 const ts = run.towerStairs[0] || {};
-check(ts.credit && ts.clockStill, 'a won tower floor: once the stairs sound its credit goes and the clock waits');
+check(ts.credit && ts.clockStill, 'a won tower floor: once the stairs sound its credit goes and the clock waits' + (ts.credit && ts.clockStill ? '' : ': ' + JSON.stringify(ts.saw)));
 const re = run.roadExit[0] || {};
 check(re.creditGone && re.noNewCredit && re.exit && re.clockStill, 'a won road: the credit on it goes, none comes, the exit is on the road and the clock waits');
 

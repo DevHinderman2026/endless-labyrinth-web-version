@@ -174,7 +174,20 @@ await page.keyboard.press('Escape'); await sleep(300);
 check((await page.evaluate(() => window.__el.game.state)) === 'menu' && spoken.some((t) => /Key test finished\. Main menu\./.test(t)), 'Escape ends the key test and returns to the menu');
 
 // --------------------------------------------------------------- in a run: a Braille C is the compass; a held arrow is one step
-await page.evaluate(() => { const g = window.__el.game; g.menuIndex = g.menuKeys.indexOf('ultimate'); g.input('enter'); });
+// (This is the first run on this computer: the notice of web 4.0.0 is said, once,
+// and on Windows it has a sentence for a Braille notetaker. Then it is put out of
+// the way of what follows.)
+const told = await page.evaluate(() => {
+  const g = window.__el.game;
+  const before = g.scores.settings.turnTold;
+  g.menuIndex = g.menuKeys.indexOf('ultimate'); g.input('enter');
+  const out = { before, after: g.scores.settings.turnTold, said: document.getElementById('said').textContent, safe: g.ut.safe, notice: !!g.ut.notice };
+  g.tts.speak('', { interrupt: true }); g.ut.notice = null; g.ut.safe = 5;
+  return out;
+});
+check(told.before === false && told.after === true && told.notice && told.safe >= 20
+  && /^New in version 4: you now turn where you stand, and the whole world turns with you\. Nothing can hurt you while you hear this\. Press the left or right arrow for a quick turn\. Hold the left or right arrow down to keep turning\. Press the up arrow to walk the way you are facing, or hold it down to run\. On a Braille notetaker, each press is one quick turn or one step\. The help for Ultimate Mode explains more\.$/.test(told.said),
+  'the first run on a Windows computer says once that turning has changed, in keys, with the notetaker\'s sentence: ' + told.said);
 await sleep(800);
 await page.evaluate(() => window.__typeCodeless('can'));
 await sleep(300);
@@ -184,8 +197,17 @@ check(run.name === run.said && run.focused === 'console', 'what the game says is
 if (run.on) { await page.evaluate(() => window.__typeCodeless('c')); await sleep(300); }
 await page.evaluate(() => { window.__steps = []; const g = window.__el.game; const oi = g.input.bind(g); g.input = (x, o) => { if (['up', 'down', 'left', 'right'].includes(x)) window.__steps.push(x); return oi(x, o); }; });
 await stream('ArrowLeft', 'ArrowLeft', 15, 40);
-await sleep(300);
-check((await page.evaluate(() => window.__steps.length)) === 1, 'in a run, a notetaker\'s held arrow is one step: ' + (await page.evaluate(() => window.__steps.join())));
+await sleep(500);
+// (Web 4.0.0: in Ultimate Mode the left and right arrows turn you, and a held
+// arrow keeps turning or running on a keyboard. A notetaker cannot hold a key:
+// its stream of presses is still one press, so one quick turn, one step.)
+const noteTurn = await page.evaluate(() => ({ steps: window.__steps.join(), face: Math.round(window.__el.game.ut.face * 180 / Math.PI), turning: !!window.__el.game.ut.turn }));
+check(noteTurn.steps === 'left' && noteTurn.face === 270 && !noteTurn.turning, 'in a run, a notetaker\'s held left arrow is one press: one quick turn, to the west, and no more: ' + JSON.stringify(noteTurn));
+await page.evaluate(() => { window.__steps = []; });
+await stream('ArrowUp', 'ArrowUp', 15, 40);
+await sleep(400);
+const noteStep = await page.evaluate(() => ({ steps: window.__steps.join(), running: !!window.__el.game.stride }));
+check(noteStep.steps === 'up' && !noteStep.running, 'and its held up arrow is one step, not a run: ' + JSON.stringify(noteStep));
 await page.keyboard.press('Escape'); await sleep(200); await page.keyboard.press('y'); await sleep(300);
 check((await page.evaluate(() => window.__el.game.state)) === 'menu', 'Escape then Y returns to the menu');
 // Escape leaves the focus in the game area (blurred and refocused, for the screen reader's focus mode).

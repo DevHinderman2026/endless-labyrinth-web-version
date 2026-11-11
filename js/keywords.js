@@ -20,8 +20,12 @@ const SENTENCES = [
   [/Tap with three fingers to pause, and again to resume\. During a run, only the double tap is counted, so it acts at once and an extra tap can never end your run by accident: to leave a run or open help, pause first with three fingers, then triple tap to quit or tap four times for help\./g,
     'Press P to pause, and again to resume. To leave a run, press Escape; to open help during a run, pause first with P, then press H.'],
   [/A single tap does nothing\. /g, ''],
+  // Ultimate Mode turns you where you stand (web 4.0.0); on a computer its arrows
+  // can be held, as nowhere else but the road.
+  [/Ultimate Mode alone turns you where you stand: there a swipe left or right is a turn, not a step, sliding left or right and holding keeps you turning until you lift, and you walk the way you face; that mode's own help section explains\. /g,
+    'Ultimate Mode alone turns you where you stand: there the left and right arrows turn you instead of stepping, an arrow held down keeps you turning or running until you let go, and you walk the way you face; that mode\'s own help section explains. '],
   [/Driving, in driving mode and on a chaos road, works its own way: put a finger on the screen and slide it up, and the car accelerates for as long as that finger stays on the screen\. Lift it and the car coasts\. Swipe down to brake: each swipe is one brake\. If your accelerating finger slides back down without lifting, it stops accelerating and brakes once\. To change lanes, lift your finger and swipe left or right\. To shoot or hear the report, lift first, then tap with two fingers or double tap as everywhere else; the car coasts meanwhile, and a second finger added while you are accelerating does nothing\./g,
-    'Driving, in driving mode and on a chaos road, is the one exception: hold the up arrow and the car accelerates for as long as you hold it. Let go and the car coasts. Press the down arrow to brake: each press is one brake. Left and right arrows change lanes, and Space and Enter shoot and report as everywhere else.'],
+    'Driving, in driving mode and on a chaos road, has a key you hold too: hold the up arrow and the car accelerates for as long as you hold it. Let go and the car coasts. Press the down arrow to brake: each press is one brake. Left and right arrows change lanes, and Space and Enter shoot and report as everywhere else.'],
   [/The main menu has a Gesture Practice, which says the name of every gesture it feels, running, walking backwards and the held finger included\. /g, ''],
   [/A Bluetooth keyboard works too, with the same keys as the computer version: the arrows, with the up arrow held down to accelerate, Enter, Space, Escape, P to pause, H for help, T for the clock and C for the compass in Ultimate Mode\./g,
     'These are the same keys as the Windows version: the arrows, with the up arrow held down to accelerate, Enter, Space, Escape, P to pause, H for help and T for the clock, and C for the compass in Ultimate Mode.'],
@@ -43,7 +47,7 @@ const SENTENCES = [
     'and every press of Enter tells you it, just before your points, or you can press T at any point to check it.'],
   // Driving Controls.
   [/Put a finger on the screen and slide it up to accelerate, and keep that finger on the screen for as long as you want to keep accelerating\. This is the only control in the game you hold rather than tap, and letting go is itself an instruction: lift your finger and you coast, bleeding speed gradually\. Swiping down is the brake and takes speed off hard: each swipe down is one touch of the brake, and sliding your accelerating finger back down stops accelerating and brakes once\. Swiping left and right moves you one lane at a time, lifting your finger first,/g,
-    'Hold the up arrow to accelerate, for as long as you want to keep accelerating. This is the only key in the game you hold rather than press, and letting go is itself an instruction: release it and you coast, bleeding speed gradually. The down arrow is the brake and takes speed off hard: each press is one touch of the brake. The left and right arrows move you one lane at a time,'],
+    'Hold the up arrow to accelerate, for as long as you want to keep accelerating. Outside Ultimate Mode, this is the only key in the game you hold rather than press, and letting go is itself an instruction: release it and you coast, bleeding speed gradually. The down arrow is the brake and takes speed off hard: each press is one touch of the brake. The left and right arrows move you one lane at a time,'],
   [/swiping left or right at a standstill only gives you the boundary buzz/g, 'pressing left or right at a standstill only gives you the boundary buzz'],
   [/Lift your finger, then tap with two fingers to shoot straight down your own lane, or double tap for your status; the car coasts while your finger is off the screen\./g,
     'Press Space to shoot straight down your own lane, or Enter for your status.'],
@@ -59,13 +63,28 @@ const SENTENCES = [
   // Ultimate Mode (web 2.0.0): the compass is C on a keyboard.
   [/To turn it on, put one finger on the screen and hold it still for about one second; hold again to turn it off\. This works in Ultimate Mode only: in every other mode a still finger does nothing\./g,
     'To turn it on, press C; press C again to turn it off. This works in Ultimate Mode only.'],
-  [/with four positions matching the swipes: swipe up for ahead, right for right, down for behind and left for left/g,
-    'with four positions matching the arrow keys: the up arrow for ahead, the right arrow for right, down for behind and left for left'],
-  [/you turn with a swipe, as everywhere else in the game/g, 'you turn with the arrow keys, as everywhere else in the game'],
-  [/then go that way for that many steps: slide up to run ahead, or swipe that way\./g, 'then go that way for that many steps with the arrow keys.'],
+  // Web 4.0.0: the world turns with you. On a computer the left and right arrows
+  // turn, a press for a quick turn and a hold to turn freely; the up and down
+  // arrows step, and held they run and walk back, which a keyboard does in no
+  // other mode; and a run may be turned.
+  [/With the compass on you turn exactly as you do with it off: swipe left or right for the next main direction, or slide left or right and hold to turn freely\./g,
+    'With the compass on you turn exactly as you do with it off: press the left or right arrow for the next main direction, or hold one down to turn freely.'],
+  [/Swipe up to hear it again\./g, 'Press the up arrow to hear it again.'],
+  [/Swipe left or right to turn: one swipe is a quick turn to the next main direction, north, east, south or west, so two swipes turn you right round, and if you had stopped in between, the swipe squares you up again\./g,
+    'Press the left or right arrow to turn: one press is a quick turn to the next main direction, north, east, south or west, so two presses turn you right round, and if you had stopped in between, the press squares you up again.'],
+  [/Slide left or right and hold to turn freely: the turn starts slowly, so a short hold is a small nudge for aiming, then gathers speed to a full circle in about two and a half seconds, and you stop exactly where you lift\./g,
+    'Hold the left or right arrow down to turn freely: the turn starts slowly, so a short hold is a small nudge for aiming, then gathers speed to a full circle in about two and a half seconds, and you stop exactly where you let go.'],
+  [/A swipe that only pauses for an instant before your finger lifts is still a swipe, so a quick turn never depends on how you swipe\./g,
+    'A press held only an instant too long is still a press, so a quick turn never depends on how you press.'],
+  [/Swipe up to take one step the way you are facing, and swipe down to take one step straight back\./g,
+    'Press the up arrow to take one step the way you are facing, and the down arrow to take one step straight back.'],
+  [/Slide up and hold to run, slide down and hold to walk backwards, at the usual speeds, lift to stop\. On a touch screen you cannot turn while you run: lift, turn, then run again\./g,
+    'Hold the up arrow down to run and the down arrow to walk backwards, and let go to stop. You can turn while you run: press or hold the left or right arrow as well, and your run curves.'],
   [/Hold a finger still for a second for the compass\./g, 'Press C for the compass.'],
-  [/The gestures are the same as every other mode: swipe to step, slide up and hold to run, slide down and hold to walk backwards, at the usual speeds, lift to stop\./g,
-    'The keys are the same as every other mode: the arrows to step.'],
+  // The notice said once at the first run after web 4.0.0 (modes/ultimate.js, TURN_NOTICE).
+  [/Swipe left or right for a quick turn\./g, 'Press the left or right arrow for a quick turn.'],
+  [/Slide left or right and hold to keep turning\./g, 'Hold the left or right arrow down to keep turning.'],
+  [/Swipe up to walk the way you are facing\./g, 'Press the up arrow to walk the way you are facing, or hold it down to run.'],
   [/with no item in hand the tap gives the empty click/g, 'with no item in hand the press gives the empty click'],
   [/hold a finger still, double tap, triple tap/g, 'double tap, triple tap'],
 ];

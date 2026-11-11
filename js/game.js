@@ -1141,6 +1141,13 @@ export class Game {
     if (this.state === S.PRACTICE) { this._practiceInput(g); return; }
     if (this.state === S.KEY_TEST) { if (g === 'back' && this.braille) this.braille.endKeyTest(); return; }
     if (g === 'run_start' || g === 'back_start' || g === 'stride_end') { this._strideInput(g); return; }
+    // A held turn's start and end (web 4.0.0, Ultimate Mode): the mode that turns
+    // takes them itself. The end must reach it whatever the state is by then (a
+    // finger may lift, or a key be let go, during a pause or the quit question).
+    if (g === 'turn_left_start' || g === 'turn_right_start' || g === 'turn_end') {
+      for (const md of MODES) if (md.turnInput) md.turnInput(this, g);
+      return;
+    }
     for (const md of MODES) {
       const h = md.inputStates && md.inputStates[this.state];
       if (h) { h(this, g); return; }
@@ -1479,6 +1486,10 @@ export class Game {
     const sig = this._strideSig();
     this.input(dir);
     if (!this.playing || this.isPaused || this._strideSig() !== sig) return false;
+    // (A mode where forward is not always north says for itself whether the step
+    // carried on: Ultimate Mode, where you walk the way you face.)
+    const md = this.mode;
+    if (md && md.strideMoved) return md.strideMoved(this, before, dir);
     const dx = this.playerPos[0] - before[0];
     const dy = this.playerPos[1] - before[1];
     const moved = dir === 'up' ? -dy : dy;
@@ -1516,13 +1527,14 @@ export class Game {
     this.scores.settings.practiced = true;
     this.scores.save();
     this.tts.speak('Gesture practice. Try any gesture and the game says what it felt. '
-      + 'Swipe in four directions, slide up and hold, slide down and hold, hold a finger still, double tap, triple tap, tap four times, tap with two fingers or with three. '
+      + 'Swipe in four directions, slide up and hold, slide down and hold, slide left or right and hold, hold a finger still, double tap, triple tap, tap four times, tap with two fingers or with three. '
       + 'Triple tap twice in a row to leave, or wait twenty seconds.');
   }
 
   _practiceInput(g) {
     const names = {
-      up: 'Swipe up.', down: 'Swipe down.', left: 'Swipe left.', right: 'Swipe right.',
+      up: 'Swipe up.', down: 'Swipe down.',
+      left: 'Swipe left. In Ultimate Mode, that turns you to the left.', right: 'Swipe right. In Ultimate Mode, that turns you to the right.',
       enter: 'Double tap. Choose, like Enter.', help: 'Four taps. Help.', tap: 'One tap. It does nothing.',
       space: 'Two-finger tap. Fire, like Space.', pause: 'Three-finger tap. Pause and resume.',
       clock: 'T. The clock.', yes: 'Y. Yes.', no: 'N. No.',
@@ -1565,6 +1577,18 @@ export class Game {
         this.practiceRunTimer = null;
         this.tts.speak(names[this.practiceRunDir || 'up']);
       } else this.tts.speak('Lifted. In a run, that stops you.');
+      return;
+    }
+    // Slide left or right and hold (web 4.0.0): the gestures say when a slide has
+    // become a hold; a slide that lifts before that is a plain swipe.
+    if (g === 'turn_left_start' || g === 'turn_right_start') {
+      this.audio.play('menu_move');
+      this.tts.speak(`Slide ${g === 'turn_left_start' ? 'left' : 'right'} and hold. In Ultimate Mode only, you keep turning ${g === 'turn_left_start' ? 'left' : 'right'} until you lift your finger.`);
+      return;
+    }
+    if (g === 'turn_end') {
+      this.audio.play('menu_move');
+      this.tts.speak('Lifted. In Ultimate Mode, that stops your turn exactly there.');
       return;
     }
     this.audio.play('menu_move');
@@ -1705,6 +1729,11 @@ export class Game {
     // Mode), and in Gesture Practice, which names it.
     this.gestures.holdCompass = this.state === S.PRACTICE
       || !!(this.playing && !this.isPaused && md && md.holdGesture && md.holdGesture(this));
+    // Sliding left or right and holding is a held turn only where the mode asks
+    // (Ultimate Mode, web 4.0.0), and in Gesture Practice, which names it. There
+    // a keyboard's held arrows turn and run too.
+    this.gestures.turnHold = this.state === S.PRACTICE
+      || !!(this.playing && !this.isPaused && md && md.turnGesture && md.turnGesture(this));
     if (this.state === S.PRACTICE && performance.now() - (this.lastInputAt || 0) > 20000) {
       this.menuIndex = this.menuKeys.indexOf('practice');
       this._toMenu('Gesture practice closed. ');

@@ -83,8 +83,14 @@ const playGame = async (key, seconds) => {
       const g = window.__el.game;
       if (g.state === 'menu' || g.state === 'game_over') return;
       if (g.hp !== undefined) g.hp = Math.max(g.hp, 50);
-      if (g.ut) { g.ut.hp = 100; g.ut.ammo = Math.max(g.ut.ammo, 20); if (g.ut.phase === 'play' && g.ut.worldTime > 12 && Math.random() < 0.1) g.ut.worldTime = 8; }
-      for (let i = 0; i < 4; i++) { g.input(dirs[Math.floor(Math.random() * 4)]); if (Math.random() < 0.4) g.input('space'); }
+      if (g.ut) {
+        g.ut.hp = 100; g.ut.ammo = Math.max(g.ut.ammo, 20); if (g.ut.phase === 'play' && g.ut.worldTime > 12 && Math.random() < 0.1) g.ut.worldTime = 8;
+        // (Web 4.0.0: a held turn now and then, let go a tick or two later, so it walks at a slant as well.)
+        if (g.ut.turn && g.ut.turn.free) { if (Math.random() < 0.6) g.input('turn_end'); } else if (Math.random() < 0.2) g.input(Math.random() < 0.5 ? 'turn_left_start' : 'turn_right_start');
+      }
+      // (While a held turn goes on it only steps: a swipe to the side would end the hold.)
+      const ways = g.ut && g.ut.turn && g.ut.turn.free ? ['up', 'down'] : dirs;
+      for (let i = 0; i < 4; i++) { g.input(ways[Math.floor(Math.random() * ways.length)]); if (Math.random() < 0.4) g.input('space'); }
     }, dirs);
     await new Promise((r) => setTimeout(r, 250));
   }

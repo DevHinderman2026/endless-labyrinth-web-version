@@ -1,5 +1,6 @@
 // Ultimate Mode soak (web 2.0.0): a bot plays for several worlds, hurried
-// along, while memory, the number of live sounds and errors are watched. Not part
+// along, while memory, the number of live sounds and errors are watched; since
+// web 4.0.0 it turns and walks at every angle, and where it stands is watched too. Not part
 // of the quick suite (it takes a few minutes):
 //   node --import ./tests/github-stub.mjs tests/ultimate-soak.mjs http://localhost:8765 [worlds]
 
@@ -33,16 +34,34 @@ for (let round = 0; round < 400 && worlds < worldsWanted; round++) {
     if (!u || g.state !== 'ultimate') return { over: true, state: g.state };
     // Stay alive: full health, plenty of ammo; wander and shoot; hurry the clock.
     u.hp = 100; u.ammo = Math.max(u.ammo, 20);
-    const dirs = ['up', 'right', 'down', 'left'];
-    for (let i = 0; i < 20; i++) {
-      g.input(dirs[Math.floor(Math.random() * 4)]);
-      if (Math.random() < 0.3) g.input('space');
+    // (Web 4.0.0: it turns, with a quick turn or a held one let go at whatever
+    // slant it has reached, then walks the way it faces, forward mostly, so that
+    // walls are met at every angle.)
+    let frames = 0;
+    const run = (n) => { for (let i = 0; i < n; i++) g.updateUltimateMode(1 / 30); frames += n; };
+    for (let i = 0; i < 6; i++) {
+      const pick = Math.random();
+      if (pick < 0.35) g.input(Math.random() < 0.5 ? 'left' : 'right');
+      else if (pick < 0.6) { g.input(Math.random() < 0.5 ? 'turn_left_start' : 'turn_right_start'); run(3 + Math.floor(Math.random() * 30)); g.input('turn_end'); }
+      run(9);       // (a quick turn lands)
+      for (let k = 0; k < 3; k++) {
+        g.input(Math.random() < 0.8 ? 'up' : 'down');
+        if (Math.random() < 0.3) g.input('space');
+      }
     }
     if (Math.random() < 0.05 && u.place === 'world') g.input('hold');
     if (u.compass.on && Math.random() < 0.5) g.input('compass');
-    // Three seconds of frames, and the clock hurried by twenty.
-    for (let i = 0; i < 90; i++) g.updateUltimateMode(1 / 30);
+    // Three seconds of frames in all, and the clock hurried by twenty.
+    run(Math.max(0, 90 - frames));
     if (u.phase === 'play' && u.worldTime > 20) u.worldTime -= 20;
+    // Where it stands: on the floor, always (never inside a wall), and how it faces.
+    const cell = (pos) => [Math.round(pos[0] / 3), Math.round(pos[1] / 3)];
+    let onFloor = true;
+    if (u.place === 'world' && u.world) { const [cx, cy] = cell(g.playerPos); onFloor = u.world.floor.has(cx + ',' + cy); }
+    else if (u.place === 'seabed' && u.seabed) { const [cx, cy] = cell(g.playerPos); onFloor = u.seabed.grid.floor.has((cx - u.seabed.origin[0]) + ',' + (cy - u.seabed.origin[1])); }
+    const quarter = u.face / (Math.PI / 2);
+    const slant = Math.abs(quarter - Math.round(quarter)) > 1e-6;
+    const offCentre = Math.abs(g.playerPos[0] / 3 - Math.round(g.playerPos[0] / 3)) > 1e-6 || Math.abs(g.playerPos[1] / 3 - Math.round(g.playerPos[1] / 3)) > 1e-6;
     await new Promise((res) => setTimeout(res, 120));
     const mem = performance.memory ? Math.round(performance.memory.usedJSHeapSize / 1e6) : null;
     return {
@@ -50,6 +69,7 @@ for (let round = 0; round < 400 && worlds < worldsWanted; round++) {
       running: [...a.live].filter((v) => v.loop && !v.paused).length, shots: [...a.live].filter((v) => !v.loop).length, maxShots: a.maxShots3d,
       buffers: a.buffers.size, big: a.bigUsed.size, buses: a.areaBuses.size, enemies: u.enemies.length, pickups: u.pickups.length, mem,
       place: u.place, dmg: g._utDamage(), mul: g._utSpeedMul().toFixed(2),
+      onFloor, slant, offCentre, pos: g.playerPos.map((x) => +x.toFixed(2)), face: +(u.face * 180 / Math.PI).toFixed(1),
     };
   });
   if (r.over) { console.log('run over:', r.state); break; }
@@ -61,6 +81,13 @@ for (let round = 0; round < 400 && worlds < worldsWanted; round++) {
   }
 }
 check(worlds >= worldsWanted, `played ${worlds} worlds`);
+// (web 4.0.0) Walking at every angle, it is never found inside a wall or off the
+// floor; and it did stand at a slant and off the middle of its square, so the
+// free walking was really played.
+const offFloor = every.filter((s) => !s.onFloor);
+check(offFloor.length === 0, `it always stands on the floor (${every.length} looks)` + (offFloor.length ? ': ' + JSON.stringify(offFloor.slice(0, 3).map((s) => [s.place, s.pos, s.face])) : ''));
+check(every.some((s) => s.slant) && every.some((s) => !s.slant) && every.some((s) => s.offCentre),
+  `it faced at a slant in ${every.filter((s) => s.slant).length} looks and squared up in ${every.filter((s) => !s.slant).length}, and stood off the middle of its square in ${every.filter((s) => s.offCentre).length}`);
 // (The bot plays twenty inputs in a burst, so one-shots pile up far beyond what a
 // hand can make; the loops are the measure of a leak.)
 const loops = samples.map((s) => s.loops);

@@ -29,7 +29,8 @@ await page.keyboard.press('ArrowUp');
 await page.waitForFunction(() => window.__el.game && window.__el.game.state === 'menu');
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
-await page.evaluate(() => { const g = window.__el.game; g.menuIndex = g.menuKeys.indexOf('ultimate'); g.input('enter'); });
+// (The first run's notice, web 4.0.0, is ultimate-turn.mjs's to check: here it has been said.)
+await page.evaluate(() => { const g = window.__el.game; g.scores.settings.turnTold = true; g.menuIndex = g.menuKeys.indexOf('ultimate'); g.input('enter'); });
 await sleep(800);
 
 // Helpers shared by the checks, installed on the page once.
@@ -97,6 +98,22 @@ await page.evaluate(async () => {
     return u.world.areas.some((x) => x.kind === kind);
   };
   window.__ut.quiet = () => { for (const v of [...a.live]) if (v.loop) v.stop(); g.ut.areaSounds.clear(); g.ut.voices.clear(); for (const e of g.ut.enemies) e.voice = null; for (const p of g.ut.pickups) p.voice = null; };
+  // Since web 4.0.0 the world turns with you and a step goes the way you face.
+  // The checks here still walk north, east, south and west, so they face that way
+  // first (tests/ultimate-turn.mjs checks turning itself).
+  const K = { north: 0, east: 1, south: 2, west: 3 };
+  window.__ut.face = (way) => { g._utTurnStop(); g._utFace(K[way] * Math.PI / 2, true); };
+  window.__ut.go = (way) => { window.__ut.face(way); g.input('up'); };
+  window.__ut.land = () => { for (let i = 0; i < 60 && g.ut.turn; i++) g.updateUltimateMode(1 / 60); };
+  window.__ut.turn = (side) => { g.input(side); window.__ut.land(); };
+  // Every playing of the ride recording, with who asked for it: the check on its
+  // easing out has now and then found one that no ride of the test began.
+  window.__ut.rideLog = [];
+  const play0 = a.play.bind(a);
+  a.play = (n, o) => {
+    if (n === 'elevator_ride') window.__ut.rideLog.push({ at: a.ctx.currentTime.toFixed(2), place: g.ut && g.ut.place, world: g.ut && g.ut.worldNo, by: (new Error().stack || '').split('\n').slice(2, 6).map((l) => l.trim().replace(/https?:\/\/[^/]+\//, '')).join(' < ') });
+    return play0(n, o);
+  };
 });
 
 // --------------------------------------------------------------- 1. sounds with no place of their own ring in the player's room
@@ -108,7 +125,7 @@ const unplaced = await page.evaluate(async () => {
   T.quiet();
   const out = { room: area.room, mix: a.listenerMix };
   // A footstep: a swipe onto a floor cell.
-  const dirs = [['up', 0, -1], ['right', 1, 0], ['down', 0, 1], ['left', -1, 0]];
+  const dirs = [['north', 0, -1], ['east', 1, 0], ['south', 0, 1], ['west', -1, 0]];
   let stepped = null;
   for (const [d, dx, dy] of dirs) {
     const [cx, cy] = T.world.cellOf([g.playerPos[0] + dx * 3, g.playerPos[1] + dy * 3]);
@@ -117,7 +134,7 @@ const unplaced = await page.evaluate(async () => {
   // (captured by family: whichever stone step is chosen)
   const names = ['step_stone_1', 'step_stone_2', 'step_stone_3', 'step_stone_4'];
   const anyStep = new Promise((resolve) => { const orig = a.play.bind(a); a.play = (n, o) => { const v = orig(n, o); if (names.includes(n)) { a.play = orig; resolve(v); } return v; }; });
-  g.input(stepped || 'up');
+  T.go(stepped || 'north');
   const sv = await anyStep;
   out.step = sv ? { taps: sv.wet && sv.wet.taps ? sv.wet.taps.size : 0, mix: sv.areaMix, ...(await T.measure(sv, area.id)) } : null;
   // The countdown's beep, as the frame plays it.
@@ -128,7 +145,7 @@ const unplaced = await page.evaluate(async () => {
   u.worldTime = 170;
   out.countdown = cd ? { taps: cd.wet && cd.wet.taps ? cd.wet.taps.size : 0, ...(await T.measure(cd, area.id)) } : null;
   // The ammo chime, taken by stepping onto a cartridge in the cell ahead.
-  const [sx, sy] = dirs.find(([d]) => d === (stepped || 'up')).slice(1);
+  const [sx, sy] = dirs.find(([d]) => d === (stepped || 'north')).slice(1);
   const ahead = [g.playerPos[0] + sx * 3, g.playerPos[1] + sy * 3];
   const [acx, acy] = T.world.cellOf(ahead);
   let ammo = null; let ammoSync = null;
@@ -138,7 +155,7 @@ const unplaced = await page.evaluate(async () => {
     let playedAt = null; const orig = a.play.bind(a); let got = null;
     a.play = (n, o) => { const v = orig(n, o); if (n === 'ammo' && !got) { got = v; playedAt = performance.now(); } return v; };
     const before = performance.now();
-    g.input(stepped || 'up');
+    T.go(stepped || 'north');
     const after = performance.now();
     a.play = orig;
     ammoSync = got ? { withinInput: playedAt >= before && playedAt <= after, ms: playedAt - before } : { withinInput: false, ms: null };
@@ -205,8 +222,8 @@ const safeRooms = await page.evaluate(async () => {
     const plain = a.irBuffers.get(area.room + '#0');
     bus = { room: area.room, stretch: area.stretch, seconds: ir ? ir.duration : null, plain: plain ? plain.duration : null };
     // A wall in the safe zone: the wall's echo level is the softer one.
-    const dirs = [['up', 0, -1], ['right', 1, 0], ['down', 0, 1], ['left', -1, 0]];
-    // Stand on a floor cell of the safe zone next to a wall, and swipe into the wall.
+    const dirs = [['north', 0, -1], ['east', 1, 0], ['south', 0, 1], ['west', -1, 0]];
+    // Stand on a floor cell of the safe zone next to a wall, and step into the wall.
     const W = T.world; let spot = null;
     for (const [cx, cy] of area.floorCells) {
       const d = dirs.find(([, dx, dy]) => !w.floor.has(W.key(cx + dx, cy + dy)));
@@ -215,7 +232,7 @@ const safeRooms = await page.evaluate(async () => {
     if (spot) {
       g.playerPos = W.posOf(spot[0][0], spot[0][1]); g._utListenerMix();
       const wp = T.capture('wall');
-      g.input(spot[1]);
+      T.go(spot[1]);
       const wv = await wp;
       wall = wv ? { send: wv.send, taps: wv.wet && wv.wet.taps ? wv.wet.taps.size : 0 } : { missing: true };
     }
@@ -269,8 +286,8 @@ const hysteresis = await page.evaluate(async () => {
   await new Promise((r) => setTimeout(r, 100));
   const before = u.areaSounds.get(C.id);
   const cVoice = before && before.amb;
-  const dir = dx === 1 ? 'right' : dx === -1 ? 'left' : dy === 1 ? 'down' : 'up';
-  g.input(dir);
+  const dir = dx === 1 ? 'east' : dx === -1 ? 'west' : dy === 1 ? 'south' : 'north';
+  T.go(dir);
   g.updateUltimateMode(1 / 30);
   await new Promise((r) => setTimeout(r, 100));
   const after = u.areaSounds.get(C.id);
@@ -296,14 +313,16 @@ const island = await page.evaluate(async () => {
   const rides = []; const startRide = g._utStartRide;
   g._utStartRide = (dir) => { rides.push(`${dir} at ${a.ctx.currentTime.toFixed(2)} from ${u.place}`); return startRide.call(g, dir); };
   u.liftArmed = false; g.updateUltimateMode(1 / 30);
-  g.input('up'); g.updateUltimateMode(1 / 30);
+  T.go('north'); g.updateUltimateMode(1 / 30);
   const inCar = u.place;
   // In the car: swipes, the shot and the throw make no sound at all; a hold speaks.
   const played = []; const orig = a.play.bind(a); a.play = (n, o) => { played.push(n); return orig(n, o); };
   const spoken = []; const os = g.tts.speak.bind(g.tts); g.tts.speak = (t, o) => { spoken.push(t); return os(t, o); };
-  for (const d of ['up', 'down', 'left', 'right', 'space', 'enter']) g.input(d);
+  const facedInCar = u.face;
+  for (const d of ['up', 'down', 'left', 'right', 'turn_left_start', 'turn_end', 'space', 'enter']) g.input(d);
   g.input('hold');
   const compassInCar = u.compass.on;
+  const turnedInCar = u.face !== facedInCar || !!u.turn;
   const playedInCar = played.slice(); played.length = 0;
   // Down to the seabed.
   for (let i = 0; i < 30 * 40 && u.place === 'ride'; i++) { g.updateUltimateMode(1 / 30); if (i % 30 === 0) await new Promise((r) => setTimeout(r, 5)); }   // (the ride recording may need decoding again)
@@ -312,7 +331,7 @@ const island = await page.evaluate(async () => {
   let edgeSound = null; const trail = [];
   for (let i = 0; i < 40 && !edgeSound; i++) {
     played.length = 0;
-    g.input('left');
+    T.go('west');
     trail.push([g.playerPos.slice(), u.place, g.state, played.slice()]);
     const s = played.find((n) => n === 'boundary' || n === 'wall');
     if (s) edgeSound = s;
@@ -322,7 +341,7 @@ const island = await page.evaluate(async () => {
   // hums where it stands, and your own bubbles come now and then.
   await new Promise((r) => setTimeout(r, 300));
   const rideStill = [...a.live].filter((v) => v.name === 'elevator_ride' && v.busy).length;
-  const rideVoices = [...a.live].filter((v) => v.name === 'elevator_ride' && v.busy).map((v) => ({ fading: !!v.fadingOut, paused: v.paused, begun: !!v.dry, age: a.ctx.currentTime - (v.startedAt || 0), now: a.ctx.currentTime.toFixed(2), place: u.place, rides: rides.slice(), worldNo: u.worldNo, phase: u.phase }));
+  const rideVoices = [...a.live].filter((v) => v.name === 'elevator_ride' && v.busy).map((v) => ({ fading: !!v.fadingOut, paused: v.paused, begun: !!v.dry, age: a.ctx.currentTime - (v.startedAt || 0), now: a.ctx.currentTime.toFixed(2), place: u.place, rides: rides.slice(), worldNo: u.worldNo, phase: u.phase, log: T.rideLog.slice(-4) }));
   const seabedHum = u.seabed && u.seabed.hum && !u.seabed.hum.stopped ? u.seabed.hum.l : null;
   const br = u.seabed && u.seabed.breath;
   const breathing = br ? { name: br.name, loop: br.loop, level: br.l, send: br.send, wet: !!br.wet, busy: br.busy, placed: br.placed } : null;
@@ -334,7 +353,7 @@ const island = await page.evaluate(async () => {
   const W2 = T.world;
   const [ex, ey] = u.seabed.origin;
   g.playerPos = W2.posOf(ex + 1, ey); u.liftArmed = true;
-  g.input('left');
+  T.go('west');
   g.updateUltimateMode(1 / 30);
   const rodeUp = u.place;
   for (let i = 0; i < 30 * 40 && u.place === 'ride'; i++) { g.updateUltimateMode(1 / 30); if (i % 30 === 0) await new Promise((r) => setTimeout(r, 5)); }
@@ -343,7 +362,11 @@ const island = await page.evaluate(async () => {
   const outCell = W2.cellOf(g.playerPos);
   const outSteps = Math.hypot(outCell[0] - isl.elevator[0], outCell[1] - isl.elevator[1]);
   const outOnSand = isl.floorCells.some(([x, y]) => x === outCell[0] && y === outCell[1]);
+  // (Web 4.0.0: you step out with your back to the lift, squared up.)
   const outFacing = g.playerFacing.slice();
+  const outWay = [g.playerPos[0] - isl.elevator[0] * 3, g.playerPos[1] - isl.elevator[1] * 3];
+  const outAway = (outFacing[0] * outWay[0] + outFacing[1] * outWay[1]) / (Math.hypot(outWay[0], outWay[1]) || 1);
+  const outSquare = Number.isInteger(Math.round(u.face / (Math.PI / 2) * 1e6) / 1e6);
   // One step back toward the lift does not ride you down unless it lands on the lift.
   const outArmed = u.liftArmed;
   // The rule itself, many times over, with chasers on the island: a few steps
@@ -362,14 +385,15 @@ const island = await page.evaluate(async () => {
   const breathLeft = [...a.live].filter((v) => v.name === 'ut_diver_breathing' && v.busy).length;
   a.play = orig; g.tts.speak = os;
   g._utStartRide = startRide;
-  return { inCar, playedInCar, spoken, compassInCar, onSeabed, edgeSound, stepsOnSeabed, trail: trail.slice(0, 12), rideStill, rideVoices, seabedHum, breathing, bubbles, rodeUp, backUp, safeAfter, waterLeft, breathLeft, outSteps, outOnSand, outFacing, outArmed, rule, chasers: u.enemies.filter((e) => e.area === isl).length };
+  return { inCar, playedInCar, spoken, compassInCar, turnedInCar, onSeabed, edgeSound, stepsOnSeabed, trail: trail.slice(0, 12), rideStill, rideVoices, seabedHum, breathing, bubbles, rodeUp, backUp, safeAfter, waterLeft, breathLeft, outSteps, outOnSand, outFacing, outAway, outSquare, outArmed, rule, chasers: u.enemies.filter((e) => e.area === isl).length };
 });
 check(island.skipped || island.rideStill === 0, `the ride recording is eased out by the time you arrive (${island.rideStill} still playing${island.rideStill ? ': ' + JSON.stringify(island.rideVoices) : ''})`);
 check(island.skipped || (island.seabedHum !== null && island.seabedHum > 0), `on the seabed the way up hums where it stands (level ${island.seabedHum && island.seabedHum.toFixed(2)})`);
 check(island.skipped || (island.breathing && island.breathing.loop && island.breathing.busy && Math.abs(island.breathing.level - 0.85) < 0.01 && island.breathing.send === 0 && !island.breathing.wet && !island.breathing.placed), 'on the seabed the diver\'s breathing loops all round you, with no echo: ' + JSON.stringify(island.breathing));
 check(island.skipped || island.bubbles >= 1, `your own bubbles come now and then on the seabed (${island.bubbles} in six seconds)`);
 check(island.skipped || (island.rodeUp === 'ride' && island.backUp === 'world' && island.safeAfter >= 2.5 && island.waterLeft === 0 && island.breathLeft === 0), 'the ride up lands you on the island with Island Mode\'s arrival grace, the water and the breathing left behind: ' + JSON.stringify({ rodeUp: island.rodeUp, backUp: island.backUp, safe: island.safeAfter, waterLeft: island.waterLeft, breathLeft: island.breathLeft }));
-check(island.skipped || (island.outOnSand && island.outSteps >= 4 && island.outSteps <= 6 && island.outFacing[0] === 0 && island.outFacing[1] === -1), `back up, you step out on the sand a few steps from the lift, facing ahead, as in Island Mode (${island.outSteps && island.outSteps.toFixed(1)} steps)`);
+check(island.skipped || (island.outOnSand && island.outSteps >= 4 && island.outSteps <= 6), `back up, you step out on the sand a few steps from the lift, as in Island Mode (${island.outSteps && island.outSteps.toFixed(1)} steps)`);
+check(island.skipped || (island.outSquare && island.outAway >= 0.7), `and with your back to the lift, squared up, so walking on takes you away from it (facing ${JSON.stringify(island.outFacing)}, ${island.outAway && island.outAway.toFixed(2)} of it away from the lift)`);
 check(island.skipped || island.rule.every((r) => r.sand && r.steps >= 4 && r.steps <= 6 && !r.onPickup), 'every step-out square is sand, 4 to 6 steps from the lift, never a pickup\'s square (60 draws)');
 check(island.skipped || island.chasers === 0 || island.rule.filter((r) => r.near >= 12).length >= 54, `the step-out square keeps clear of the chasers (${island.chasers} on the island; ${island.rule ? island.rule.filter((r) => r.near >= 12).length : 0} of 60 at least four steps from every one)`);
 check(!island.skipped, 'a world with an island was found');
@@ -402,6 +426,7 @@ const hum = await page.evaluate(async () => {
 check((hum.skipped && hum.skipped !== 'no run') || (hum.outside === 0 && hum.inside > 0), `the island elevator's hum is silent from the ${hum.nb || 'next'} area beside the island (${hum.fromLift ? hum.fromLift.toFixed(1) : '?'} steps from the lift: ${hum.outside}) and heard on the island (${hum.inside && hum.inside.toFixed(2)})` + (hum.skipped ? ' [skipped: ' + hum.skipped + ']' : ''));
 check(island.skipped || (island.inCar === 'ride' && island.playedInCar.length === 0), 'in the elevator car every swipe, the shot and the throw are silent (Island Mode): played ' + JSON.stringify(island.playedInCar));
 check(island.skipped || (island.compassInCar === false && island.spoken.some((t) => /Compass not available in the elevator/.test(t))), 'a hold in the car says the compass is not available there: ' + JSON.stringify(island.spoken));
+check(island.skipped || island.turnedInCar === false, 'and in the car you cannot turn: a swipe to the side and a held turn do nothing');
 check(island.skipped || (island.onSeabed === 'seabed' && island.edgeSound === 'boundary'), `the seabed's edge is the boundary buzz, not a wall (${island.edgeSound})` + (island.edgeSound === 'boundary' ? '' : ' ' + JSON.stringify(island.trail)));
 check(island.skipped || island.stepsOnSeabed === 0, 'the seabed makes no sound underfoot');
 
@@ -586,7 +611,7 @@ const park = await page.evaluate(async () => {
   const floor = new Set(area.floorCells.map(([cx, cy]) => `${cx},${cy}`));
   const sc = W.cellOf(sl.pos);
   const side = [[1, 0], [-1, 0], [0, 1], [0, -1]].find(([dx, dy]) => [1, 2, 3].every((k) => floor.has(`${sc[0] + dx * k},${sc[1] + dy * k}`))) || [1, 0];
-  const toward = side[0] === 1 ? 'left' : side[0] === -1 ? 'right' : side[1] === 1 ? 'up' : 'down';
+  const toward = side[0] === 1 ? 'west' : side[0] === -1 ? 'east' : side[1] === 1 ? 'north' : 'south';
   u.area = area; u.safe = 0; g.playerPos = [sl.pos[0] + side[0] * 9, sl.pos[1] + side[1] * 9]; g._utRefreshRooms(); g._utListenerMix();
   T.quiet();
   g.updateUltimateMode(1 / 30);
@@ -597,13 +622,13 @@ const park = await page.evaluate(async () => {
   const spoken = []; const os = g.tts.speak.bind(g.tts); g.tts.speak = (t, o) => { spoken.push(t); return os(t, o); };
   const p0 = u.points; const mult = g._utMultiplier();
   g.playerPos = [sl.pos[0] + side[0] * 6, sl.pos[1] + side[1] * 6]; g._utListenerMix();
-  g.input(toward);                         // onto the square beside the slide
+  T.go(toward);                            // onto the square beside the slide
   out.started = u.place === 'slide' && u.slide && u.slide.stage === 'climb';
-  // Nothing answers on the slide.
-  const before = [...g.playerPos];
-  for (const d of ['up', 'down', 'space', 'enter']) g.input(d);
+  // Nothing answers on the slide: no step, no shot, no turn, no compass.
+  const before = [...g.playerPos]; const faced = u.face;
+  for (const d of ['up', 'down', 'left', 'right', 'turn_left_start', 'turn_end', 'space', 'enter']) g.input(d);
   g.input('hold');
-  out.heldStill = g.playerPos[0] === before[0] && g.playerPos[1] === before[1] && !u.compass.on && spoken.some((t) => /Compass not available on the slide/.test(t));
+  out.heldStill = g.playerPos[0] === before[0] && g.playerPos[1] === before[1] && u.face === faced && !u.turn && !u.compass.on && spoken.some((t) => /Compass not available on the slide/.test(t));
   out.stepSounds = played.filter((n) => /^step_/.test(n)).length;
   out.pauseBlocked = T.mod.default.blockPause(g);
   // Ride it out.
@@ -662,13 +687,16 @@ const bus = await page.evaluate(async () => {
   }
   out.routeDbg = (() => { const r = g._utRoute(); const gc = W.cellOf(b.pos); return { t: r.target.name, p: r.path && r.path.length, from: here, goal: gc, goalFloor: W.isFloor(u.world, gc[0], gc[1]), fromFloor: W.isFloor(u.world, here[0], here[1]), place: u.place, stage: b.stage }; })();
   g.input('hold'); out.compassSaid = document.getElementById('said').textContent; g.input('hold');
-  // Walk onto it.
-  g.playerPos = [b.pos[0] + 3, b.pos[1]]; g._utListenerMix();
-  g.input('left');
+  // Walk onto it, from a square beside it that is floor (a step is walked now, so
+  // it cannot begin inside a wall).
+  const bc = W.cellOf(b.pos);
+  const beside = [[1, 0, 'west'], [-1, 0, 'east'], [0, 1, 'north'], [0, -1, 'south']].find(([dx, dy]) => W.isFloor(u.world, bc[0] + dx, bc[1] + dy)) || [1, 0, 'west'];
+  g.playerPos = W.posOf(bc[0] + beside[0], bc[1] + beside[1]); g._utListenerMix();
+  T.go(beside[2]);
   out.boarded = u.place === 'bus' && b.stage === 'boarding';
-  const before = [...g.playerPos];
-  for (const d of ['up', 'left', 'space', 'enter']) g.input(d);
-  out.heldStill = g.playerPos[0] === before[0] && g.playerPos[1] === before[1];
+  const before = [...g.playerPos]; const faced = u.face;
+  for (const d of ['up', 'down', 'left', 'right', 'turn_right_start', 'turn_end', 'space', 'enter']) g.input(d);
+  out.heldStill = g.playerPos[0] === before[0] && g.playerPos[1] === before[1] && u.face === faced && !u.turn;
   // Ride it out (with yields, for the recordings to decode).
   const total = BUS_GO_AT + b.ride + BUS_GO_AT + 2;
   const boardAt = u.busElapsed;
@@ -801,12 +829,12 @@ const edges = await page.evaluate(async () => {
   const bump = (area) => {
     // Stand on a floor cell of the area whose next cell one way is not floor, and step that way.
     for (const [cx, cy] of area.floorCells) {
-      for (const [g2, dx, dy] of [['left', -1, 0], ['right', 1, 0], ['up', 0, -1], ['down', 0, 1]]) {
+      for (const [g2, dx, dy] of [['west', -1, 0], ['east', 1, 0], ['north', 0, -1], ['south', 0, 1]]) {
         if (W.isFloor(u.world, cx + dx, cy + dy)) continue;
         g.playerPos = W.posOf(cx, cy); u.area = area; u.place = 'world'; g._utListenerMix();
         const played = []; const orig = a.play.bind(a); a.play = (n, o) => { played.push(n); return orig(n, o); };
         const before = [...g.playerPos];
-        g.input(g2);
+        T.go(g2);
         a.play = orig;
         return { played, stayed: before[0] === g.playerPos[0] && before[1] === g.playerPos[1] };
       }
@@ -839,7 +867,7 @@ const aboard = await page.evaluate(async () => {
   // The bus stands beside you; step up to it.
   u.bus = { area, pos: [g.playerPos[0] + 3, g.playerPos[1]], stage: 'waiting', t: 0, voice: null, rideVoice: null, pullVoice: null, doorVoice: null, ride: 20, steps: 100 };
   e.items = 3; e.cooldown = 0; e.notice = 0; e.recover = 0;
-  g.input('right');
+  T.go('east');
   out.boarded = u.place === 'bus';
   out.droppedAtBoarding = u.projectiles.length === 0;
   const played = []; const orig = a.play.bind(a); a.play = (n, o) => { played.push(n); return orig(n, o); };
@@ -862,16 +890,25 @@ const survey = await page.evaluate(async () => {
   const g = window.__el.game; const u = g.ut; const T = window.__ut; const W = T.world;
   const area = T.goTo((x) => x.kind !== 'event') || T.goTo(() => true);
   const names = { labyrinth: 'a labyrinth', island: 'an island', tower: 'a tower area', battle: 'a battle area', event: 'a safe zone' };
-  const words4 = ['Ahead', 'Right', 'Behind', 'Left'];
+  // (Web 4.0.0: you turn for real, and the compass says what lies ahead of you
+  // when you face a main direction: the leg with its turn when that is the way to
+  // go, else how far it is open and what lies beyond, and then where the way is
+  // from there.)
+  const ways = ['north', 'east', 'south', 'west'];
   const dirs = [[0, -1], [1, 0], [0, 1], [-1, 0]];
   const [cx, cy] = W.cellOf(g.playerPos);
   const out = { words: [], ok: true, route: 0, wanted: [] };
   const plural = (n, w) => `${n} ${w}${n === 1 ? '' : 's'}`;
+  const cap = (t) => t[0].toUpperCase() + t.slice(1);
+  const leg = g._utRoute().leg;
+  const legAt = leg ? dirs.findIndex((d) => d[0] === leg.dir[0] && d[1] === leg.dir[1]) : -1;
   for (let i = 0; i < 4; i++) {
+    T.face(ways[i]);
     const w = g._utCompassWords(i);
     out.words.push(w);
     const [dx, dy] = dirs[i];
-    if (/, \d+ steps?, then (ahead|right|behind|left)\.$|, \d+ steps? to the (safe zone|bus|way out)\.$/.test(w)) { out.route += 1; out.wanted.push('(route)'); continue; }
+    if (/^This way, \d+ steps?, then (right|left)\.$|^This way, \d+ steps? to (the safe zone|the bus|the way out)\.$/.test(w)) { out.route += 1; out.wanted.push('(route)'); if (i !== legAt) out.ok = false; continue; }
+    const side = legAt < 0 ? '' : ` The way is ${['ahead', 'to your right', 'behind you', 'to your left'][(legAt - i + 4) % 4]}.`;
     // Walk that way ourselves: how far it is open, and what stops us.
     let open = 0; let x = cx; let y = cy; let stop = 'wall';
     for (let k = 0; k < 40; k++) {
@@ -886,18 +923,30 @@ const survey = await page.evaluate(async () => {
     const then = far ? `, then ${names[far.kind]}` : '';
     const blocker = area.kind === 'island' ? "the island's edge" : 'a wall';
     let want;
-    if (stop === 'border') want = `${words4[i]}: open to the border, ${plural(open, 'step')}, into ${names[next.kind]}${then}.`;
-    else if (!next) want = open ? `${words4[i]}: open for ${plural(open, 'step')}, then ${blocker}; the edge of the world is ${plural(toBorder, 'step')} away.` : `${words4[i]}: ${blocker}; the edge of the world is ${plural(toBorder, 'step')} away.`;
-    else want = (open ? `${words4[i]}: open for ${plural(open, 'step')}, then ${blocker}. ` : `${words4[i]}: ${blocker}. `) + `Beyond, ${names[next.kind]}, ${plural(toBorder, 'step')} away${then}.`;
+    if (stop === 'border') want = `open to the border, ${plural(open, 'step')}, into ${names[next.kind]}${then}.`;
+    else if (!next) want = open ? `open for ${plural(open, 'step')}, then ${blocker}; the edge of the world is ${plural(toBorder, 'step')} away.` : `${blocker}; the edge of the world is ${plural(toBorder, 'step')} away.`;
+    else want = (open ? `open for ${plural(open, 'step')}, then ${blocker}. ` : `${blocker}. `) + `Beyond, ${names[next.kind]}, ${plural(toBorder, 'step')} away${then}.`;
+    want = cap(want) + side;
     out.wanted.push(want);
     if (w !== want) out.ok = false;
   }
-  // Compass on, for real: the briefing, then the way ahead.
-  g.input('hold'); out.said = document.getElementById('said').textContent; g.input('hold');
+  // Compass on, for real, facing north: the briefing, then the way ahead. The way
+  // to start is counted from the way you face.
+  T.face('north');
+  g.input('hold'); out.said = document.getElementById('said').textContent;
+  out.startNorth = (/starting (ahead|right|behind|left)\./.exec(out.said) || [])[1];
+  out.wantNorth = legAt < 0 ? undefined : ['ahead', 'right', 'behind', 'left'][legAt];
+  g.input('hold');
+  // Facing east, the same leg starts a quarter turn further round to the left.
+  T.face('east');
+  g.input('hold'); out.startEast = (/starting (ahead|right|behind|left)\./.exec(document.getElementById('said').textContent) || [])[1]; g.input('hold');
+  out.wantEast = legAt < 0 ? undefined : ['ahead', 'right', 'behind', 'left'][(legAt - 1 + 4) % 4];
+  T.face('north');
   return out;
 });
-check(survey.ok && survey.route === 1, 'each compass direction says how far it is open, what stops you and what lies beyond, and one carries the route leg with its turn: ' + JSON.stringify(survey.words) + (survey.ok ? '' : ' wanted ' + JSON.stringify(survey.wanted)));
-check(/^Compass on\. You are (in|on) (a labyrinth|an island|a tower area|a battle area|a safe zone)\. (The safe zone|The bus|The way out) is \d+ steps? away, starting (ahead|right|behind|left)\. (Nearby: [^.]*(steps? away, starting (ahead|right|behind|left)|right here)[^.]*\.|Nothing to pick up nearby\.) (Ahead)[,:.].*$/.test(survey.said), 'turning the compass on gives the briefing, then the way ahead: ' + survey.said);
+check(survey.ok && survey.route === 1, 'facing each main direction, the compass says how far it is open, what stops you, what lies beyond and where the way is, and one of them is the route leg with its turn: ' + JSON.stringify(survey.words) + (survey.ok ? '' : ' wanted ' + JSON.stringify(survey.wanted)));
+check(/^Compass on\. You are (in|on) (a labyrinth|an island|a tower area|a battle area|a safe zone)\. (The safe zone|The bus|The way out) is \d+ steps? away, starting (ahead|right|behind|left)\. (Nearby: [^.]*(steps? away, starting (ahead|right|behind|left)|right here)[^.]*\.|Nothing to pick up nearby\.) (This way|Open|A wall|The island's edge)[ ,;.].*$/.test(survey.said), 'turning the compass on gives the briefing, then the way ahead: ' + survey.said);
+check(survey.startNorth === survey.wantNorth && survey.startEast === survey.wantEast, `the way to start is counted from the way you face: facing north "starting ${survey.startNorth}", facing east "starting ${survey.startEast}"`);
 
 // --------------------------------------------------------------- 13. regeneration under a pile of sounds (Russell, 8 Nov: roars carried over; a crash)
 const regenLoad = await page.evaluate(async () => {
@@ -1038,7 +1087,7 @@ check(crowdRoom.skipped || (crowdRoom.each.length === 13 && crowdRoom.each.every
 check(crowdRoom.skipped || crowdRoom.each.filter((e) => e.send === crowdRoom.closeSend).every((e) => e.ratio > (crowdRoom.footstep || 0) * 0.8), `the close-up recordings carry at least as much room as a footstep does (footstep ${crowdRoom.footstep})`);
 check(crowdRoom.skipped || (crowdRoom.crowdLoop && Math.abs(crowdRoom.crowdLoop.send - 0.15) < 0.001), 'the background stadium crowd keeps its light send: ' + JSON.stringify(crowdRoom.crowdLoop));
 
-// --------------------------------------------------------------- 16. a kinder aim and more chasers (Russell, 9 Nov; web 3.2.0)
+// --------------------------------------------------------------- 16. the aim is the front quarter (Russell, 11 Nov; web 4.0.0), and more chasers (9 Nov; web 3.2.0)
 const aim = await page.evaluate(async () => {
   const g = window.__el.game; const u = g.ut; const T = window.__ut;
   if (!u.world) return { skipped: 'no run' };
@@ -1050,13 +1099,34 @@ const aim = await page.evaluate(async () => {
   u.enemies = u.enemies.filter((e) => e.area !== area || e === mine[0]);
   const e = mine[0];
   const [px, py] = g.playerPos;
+  // The chaser `steps` away at `deg` degrees clockwise from north: does a shot take it?
   const at = (deg, steps) => { const r = steps * 3; const t = deg * Math.PI / 180; e.x = px + Math.sin(t) * r; e.y = py - Math.cos(t) * r; return g._utLocked() === e; };
+  const facing = (deg) => { g._utTurnStop(); g._utFace(deg * Math.PI / 180, true); };
+  facing(0);
   const out = {
-    ahead: at(0, 8), behind: at(180, 8),
-    at50: at(50, 8), at55: at(55, 8), behind55: at(180 - 55, 8),
-    at65: at(65, 8), side90: at(90, 8),
-    closeSide: at(90, 1.5), closeDiag: at(75, 1.9), notClose: at(90, 2.5),
+    // Facing north: straight ahead and up to 45 degrees either side; nothing wider, nothing behind.
+    ahead: at(0, 8), at30: at(30, 8), at44: at(44, 8), at45: at(45, 8), atMinus45: at(-45, 8),
+    at47: at(47, 8), atMinus47: at(-47, 8), side90: at(90, 8), behind: at(180, 8), behind30: at(150, 8),
+    // Within two steps, whatever side, behind you too.
+    closeSide: at(90, 1.5), closeDiag: at(75, 1.9), closeBehind: at(180, 1.9), notClose: at(90, 2.5), notCloseBehind: at(180, 2.5),
   };
+  // The aim turns with you: facing east, what was to the side is ahead.
+  facing(90);
+  out.east = { ahead: at(90, 8), north: at(0, 8), south: at(180, 8), at130: at(130, 8), at140: at(140, 8) };
+  // At a slant too: facing 30 degrees, 40 degrees to the right of that is in, 50 to the left is out.
+  facing(30);
+  out.slant = { right40: at(70, 8), left50: at(-20, 8), left40: at(-10, 8) };
+  // Every way an enemy can be is in front of you for one of the four main directions
+  // at least, so quick turns alone can face any enemy (a Braille notetaker's keys
+  // cannot be held).
+  let uncovered = 0;
+  for (let deg = 0; deg < 360; deg += 1) {
+    let seen = false;
+    for (const f of [0, 90, 180, 270]) { facing(f); if (at(deg, 8)) seen = true; }
+    if (!seen) uncovered += 1;
+  }
+  out.uncovered = uncovered;
+  facing(0);
   u.enemies.push(...mine.slice(1));
   mine.forEach((m, i) => { [m.x, m.y] = saved[i]; });
   // The counts: one or two in the easy stretch, up to eight later.
@@ -1067,9 +1137,12 @@ const aim = await page.evaluate(async () => {
   out.easy = [...easy].sort(); out.most = most;
   return out;
 });
-check(!aim.skipped && aim.ahead && aim.behind && aim.at50 && aim.at55 && aim.behind55, 'a shot takes a chaser roughly in front or behind: straight, 50 and 55 degrees off, ahead and behind: ' + JSON.stringify(aim));
-check(!aim.skipped && !aim.at65 && !aim.side90, 'a chaser well off to the side and out of reach is not taken (65 and 90 degrees, eight steps away)');
-check(!aim.skipped && aim.closeSide && aim.closeDiag && !aim.notClose, 'a chaser within two steps is hit whatever side it is on; at two and a half steps to the side it is not');
+check(!aim.skipped && aim.ahead && aim.at30 && aim.at44 && aim.at45 && aim.atMinus45, 'a shot takes a chaser in the front quarter: straight ahead and up to 45 degrees either side: ' + JSON.stringify(aim));
+check(!aim.skipped && !aim.at47 && !aim.atMinus47 && !aim.side90 && !aim.behind && !aim.behind30, 'a chaser wider than that, or behind you, is not taken (47 and 90 degrees off, and behind, eight steps away)');
+check(!aim.skipped && aim.closeSide && aim.closeDiag && aim.closeBehind && !aim.notClose && !aim.notCloseBehind, 'a chaser within two steps is hit whatever side it is on, behind you too; at two and a half steps it is not');
+check(!aim.skipped && aim.east.ahead && !aim.east.north && !aim.east.south && aim.east.at130 && !aim.east.at140, 'the aim turns with you: facing east, east is ahead and north and south are to the side: ' + JSON.stringify(aim.east));
+check(!aim.skipped && aim.slant.right40 && aim.slant.left40 && !aim.slant.left50, 'and at a slant: facing 30 degrees, 40 degrees either side is in and 50 is out: ' + JSON.stringify(aim.slant));
+check(!aim.skipped && aim.uncovered === 0, `whichever way an enemy lies, one of the four main directions has it in front, so quick turns alone can face it (${aim.uncovered} of 360 degrees uncovered)`);
 check(!aim.skipped && aim.easy.join() === '1,2' && aim.most === 8, `battle and island areas hold one or two chasers in the easy stretch and up to eight later: ${aim.easy}, ${aim.most}`);
 
 // --------------------------------------------------------------- 17. beacons over the arena, and cartridges that do not grow (Russell, 9 Nov; web 3.2.0)

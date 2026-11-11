@@ -26,6 +26,7 @@ const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 // A run whose world has an island, a tower area and a battle area (made again until it does).
 await page.evaluate(async () => {
   const g = window.__el.game;
+  g.scores.settings.turnTold = true;   // (the first run's notice, web 4.0.0, is ultimate-turn.mjs's to check: here it has been said)
   for (let i = 0; i < 40; i++) {
     g.menuIndex = g.menuKeys.indexOf('ultimate');
     g.input('enter');
@@ -37,14 +38,26 @@ await page.evaluate(async () => {
 });
 await sleep(500);
 
+// Since web 4.0.0 the world turns with you, and a step goes the way you face: the
+// checks below still walk north, east, south and west, so they face that way first
+// (tests/ultimate-turn.mjs checks turning itself).
+await page.evaluate(() => {
+  const g = window.__el.game;
+  const K = { north: 0, east: 1, south: 2, west: 3 };
+  window.__t = {
+    face(way) { g._utTurnStop(); g._utFace(K[way] * Math.PI / 2, true); },
+    go(way) { this.face(way); g.input('up'); },
+  };
+});
+
 // --------------------------------------------------------------- the seabed, in world coordinates
 const seabed = await page.evaluate(async () => {
-  const g = window.__el.game; const u = g.ut;
+  const g = window.__el.game; const u = g.ut; const T = window.__t;
   const isl = u.world.areas.find((x) => x.kind === 'island');
   u.area = isl; u.safe = 0;
   g.playerPos = [isl.elevator[0] * 3, (isl.elevator[1] + 1) * 3];
   u.liftArmed = false; g.updateUltimateMode(1 / 30);
-  g.input('up'); g.updateUltimateMode(1 / 30);
+  T.go('north'); g.updateUltimateMode(1 / 30);
   // The lift's hum is silent in the car (Island Mode stops it as the ride begins).
   const hum = u.areaSounds.get(isl.id) && u.areaSounds.get(isl.id).hum;
   let humInCar = 0;
@@ -55,13 +68,13 @@ const seabed = await page.evaluate(async () => {
   const origin = u.seabed.origin;
   // Walk to the seabed's edge: the wall stops you there, six cells out.
   let steps = 0; let p0 = [...g.playerPos];
-  for (let i = 0; i < 10; i++) { const b = [...g.playerPos]; g.input('right'); if (g.playerPos[0] !== b[0]) steps += 1; }
+  for (let i = 0; i < 10; i++) { const b = [...g.playerPos]; T.go('east'); if (g.playerPos[0] !== b[0]) steps += 1; }
   const edge = (g.playerPos[0] - lift[0]) / 3;
   // Walk onto a seabed pickup: it is taken (ammo or a credit).
   const pk = u.seabed.pickups[0];
   const a0 = u.ammo; const pts0 = u.points;
   g.playerPos = [pk.pos[0], pk.pos[1] + 3];
-  g.input('up'); g.updateUltimateMode(1 / 30);
+  T.go('north'); g.updateUltimateMode(1 / 30);
   const taken = !u.seabed.pickups.includes(pk) && (u.ammo > a0 || u.points > pts0);
   const inside = u.seabed.pickups.every((q) => Math.abs(q.pos[0] - lift[0]) <= 18 && Math.abs(q.pos[1] - lift[1]) <= 18);
   // The compass points back toward the lift.
@@ -103,7 +116,7 @@ const between = await page.evaluate(async () => {
     u.area = isl; u.safe = 0;
     g.playerPos = [isl.elevator[0] * 3, (isl.elevator[1] + 1) * 3];
     u.liftArmed = false; g.updateUltimateMode(1 / 30);
-    g.input('up'); g.updateUltimateMode(1 / 30);
+    window.__t.go('north'); g.updateUltimateMode(1 / 30);
     rode = u.place;
   }
   u.worldTime = 2.5;
@@ -227,6 +240,8 @@ const recovered = await page.evaluate(async () => {
   const W = await import('./js/modes/ultimate/world.js');
   u.worldTime = 200; u.safe = 99;   // (no regeneration and no hit while we wait)
   const before = { loops: [...a.live].filter((v) => v.loop).length, buses: a.areaBuses.size };
+  // Facing east when the engine goes: the fresh one must face east too (web 4.0.0).
+  window.__t.face('east');
   const oldCtx = a.ctx;
   a.recover();
   // A loop whose long recording is still being decoded for the new engine starts
@@ -256,18 +271,23 @@ const recovered = await page.evaluate(async () => {
     v = p && p.voice;
   }
   // Step whichever way is open, and expect the sound to shift the other way.
-  const ways = [['left', -1, 0], ['right', 1, 0], ['up', 0, -1], ['down', 0, 1]];
+  const L = a.ctx.listener;
+  const facing = L.forwardX ? [L.forwardX.value, L.forwardZ.value] : null;
+  const ways = [['west', -1, 0], ['east', 1, 0], ['north', 0, -1], ['south', 0, 1]];
   const [dir, dx, dy] = ways.find(([, x, y]) => W.isFloor(u.world, c0[0] + x, c0[1] + y)) || ways[0];
   const p0 = v ? v.pos3.slice() : null;
   const at0 = g.playerPos.slice();
-  g.input(dir); g.updateUltimateMode(1 / 30);
+  window.__t.go(dir); g.updateUltimateMode(1 / 30);
   const p1 = v ? v.pos3.slice() : null;
   const step = { dir, voice: v && v.name, area: u.area && u.area.kind, place: u.place, movedX: g.playerPos[0] - at0[0], movedY: g.playerPos[1] - at0[1] };
-  // Relative position: x is to your right; for a step ahead/behind it is z.
+  // A sound's place is kept in the world's own directions (x east, z south) from
+  // where you stand; the way you face is the listener's. So a step east moves it
+  // three units west of you, whichever way you look.
   const shift = p0 && p1 ? (dx ? p1[0] - p0[0] : p1[2] - p0[2]) : null;
   const want = -3 * (dx || dy);
-  return { before, newCtx: a.ctx !== oldCtx, spatial: a.spatial, world: !!(a.worldIn && a.worldGain), buses: a.areaBuses.size, loops: live.length, moved, notMoved, waited, p0, p1, shift, want, step };
+  return { before, newCtx: a.ctx !== oldCtx, spatial: a.spatial, world: !!(a.worldIn && a.worldGain), buses: a.areaBuses.size, loops: live.length, moved, notMoved, waited, p0, p1, shift, want, step, facing };
 });
+check(recovered.facing === null || (Math.abs(recovered.facing[0] - 1) < 0.01 && Math.abs(recovered.facing[1]) < 0.01), 'and the fresh engine faces the way you were facing (east): ' + JSON.stringify(recovered.facing));
 check(recovered.newCtx && recovered.spatial && recovered.world && recovered.buses >= 1 && recovered.loops >= 1 && recovered.moved, `a fresh engine keeps the 3D world: ${recovered.loops} loops rebound and placed within ${recovered.waited + 100} ms, ${recovered.buses} buses (new engine ${recovered.newCtx}, 3D ${recovered.spatial}, world chain ${recovered.world}, every placed loop on the new engine ${recovered.moved})` + (recovered.moved ? '' : ': ' + JSON.stringify(recovered.notMoved)));
 check(recovered.shift !== null && Math.abs(recovered.shift - recovered.want) < 0.3, `a step moves a placed sound three units the other way relative to you: ${JSON.stringify(recovered.p0)} -> ${JSON.stringify(recovered.p1)} ` + JSON.stringify(recovered.step));
 
