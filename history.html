@@ -8,7 +8,7 @@
   <link rel="icon" href="icons/icon-192.png">
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
   <meta name="theme-color" content="#0c0f14">
-  <link rel="stylesheet" href="css/site.css?v=3.2.0">
+  <link rel="stylesheet" href="css/site.css?v=3.3.0">
 </head>
 <body>
   <header class="site">
@@ -20,6 +20,19 @@
     <p>This page lists the web version. For the Windows version, see its <a href="https://github.com/DevHinderman2026/Endless-Labyrinth/blob/main/Credits%20and%20Version%20History/CHANGELOG.md">changelog</a> on GitHub.</p>
     <p>The game updates by itself: the next time you open it, you have the latest version. Only a sound pack that has changed is downloaded again, and your high scores are kept. Events are not listed here: they appear in the Events menu as they open.</p>
 
+    <h2>3.3.0 (10 November 2026), web only</h2>
+    <p>Ultimate Mode, made fairer and more dependable: every run begins with a few shots and a few tower items, the items are now yours to keep as ammo is, the report says how many you hold, and in a crowded world the bus's chime can no longer go missing. Web only: the Windows game is unchanged.</p>
+    <h3>Changed: Ultimate Mode</h3>
+    <ul>
+      <li><strong>Every run begins with a few shots and a few tower items.</strong> Between eight and twelve shots and between two and four items, picked afresh for each run, so you can defend yourself from the first moment, whether you land beside a battle area or a tower area. Before, a run began with neither, and finding some was the first job.</li>
+      <li><strong>Tower items are yours to keep, as ammo is.</strong> The items you hold now go with you when you leave a tower area, into the next tower area and into every new world, with no limit on how many you carry. Before, they were gone the moment you stepped out of the area you picked them up in, so every visit to a tower area began with a hunt for one. They are still thrown only in a tower area, where they are still the only weapon; everywhere else the attack fires the laser and the items wait in your hands.</li>
+      <li><strong>The report says your items.</strong> The report now gives your health, your points, your shots and your items, in that order: for example, 100 health. 0 points. 10 shots. 3 items. The line on the screen says them too.</li>
+    </ul>
+    <h3>Fixed</h3>
+    <ul>
+      <li><strong>The bus's chime always sounds.</strong> In a crowded world, late in a run, the two-note chime that says a bus has come was sometimes cut short or never played at all, and so was the sound of the bus pulling up. The game allows only so many sounds at once, and it was counting every background in the world against that, those of far-off areas you could not hear included: thirty and more of them late in a run. That left almost no room, so in a fight each new footstep or shot pushed out the oldest sound still playing, and the longest sounds went first. Now a short sound can only ever push out another short sound, never a background, and the sounds that tell you something are never the ones to go: the bus pulling up, its chime and its doors, the countdown, the hit and the health warning, a thrower's wind-up, the elevator's ride and its arrival, the water slide.</li>
+      <li><strong>Areas you cannot hear no longer cost anything.</strong> The backgrounds of far-off areas used to play on at no volume, all of them, all the time. Now a background nobody can hear is held where it is after a moment and carries on from there as soon as you come within earshot, and the sound of a chaser in an area you have just left stops at the border instead of playing on unheard. Nothing you could hear has changed; late in a run the game simply has far fewer sounds running at once, which is easier on a phone.</li>
+    </ul>
     <h2>3.2.0 (9 November 2026), web only</h2>
     <p>Ultimate Mode after more play testing: you step out away from the elevator, tower areas grow hard far more slowly, there are a few more chasers, the aim is kinder, the arena's beacons are louder and ammo no longer piles up. On Windows, a Braille notetaker's keys now reach the game at once. And a new version of the site now shows as soon as it is published. Web only: the Windows game is unchanged.</p>
     <h3>Changed: Ultimate Mode</h3>
@@ -259,51 +272,51 @@
   <script type="importmap">
   {
     "imports": {
-      "./js/accessibility.js": "./js/accessibility.js?v=3.2.0",
-      "./js/audio.js": "./js/audio.js?v=3.2.0",
-      "./js/backup.js": "./js/backup.js?v=3.2.0",
-      "./js/backups-page.js": "./js/backups-page.js?v=3.2.0",
-      "./js/braille.js": "./js/braille.js?v=3.2.0",
-      "./js/calendar.js": "./js/calendar.js?v=3.2.0",
-      "./js/device.js": "./js/device.js?v=3.2.0",
-      "./js/display.js": "./js/display.js?v=3.2.0",
-      "./js/game.js": "./js/game.js?v=3.2.0",
-      "./js/gestures.js": "./js/gestures.js?v=3.2.0",
-      "./js/help-data.js": "./js/help-data.js?v=3.2.0",
-      "./js/help-page.js": "./js/help-page.js?v=3.2.0",
-      "./js/keywords.js": "./js/keywords.js?v=3.2.0",
-      "./js/main.js": "./js/main.js?v=3.2.0",
-      "./js/modes/chaos.js": "./js/modes/chaos.js?v=3.2.0",
-      "./js/modes/driving.js": "./js/modes/driving.js?v=3.2.0",
-      "./js/modes/events/engine.js": "./js/modes/events/engine.js?v=3.2.0",
-      "./js/modes/events/feed.js": "./js/modes/events/feed.js?v=3.2.0",
-      "./js/modes/events/help.js": "./js/modes/events/help.js?v=3.2.0",
-      "./js/modes/events/missions.js": "./js/modes/events/missions.js?v=3.2.0",
-      "./js/modes/events/py.js": "./js/modes/events/py.js?v=3.2.0",
-      "./js/modes/events/schema.js": "./js/modes/events/schema.js?v=3.2.0",
-      "./js/modes/events/sign.js": "./js/modes/events/sign.js?v=3.2.0",
-      "./js/modes/events/sounds.js": "./js/modes/events/sounds.js?v=3.2.0",
-      "./js/modes/events/wording.js": "./js/modes/events/wording.js?v=3.2.0",
-      "./js/modes/events.js": "./js/modes/events.js?v=3.2.0",
-      "./js/modes/index.js": "./js/modes/index.js?v=3.2.0",
-      "./js/modes/island.js": "./js/modes/island.js?v=3.2.0",
-      "./js/modes/tower.js": "./js/modes/tower.js?v=3.2.0",
-      "./js/modes/ultimate/help.js": "./js/modes/ultimate/help.js?v=3.2.0",
-      "./js/modes/ultimate/world.js": "./js/modes/ultimate/world.js?v=3.2.0",
-      "./js/modes/ultimate.js": "./js/modes/ultimate.js?v=3.2.0",
-      "./js/packs.js": "./js/packs.js?v=3.2.0",
-      "./js/site.js": "./js/site.js?v=3.2.0",
-      "./js/sound-rules.js": "./js/sound-rules.js?v=3.2.0",
-      "./js/speech.js": "./js/speech.js?v=3.2.0",
-      "./js/stats.js": "./js/stats.js?v=3.2.0",
-      "./js/storage.js": "./js/storage.js?v=3.2.0",
-      "./js/update-alert.js": "./js/update-alert.js?v=3.2.0",
-      "./js/version.js": "./js/version.js?v=3.2.0",
-      "./js/wetworker.js": "./js/wetworker.js?v=3.2.0"
+      "./js/accessibility.js": "./js/accessibility.js?v=3.3.0",
+      "./js/audio.js": "./js/audio.js?v=3.3.0",
+      "./js/backup.js": "./js/backup.js?v=3.3.0",
+      "./js/backups-page.js": "./js/backups-page.js?v=3.3.0",
+      "./js/braille.js": "./js/braille.js?v=3.3.0",
+      "./js/calendar.js": "./js/calendar.js?v=3.3.0",
+      "./js/device.js": "./js/device.js?v=3.3.0",
+      "./js/display.js": "./js/display.js?v=3.3.0",
+      "./js/game.js": "./js/game.js?v=3.3.0",
+      "./js/gestures.js": "./js/gestures.js?v=3.3.0",
+      "./js/help-data.js": "./js/help-data.js?v=3.3.0",
+      "./js/help-page.js": "./js/help-page.js?v=3.3.0",
+      "./js/keywords.js": "./js/keywords.js?v=3.3.0",
+      "./js/main.js": "./js/main.js?v=3.3.0",
+      "./js/modes/chaos.js": "./js/modes/chaos.js?v=3.3.0",
+      "./js/modes/driving.js": "./js/modes/driving.js?v=3.3.0",
+      "./js/modes/events/engine.js": "./js/modes/events/engine.js?v=3.3.0",
+      "./js/modes/events/feed.js": "./js/modes/events/feed.js?v=3.3.0",
+      "./js/modes/events/help.js": "./js/modes/events/help.js?v=3.3.0",
+      "./js/modes/events/missions.js": "./js/modes/events/missions.js?v=3.3.0",
+      "./js/modes/events/py.js": "./js/modes/events/py.js?v=3.3.0",
+      "./js/modes/events/schema.js": "./js/modes/events/schema.js?v=3.3.0",
+      "./js/modes/events/sign.js": "./js/modes/events/sign.js?v=3.3.0",
+      "./js/modes/events/sounds.js": "./js/modes/events/sounds.js?v=3.3.0",
+      "./js/modes/events/wording.js": "./js/modes/events/wording.js?v=3.3.0",
+      "./js/modes/events.js": "./js/modes/events.js?v=3.3.0",
+      "./js/modes/index.js": "./js/modes/index.js?v=3.3.0",
+      "./js/modes/island.js": "./js/modes/island.js?v=3.3.0",
+      "./js/modes/tower.js": "./js/modes/tower.js?v=3.3.0",
+      "./js/modes/ultimate/help.js": "./js/modes/ultimate/help.js?v=3.3.0",
+      "./js/modes/ultimate/world.js": "./js/modes/ultimate/world.js?v=3.3.0",
+      "./js/modes/ultimate.js": "./js/modes/ultimate.js?v=3.3.0",
+      "./js/packs.js": "./js/packs.js?v=3.3.0",
+      "./js/site.js": "./js/site.js?v=3.3.0",
+      "./js/sound-rules.js": "./js/sound-rules.js?v=3.3.0",
+      "./js/speech.js": "./js/speech.js?v=3.3.0",
+      "./js/stats.js": "./js/stats.js?v=3.3.0",
+      "./js/storage.js": "./js/storage.js?v=3.3.0",
+      "./js/update-alert.js": "./js/update-alert.js?v=3.3.0",
+      "./js/version.js": "./js/version.js?v=3.3.0",
+      "./js/wetworker.js": "./js/wetworker.js?v=3.3.0"
     }
   }
   </script>
   <!-- end of versions -->
-  <script type="module" src="js/site.js?v=3.2.0"></script>
+  <script type="module" src="js/site.js?v=3.3.0"></script>
 </body>
 </html>

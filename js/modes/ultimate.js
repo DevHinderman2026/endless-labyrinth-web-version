@@ -16,8 +16,9 @@
 // survival multiplier that rises with every world survived. Every number marked
 // "tune" is a starting value for Russell to judge by ear.
 //
-// Enemies never leave their areas. Ammo is carried everywhere and has no limit;
-// tower items belong to the tower area they were found in. A compass (hold a
+// Enemies never leave their areas. Ammo and tower items are carried everywhere
+// and have no limit; an item is thrown only in a tower area (until web 3.3.0 the
+// items belonged to the tower area they were found in). A compass (hold a
 // finger still for a second; C on a keyboard) points along the walkable route to
 // the nearest safe zone with a centred beep, highest toward the way to go, while
 // the world is muffled and nothing can move; it says how far the leg runs.
@@ -53,6 +54,12 @@ export const FADE_IN = 0.5;                     // the new world's rise (was 1.0
 export const SAFE_SECONDS = 5.0;                // after a new world fades in
 export const EASY_SECONDS = 120;                // the easy stretch
 export const START_HP = 100;
+// What a run begins with in hand, drawn afresh for every run (Russell, 10 Nov:
+// about ten shots and about three items, so you can defend yourself from the
+// first moment; picked at random, close to those). Until web 3.3.0 a run began
+// with neither.
+export const START_AMMO = [8, 12];
+export const START_ITEMS = [2, 4];
 export const DAMAGE_START = 5;                  // a hit in the easy stretch
 export const DAMAGE_CAP = 25;                   // Tower's cap: death takes at least four hits
 export const DAMAGE_PER_MINUTE = 1.5;           // after the easy stretch, toward the cap
@@ -92,6 +99,9 @@ export const AMBIENCE_RANGE = 15.0;             // a neighbouring area's air, an
 export const AMBIENCE_LEVEL = 0.8;
 export const DOOR_LEAK = 0.85;                  // through a doorway, against an open border
 export const KEEP_SLOTS = 2;                    // an area's air keeps running while within this many slots of yours
+export const PARK_BELOW = 0.0005;               // an area's air quieter than this is unheard ...
+export const PARK_AFTER = 1.5;                  // ... and after this many seconds unheard its loops are held where they are (see _utUpdateSounds)
+const AREA_LOOPS = ['amb', 'ambIn', 'drums', 'drumsIn', 'crowd', 'crowdIn'];   // an area's air: each background's placed copy and its wide one
 export const REACH = 1.6;                       // walking into the elevator: its own cell
 export const PICKUP_REACH = 3.2;                // a cartridge, credit, potion or tower item: its cell or the next (Battle, Tower and Island take theirs within 3 units)
 export const ITEM_NEAR = [12.0, 30.0];          // a tower item lies this far from you when it appears, as on a tower floor (was anywhere in the area)
@@ -369,8 +379,9 @@ const mixin = {
     const u = this.ut = {
       run: this.runId,
       worldNo: 0, worlds: 0, elapsed: 0.0, worldTime: 0.0, worldLen: 0.0, phase: 'play', gap: 0.0, safe: 0.0, lastCount: -1,
-      hp: START_HP, ammo: 0, points: 0, worldPoints: 0, worldDamage: 0, kills: 0, speedBonus: 1.0,
-      world: null, area: null, areaSounds: new Map(), enemies: [], projectiles: [], towerItems: new Map(), towerCarry: null,
+      hp: START_HP, ammo: randint(START_AMMO[0], START_AMMO[1]), items: randint(START_ITEMS[0], START_ITEMS[1]),
+      points: 0, worldPoints: 0, worldDamage: 0, kills: 0, speedBonus: 1.0,
+      world: null, area: null, areaSounds: new Map(), enemies: [], projectiles: [], towerItems: new Map(),
       pickups: [], timers: [], respawn: new Map(), potionDue: new Map(), hitCooldown: 0, lowWarned: false,
       place: 'world', ride: null, seabed: null, lift: null, liftArmed: false, dingTimer: 0,
       compass: { on: false, dir: 0, t: 0 }, prox: 0, steps: [],
@@ -447,7 +458,7 @@ const mixin = {
     u.gap = first ? 0 : FADE_IN;
     u.safe = SAFE_SECONDS + (first ? 0 : FADE_IN);
     u.enemies = []; u.projectiles = []; u.pickups = []; u.timers = []; u.respawn = new Map();
-    u.towerItems = new Map(); u.towerCarry = null; u.potionDue = new Map();
+    u.towerItems = new Map(); u.potionDue = new Map();    // (the items in your hands stay there: they are carried like ammo)
     u.place = 'world'; u.ride = null; u.rideMix = null; u.seabed = null; u.lift = null; u.liftArmed = false; u.dingTimer = 0; u.slide = null; u.slides = []; u.bus = null; u.busAt = null; u.shSafe = 0; u.shBus = 0;
     this._utCompassOff(true);
     u.worldPoints = 0; u.worldDamage = 0;
@@ -549,10 +560,12 @@ const mixin = {
   },
 
   // A sound of this world: played, remembered, and placed.
-  _utPlay(name, pos, { loops = 0, volume = 1.0, fadeMs = 0, height = 0, direct = false, send = null } = {}) {
+  // (`keep`: a cue that is never stopped to make room for newer one-shots; see
+  // AudioEngine.play.)
+  _utPlay(name, pos, { loops = 0, volume = 1.0, fadeMs = 0, height = 0, direct = false, send = null, keep = false } = {}) {
     const u = this.ut;
     const rel = this._utRel(pos);
-    const v = this.audio.play(name, { loops, volume: 0.0, fadeMs, pos: pos ? rel : null, height, areaMix: pos ? this._utMixAt(pos) : null, direct, send });
+    const v = this.audio.play(name, { loops, volume: 0.0, fadeMs, pos: pos ? rel : null, height, areaMix: pos ? this._utMixAt(pos) : null, direct, send, keep });
     if (!v) return null;
     if (pos) v.setSpatial(volume, rel[0], rel[1], this._behind(pos), height); else v.setVolume(volume, volume);
     if (loops === -1) u.voices.add(v); else u.shots.add(v);
@@ -691,7 +704,7 @@ const mixin = {
     u.hp = Math.max(0, u.hp - dmg);
     u.worldDamage += dmg;
     u.hitCooldown = HIT_COOLDOWN;
-    this.audio.play('player_hit');
+    this.audio.play('player_hit', { keep: true });
     // In a battle area the crowd reacts to the blow (the last one too).
     const crowd = !!(u.area && u.area.crowd && u.place === 'world');
     const react = HIT_REACTIONS.filter((n) => this.audio.has(n));
@@ -705,7 +718,7 @@ const mixin = {
     const low = Math.max(35, 2 * dmg);
     if (u.hp <= low && !u.lowWarned) {
       u.lowWarned = true;
-      this.audio.play('health_low');
+      this.audio.play('health_low', { keep: true });
       this.tts.speak(`Health low. ${u.hp}.`, { interrupt: true });
     }
     this._utPotions(0);
@@ -797,11 +810,12 @@ const mixin = {
 
   _utItemPos(item) { return [item.x + item.area.centre[0], item.y + item.area.centre[1]]; },
 
-  // How many tower items the player holds, here: they belong to the area.
-  _utItemsHeld() {
-    const u = this.ut;
-    return u.towerCarry && u.area && u.towerCarry.area === u.area.id ? u.towerCarry.count : 0;
-  },
+  // How many tower items the player holds. They are carried like ammo, from area
+  // to area and from world to world, and thrown only in a tower area (Russell,
+  // 10 Nov: so that the player is not hunting for items all the time. Until web
+  // 3.3.0 they belonged to the tower area they were picked up in, and were gone
+  // on leaving it).
+  _utItemsHeld() { return this.ut.items; },
 
   // ---------------------------------------------------------------- timing
   _utLater(delay, name, pos, opts = {}) {
@@ -838,7 +852,7 @@ const mixin = {
     const left = Math.ceil(u.worldTime);
     if (left >= 1 && left <= COUNT_FROM && left !== u.lastCount) {
       u.lastCount = left;
-      this.audio.play('countdown_high');
+      this.audio.play('countdown_high', { keep: true });   // the only warning there is: never crowded out
     }
     if (u.phase === 'play' && u.worldTime <= FADE_OUT) {
       u.phase = 'fading';
@@ -1041,7 +1055,7 @@ const mixin = {
         if (e.dumping && e.volleySize >= 3) name = 'enemy_windup_full';
         else if (e.volleySize <= 1) name = 'enemy_windup';
         else name = `enemy_windup_${Math.min(3, e.volleySize)}`;
-        this._utPlay(name, pos, { volume: level });
+        this._utPlay(name, pos, { volume: level, keep: true });   // the wind-up is the only warning of a throw
       }
     }
   },
@@ -1087,8 +1101,7 @@ const mixin = {
       if (item) {
         const pos = this._utItemPos(item);
         if (dist2(pos, this.playerPos) < PICKUP_REACH) {
-          if (!u.towerCarry || u.towerCarry.area !== a.id) u.towerCarry = { area: a.id, count: 0 };
-          u.towerCarry.count += 1;
+          u.items += 1;
           this.audio.play('ammo');
           if (item.channel) { item.channel.stop(); u.voices.delete(item.channel); }
           u.towerItems.delete(a.id);
@@ -1152,8 +1165,8 @@ const mixin = {
           const far = Math.max(0, Math.min(1, (steps - BUS_FAR_STEPS) / (BUS_FAREST_STEPS - BUS_FAR_STEPS)));
           u.bus = { area: here, pos, stage: 'coming', t: 0, voice: null, rideVoice: null, pullVoice: null, doorVoice: null, ride: BUS_RIDE[0] + (BUS_RIDE[1] - BUS_RIDE[0]) * far, steps };
           // It pulls up where it will stand, then the chime says it has come.
-          if (this.audio.has('ut_bus_arrive')) u.bus.pullVoice = this._utPlay('ut_bus_arrive', pos, { volume: 0.0 });
-          else { u.bus.stage = 'waiting'; this.audio.play('ut_bus_chime', { volume: 0.7 }); }
+          if (this.audio.has('ut_bus_arrive')) u.bus.pullVoice = this._utPlay('ut_bus_arrive', pos, { volume: 0.0, keep: true });
+          else { u.bus.stage = 'waiting'; this._utBusChime(); }
         }
       }
     }
@@ -1161,13 +1174,13 @@ const mixin = {
     if (!b || b.stage === 'waiting') return;
     b.t += dt;
     if (b.stage === 'coming') {
-      if (b.t >= BUS_PULL_STOP) { b.stage = 'waiting'; b.t = 0; b.pullVoice = null; this.audio.play('ut_bus_chime', { volume: 0.7 }); }
+      if (b.t >= BUS_PULL_STOP) { b.stage = 'waiting'; b.t = 0; b.pullVoice = null; this._utBusChime(); }
       return;
     }
     const steps = () => { for (let i = 0; i < 3; i++) this._utLater(i * BUS_STEP_GAP, choice(STEPS_STONE), null); };
     const door = (name, pos) => {
       if (b.doorVoice) b.doorVoice.fadeout(200);
-      b.doorVoice = this._utPlay(name, pos || null);
+      b.doorVoice = this._utPlay(name, pos || null, { keep: true });
       b.doorAt = b.t;
     };
     if (b.doorVoice && b.t - b.doorAt >= BUS_DOOR_CUT) { b.doorVoice.fadeout(400); b.doorVoice = null; }
@@ -1211,6 +1224,12 @@ const mixin = {
     }
   },
 
+  // The two notes that say a bus has come. A cue: nothing is allowed to push it
+  // out (Russell, 10 Nov: in certain cases the chime did not sound. In a crowded
+  // world the sound engine's full house stopped it for the next footstep or
+  // shot; see AudioEngine.play).
+  _utBusChime() { return this.audio.play('ut_bus_chime', { volume: 0.7, keep: true }); },
+
   _utBoardBus() {
     const u = this.ut; const b = u.bus;
     u.place = 'bus';
@@ -1219,7 +1238,7 @@ const mixin = {
     b.stage = 'boarding'; b.t = 0; b.stepped = false; b.closed = false;
     this.stride = null;
     if (b.doorVoice) b.doorVoice.fadeout(200);
-    b.doorVoice = this._utPlay('ut_bus_doors_open', null); b.doorAt = 0;
+    b.doorVoice = this._utPlay('ut_bus_doors_open', null, { keep: true }); b.doorAt = 0;
   },
 
   // ---------------------------------------------------------------- the water park
@@ -1232,7 +1251,7 @@ const mixin = {
     u.slide = { sl, t: 0, stage: 'climb' };
     if (sl.voice) { sl.voice.stop(); u.voices.delete(sl.voice); sl.voice = null; }
     this.stride = null;
-    this._utPlay('stairs_climb', null);
+    this._utPlay('stairs_climb', null, { keep: true });
   },
 
   _utUpdateSlide(dt) {
@@ -1243,10 +1262,10 @@ const mixin = {
     if (r.stage === 'climb' && r.t >= SLIDE_CLIMB) {
       r.stage = 'down';
       r.t = 0;
-      if (this.audio.has('ut_slide')) this._utPlay('ut_slide', null, { volume: 0.9 });
+      if (this.audio.has('ut_slide')) this._utPlay('ut_slide', null, { volume: 0.9, keep: true });
     } else if (r.stage === 'down' && r.t >= SLIDE_DOWN) {
       // The splash, the points, and up somewhere else in the park.
-      if (this.audio.has('evt_water_splash')) this._utPlay('evt_water_splash', null);
+      if (this.audio.has('evt_water_splash')) this._utPlay('evt_water_splash', null, { keep: true });
       const a = r.sl.area;
       const spot = randomFloor(u.world, a, rand, { from: r.sl.pos, minDist: SLIDE_LAND_AWAY, avoid: u.pickups.map((p) => p.pos), clearance: 3.0 })
         || randomFloor(u.world, a, rand, { from: r.sl.pos, minDist: 8.0 });
@@ -1285,7 +1304,7 @@ const mixin = {
     u.liftArmed = false;
     // (Island Mode: a recording far longer than a ride should be is capped and
     // eased out over its last second.)
-    u.ride = { dir, t: 0, len, area: a, chimed: false, capped: len < own - 0.05, faded: false, voice: this.audio.play('elevator_ride', { direct: false }) };
+    u.ride = { dir, t: 0, len, area: a, chimed: false, capped: len < own - 0.05, faded: false, voice: this.audio.play('elevator_ride', { direct: false, keep: true }) };
     if (dir === 'down') {
       // The seabed lies straight under the island's elevator, in the world's own
       // coordinates: its cell (0, 0) is the elevator's cell, so every position in
@@ -1333,7 +1352,7 @@ const mixin = {
     this._utUpdateSounds(dt);
     if (!r.chimed && r.t >= DOORS_OPEN * L - ARRIVE_CHIME_LEAD) {
       r.chimed = true;
-      this.audio.play(r.dir === 'down' ? 'elevator_arrive_1' : 'elevator_arrive_2');
+      this.audio.play(r.dir === 'down' ? 'elevator_arrive_1' : 'elevator_arrive_2', { keep: true });
     }
     if (r.capped && !r.faded && r.t >= L - 1.0) { r.faded = true; if (r.voice) r.voice.fadeout(1000); }
     if (r.t < L) return;
@@ -1464,7 +1483,7 @@ const mixin = {
     for (const a of w.areas) {
       let s = u.areaSounds.get(a.id);
       if (!keep(a)) {
-        if (s) { for (const v of Object.values(s)) if (v) { v.fadeout(800); u.voices.delete(v); } u.areaSounds.delete(a.id); }
+        if (s) { for (const k of [...AREA_LOOPS, 'hum']) { const v = s[k]; if (v) { v.fadeout(800); u.voices.delete(v); } } u.areaSounds.delete(a.id); }
         continue;
       }
       if (!s) {
@@ -1505,25 +1524,42 @@ const mixin = {
         if (!onWorld) level *= 0.3;
       }
       level *= aboveLevel || (seabed ? 1 : 0);
-      const mixHere = this._utMixAt(this.playerPos);
-      const dull = dullOf(a);
-      const pair = (placed, wide, gain) => {
-        if (placed) {
-          if (from) this._utFollow(placed, from, level * gain * (1 - inside), height, dull);
-          else { placed.setSpatial(0, 0, -0.05, 0, height); placed.setAreaMix(mixHere); }
-        }
-        if (wide) { wide.setVolume(level * gain * inside, level * gain * inside, dull); wide.setAreaMix(mixHere); }
-      };
-      pair(s.amb, s.ambIn, 1);
-      pair(s.drums, s.drumsIn, 0.85);
-      pair(s.crowd, s.crowdIn, CROWD_LEVEL);
+      // An area nobody can hear costs the phone nothing: after a moment unheard,
+      // its loops are held where they are, and they carry on from there the moment
+      // the area is heard again. All of an area's loops are held and let go in the
+      // same frame, so each background's two copies stay in step, and its drums
+      // stay with its drone. (Until web 3.3.0 every kept area's loops played on at
+      // no volume: thirty and more of them late in a run, each with its panners.)
+      s.quiet = level > PARK_BELOW ? 0 : (s.quiet || 0) + dt;
+      const parked = s.quiet > PARK_AFTER;
+      // (One still being decoded cannot be held yet: it is, the frame it begins.)
+      if (AREA_LOOPS.some((k) => s[k] && s[k].busy && s[k].paused !== parked && (!parked || s[k].dry))) {
+        this.audio.holdAll(AREA_LOOPS.map((k) => s[k]), parked);
+      }
+      if (!parked) {
+        const mixHere = this._utMixAt(this.playerPos);
+        const dull = dullOf(a);
+        const pair = (placed, wide, gain) => {
+          if (placed) {
+            if (from) this._utFollow(placed, from, level * gain * (1 - inside), height, dull);
+            else { placed.setSpatial(0, 0, -0.05, 0, height); placed.setAreaMix(mixHere); }
+          }
+          if (wide) { wide.setVolume(level * gain * inside, level * gain * inside, dull); wide.setAreaMix(mixHere); }
+        };
+        pair(s.amb, s.ambIn, 1);
+        pair(s.drums, s.drumsIn, 0.85);
+        pair(s.crowd, s.crowdIn, CROWD_LEVEL);
+      }
       if (s.hum) {
         const lp = posOf(a.elevator[0], a.elevator[1]);
         // The lift's hum is a thing of the ground: silent in the car and on the
         // seabed, as Island Mode stops it when the ride begins. Like its chime, it
         // belongs to its own island: silent from any other area, however near.
+        // Unheard, it is held like the island's air, by its own level.
         const hl = onWorld && u.area === a ? levelAt(dist2(lp, this.playerPos)) : 0;
-        this._utFollow(s.hum, lp, hl, aboveHeight);
+        s.humQuiet = hl > PARK_BELOW ? 0 : (s.humQuiet || 0) + dt;
+        if (s.humQuiet > PARK_AFTER) s.hum.pause();
+        else { s.hum.resume(); this._utFollow(s.hum, lp, hl, aboveHeight); }
       }
     }
     // Enemies: heard only in the area you are in (a neighbour's wait, unheard,
@@ -1533,7 +1569,9 @@ const mixin = {
       const d = dist2(pos, this.playerPos);
       const level = e.area !== u.area ? 0 : levelAt(d) * (onWorld ? 1 : (ride ? ride.above * 0.6 : 0));
       if (!e.voice && level > 0.01) e.voice = this._utPlay(e.soundName, pos, { loops: -1, volume: 0.0 });
-      else if (e.voice && level <= 0.001 && d > HEAR_RANGE + 10) { e.voice.stop(); u.voices.delete(e.voice); e.voice = null; }
+      // (One in another area is let go at once: it would only play on unheard, and
+      // its sound starts afresh when you come back into its area.)
+      else if (e.voice && level <= 0.001 && (d > HEAR_RANGE + 10 || e.area !== u.area)) { e.voice.fadeout(80); u.voices.delete(e.voice); e.voice = null; }
       if (e.voice) this._utFollow(e.voice, pos, level, aboveHeight);
     }
     // Pickups and tower items: beacons, as far as the ear carries in your own
@@ -1625,8 +1663,6 @@ const mixin = {
       const a = areaAt(u.world, this.playerPos);
       if (a !== u.area) {
         u.area = a;
-        // Tower items stay with their area: leaving, they are gone.
-        if (u.towerCarry && u.towerCarry.area !== a.id) u.towerCarry = null;
         this._utRefreshRooms();
       }
       this._utListenerMix();
@@ -1667,7 +1703,7 @@ const mixin = {
     const a = u.area;
     const throwers = u.enemies.filter((e) => e.kind === 'thrower' && e.area === a);
     if (!throwers.length) { this.audio.play('empty_click'); return; }
-    u.towerCarry.count -= 1;
+    u.items -= 1;
     this.audio.play('item_throw');
     // Battle's aiming rule: the nearest thrower centred between the ears.
     let best = null; let bestD = Infinity;
@@ -1702,7 +1738,8 @@ const mixin = {
 
   _utReport() {
     const u = this.ut;
-    this.tts.speak(`${u.hp} health. ${u.points} ${plural(u.points, 'point')}. ${u.ammo} ${plural(u.ammo, 'shot')}.`, { interrupt: true });
+    // (Shots, then items: what the attack has to work with, wherever you are.)
+    this.tts.speak(`${u.hp} health. ${u.points} ${plural(u.points, 'point')}. ${u.ammo} ${plural(u.ammo, 'shot')}. ${u.items} ${plural(u.items, 'item')}.`, { interrupt: true });
   },
 
   // ---------------------------------------------------------------- the compass
@@ -1967,7 +2004,7 @@ function stopAll(game) {
     // placed sound of a world holds two HRTF panners and the areas' sounds held
     // some thirty voices; the run's score and times stay for the Game Over words.
     u.areaSounds.clear(); u.enemies = []; u.projectiles = []; u.pickups = []; u.slides = []; u.slide = null;
-    u.bus = null; u.towerItems.clear(); u.towerCarry = null; u.ride = null; u.seabed = null; u.lift = null;
+    u.bus = null; u.towerItems.clear(); u.ride = null; u.seabed = null; u.lift = null;
     u.world = null; u.area = null;
   }
   if (game.audio && game.audio.spatial) game.audio.spatialOff({ now: true });
@@ -2042,7 +2079,7 @@ export default {
   status(game) {
     const u = game.ut;
     if (!u) return 'Ultimate Mode.';
-    const bits = [`Ultimate Mode. World ${u.worldNo}.`, `Health ${u.hp}.`, `${u.points} points.`, `${u.ammo} shots.`];
+    const bits = [`Ultimate Mode. World ${u.worldNo}.`, `Health ${u.hp}.`, `${u.points} ${plural(u.points, 'point')}.`, `${u.ammo} ${plural(u.ammo, 'shot')}.`, `${u.items} ${plural(u.items, 'item')}.`];
     if (u.place === 'seabed') bits.push('Seabed.');
     if (u.compass.on) bits.push('Compass on.');
     return bits.join(' ');

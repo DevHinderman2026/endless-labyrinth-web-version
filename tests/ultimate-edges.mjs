@@ -200,7 +200,7 @@ const thrower = await page.evaluate(async () => {
   // respawn is scheduled for its area.
   u.ammo = 30;
   e.x = g.playerPos[0] - tw.centre[0]; e.y = g.playerPos[1] - tw.centre[1] - 8;
-  u.towerCarry = { area: tw.id, count: 40 };
+  u.items = 40;
   let shots = 0;
   while (u.enemies.includes(e) && shots < 40) { g.input('space'); shots += 1; }
   const ammoLeft = u.ammo;

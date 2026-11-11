@@ -84,7 +84,14 @@ export class AudioEngine {
     this.roomGain = 1.0;
     this.roomLean = 0.0;
     this.live = new Set();        // every Voice still playing
-    this.maxLive = 56;            // a ceiling on voices at once: past it the oldest one-shot gives way (a phone's audio thread has limits)
+    // A ceiling on one-shots at once: past it the oldest gives way (see play; a
+    // phone's audio thread has limits). In the 3D world it is lower, since every
+    // placed sound there has its own panners and echo sends. Loops are never
+    // counted against a one-shot: they are the world's own, and the mode that
+    // plays them keeps their number down (Ultimate Mode holds the ones nobody can
+    // hear: see holdAll).
+    this.maxShots = 56;
+    this.maxShots3d = 16;
     this.culled = 0;              // how many a full house has stopped early (for the tests)
     this.sourceEffect = null;     // set by the game: position -> [gain, lean]
     this.behindOf = null;         // set by the game: position -> 0..1
@@ -700,7 +707,9 @@ export class AudioEngine {
   // `direct` plays it past the world's filter and fade (the compass). A sound
   // given no `areaMix` rings where the player is (listenerMix). `send` sets the
   // sound's echo level in place of its family's (a background's light echo).
-  play(name, { loops = 0, volume = 1.0, fadeMs = 0, at = null, pos = null, height = 0, areaMix = null, direct = false, send = null } = {}) {
+  // `keep`: a cue that must be heard out (a bus's chime, the countdown): it is
+  // never the one-shot that gives way to a newer one.
+  play(name, { loops = 0, volume = 1.0, fadeMs = 0, at = null, pos = null, height = 0, areaMix = null, direct = false, send = null, keep = false } = {}) {
     const pair = this.entries.get(name);
     if (!pair || !pair.dry) return null;
     if (loops === -1) {
@@ -716,16 +725,29 @@ export class AudioEngine {
     let behind = 0.0;
     if (at && this.sourceEffect) { try { src = this.sourceEffect(at); } catch (e) { src = null; } }
     if (at && this.behindOf) { try { behind = this.behindOf(at); } catch (e) { behind = 0.0; } }
-    if (this.live.size >= this.maxLive) {
-      // A full house: the oldest one-shot still playing gives way (a loop is part
-      // of the world and stays). With only loops playing, a new one-shot is not
-      // started at all; a new loop is.
-      let oldest = null;
-      for (const o of this.live) { if (!o.loop && !o.direct) { oldest = o; break; } }
-      if (oldest) { oldest.stop(); this.culled += 1; }
-      else if (loops !== -1) { this.culled += 1; return null; }
+    if (loops !== -1) {
+      // A full house of one-shots: the oldest still playing gives way to the new
+      // one. One-shots are counted among themselves. Until web 3.3.0 every voice
+      // was counted, loops too, and in a crowded world of Ultimate Mode the loops
+      // alone (most of them far-off areas, unheard) nearly filled the house: in a
+      // fight each new footstep or shot stopped the oldest one-shot still
+      // sounding, which was the long ones first, the bus pulling up, its chime,
+      // the crowd's roar; and with loops alone at the ceiling, a one-shot was not
+      // started at all. A loop no longer costs a one-shot its place, and a cue
+      // marked `keep` is never the one to go.
+      let shots = 0; let oldest = null;
+      for (const o of this.live) {
+        if (o.loop) continue;
+        shots += 1;
+        if (!oldest && !o.direct && !o.keep) oldest = o;
+      }
+      if (shots >= (this.spatial ? this.maxShots3d : this.maxShots)) {
+        if (oldest) { oldest.stop(); this.culled += 1; }
+        else if (!keep) { this.culled += 1; return null; }   // (every one of them a cue: the newcomer gives way)
+      }
     }
     const v = new Voice(this, name, pair, { loop: loops === -1, volume, fadeMs, src, behind });
+    v.keep = !!keep;
     if (this.spatial) {
       v.direct = !!direct;
       if (pos) v.pos3 = [pos[0], height, pos[1]];
@@ -746,6 +768,18 @@ export class AudioEngine {
 
   stopAll() {
     for (const v of [...this.live]) v.stop();
+  }
+
+  // Hold several loops where they are, or let them carry on, as one: a single
+  // reading of the clock for all of them, so that two copies of one recording
+  // (Ultimate Mode's placed and wide backgrounds) are exactly as far apart
+  // afterwards as they were before, however often it happens.
+  holdAll(voices, held) {
+    const now = this.ctx.currentTime;
+    for (const v of voices) {
+      if (!v) continue;
+      if (held) v.pause(now); else v.resume(now);
+    }
   }
 
   pauseBeeps() {
@@ -785,6 +819,8 @@ export class Voice {
     this.pos3 = null;
     this.areaMix = null;
     this.direct = false;
+    this.keep = false;        // a cue that is never stopped to make room for a newer one-shot (AudioEngine.play)
+    this.jump = false;        // its next place is set at once, not glided to (see resume)
   }
 
   // Whether this voice is placed by the panner: the world is 3D and it has a place.
@@ -841,7 +877,11 @@ export class Voice {
     this.pos3 = [x, y, z];
     if (!this.dry || !this.audio.spatial) return;
     const now = this.ctx.currentTime;
-    for (const br of [this.dry, this.dull]) if (br && br.panner) Voice._place(br.panner, x, y, z, now, false);
+    // One just carried on after being held (see resume) is put where it now is
+    // at once: the player may have come a long way while it was silent.
+    const jump = !!this.jump;
+    this.jump = false;
+    for (const br of [this.dry, this.dull]) if (br && br.panner) Voice._place(br.panner, x, y, z, now, jump);
   }
 
   // Which areas' echoes a placed sound rings in (3D): { areaId: weight }.
@@ -993,8 +1033,7 @@ export class Voice {
     if (wasPaused) this.pause();
   }
 
-  _startSources(offset) {
-    const now = this.ctx.currentTime;
+  _startSources(offset, now = this.ctx.currentTime) {
     this.sources = [];
     let first = null;
     for (const br of [this.dry, this.dull, this.wet && this.wet.buffer ? this.wet : null]) {
@@ -1122,16 +1161,19 @@ export class Voice {
     setTimeout(() => this.stop(), ms + 30);
   }
 
-  pause() {
+  // Held where it is, and carrying on from there. (`now` is the clock's reading
+  // to go by: AudioEngine.holdAll gives several voices the same one.)
+  pause(now = this.ctx.currentTime) {
     if (this.paused || this.stopped || this.ended || !this.dry) return;
-    this.offset = this.ctx.currentTime - this.startedAt;
+    this.offset = now - this.startedAt;
     this.paused = true;
     this._stopSources();
   }
 
-  resume() {
+  resume(now = this.ctx.currentTime) {
     if (!this.paused || this.stopped) return;
     this.paused = false;
-    this._startSources(this.offset);
+    this.jump = true;
+    this._startSources(this.offset, now);
   }
 }

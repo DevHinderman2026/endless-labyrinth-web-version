@@ -25,6 +25,7 @@ await page.waitForFunction(() => window.__el.game && window.__el.game.state === 
 await page.evaluate(() => { const g = window.__el.game; g.menuIndex = g.menuKeys.indexOf('ultimate'); g.input('enter'); });
 
 const samples = [];
+const every = [];     // every round, not only each world's first
 let worlds = 0;
 for (let round = 0; round < 400 && worlds < worldsWanted; round++) {
   const r = await page.evaluate(async () => {
@@ -46,15 +47,17 @@ for (let round = 0; round < 400 && worlds < worldsWanted; round++) {
     const mem = performance.memory ? Math.round(performance.memory.usedJSHeapSize / 1e6) : null;
     return {
       over: false, worldNo: u.worldNo, elapsed: Math.round(u.elapsed), live: a.live.size, loops: [...a.live].filter((v) => v.loop).length,
+      running: [...a.live].filter((v) => v.loop && !v.paused).length, shots: [...a.live].filter((v) => !v.loop).length, maxShots: a.maxShots3d,
       buffers: a.buffers.size, big: a.bigUsed.size, buses: a.areaBuses.size, enemies: u.enemies.length, pickups: u.pickups.length, mem,
       place: u.place, dmg: g._utDamage(), mul: g._utSpeedMul().toFixed(2),
     };
   });
   if (r.over) { console.log('run over:', r.state); break; }
+  every.push(r);
   if (r.worldNo > worlds) {
     worlds = r.worldNo;
     samples.push(r);
-    console.log(`world ${r.worldNo} at ${r.elapsed}s: live ${r.live} (loops ${r.loops}), buffers ${r.buffers}, big ${r.big}, buses ${r.buses}, enemies ${r.enemies}, pickups ${r.pickups}, heap ${r.mem} MB, damage ${r.dmg}, speed x${r.mul}, ${r.place}`);
+    console.log(`world ${r.worldNo} at ${r.elapsed}s: live ${r.live} (loops ${r.loops}, ${r.running} of them running; one-shots ${r.shots}), buffers ${r.buffers}, big ${r.big}, buses ${r.buses}, enemies ${r.enemies}, pickups ${r.pickups}, heap ${r.mem} MB, damage ${r.dmg}, speed x${r.mul}, ${r.place}`);
   }
 }
 check(worlds >= worldsWanted, `played ${worlds} worlds`);
@@ -62,6 +65,11 @@ check(worlds >= worldsWanted, `played ${worlds} worlds`);
 // hand can make; the loops are the measure of a leak.)
 const loops = samples.map((s) => s.loops);
 check(Math.max(...loops) < 40, `looping sounds stay bounded (most ${Math.max(...loops)}; live at most ${Math.max(...samples.map((s) => s.live))})`);
+// (web 3.3.0) The loops of areas nobody can hear are held, so far fewer run than
+// are alive; and one-shots never pass their own ceiling, whatever the bot does.
+const running = every.map((s) => s.running);
+check(Math.max(...running) < 30 && Math.max(...running) <= Math.max(...every.map((s) => s.loops)), `the loops actually running stay well below those alive (most ${Math.max(...running)} running; most alive ${Math.max(...every.map((s) => s.loops))})`);
+check(every.every((s) => s.shots <= s.maxShots + 4), `one-shots stay at their ceiling of ${every.length ? every[0].maxShots : '?'} (most ${Math.max(...every.map((s) => s.shots))}; a few cues may sound above it)`);
 const heaps = samples.map((s) => s.mem).filter((m) => m !== null);
 if (heaps.length >= 3) {
   const late = heaps.slice(-2); const early = heaps.slice(1, 3);

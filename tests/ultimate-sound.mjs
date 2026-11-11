@@ -291,6 +291,10 @@ const island = await page.evaluate(async () => {
   if (!isl) return { skipped: true };
   u.area = isl; u.safe = 0;
   g.playerPos = W.posOf(isl.elevator[0], isl.elevator[1] + 1); g._utRefreshRooms(); g._utListenerMix();
+  // (Every ride begun and every ride recording played from here on is noted: a
+  // failure below then says what happened.)
+  const rides = []; const startRide = g._utStartRide;
+  g._utStartRide = (dir) => { rides.push(`${dir} at ${a.ctx.currentTime.toFixed(2)} from ${u.place}`); return startRide.call(g, dir); };
   u.liftArmed = false; g.updateUltimateMode(1 / 30);
   g.input('up'); g.updateUltimateMode(1 / 30);
   const inCar = u.place;
@@ -318,6 +322,7 @@ const island = await page.evaluate(async () => {
   // hums where it stands, and your own bubbles come now and then.
   await new Promise((r) => setTimeout(r, 300));
   const rideStill = [...a.live].filter((v) => v.name === 'elevator_ride' && v.busy).length;
+  const rideVoices = [...a.live].filter((v) => v.name === 'elevator_ride' && v.busy).map((v) => ({ fading: !!v.fadingOut, paused: v.paused, begun: !!v.dry, age: a.ctx.currentTime - (v.startedAt || 0), now: a.ctx.currentTime.toFixed(2), place: u.place, rides: rides.slice(), worldNo: u.worldNo, phase: u.phase }));
   const seabedHum = u.seabed && u.seabed.hum && !u.seabed.hum.stopped ? u.seabed.hum.l : null;
   const br = u.seabed && u.seabed.breath;
   const breathing = br ? { name: br.name, loop: br.loop, level: br.l, send: br.send, wet: !!br.wet, busy: br.busy, placed: br.placed } : null;
@@ -356,9 +361,10 @@ const island = await page.evaluate(async () => {
   await new Promise((r) => setTimeout(r, 700));
   const breathLeft = [...a.live].filter((v) => v.name === 'ut_diver_breathing' && v.busy).length;
   a.play = orig; g.tts.speak = os;
-  return { inCar, playedInCar, spoken, compassInCar, onSeabed, edgeSound, stepsOnSeabed, trail: trail.slice(0, 12), rideStill, seabedHum, breathing, bubbles, rodeUp, backUp, safeAfter, waterLeft, breathLeft, outSteps, outOnSand, outFacing, outArmed, rule, chasers: u.enemies.filter((e) => e.area === isl).length };
+  g._utStartRide = startRide;
+  return { inCar, playedInCar, spoken, compassInCar, onSeabed, edgeSound, stepsOnSeabed, trail: trail.slice(0, 12), rideStill, rideVoices, seabedHum, breathing, bubbles, rodeUp, backUp, safeAfter, waterLeft, breathLeft, outSteps, outOnSand, outFacing, outArmed, rule, chasers: u.enemies.filter((e) => e.area === isl).length };
 });
-check(island.skipped || island.rideStill === 0, `the ride recording is eased out by the time you arrive (${island.rideStill} still playing)`);
+check(island.skipped || island.rideStill === 0, `the ride recording is eased out by the time you arrive (${island.rideStill} still playing${island.rideStill ? ': ' + JSON.stringify(island.rideVoices) : ''})`);
 check(island.skipped || (island.seabedHum !== null && island.seabedHum > 0), `on the seabed the way up hums where it stands (level ${island.seabedHum && island.seabedHum.toFixed(2)})`);
 check(island.skipped || (island.breathing && island.breathing.loop && island.breathing.busy && Math.abs(island.breathing.level - 0.85) < 0.01 && island.breathing.send === 0 && !island.breathing.wet && !island.breathing.placed), 'on the seabed the diver\'s breathing loops all round you, with no echo: ' + JSON.stringify(island.breathing));
 check(island.skipped || island.bubbles >= 1, `your own bubbles come now and then on the seabed (${island.bubbles} in six seconds)`);
@@ -642,7 +648,18 @@ const bus = await page.evaluate(async () => {
   // The compass points to the bus while it waits.
   const leg = g._utRouteLeg();
   const busCell = W.cellOf(b.pos); const here = W.cellOf(g.playerPos);
-  out.legTowardBus = leg ? Math.sign(busCell[0] - here[0]) === leg.dir[0] || Math.sign(busCell[1] - here[1]) === leg.dir[1] : null;
+  // (The first leg is a step along the walkable way to the bus: one step that way
+  // and the way is one step shorter. In a labyrinth that first step may well be
+  // away from the bus as the crow flies, which an older form of this check took
+  // for a fault.)
+  out.legTowardBus = null;
+  if (leg) {
+    const r0 = g._utRoute(); const stood = [...g.playerPos];
+    g.playerPos = [stood[0] + leg.dir[0] * 3, stood[1] + leg.dir[1] * 3];
+    const r1 = g._utRoute();
+    g.playerPos = stood;
+    out.legTowardBus = r0.target.name === 'the bus' && !!r0.path && (r1.path ? r1.path.length === r0.path.length - 1 : r0.path.length === 1);
+  }
   out.routeDbg = (() => { const r = g._utRoute(); const gc = W.cellOf(b.pos); return { t: r.target.name, p: r.path && r.path.length, from: here, goal: gc, goalFloor: W.isFloor(u.world, gc[0], gc[1]), fromFloor: W.isFloor(u.world, here[0], here[1]), place: u.place, stage: b.stage }; })();
   g.input('hold'); out.compassSaid = document.getElementById('said').textContent; g.input('hold');
   // Walk onto it.
@@ -727,6 +744,12 @@ const hits = await page.evaluate(async () => {
   await T.ensureKind('battle');
   const area = T.goTo((x) => x.kind === 'battle');
   if (!area) return { skipped: true, ...out };
+  // (The arena's own chasers are sent away, so that only the strikes made here
+  // are counted: one of them reaching you in the pauses below was a hit more.)
+  for (const e of u.enemies) if (e.area === area && e.voice) { e.voice.stop(); u.voices.delete(e.voice); e.voice = null; }
+  u.enemies = u.enemies.filter((e) => e.area !== area);
+  // (And a strike one of them landed as you arrived has had its reaction.)
+  await new Promise((r) => setTimeout(r, 400));
   const foe = { kind: 'chaser', area, x: g.playerPos[0], y: g.playerPos[1] - 6, voice: null };
   const played = []; const orig = a.play.bind(a);
   a.play = (n, o) => { played.push([n, performance.now(), o || {}, a.listenerMix !== null]); return orig(n, o); };
@@ -900,18 +923,46 @@ const regenLoad = await page.evaluate(async () => {
   out.atOnce = { crowd: [...a.live].filter((v) => /^ut_crowd_|^explosion$/.test(v.name) && v.busy).length, oldBuses: 0 };
   await sleep(1200);   // every roar that was due has had its moment
   for (let i = 0; i < 30; i++) g.updateUltimateMode(1 / 30);
-  out.later = { crowd: [...a.live].filter((v) => /^ut_crowd_|^explosion$/.test(v.name) && v.busy).length, shotsStopped: [...u.shots].filter((v) => !v.busy).length, live: a.live.size, max: a.maxLive };
-  // A pile of one-shots at once: the ceiling holds and the loops stay.
+  const shotsNow = () => [...a.live].filter((v) => !v.loop).length;
+  out.later = { crowd: [...a.live].filter((v) => /^ut_crowd_|^explosion$/.test(v.name) && v.busy).length, shotsStopped: [...u.shots].filter((v) => !v.busy).length, shots: shotsNow(), max: a.maxShots3d };
+  // A pile of one-shots at once, with the bus's chime sounding (web 3.3.0: found
+  // by Russell, in a crowded world the chime sometimes never sounded). The
+  // ceiling on one-shots holds, the loops stay, and the chime, a cue, plays on.
   const loopsBefore = [...a.live].filter((v) => v.loop).length;
+  const chime = g._utBusChime();
+  const plain = g._utPlay('explosion', [g.playerPos[0] + 3, g.playerPos[1] + 2]);    // older than every bang to come, and no cue
   for (let i = 0; i < 90; i++) g._utPlay('explosion', [g.playerPos[0] + (i % 7), g.playerPos[1] + 2]);
-  out.pile = { live: a.live.size, loops: [...a.live].filter((v) => v.loop).length, loopsBefore, culled: a.culled - out.culledBefore };
+  out.pile = { shots: shotsNow(), loops: [...a.live].filter((v) => v.loop).length, loopsBefore, culled: a.culled - out.culledBefore,
+    chime: !!chime && chime.keep && chime.busy, plainGone: !!plain && plain.stopped };
+  // Loops never cost a one-shot its place: with more loops alive than the old
+  // ceiling of 56 voices, a one-shot still starts, and nothing gives way for it.
+  for (const v of [...a.live]) if (!v.loop && v !== chime) v.stop();
+  const extra = [];
+  for (let i = 0; i < 70; i++) extra.push(a.play('item_beacon', { loops: -1, volume: 0 }));
+  const culledAt = a.culled;
+  const among = a.play('explosion', { volume: 0 });
+  out.loops = { alive: [...a.live].filter((v) => v.loop).length, started: !!among && among.busy, culled: a.culled - culledAt, chime: !!chime && chime.busy };
+  for (const v of extra) if (v) v.stop();
+  if (among) among.stop();
+  // A house full of cues: a plain newcomer gives way (no cue is cut for it), and
+  // one more cue still sounds.
+  for (const v of [...a.live]) if (!v.loop) v.stop();
+  const cues = [];
+  for (let i = 0; i < a.maxShots3d; i++) cues.push(a.play('ut_bus_chime', { volume: 0, keep: true }));
+  const refused = a.play('explosion', { volume: 0 });
+  const oneMore = a.play('ut_bus_chime', { volume: 0, keep: true });
+  out.cues = { all: cues.every((v) => v && v.busy), refused: refused === null, oneMore: !!oneMore && oneMore.busy };
+  for (const v of [...cues, oneMore]) if (v) v.stop();
   await sleep(300);
   return out;
 });
 check(regenLoad.skipped || (regenLoad.roaring >= 1 && regenLoad.newWorld), `a fight in the arena had the crowd going (${regenLoad.roaring} crowd sounds) when the world ended`);
 check(regenLoad.skipped || (regenLoad.atOnce.crowd === 0 && regenLoad.later.crowd === 0), `no roar, groan or bang of the old world is heard in the new one, not at once (${regenLoad.atOnce && regenLoad.atOnce.crowd}) and not when its timers come due (${regenLoad.later && regenLoad.later.crowd})`);
-check(regenLoad.skipped || (regenLoad.later.shotsStopped === 0 && regenLoad.later.live <= regenLoad.later.max), `finished one-shots are forgotten and the voices stay under the ceiling (${regenLoad.later && regenLoad.later.live} of ${regenLoad.later && regenLoad.later.max})`);
-check(regenLoad.skipped || (regenLoad.pile.live <= regenLoad.later.max && regenLoad.pile.loops === regenLoad.pile.loopsBefore && regenLoad.pile.culled > 0), `ninety bangs at once: the ceiling holds (${regenLoad.pile && regenLoad.pile.live} voices), the loops all stay (${regenLoad.pile && regenLoad.pile.loops}), the oldest bangs gave way (${regenLoad.pile && regenLoad.pile.culled})`);
+check(regenLoad.skipped || (regenLoad.later.shotsStopped === 0 && regenLoad.later.shots <= regenLoad.later.max), `finished one-shots are forgotten and the one-shots stay under their ceiling (${regenLoad.later && regenLoad.later.shots} of ${regenLoad.later && regenLoad.later.max})`);
+check(regenLoad.skipped || (regenLoad.later.max === 16 && regenLoad.pile.shots <= regenLoad.later.max && regenLoad.pile.loops === regenLoad.pile.loopsBefore && regenLoad.pile.culled > 0 && regenLoad.pile.plainGone), `ninety bangs at once: the ceiling on one-shots holds (${regenLoad.pile && regenLoad.pile.shots} of ${regenLoad.later && regenLoad.later.max}), the loops all stay (${regenLoad.pile && regenLoad.pile.loops}), the oldest bangs gave way (${regenLoad.pile && regenLoad.pile.culled})`);
+check(regenLoad.skipped || regenLoad.pile.chime, 'and the bus\'s chime, a cue, plays on through all ninety: it is never the one to give way');
+check(regenLoad.skipped || (regenLoad.loops.alive >= 70 && regenLoad.loops.started && regenLoad.loops.culled === 0 && regenLoad.loops.chime), `loops never cost a one-shot its place: with ${regenLoad.loops && regenLoad.loops.alive} loops alive a bang still starts, and nothing gives way for it`);
+check(regenLoad.skipped || (regenLoad.cues.all && regenLoad.cues.refused && regenLoad.cues.oneMore), 'a house full of cues: a plain newcomer gives way, no cue is cut for it, and one more cue still sounds: ' + JSON.stringify(regenLoad.cues));
 
 // --------------------------------------------------------------- 14. potions live in the safe zones (Russell, 8 Nov; web 3.1.0)
 const potions = await page.evaluate(async () => {
@@ -1055,6 +1106,148 @@ const loud = await page.evaluate(async () => {
 });
 check(!loud.skipped && loud.minShots === 3 && loud.maxShots === 6, `every cartridge holds three to six shots at half a minute, ten minutes and forty (${loud.minShots} to ${loud.maxShots})`);
 check(!loud.skipped && loud.battle !== null && Math.abs(loud.battle - 2) < 0.05 && loud.labyrinth !== null && Math.abs(loud.labyrinth - 1) < 0.05, `a cartridge's beacon plays twice as loud in a battle area as in a labyrinth (battle ×${loud.battle && loud.battle.toFixed(2)}, labyrinth ×${loud.labyrinth && loud.labyrinth.toFixed(2)})`);
+
+// --------------------------------------------------------------- 18. an area nobody can hear costs nothing (web 3.3.0)
+const parking = await page.evaluate(async () => {
+  const g = window.__el.game; const a = window.__el.audio; const u = g.ut; const T = window.__ut; const W = T.world;
+  const { PARK_AFTER, AMBIENCE_RANGE } = T.mod;
+  const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+  const LOOPS = ['amb', 'ambIn', 'drums', 'drumsIn', 'crowd', 'crowdIn'];
+  const voicesOf = (area) => { const s = u.areaSounds.get(area.id); return s ? LOOPS.map((k) => s[k]).filter(Boolean) : []; };
+  // A late world, so that its areas are full; the player in the middle of an area
+  // with an open border, every neighbour's border too far off to be heard.
+  u.elapsed = 15 * 60;
+  let A = null; let B = null;
+  for (let n = 0; n < 12 && !A; n++) {
+    for (const bd of u.world.borders || []) {
+      const x = u.world.areas.find((q) => q.id === bd.a); const y = u.world.areas.find((q) => q.id === bd.b);
+      // (Not from an island: its middle is the lift, and coming back to it would be a ride down.)
+      const plain = (q) => q.kind !== 'island' && q.kind !== 'event';
+      if (x && y && !bd.door && (x.ay === y.ay || x.ax === y.ax) && (plain(x) || plain(y))) { [A, B] = plain(x) ? [x, y] : [y, x]; break; }
+    }
+    if (!A) { u.worldTime = 0.05; for (let i = 0; i < 60; i++) g.updateUltimateMode(1 / 30); await sleep(50); }
+  }
+  if (!A) return { skipped: true };
+  T.goTo((x) => x === A);
+  u.worldTime = 170; u.hp = 100;
+  T.quiet();
+  const frames = async (seconds) => { for (let t = 0; t < seconds; t += 1 / 30) { u.safe = 99; u.hp = 100; u.worldTime = 170; g.updateUltimateMode(1 / 30); if (Math.round(t * 30) % 6 === 0) await sleep(15); } };
+  // Every kept area's air is decoded and begun, then held if unheard (ten seconds at most).
+  const out = {};
+  const unheard = () => u.world.areas.filter((x) => x !== A && u.areaSounds.has(x.id));
+  for (let i = 0; i < 20; i++) {
+    await frames(PARK_AFTER + 0.5);
+    if (unheard().every((x) => voicesOf(x).every((v) => v.paused))) break;
+  }
+  const own = voicesOf(A);
+  out.kept = unheard().length;
+  out.ownRunning = own.length >= 2 && own.every((v) => v.busy && !v.paused);
+  out.ownHeard = u.areaSounds.get(A.id).ambIn.l > 0;
+  out.othersHeld = unheard().every((x) => voicesOf(x).length >= 2 && voicesOf(x).every((v) => v.busy && v.paused));
+  out.running = [...a.live].filter((v) => v.loop && !v.paused && [...u.areaSounds.values()].some((s) => LOOPS.some((k) => s[k] === v))).length;
+  out.ownCount = own.length;
+  const sB = u.areaSounds.get(B.id);
+  const heldAt = sB.amb.offset;
+  // A second and a half of silence, exactly: not held before it, held after it.
+  // (Two cells from B's border, then back to the middle.)
+  const horizontal = A.ay === B.ay;
+  const nearB = horizontal ? [(B.ax > A.ax ? A.x1 - 2 : A.x0 + 2), A.y0 + 16] : [A.x0 + 16, (B.ay > A.ay ? A.y1 - 2 : A.y0 + 2)];
+  const mid = [...g.playerPos];
+  // Towards B: its air is heard again, and carries on from where it was held, the two copies in step.
+  g.playerPos = W.posOf(nearB[0], nearB[1]); g._utListenerMix();
+  g.updateUltimateMode(1 / 30);
+  // (How far apart the two copies of B's background are by their own clocks: they
+  // were started one straight after the other, so a few thousandths of a second
+  // at most. Holding them and letting them go must add nothing to it, ever.)
+  const skew = () => sB.amb.startedAt - sB.ambIn.startedAt;
+  const skew0 = skew();
+  out.near = { level: sB.amb.l, resumed: voicesOf(B).every((v) => !v.paused && v.busy), skew: skew0,
+    carriedOn: Math.abs((a.ctx.currentTime - sB.amb.startedAt) - heldAt) < 0.25, sources: sB.amb.sources.length > 0 && sB.ambIn.sources.length > 0 };
+  await sleep(150);
+  // Back to the middle: B's air plays on unheard for a moment (no flapping at a border), then it is held again.
+  g.playerPos = mid; g._utListenerMix();
+  await frames(PARK_AFTER - 0.4);
+  out.grace = { level: sB.amb.l, running: voicesOf(B).every((v) => !v.paused) };
+  await frames(0.8);
+  out.again = voicesOf(B).every((v) => v.paused);
+  // Many times over: the two copies never drift apart.
+  const apart = [];
+  for (let n = 0; n < 6; n++) {
+    g.playerPos = W.posOf(nearB[0], nearB[1]); g._utListenerMix(); g.updateUltimateMode(1 / 30);
+    apart.push(Math.abs(skew() - skew0));
+    await sleep(40);
+    g.playerPos = mid; g._utListenerMix(); await frames(PARK_AFTER + 0.3);
+  }
+  out.apart = Math.max(...apart);
+  // Stepping over the border, the wide copy takes over at full, at once.
+  g.playerPos = W.posOf(nearB[0], nearB[1]); g._utListenerMix(); g.updateUltimateMode(1 / 30);
+  u.area = B; g.playerPos = W.posOf(horizontal ? (B.ax > A.ax ? B.x0 + 1 : B.x1 - 1) : B.x0 + 16, horizontal ? B.y0 + 16 : (B.ay > A.ay ? B.y0 + 1 : B.y1 - 1));
+  g._utRefreshRooms(); g._utListenerMix(); g.updateUltimateMode(1 / 30);
+  out.inside = { wide: sB.ambIn.l, placed: sB.amb.l, running: !sB.ambIn.paused && !sB.amb.paused };
+  // The lift's hum: held off its island, playing on it.
+  const isl = u.world.areas.find((x) => x.kind === 'island' && u.areaSounds.has(x.id) && x !== u.area);
+  if (isl) {
+    await frames(PARK_AFTER + 0.5);
+    const hum = u.areaSounds.get(isl.id).hum;
+    out.hum = { held: !!hum && (hum.paused || !hum.dry) };
+    u.area = isl; u.place = 'world'; u.liftArmed = false;
+    g.playerPos = W.posOf(isl.elevator[0], isl.elevator[1] + 3); g._utRefreshRooms(); g._utListenerMix();
+    g.updateUltimateMode(1 / 30);
+    const hum2 = u.areaSounds.get(isl.id).hum;
+    out.hum.same = hum2 === hum; out.hum.playing = !!hum2 && !hum2.paused && hum2.l > 0;
+  }
+  return out;
+});
+check(parking.skipped || (parking.ownRunning && parking.ownHeard), 'the air of the area you stand in plays, heard: ' + JSON.stringify(parking));
+check(parking.skipped || (parking.kept >= 2 && parking.othersHeld), `every other kept area (${parking.kept} of them), unheard from the middle of yours, has its loops held, none of them stopped`);
+check(parking.skipped || parking.running === parking.ownCount, `so the only area loops running are your own area's (${parking.running} running, ${parking.ownCount} your own)`);
+check(parking.skipped || (parking.near.level > 0 && parking.near.resumed && parking.near.sources && parking.near.carriedOn), 'near a neighbour\'s border its air is heard again, carrying on from where it was held: ' + JSON.stringify(parking.near));
+check(parking.skipped || (Math.abs(parking.near.skew) < 0.02 && parking.apart < 1e-9), `its placed copy and its wide copy are in step when it carries on (${parking.near && parking.near.skew} seconds apart by their clocks), and being held six more times adds nothing to that (${parking.apart})`);
+check(parking.skipped || (parking.grace.level === 0 && parking.grace.running && parking.again), 'out of earshot again it plays on unheard for a moment, then is held again: ' + JSON.stringify(parking.grace) + ' ' + parking.again);
+check(parking.skipped || (parking.inside.running && parking.inside.wide > 0.5 && parking.inside.placed === 0), 'across the border its wide copy takes over at once: ' + JSON.stringify(parking.inside));
+check(parking.skipped || !parking.hum || (parking.hum.held && parking.hum.same && parking.hum.playing), 'the lift\'s hum is held off its island and plays, the same voice, on it: ' + JSON.stringify(parking.hum));
+
+// --------------------------------------------------------------- 19. a chaser in the area you left is let go at once (web 3.3.0)
+const leftBehind = await page.evaluate(async () => {
+  const g = window.__el.game; const a = window.__el.audio; const u = g.ut; const T = window.__ut; const W = T.world;
+  const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+  let A = null; let B = null;
+  for (const bd of u.world.borders || []) {
+    const x = u.world.areas.find((q) => q.id === bd.a); const y = u.world.areas.find((q) => q.id === bd.b);
+    // (Not from an island: its middle is the lift, and standing there would be a ride down.)
+    const plain = (q) => q.kind !== 'island' && q.kind !== 'event';
+    if (x && y && !bd.door && (x.ay === y.ay || x.ax === y.ax) && (plain(x) || plain(y))) { [A, B] = plain(x) ? [x, y] : [y, x]; break; }
+  }
+  if (!A) return { skipped: true };
+  T.goTo((x) => x === A);
+  u.worldTime = 170; u.hp = 100; u.safe = 99;
+  u.enemies = [];
+  T.quiet();
+  const horizontal = A.ay === B.ay;
+  const edge = horizontal ? [(B.ax > A.ax ? A.x1 - 1 : A.x0 + 1), A.y0 + 16] : [A.x0 + 16, (B.ay > A.ay ? A.y1 - 1 : A.y0 + 1)];
+  g.playerPos = W.posOf(edge[0], edge[1]); g._utListenerMix();
+  const e = { kind: 'chaser', area: A, x: g.playerPos[0] + (horizontal ? 0 : 6), y: g.playerPos[1] + (horizontal ? 6 : 0), speed: 0, voice: null, goal: null, goalTimer: 0, soundName: 'obstacle_1' };
+  u.enemies.push(e);
+  g.updateUltimateMode(1 / 30);
+  const voice = e.voice;
+  const out = { had: !!voice && voice.busy, place: u.place, phase: u.phase, kinds: [A.kind, B.kind], loopsBefore: [...a.live].filter((v) => v.loop && v.name === 'obstacle_1').length };
+  // Over the border into B.
+  u.area = B; g.playerPos = W.posOf(horizontal ? (B.ax > A.ax ? B.x0 + 1 : B.x1 - 1) : B.x0 + 16, horizontal ? B.y0 + 16 : (B.ay > A.ay ? B.y0 + 1 : B.y1 - 1));
+  g._utRefreshRooms(); g._utListenerMix(); u.safe = 99;
+  g.updateUltimateMode(1 / 30); g.updateUltimateMode(1 / 30);
+  out.letGo = e.voice === null;
+  await sleep(250);
+  out.stopped = !!voice && voice.stopped; out.loopsAfter = [...a.live].filter((v) => v.loop && v.name === 'obstacle_1').length;
+  // Back into A: it is heard again, with a voice of its own.
+  u.area = A; g.playerPos = W.posOf(edge[0], edge[1]); g._utRefreshRooms(); g._utListenerMix(); u.safe = 99;
+  g.updateUltimateMode(1 / 30);
+  out.back = !!e.voice && e.voice !== voice && e.voice.busy;
+  if (e.voice) { e.voice.stop(); u.voices.delete(e.voice); }
+  u.enemies = [];
+  return out;
+});
+check(leftBehind.skipped || (leftBehind.had && leftBehind.letGo && leftBehind.stopped && leftBehind.loopsAfter === 0), 'a chaser in the area you have just left is let go at once, not left playing unheard: ' + JSON.stringify(leftBehind));
+check(leftBehind.skipped || leftBehind.back, 'and it is heard again, afresh, when you step back into its area');
 
 check(errors.length === 0, 'no page errors' + (errors.length ? ': ' + errors.slice(0, 3).join(' | ') : ''));
 await browser.close();

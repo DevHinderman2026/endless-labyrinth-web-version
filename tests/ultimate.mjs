@@ -81,7 +81,7 @@ const w0 = await page.evaluate(async () => {
   const near = [...a.live].filter((v) => v.loop).map((v) => v.name);
   const placed = [...a.live].filter((v) => v.loop && v.placed).length;
   return {
-    worldNo: u.worldNo, areas: kinds, hp: u.hp, ammo: u.ammo, points: u.points, worldTime: u.worldTime, safe: u.safe,
+    worldNo: u.worldNo, areas: kinds, hp: u.hp, ammo: u.ammo, items: u.items, points: u.points, worldTime: u.worldTime, safe: u.safe,
     enemies: u.enemies.length, enemyAreas: enemyAreas.length, perArea, easyOk: enemyAreas.every((x) => { const n = perArea[x.id] || 0; return x.kind === 'tower' ? n === 1 : n >= 1 && n <= 2; }), labsQuiet: u.enemies.every((e) => e.area.kind !== 'labyrinth' && e.area.kind !== 'event'),
     kindsRight: u.enemies.every((e) => (e.kind === 'thrower') === (e.area.kind === 'tower')),
     pickups: u.pickups.map((p) => p.kind), safeAmmo: u.pickups.filter((p) => p.safe).length, eventAreas: kinds.filter((k) => k === 'event').length,
@@ -108,7 +108,8 @@ const w0 = await page.evaluate(async () => {
 });
 check(w0.worldNo === 1 && w0.areas.length >= 5 && w0.areas.length <= 10, `world 1 has ${w0.areas.length} areas: ${w0.areas.join(', ')}`);
 check(w0.eventAreas >= 1, 'at least one event area (the safe zone)');
-check(w0.hp === 100 && w0.ammo === 0 && w0.points === 0, 'starts with 100 health, no ammo, no points');
+check(w0.hp === 100 && w0.points === 0, 'starts with 100 health and no points');
+check(Number.isInteger(w0.ammo) && w0.ammo >= 8 && w0.ammo <= 12 && Number.isInteger(w0.items) && w0.items >= 2 && w0.items <= 4, `and with a few shots and a few tower items in hand, eight to twelve and two to four (web 3.3.0): ${w0.ammo} shots, ${w0.items} items`);
 check(w0.worldTime > 58 && w0.worldTime <= 240, `the first world lasts somewhere between one and four minutes (${w0.worldTime.toFixed(1)} left)`);
 check(w0.labsQuiet && w0.kindsRight, 'enemies only in battle, island and tower areas; throwers in tower areas only');
 check(w0.easyOk, `easy stretch: ${w0.enemies} enemies in ${w0.enemyAreas} enemy areas (one or two chasers in each battle or island area, one rival in each tower area): ` + JSON.stringify(w0.perArea));
@@ -133,12 +134,21 @@ const walk = await page.evaluate(async () => {
   }
   g.input('enter');
   const report = document.getElementById('said').textContent;
+  const wanted = `${u.hp} health. ${u.points} ${u.points === 1 ? 'point' : 'points'}. ${u.ammo} ${u.ammo === 1 ? 'shot' : 'shots'}. ${u.items} ${u.items === 1 ? 'item' : 'items'}.`;
+  // One of each is said as one: 1 shot, 1 item.
+  const had = [u.ammo, u.items];
+  u.ammo = 1; u.items = 1; g.input('enter');
+  const reportOne = document.getElementById('said').textContent;
+  // With nothing loaded (and, in a tower area, nothing to throw) the attack spends nothing.
+  u.ammo = 0; u.items = 0;
   g.input('space');
   const empty = u.ammo;
-  return { moved, walls, report, empty, area: u.area.kind, same: before[0] === g.playerPos[0] && before[1] === g.playerPos[1] };
+  [u.ammo, u.items] = had;
+  return { moved, walls, report, wanted, reportOne, empty, area: u.area.kind, same: before[0] === g.playerPos[0] && before[1] === g.playerPos[1] };
 });
 check(walk.moved >= 1, `steps move (${walk.moved} moved, ${walk.walls} walls)`);
-check(/^\d+ health\. \d+ points?\. \d+ shots?\.$/.test(walk.report) && !/world|area|labyrinth|island|tower|battle|event/i.test(walk.report), 'the report says health, points and ammo only: ' + walk.report);
+check(/^\d+ health\. \d+ points?\. \d+ shots?\. \d+ items?\.$/.test(walk.report) && walk.report === walk.wanted && !/world|area|labyrinth|island|tower|battle|event/i.test(walk.report), 'the report says health, points, shots and items, in that order, and nothing else: ' + walk.report);
+check(/ 1 shot\. 1 item\.$/.test(walk.reportOne), 'one of each is said as one: ' + walk.reportOne);
 check(walk.empty === 0, 'firing with no ammo spends nothing (the empty click)');
 
 // --------------------------------------------------------------- ammo, shooting a chaser, points, the low-ammo tone
@@ -326,6 +336,7 @@ const tower = await page.evaluate(() => {
   if (!thrower) return { skipped: true };
   const item = u.towerItems.get(tw.id);
   u.area = tw; u.safe = 0;
+  u.items = 0;    // (a run begins with a few in hand: put down here, so that the one picked up is the one counted)
   const ip = g._utItemPos(item);
   g.playerPos = [ip[0], ip[1] + 3];
   g.input('up');
@@ -342,22 +353,38 @@ const tower = await page.evaluate(() => {
   g.input('space');   // nothing held: the empty click, not the laser (ammo is no fallback in a tower area)
   a.play = orig;
   const afterShot = { ammo: u.ammo, hits: thrower.hitsTaken, alive: u.enemies.includes(thrower), played };
-  // Leaving the area loses the items.
-  u.towerCarry = { area: tw.id, count: 3 };
-  const other = u.world.areas.find((x) => x !== tw);
+  // Leaving the area, the items go with you (web 3.3.0: carried like ammo; until
+  // then they were gone at the border).
+  u.items = 3;
+  const other = u.world.areas.find((x) => x.kind !== 'tower');
   const oc = other.floorCells[0];
   const from = [...g.playerPos];
   g.playerPos = [oc[0] * 3, (oc[1] + 1) * 3];
   g.input('up');
   const after = g._utItemsHeld();
-  return { skipped: false, held, fresh, afterThrow, afterShot, after, carry: u.towerCarry, from };
+  const leftTower = u.area !== tw && u.area.kind !== 'tower';
+  g.input('enter');
+  const report = document.getElementById('said').textContent;
+  // Out here the attack is the laser, never a throw: the items wait in your hands.
+  u.ammo = 2;
+  const played2 = []; a.play = (n, o) => { played2.push(n); return orig(n, o); };
+  g.input('space');
+  a.play = orig;
+  const outside = { ammo: u.ammo, items: g._utItemsHeld(), played: played2 };
+  // The line on the screen says the items too, after the shots.
+  const line = g._statusLine();
+  u.items = 1; const lineOne = g._statusLine(); u.items = 3;
+  return { skipped: false, held, fresh, afterThrow, afterShot, after, leftTower, report, outside, line, lineOne, from };
 });
 if (tower.skipped) console.log('SKIP no tower area with a thrower in this world');
 else {
   check(tower.held === 1 && tower.fresh, 'walking into a tower item takes it, and a fresh one appears');
   check(tower.afterThrow.held === 0 && tower.afterThrow.ammo === 3 && (tower.afterThrow.hits === 1 || !tower.afterThrow.alive), 'the attack throws the held item at the centred thrower, spending no ammo');
   check(tower.afterShot.ammo === 3 && tower.afterShot.played.includes('empty_click') && !tower.afterShot.played.includes('laser') && (!tower.afterShot.alive || tower.afterShot.hits === tower.afterThrow.hits), 'with no item held, the attack in a tower area is the empty click: no laser, no ammo spent: ' + JSON.stringify(tower.afterShot.played));
-  check(tower.after === 0 && tower.carry === null, 'tower items are gone on leaving the area');
+  check(tower.leftTower && tower.after === 3, `the items you hold go with you when you leave the tower area (${tower.after} of 3 still held)`);
+  check(/ 3 items\.$/.test(tower.report), 'and the report says how many, wherever you are: ' + tower.report);
+  check(tower.outside.ammo === 1 && tower.outside.items === 3 && tower.outside.played.includes('laser') && !tower.outside.played.includes('item_throw'), 'outside a tower area the attack is the laser, never a throw: ' + JSON.stringify(tower.outside));
+  check(/^Ultimate Mode\. World \d+\. Health \d+\. \d+ points?\. 1 shot\. 3 items\.( Compass on\.)?$/.test(tower.line) && / 1 shot\. 1 item\./.test(tower.lineOne), 'the line on the screen says the items after the shots: ' + tower.line + ' / ' + tower.lineOne);
 }
 
 // --------------------------------------------------------------- regeneration
@@ -375,7 +402,7 @@ const regen = await page.evaluate(async () => {
   const origLevel = a.setWorldLevel.bind(a);
   a.setWorldLevel = (l, s) => { levels.push([l, s]); return origLevel(l, s); };
   let phases = new Set(); let atEnd = null; let atStart = null; let firstTime = null;
-  u.ammo = 7;
+  u.ammo = 7; u.items = 5;
   for (let i = 0; i < 30 * 20; i++) {
     g.updateUltimateMode(1 / 30);
     phases.add(u.phase);
@@ -389,7 +416,7 @@ const regen = await page.evaluate(async () => {
   return {
     worldNo: u.worldNo, no1, worlds: u.worlds, worlds1, newWorld: u.world !== world1, phases: [...phases], spoken, counts: played.filter((n) => n === 'countdown_high').length, worldLen: u.worldLen,
     levels, safe: u.safe, atEnd, atStart, worldTime: firstTime, mult: g._utMultiplier(),
-    compassOff: !u.compass.on, place: u.place, carry: u.towerCarry, areas: u.world.areas.length, loops: [...a.live].filter((v) => v.loop).length,
+    compassOff: !u.compass.on, place: u.place, items: u.items, areas: u.world.areas.length, loops: [...a.live].filter((v) => v.loop).length,
   };
 });
 check(regen.worldNo === regen.no1 + 1 && regen.newWorld && regen.worlds === regen.worlds1 + 1, `the world regenerates into world ${regen.no1 + 1}`);
@@ -416,7 +443,8 @@ check(lengths.lens.every((l) => l >= 60 && l <= 240) && new Set(lengths.lens).si
 check(lengths.statusLeaks === 0, 'the status report does not tell how long the world has left');
 check(regen.atEnd && regen.atStart && regen.atEnd.hp === regen.atStart.hp && regen.atEnd.ammo === regen.atStart.ammo && regen.atStart.ammo === 7, 'health and ammo carry over: ' + JSON.stringify([regen.atEnd, regen.atStart]));
 check(Math.abs(regen.mult - (1 + 0.5 * regen.worlds)) < 1e-9, `the multiplier is now ${regen.mult} (${regen.worlds} worlds survived)`);
-check(regen.place === 'world' && regen.carry === null && regen.compassOff, 'on the ground, no tower items, compass off');
+check(regen.place === 'world' && regen.compassOff, 'on the ground, compass off');
+check(regen.items === 5, `the tower items in your hands carry over into the new world, as ammo does (${regen.items} of 5)`);
 check(regen.loops >= 1, `the new world sounds (${regen.loops} loops)`);
 
 // --------------------------------------------------------------- scoring with the multiplier, no points in a safe zone

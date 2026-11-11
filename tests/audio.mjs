@@ -119,6 +119,83 @@ const wet = await page.evaluate(async () => {
 check(['ammo_beacon', 'prox_3', 'obstacle_2'].every((n) => wet[n].len && wet[n].err < 1e-4), 'the loop echo matches the browser\'s own rendering: ' + JSON.stringify(wet));
 check(wet.made === 0, `80 loop echoes in a row, with no OfflineAudioContext made (${wet.eightyMs} ms)`);
 
+// A full house (web 3.3.0). One-shots are counted among themselves: a loop never
+// costs a one-shot its place, the oldest one-shot gives way to a new one, and a
+// cue played with `keep` is never the one to go. (Until then every voice was
+// counted, and loops alone could fill the house, so a one-shot was not started.)
+const house = await page.evaluate(async () => {
+  const a = window.__el.audio;
+  a.stopAll();
+  const out = { max: a.maxShots, max3d: a.maxShots3d, spatial: a.spatial };
+  const shots = () => [...a.live].filter((v) => !v.loop).length;
+  // More loops than the old ceiling of 56 voices: a one-shot still starts.
+  const loops = [];
+  for (let i = 0; i < 70; i++) loops.push(a.play('ammo_beacon', { loops: -1, volume: 0 }));
+  const c0 = a.culled;
+  const among = a.play('laser', { volume: 0 });
+  out.amongLoops = { loops: [...a.live].filter((v) => v.loop).length, started: !!among && among.busy, culled: a.culled - c0 };
+  if (among) among.stop();
+  // A cue, a plain sound older than the rest, then a house full of plain sounds.
+  const cue = a.play('countdown_high', { volume: 0, keep: true });
+  const first = a.play('laser', { volume: 0 });
+  const rest = [];
+  for (let i = 0; i < a.maxShots - 2; i++) rest.push(a.play('laser', { volume: 0 }));
+  out.full = shots();
+  const c1 = a.culled;
+  const newcomer = a.play('laser', { volume: 0 });
+  out.overflow = { shots: shots(), culled: a.culled - c1, firstGone: !!first && first.stopped, cueStays: !!cue && cue.busy, newcomer: !!newcomer && newcomer.busy,
+    restStay: rest.every((v) => v && v.busy), loopsStay: loops.every((v) => v && v.busy) };
+  // Sixty more: never above the ceiling, the cue still there, every loop still there.
+  for (let i = 0; i < 60; i++) a.play('laser', { volume: 0 });
+  out.pile = { shots: shots(), cueStays: !!cue && cue.busy, loopsStay: loops.every((v) => v && v.busy) };
+  a.stopAll();
+  // A house full of cues: a plain newcomer gives way, and a cue still sounds.
+  const cues = [];
+  for (let i = 0; i < a.maxShots; i++) cues.push(a.play('countdown_high', { volume: 0, keep: true }));
+  const c2 = a.culled;
+  const refused = a.play('laser', { volume: 0 });
+  const oneMore = a.play('countdown_high', { volume: 0, keep: true });
+  out.cues = { refused: refused === null, counted: a.culled - c2, allStay: cues.every((v) => v && v.busy), oneMore: !!oneMore && oneMore.busy };
+  a.stopAll();
+  return out;
+});
+check(house.max === 56 && house.max3d === 16 && !house.spatial, `the ceiling on one-shots at once is ${house.max}, and ${house.max3d} in the 3D world`);
+check(house.amongLoops.loops === 70 && house.amongLoops.started && house.amongLoops.culled === 0, `a loop never costs a one-shot its place: with ${house.amongLoops.loops} loops playing a shot still starts, and nothing gives way for it`);
+check(house.full === house.max && house.overflow.shots === house.max && house.overflow.culled === 1 && house.overflow.firstGone && house.overflow.newcomer && house.overflow.restStay, 'a full house: the oldest plain sound gives way to the new one, and only that one: ' + JSON.stringify(house.overflow));
+check(house.overflow.cueStays && house.overflow.loopsStay && house.pile.shots === house.max && house.pile.cueStays && house.pile.loopsStay, 'a cue older than all of them is never the one to go, nor is any loop, through sixty more: ' + JSON.stringify(house.pile));
+check(house.cues.refused && house.cues.counted === 1 && house.cues.allStay && house.cues.oneMore, 'a house full of cues: a plain newcomer gives way, no cue is cut for it, and one more cue still sounds: ' + JSON.stringify(house.cues));
+
+// Several loops held and let go as one (holdAll): by a single reading of the
+// clock, so two copies of one recording are exactly as far apart afterwards.
+const held = await page.evaluate(async () => {
+  const a = window.__el.audio;
+  const wait = (ms) => new Promise((res) => setTimeout(res, ms));
+  const x = a.play('ammo_beacon', { loops: -1, volume: 0 });
+  const y = a.play('ammo_beacon', { loops: -1, volume: 0 });
+  await wait(120);
+  const apart0 = x.startedAt - y.startedAt;
+  const apart = [];
+  let allHeld = true; let allGoing = true;
+  for (let i = 0; i < 8; i++) {
+    a.holdAll([x, y, null], true);
+    allHeld = allHeld && x.paused && y.paused && x.sources.length === 0 && y.sources.length === 0 && Math.abs((x.offset - y.offset) + apart0) < 1e-9;
+    await wait(30 + i * 7);
+    a.holdAll([x, y, null], false);
+    allGoing = allGoing && !x.paused && !y.paused && x.sources.length > 0 && y.sources.length > 0;
+    apart.push(Math.abs((x.startedAt - y.startedAt) - apart0));
+    await wait(25);
+  }
+  // Held twice, let go twice: nothing more happens.
+  a.holdAll([x, y], true); const off = x.offset; a.holdAll([x, y], true);
+  const twice = x.offset === off;
+  a.holdAll([x, y], false); const n = x.sources.length; a.holdAll([x, y], false);
+  const twiceGo = x.sources.length === n;
+  x.stop(); y.stop();
+  return { apart0, worst: Math.max(...apart), allHeld, allGoing, twice, twiceGo };
+});
+check(held.allHeld && held.allGoing && held.worst < 1e-9, `two copies of a loop held and let go as one, eight times: never further apart than they began (${held.worst} seconds added to ${held.apart0})`);
+check(held.twice && held.twiceGo, 'holding what is held, or letting go what is going, changes nothing');
+
 // Two copies of the game: a record set in one survives the other saving.
 const two = await page.evaluate(() => {
   const s = window.__el.game.scores;
