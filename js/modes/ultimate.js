@@ -391,11 +391,21 @@ export function walkStep(from, dir, len, open) {
   const vx = dir[0] * len; const vy = dir[1] * len;
   const hit = shutAt(vx, vy);
   if (!hit) return { pos: [from[0] + vx, from[1] + vy], moved: len, hit: null };
-  // Along it: the bigger part of the step first.
-  const parts = Math.abs(vx) >= Math.abs(vy) ? [[vx, 0], [0, vy]] : [[0, vy], [vx, 0]];
-  for (const [sx, sy] of parts) {
+  // Along it: the bigger part of the step first. When the way along it is the
+  // way you are mostly facing (a corridor you face a little off its line), the
+  // step glides a whole step down it (web 4.1.2, Russell: since 4.1.0's turns of
+  // 30 degrees, a corridor walked at a slant gave a short step and a wall sound
+  // every time). Otherwise, only the part of the step that runs along it.
+  const bigX = Math.abs(vx) >= Math.abs(vy);
+  const parts = bigX ? [[vx, 0], [0, vy]] : [[0, vy], [vx, 0]];
+  for (let i = 0; i < parts.length; i++) {
+    const [sx, sy] = parts[i];
     const part = Math.abs(sx) + Math.abs(sy);
     if (part < SLIDE_MIN) continue;
+    if (i === 0) {
+      const gx = sx ? Math.sign(sx) * len : 0; const gy = sy ? Math.sign(sy) * len : 0;
+      if (!shutAt(gx, gy)) return { pos: [from[0] + gx, from[1] + gy], moved: len, hit };
+    }
     if (!shutAt(sx, sy)) return { pos: [from[0] + sx, from[1] + sy], moved: part, hit };
   }
   return { pos: [from[0], from[1]], moved: 0, hit };
@@ -2198,7 +2208,7 @@ const mixin = {
       words = `${got} health`;
     }
     u.lastCase = { kind, came };
-    this.tts.speak(`Glass case: ${words}.`, { interrupt: true });
+    this.tts.speak(`${words[0].toUpperCase()}${words.slice(1)}.`, { interrupt: true });   // (the reward alone: web 4.1.2, Russell)
   },
 
   // A hunter that has lost you: gone, with no bang and no points, and no other in its place.
@@ -2226,8 +2236,10 @@ const mixin = {
       : (p) => { const [cx, cy] = cellOf(p); return isFloor(u.world, cx, cy); };
     const from = [this.playerPos[0], this.playerPos[1]];
     const w = walkStep(from, dir, CELL, open);
-    if (w.hit) {
-      // Stopped, or sliding along it (then it is quieter). The seabed has no walls:
+    if (w.hit && w.moved <= 0) {
+      // Stopped by it. (Sliding along a wall is silent since web 4.1.2, Russell:
+      // a footstep and a wall at once on every step in a corridor was confusing.
+      // Until then the wall sounded beside you, quieter, at WALL_TOUCH.) The seabed has no walls:
       // its edge is the boundary buzz, as in Island Mode; so is an island's edge
       // (Russell, 8 Nov: no labyrinth wall on an island). Elsewhere a wall, where
       // it is (the world's edge is a wall too); a safe zone's walls ring softer

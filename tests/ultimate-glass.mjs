@@ -334,11 +334,11 @@ if (smash.found) {
   check(smash.chimedAgain, 'go away and come back, and it chimes again');
   check(smash.smashed && smash.played.includes('ut_glass_smash') && !smash.played.includes('laser') && smash.humGone,
     'within reach, the attack smashes it: the smash is heard, no laser, and its hum stops: ' + JSON.stringify(smash.played));
-  check(smash.spoken.length === 1 && /^Glass case: .+\.$/.test(smash.spoken[0]) && !/enem|chaser|hunter|coming|\b[2-5] (are|more)/i.test(smash.spoken[0]),
+  check(smash.spoken.length === 1 && /^.+\.$/.test(smash.spoken[0]) && !/enem|chaser|hunter|coming|\b[2-5] (are|more)/i.test(smash.spoken[0]),
     'the voice says what was in it, and nothing of who is coming: ' + JSON.stringify(smash.spoken));
   const k = smash.last && smash.last.kind; const dl = smash.delta;
-  const rewardOk = (k === 'shots' && dl.ammo > smash.hunters && dl.ammo <= smash.hunters + 3 && new RegExp(`^Glass case: ${dl.ammo} shots\\.$`).test(smash.spoken[0]))
-    || (k === 'points' && dl.points > 0 && dl.ammo === 0 && new RegExp(`^Glass case: ${dl.points} points\\.$`).test(smash.spoken[0]))
+  const rewardOk = (k === 'shots' && dl.ammo > smash.hunters && dl.ammo <= smash.hunters + 3 && new RegExp(`^${dl.ammo} shots\\.$`).test(smash.spoken[0]))
+    || (k === 'points' && dl.points > 0 && dl.ammo === 0 && new RegExp(`^${dl.points} points\\.$`).test(smash.spoken[0]))
     || (k === 'time' && dl.time === 30 && dl.ammo === 0 && /30 more seconds in this world/.test(smash.spoken[0]))
     || (k === 'items' && dl.items >= 2 && dl.items <= 3 && dl.ammo === 0 && new RegExp(`${dl.items} tower items`).test(smash.spoken[0]))
     || (k === 'health' && dl.hp === 30 && dl.ammo === 0 && /30 health/.test(smash.spoken[0]));
@@ -385,11 +385,11 @@ const many = await page.evaluate(async () => {
     const only = (key) => Object.keys(d).every((x) => x === key || Math.abs(d[x]) < 1e-6);
     if (came !== u.lastCase.came) out.bad.push('count');
     if (came < 2 || came > 5) out.bad.push('came ' + came);
-    if (k === 'shots' && !(only('ammo') && d.ammo >= came + CASE_SHOTS_OVER[0] && d.ammo <= came + CASE_SHOTS_OVER[1] && said === `Glass case: ${d.ammo} shots.`)) out.bad.push('shots ' + JSON.stringify(d) + said);
-    if (k === 'points' && !(only('points') && !compass && d.points === Math.round(CASE_POINTS * g._utMultiplier()) && u.worldPoints - b.wp === CASE_POINTS && said === `Glass case: ${d.points} points.`)) out.bad.push('points ' + JSON.stringify(d) + said);
-    if (k === 'time' && !(only('time') && Math.abs(d.time - CASE_TIME) < 1e-6 && said === `Glass case: ${CASE_TIME} more seconds in this world.`)) out.bad.push('time ' + JSON.stringify(d) + said);
-    if (k === 'items' && !(only('items') && d.items >= CASE_ITEMS[0] && d.items <= CASE_ITEMS[1] && said === `Glass case: ${d.items} tower items.`)) out.bad.push('items ' + JSON.stringify(d) + said);
-    if (k === 'health' && !(only('hp') && !full && d.hp === Math.min(CASE_HEALTH, START_HP - b.hp) && u.hp <= START_HP && said === `Glass case: ${d.hp} health.`)) out.bad.push('health ' + JSON.stringify(d) + said);
+    if (k === 'shots' && !(only('ammo') && d.ammo >= came + CASE_SHOTS_OVER[0] && d.ammo <= came + CASE_SHOTS_OVER[1] && said === `${d.ammo} shots.`)) out.bad.push('shots ' + JSON.stringify(d) + said);
+    if (k === 'points' && !(only('points') && !compass && d.points === Math.round(CASE_POINTS * g._utMultiplier()) && u.worldPoints - b.wp === CASE_POINTS && said === `${d.points} points.`)) out.bad.push('points ' + JSON.stringify(d) + said);
+    if (k === 'time' && !(only('time') && Math.abs(d.time - CASE_TIME) < 1e-6 && said === `${CASE_TIME} more seconds in this world.`)) out.bad.push('time ' + JSON.stringify(d) + said);
+    if (k === 'items' && !(only('items') && d.items >= CASE_ITEMS[0] && d.items <= CASE_ITEMS[1] && said === `${d.items} tower items.`)) out.bad.push('items ' + JSON.stringify(d) + said);
+    if (k === 'health' && !(only('hp') && !full && d.hp === Math.min(CASE_HEALTH, START_HP - b.hp) && u.hp <= START_HP && said === `${d.hp} health.`)) out.bad.push('health ' + JSON.stringify(d) + said);
     if (/\b(enem|chaser|hunter)/i.test(said)) out.bad.push('said who comes');
   }
   u.compass.on = false;
@@ -406,7 +406,7 @@ if (!many.skipped) {
   const c = many.counts; const n = many.n;
   check(Object.keys(c).every((x) => x >= 2 && x <= 5) && (c[2] + c[3]) / n > 0.62 && (c[2] + c[3]) / n < 0.88 && c[5] / n > 0.04 && c[5] / n < 0.17 && c[4] > 0,
     `two to five chasers come, mostly two or three, five only now and then: ${JSON.stringify(c)}`);
-  check(many.words.every((w) => /^Glass case: N (shots|points|more seconds in this world|tower items|health)\.$/.test(w)), 'the spoken rewards: ' + JSON.stringify(many.words));
+  check(many.words.every((w) => /^N (shots|points|more seconds in this world|tower items|health)\.$/.test(w)), 'the spoken rewards: ' + JSON.stringify(many.words));
 }
 
 // ------------------------------------------------------------------ 5. the chasers, and a labyrinth

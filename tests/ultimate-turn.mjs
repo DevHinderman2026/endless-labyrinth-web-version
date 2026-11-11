@@ -400,6 +400,12 @@ const walls = await page.evaluate(async () => {
   out.doorPost = go(door, [3, 9], 0);
   // Nothing in the game puts you inside a wall; but if a fault ever did, you could
   // walk out of it onto the floor (never further into the wall).
+  // A corridor running north, faced a little off its line: a whole step down it
+  // (web 4.1.2), from the middle of its square or off to one side.
+  const corridor = ['###', '#.#', '#.#', '#.#', '#.#', '###'];
+  out.corridor30 = go(corridor, [3, 12], 30);
+  out.corridor330 = go(corridor, [3 - 0.9, 12], 330);   // (already near the west wall, facing a little west of north)
+  out.corridor60 = go(corridor, [3, 12], 60);
   out.outOfWall = go(room, [9, 0], 180);
   out.outOfWallSlant = go(room, [9, 0.4], 150);
   out.deeperIntoWall = go(room, [9, 0], 90);
@@ -407,8 +413,12 @@ const walls = await page.evaluate(async () => {
 });
 check(walls.open.moved === 3 && !walls.open.hit && walls.open.dy === -3, 'on open floor a step is a step');
 check(walls.square.moved === 0 && walls.square.hit && walls.nearlySquare.moved === 0 && walls.nearlySquare.hit, 'squarely into a wall you stop, as you always did; nearly square (10 degrees) you stop too: ' + JSON.stringify([walls.square, walls.nearlySquare]));
-check(walls.slant30.hit && walls.slant30.dy === 0 && Math.abs(walls.slant30.dx - 1.5) < 1e-6 && walls.slant60.dy === 0 && Math.abs(walls.slant60.dx - 2.598076) < 1e-5 && walls.slantLeft.dy === 0 && Math.abs(walls.slantLeft.dx + 1.5) < 1e-6,
-  `at a slant you slide along the wall by the part of the step that runs along it: ${walls.slant30.dx} units at 30 degrees, ${walls.slant60.dx} at 60, ${walls.slantLeft.dx} the other way`);
+check(walls.slant30.hit && walls.slant30.dy === 0 && Math.abs(walls.slant30.dx - 1.5) < 1e-6 && walls.slantLeft.dy === 0 && Math.abs(walls.slantLeft.dx + 1.5) < 1e-6,
+  `facing mostly into a wall, at a slant, you slide along it by the part of the step that runs along it: ${walls.slant30.dx} units at 30 degrees, ${walls.slantLeft.dx} the other way`);
+check(walls.slant60.dy === 0 && walls.slant60.dx === 3 && walls.slant60.moved === 3,
+  `facing mostly along a wall, you glide a whole step along it (web 4.1.2): ${walls.slant60.dx} units at 60 degrees`);
+check([walls.corridor30, walls.corridor330].every((r) => r.dx === 0 && r.dy === -3 && r.moved === 3) && walls.corridor60.dx === 0 && Math.abs(walls.corridor60.dy + 1.5) < 1e-6,
+  'a corridor faced 30 degrees off its line is walked a whole step at a time, from the middle or the side of it; faced 60 degrees off, a shorter step: ' + JSON.stringify([walls.corridor30, walls.corridor330, walls.corridor60]));
 check(walls.corner.moved === 0 && walls.corner.hit && walls.cornerAlong.hit && walls.cornerAlong.dy === 0 && walls.cornerAlong.dx < -2, 'in a corner you stop; turned along one wall, you slide out along it: ' + JSON.stringify([walls.corner, walls.cornerAlong]));
 check(walls.offCentre.dx === 3 && walls.offCentre.dy === 0 && !walls.offCentre.hit && walls.offCentreWall.moved === 0 && walls.offCentreWall.hit, 'off the middle of a square and squared up, a step is still square to square, and a wall still a wall');
 check(walls.pinch.moved === 0 && walls.pinchSmall.moved === 0, 'you never pass between two walls that meet at a corner: ' + JSON.stringify([walls.pinch, walls.pinchSmall]));
@@ -507,20 +517,20 @@ const worldWalls = await page.evaluate(async () => {
 });
 check(worldWalls.square && worldWalls.square.dx === 0 && worldWalls.square.dy === 0 && worldWalls.square.sounds.length === 1 && worldWalls.square.sounds[0][0] === 'wall' && worldWalls.square.sounds[0][1] === 1 && worldWalls.square.sounds[0][2],
   `squarely into a wall (${worldWalls.kind} area): no step, and the wall sounds where it is: ` + JSON.stringify(worldWalls.square));
-check(worldWalls.slide && worldWalls.slide.dy === 0 && worldWalls.slide.dx > 1.5 && worldWalls.slide.sounds.some(([n, level]) => n === 'wall' && level === worldWalls.WALL_TOUCH) && worldWalls.slide.sounds.some(([n]) => n === 'step_stone' || n === 'step_sand'),
-  'at a slant you slide along it: a footstep, and the wall beside you, quieter: ' + JSON.stringify(worldWalls.slide));
+check(worldWalls.slide && worldWalls.slide.dy === 0 && worldWalls.slide.dx > 1.5 && !worldWalls.slide.sounds.some(([n]) => n === 'wall') && worldWalls.slide.sounds.some(([n]) => n === 'step_stone' || n === 'step_sand'),
+  'at a slant you slide along it: a footstep, and no wall sound (web 4.1.2): ' + JSON.stringify(worldWalls.slide));
 // (Where it is heard: the middle of the square in your way. Facing 40 degrees east
 // of north with the wall to the north, that is to your left, not ahead.)
 const wallAt = (r) => { const w = r && r.sounds.find(([n]) => n === 'wall'); return w ? w[3] : null; };
 const sideOf = (rel, deg) => rel[0] * Math.cos(deg * Math.PI / 180) + rel[1] * Math.sin(deg * Math.PI / 180);   // to your right (+) or left (-)
-check(wallAt(worldWalls.square) && wallAt(worldWalls.square).join() === '0,-3' && wallAt(worldWalls.slide) && wallAt(worldWalls.slide)[1] === -3 && sideOf(wallAt(worldWalls.slide), 40) < -1,
-  `the wall sounds from the square that stopped you: straight ahead when you meet it squarely (${JSON.stringify(wallAt(worldWalls.square))}), to your left when you slide along one on your left (${JSON.stringify(wallAt(worldWalls.slide))})`);
+check(wallAt(worldWalls.square) && wallAt(worldWalls.square).join() === '0,-3',
+  `the wall sounds from the square that stopped you: straight ahead when you meet it squarely (${JSON.stringify(wallAt(worldWalls.square))})`);
 check(worldWalls.runSlide && worldWalls.runSlide.running && worldWalls.runSlide.dx > 3 && worldWalls.runSlide.dy === 0 && worldWalls.runSquare && !worldWalls.runSquare.running,
   `a run slides along a wall for as long as it moves you (${worldWalls.runSlide && worldWalls.runSlide.dx} units), and ends squarely against one`);
 check(!worldWalls.islandSquare || (worldWalls.islandSquare.dx === 0 && worldWalls.islandSquare.dy === 0 && worldWalls.islandSquare.sounds.length === 1 && worldWalls.islandSquare.sounds[0][0] === 'boundary' && worldWalls.islandSquare.sounds[0][1] === 1),
   'an island\'s edge is still the boundary buzz, never a wall: ' + JSON.stringify(worldWalls.islandSquare));
-check(!worldWalls.islandSlide || (worldWalls.islandSlide.dx > 1.5 && worldWalls.islandSlide.sounds.some(([n, level]) => n === 'boundary' && level === worldWalls.WALL_TOUCH) && !worldWalls.islandSlide.sounds.some(([n]) => n === 'wall')),
-  'and along it at a slant you slide, with the buzz, quieter: ' + JSON.stringify(worldWalls.islandSlide));
+check(!worldWalls.islandSlide || (worldWalls.islandSlide.dx > 1.5 && !worldWalls.islandSlide.sounds.some(([n]) => n === 'boundary' || n === 'wall')),
+  'and along it at a slant you slide, silently (web 4.1.2): ' + JSON.stringify(worldWalls.islandSlide));
 
 // --------------------------------------------------------------- 7. the report and the line on the screen
 const report = await page.evaluate(async () => {
