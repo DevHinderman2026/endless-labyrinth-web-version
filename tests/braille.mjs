@@ -202,7 +202,7 @@ await sleep(500);
 // arrow keeps turning or running on a keyboard. A notetaker cannot hold a key:
 // its stream of presses is still one press, so one quick turn, one step.)
 const noteTurn = await page.evaluate(() => ({ steps: window.__steps.join(), face: Math.round(window.__el.game.ut.face * 180 / Math.PI), turning: !!window.__el.game.ut.turn }));
-check(noteTurn.steps === 'left' && noteTurn.face === 270 && !noteTurn.turning, 'in a run, a notetaker\'s held left arrow is one press: one quick turn, to the west, and no more: ' + JSON.stringify(noteTurn));
+check(noteTurn.steps === 'left' && noteTurn.face === 330 && !noteTurn.turning, 'in a run, a notetaker\'s held left arrow is one press: one quick turn, thirty degrees to the left, and no more: ' + JSON.stringify(noteTurn));
 await page.evaluate(() => { window.__steps = []; });
 await stream('ArrowUp', 'ArrowUp', 15, 40);
 await sleep(400);

@@ -46,7 +46,10 @@ await page.evaluate(async () => {
     if (!area) return null;
     u.area = area; u.safe = 0;
     // (No bus and no slide underfoot: a check that walks must not be carried off.)
+    // (Nor a glass case within reach, web 4.1.0: tests/ultimate-glass.mjs checks those.)
     u.bus = null; u.busAt = null; u.slide = null; u.slides = []; u.place = 'world';
+    for (const c of u.cases || []) if (c.voice) { c.voice.stop(); u.voices.delete(c.voice); }
+    u.cases = [];
     // The middle of the area, or the open square nearest it: in a labyrinth the
     // very middle is sometimes a wall, and a check made from inside a wall fails.
     const mx = area.x0 + 16; const my = area.y0 + 16;
@@ -755,7 +758,7 @@ check(bus.pulling && bus.pulling.stage === 'coming' && bus.pulling.sound && bus.
 check(bus.came && bus.chime && bus.outsideSafe && bus.near >= 10 && bus.near <= 40, `when a safe zone is far (${bus.realSteps} steps here, told 100) a bus pulls up near you with its chime: ` + JSON.stringify({ near: bus.near && bus.near.toFixed(1), ride: bus.ride }));
 check(bus.ride && Math.abs(bus.ride - (15 + 15 * (100 - 45) / 105)) < 0.01, `the ride's length follows the walk it saves (${bus.ride && bus.ride.toFixed(1)} s for 100 steps)`);
 check(bus.engine && bus.engine.name === 'ut_bus_idle' && bus.engine.placed && bus.engine.level > 0.3, 'its engine idles where it stands: ' + JSON.stringify(bus.engine));
-check(bus.legTowardBus && /^Compass on\. You are (in|on) .*\. The bus is \d+ steps? away, starting (ahead|right|behind|left)\. /.test(bus.compassSaid), 'the compass points to the waiting bus and says so: ' + bus.compassSaid + ' ' + JSON.stringify(bus.routeDbg));
+check(bus.legTowardBus && /^Compass on\. You are (in|on) .*\. The bus is \d+ steps? away, starting (north|east|south|west), [a-z0-9 ]+\. /.test(bus.compassSaid), 'the compass points to the waiting bus and says so: ' + bus.compassSaid + ' ' + JSON.stringify(bus.routeDbg));
 check(bus.boarded && bus.heldStill, 'stepping up to the bus boards it; on the bus nothing answers');
 check(bus.inOrder && bus.steps >= 5 && bus.rideVoice && bus.rideVoice.loop, 'doors open, steps, doors close, the ride from your seat, doors open, steps, doors close, and it drives off: ' + JSON.stringify({ steps: bus.steps, ride: bus.rideVoice }));
 check(bus.landedSafe && bus.gone && bus.idleLeft === 0, 'you are left on the floor of the nearest safe zone, the bus gone and its engine with it');
@@ -907,8 +910,12 @@ const survey = await page.evaluate(async () => {
     const w = g._utCompassWords(i);
     out.words.push(w);
     const [dx, dy] = dirs[i];
-    if (/^This way, \d+ steps?, then (right|left)\.$|^This way, \d+ steps? to (the safe zone|the bus|the way out)\.$/.test(w)) { out.route += 1; out.wanted.push('(route)'); if (i !== legAt) out.ok = false; continue; }
-    const side = legAt < 0 ? '' : ` The way is ${['ahead', 'to your right', 'behind you', 'to your left'][(legAt - i + 4) % 4]}.`;
+    // (Web 4.1.0: every answer names the direction and describes it; the way to go
+    // says so and ends with the walk, any other ends with where the way is, by name.)
+    const target = g._utRoute().target;
+    const wayName = /^the way /.test(target.name) ? target.name : `the way to ${target.name}`;
+    const isRoute = i === legAt;
+    const side = legAt < 0 || isRoute ? '' : ` ${cap(wayName)} is ${ways[legAt]}, ${['straight ahead', 'to your right', 'behind you', 'to your left'][(legAt - i + 4) % 4]}.`;
     // Walk that way ourselves: how far it is open, and what stops us.
     let open = 0; let x = cx; let y = cy; let stop = 'wall';
     for (let k = 0; k < 40; k++) {
@@ -926,7 +933,12 @@ const survey = await page.evaluate(async () => {
     if (stop === 'border') want = `open to the border, ${plural(open, 'step')}, into ${names[next.kind]}${then}.`;
     else if (!next) want = open ? `open for ${plural(open, 'step')}, then ${blocker}; the edge of the world is ${plural(toBorder, 'step')} away.` : `${blocker}; the edge of the world is ${plural(toBorder, 'step')} away.`;
     else want = (open ? `open for ${plural(open, 'step')}, then ${blocker}. ` : `${blocker}. `) + `Beyond, ${names[next.kind]}, ${plural(toBorder, 'step')} away${then}.`;
-    want = cap(want) + side;
+    if (isRoute) {
+      out.route += 1;
+      const walk = leg.arrives ? `Walk ${plural(leg.steps, 'step')} this way, and you are there.`
+        : `Walk ${plural(leg.steps, 'step')} this way, then turn ${leg.dir[0] * leg.next[1] - leg.dir[1] * leg.next[0] > 0 ? 'right' : 'left'}, to face ${ways[dirs.findIndex((d) => d[0] === leg.next[0] && d[1] === leg.next[1])]}.`;
+      want = `${cap(ways[i])}, ${wayName}. ${cap(want)} ${walk}`;
+    } else want = `${cap(ways[i])}. ${cap(want)}${side}`;
     out.wanted.push(want);
     if (w !== want) out.ok = false;
   }
@@ -934,19 +946,19 @@ const survey = await page.evaluate(async () => {
   // to start is counted from the way you face.
   T.face('north');
   g.input('hold'); out.said = document.getElementById('said').textContent;
-  out.startNorth = (/starting (ahead|right|behind|left)\./.exec(out.said) || [])[1];
-  out.wantNorth = legAt < 0 ? undefined : ['ahead', 'right', 'behind', 'left'][legAt];
+  out.startNorth = (/ away, starting ((?:north|east|south|west), [a-z ]+)\./.exec(out.said) || [])[1];
+  out.wantNorth = legAt < 0 ? undefined : `${ways[legAt]}, ${['straight ahead', 'to your right', 'behind you', 'to your left'][legAt]}`;
   g.input('hold');
   // Facing east, the same leg starts a quarter turn further round to the left.
   T.face('east');
-  g.input('hold'); out.startEast = (/starting (ahead|right|behind|left)\./.exec(document.getElementById('said').textContent) || [])[1]; g.input('hold');
-  out.wantEast = legAt < 0 ? undefined : ['ahead', 'right', 'behind', 'left'][(legAt - 1 + 4) % 4];
+  g.input('hold'); out.startEast = (/ away, starting ((?:north|east|south|west), [a-z ]+)\./.exec(document.getElementById('said').textContent) || [])[1]; g.input('hold');
+  out.wantEast = legAt < 0 ? undefined : `${ways[legAt]}, ${['straight ahead', 'to your right', 'behind you', 'to your left'][(legAt - 1 + 4) % 4]}`;
   T.face('north');
   return out;
 });
-check(survey.ok && survey.route === 1, 'facing each main direction, the compass says how far it is open, what stops you, what lies beyond and where the way is, and one of them is the route leg with its turn: ' + JSON.stringify(survey.words) + (survey.ok ? '' : ' wanted ' + JSON.stringify(survey.wanted)));
-check(/^Compass on\. You are (in|on) (a labyrinth|an island|a tower area|a battle area|a safe zone)\. (The safe zone|The bus|The way out) is \d+ steps? away, starting (ahead|right|behind|left)\. (Nearby: [^.]*(steps? away, starting (ahead|right|behind|left)|right here)[^.]*\.|Nothing to pick up nearby\.) (This way|Open|A wall|The island's edge)[ ,;.].*$/.test(survey.said), 'turning the compass on gives the briefing, then the way ahead: ' + survey.said);
-check(survey.startNorth === survey.wantNorth && survey.startEast === survey.wantEast, `the way to start is counted from the way you face: facing north "starting ${survey.startNorth}", facing east "starting ${survey.startEast}"`);
+check(survey.ok && survey.route === 1, 'facing each main direction, the compass names it and says how far it is open, what stops you, what lies beyond and where the way is, and one of them is the way to go, with the walk and its turn: ' + JSON.stringify(survey.words) + (survey.ok ? '' : ' wanted ' + JSON.stringify(survey.wanted)));
+check(/^Compass on\. You are (in|on) (a labyrinth|an island|a tower area|a battle area|a safe zone)\. (The safe zone|The bus|The way out) is \d+ steps? away, starting (north|east|south|west), (straight ahead|to your right|behind you|to your left)\. (Nearby: [^.]*(steps? away, starting (north|east|south|west), [a-z ]+|right here)[^.]*\.|Nothing to pick up nearby\.) (North\. (Open|A wall|The island's edge)|North, the way)[ ,;.].*$/.test(survey.said) && !/This way,/.test(survey.said), 'turning the compass on gives the briefing, then the way ahead: ' + survey.said);
+check(survey.startNorth === survey.wantNorth && survey.startEast === survey.wantEast, `the way to start is named, and placed from the way you face: facing north "starting ${survey.startNorth}", facing east "starting ${survey.startEast}"`);
 
 // --------------------------------------------------------------- 13. regeneration under a pile of sounds (Russell, 8 Nov: roars carried over; a crash)
 const regenLoad = await page.evaluate(async () => {
@@ -1104,28 +1116,30 @@ const aim = await page.evaluate(async () => {
   const facing = (deg) => { g._utTurnStop(); g._utFace(deg * Math.PI / 180, true); };
   facing(0);
   const out = {
-    // Facing north: straight ahead and up to 45 degrees either side; nothing wider, nothing behind.
-    ahead: at(0, 8), at30: at(30, 8), at44: at(44, 8), at45: at(45, 8), atMinus45: at(-45, 8),
-    at47: at(47, 8), atMinus47: at(-47, 8), side90: at(90, 8), behind: at(180, 8), behind30: at(150, 8),
+    // Facing north: straight ahead and up to 30 degrees either side (web 4.1.0; 45
+    // before); nothing wider, nothing behind.
+    ahead: at(0, 8), at15: at(15, 8), at29: at(29, 8), at30: at(30, 8), atMinus30: at(-30, 8),
+    at32: at(32, 8), atMinus32: at(-32, 8), at45: at(45, 8), side90: at(90, 8), behind: at(180, 8), behind30: at(150, 8),
     // Within two steps, whatever side, behind you too.
     closeSide: at(90, 1.5), closeDiag: at(75, 1.9), closeBehind: at(180, 1.9), notClose: at(90, 2.5), notCloseBehind: at(180, 2.5),
   };
   // The aim turns with you: facing east, what was to the side is ahead.
   facing(90);
-  out.east = { ahead: at(90, 8), north: at(0, 8), south: at(180, 8), at130: at(130, 8), at140: at(140, 8) };
-  // At a slant too: facing 30 degrees, 40 degrees to the right of that is in, 50 to the left is out.
+  out.east = { ahead: at(90, 8), north: at(0, 8), south: at(180, 8), at115: at(115, 8), at125: at(125, 8) };
+  // At a slant too: facing 30 degrees, 25 degrees either side of that is in, 35 is out.
   facing(30);
-  out.slant = { right40: at(70, 8), left50: at(-20, 8), left40: at(-10, 8) };
-  // Every way an enemy can be is in front of you for one of the four main directions
-  // at least, so quick turns alone can face any enemy (a Braille notetaker's keys
-  // cannot be held).
-  let uncovered = 0;
+  out.slant = { right25: at(55, 8), left35: at(-5, 8), left25: at(5, 8), right35: at(65, 8) };
+  // Every way an enemy can be is in front of you, and within 15 degrees of the
+  // centre, for one of a quick turn's twelve steps at least, so quick turns alone
+  // can face any enemy (a Braille notetaker's keys cannot be held).
+  let uncovered = 0; let worst = 0;
   for (let deg = 0; deg < 360; deg += 1) {
-    let seen = false;
-    for (const f of [0, 90, 180, 270]) { facing(f); if (at(deg, 8)) seen = true; }
+    let seen = false; let nearest = 360;
+    for (let f = 0; f < 360; f += 30) { facing(f); if (at(deg, 8)) seen = true; nearest = Math.min(nearest, Math.abs(((deg - f + 540) % 360) - 180)); }
     if (!seen) uncovered += 1;
+    worst = Math.max(worst, nearest);
   }
-  out.uncovered = uncovered;
+  out.uncovered = uncovered; out.worst = worst;
   facing(0);
   u.enemies.push(...mine.slice(1));
   mine.forEach((m, i) => { [m.x, m.y] = saved[i]; });
@@ -1137,12 +1151,12 @@ const aim = await page.evaluate(async () => {
   out.easy = [...easy].sort(); out.most = most;
   return out;
 });
-check(!aim.skipped && aim.ahead && aim.at30 && aim.at44 && aim.at45 && aim.atMinus45, 'a shot takes a chaser in the front quarter: straight ahead and up to 45 degrees either side: ' + JSON.stringify(aim));
-check(!aim.skipped && !aim.at47 && !aim.atMinus47 && !aim.side90 && !aim.behind && !aim.behind30, 'a chaser wider than that, or behind you, is not taken (47 and 90 degrees off, and behind, eight steps away)');
+check(!aim.skipped && aim.ahead && aim.at15 && aim.at29 && aim.at30 && aim.atMinus30, 'a shot takes a chaser in front of you: straight ahead and up to 30 degrees either side: ' + JSON.stringify(aim));
+check(!aim.skipped && !aim.at32 && !aim.atMinus32 && !aim.at45 && !aim.side90 && !aim.behind && !aim.behind30, 'a chaser wider than that, or behind you, is not taken (32, 45 and 90 degrees off, and behind, eight steps away): 45 degrees off was taken until web 4.1.0');
 check(!aim.skipped && aim.closeSide && aim.closeDiag && aim.closeBehind && !aim.notClose && !aim.notCloseBehind, 'a chaser within two steps is hit whatever side it is on, behind you too; at two and a half steps it is not');
-check(!aim.skipped && aim.east.ahead && !aim.east.north && !aim.east.south && aim.east.at130 && !aim.east.at140, 'the aim turns with you: facing east, east is ahead and north and south are to the side: ' + JSON.stringify(aim.east));
-check(!aim.skipped && aim.slant.right40 && aim.slant.left40 && !aim.slant.left50, 'and at a slant: facing 30 degrees, 40 degrees either side is in and 50 is out: ' + JSON.stringify(aim.slant));
-check(!aim.skipped && aim.uncovered === 0, `whichever way an enemy lies, one of the four main directions has it in front, so quick turns alone can face it (${aim.uncovered} of 360 degrees uncovered)`);
+check(!aim.skipped && aim.east.ahead && !aim.east.north && !aim.east.south && aim.east.at115 && !aim.east.at125, 'the aim turns with you: facing east, east is ahead and north and south are to the side: ' + JSON.stringify(aim.east));
+check(!aim.skipped && aim.slant.right25 && aim.slant.left25 && !aim.slant.left35 && !aim.slant.right35, 'and at a slant: facing 30 degrees, 25 degrees either side is in and 35 is out: ' + JSON.stringify(aim.slant));
+check(!aim.skipped && aim.uncovered === 0 && aim.worst === 15, `whichever way an enemy lies, one of a quick turn's twelve steps has it in front, never more than ${aim.worst} degrees off centre, so quick turns alone can face it (${aim.uncovered} of 360 degrees uncovered)`);
 check(!aim.skipped && aim.easy.join() === '1,2' && aim.most === 8, `battle and island areas hold one or two chasers in the easy stretch and up to eight later: ${aim.easy}, ${aim.most}`);
 
 // --------------------------------------------------------------- 17. beacons over the arena, and cartridges that do not grow (Russell, 9 Nov; web 3.2.0)

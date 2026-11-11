@@ -67,11 +67,13 @@ const SENTENCES = [
   // turn, a press for a quick turn and a hold to turn freely; the up and down
   // arrows step, and held they run and walk back, which a keyboard does in no
   // other mode; and a run may be turned.
-  [/With the compass on you turn exactly as you do with it off: swipe left or right for the next main direction, or slide left or right and hold to turn freely\./g,
-    'With the compass on you turn exactly as you do with it off: press the left or right arrow for the next main direction, or hold one down to turn freely.'],
-  [/Swipe up to hear it again\./g, 'Press the up arrow to hear it again.'],
-  [/Swipe left or right to turn: one swipe is a quick turn to the next main direction, north, east, south or west, so two swipes turn you right round, and if you had stopped in between, the swipe squares you up again\./g,
-    'Press the left or right arrow to turn: one press is a quick turn to the next main direction, north, east, south or west, so two presses turn you right round, and if you had stopped in between, the press squares you up again.'],
+  [/With the compass on you turn exactly as you do with it off: swipe left or right to turn 30 degrees, or slide left or right and hold to turn freely\./g,
+    'With the compass on you turn exactly as you do with it off: press the left or right arrow to turn 30 degrees, or hold one down to turn freely.'],
+  [/Swipe up to hear any of it again\./g, 'Press the up arrow to hear any of it again.'],
+  [/Swipe left or right to turn: one swipe is a quick turn of 30 degrees, so three swipes are a quarter turn, from one main direction to the next, and six turn you right round\./g,
+    'Press the left or right arrow to turn: one press is a quick turn of 30 degrees, so three presses are a quarter turn, from one main direction to the next, and six turn you right round.'],
+  [/If a held turn has left you between two steps, the next swipe takes you onto a step again\./g,
+    'If a held turn has left you between two steps, the next press takes you onto a step again.'],
   [/Slide left or right and hold to turn freely: the turn starts slowly, so a short hold is a small nudge for aiming, then gathers speed to a full circle in about two and a half seconds, and you stop exactly where you lift\./g,
     'Hold the left or right arrow down to turn freely: the turn starts slowly, so a short hold is a small nudge for aiming, then gathers speed to a full circle in about two and a half seconds, and you stop exactly where you let go.'],
   [/A swipe that only pauses for an instant before your finger lifts is still a swipe, so a quick turn never depends on how you swipe\./g,
@@ -84,6 +86,8 @@ const SENTENCES = [
   // The notice said once at the first run after web 4.0.0 (modes/ultimate.js, TURN_NOTICE).
   [/Swipe left or right for a quick turn\./g, 'Press the left or right arrow for a quick turn.'],
   [/Slide left or right and hold to keep turning\./g, 'Hold the left or right arrow down to keep turning.'],
+  // (web 4.1.0: the pool.)
+  [/If you run through it, by sliding a finger up and holding it, you swim instead/g, 'If you run through it, by holding the up arrow down, you swim instead'],
   [/Swipe up to walk the way you are facing\./g, 'Press the up arrow to walk the way you are facing, or hold it down to run.'],
   [/with no item in hand the tap gives the empty click/g, 'with no item in hand the press gives the empty click'],
   [/hold a finger still, double tap, triple tap/g, 'double tap, triple tap'],

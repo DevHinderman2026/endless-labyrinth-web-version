@@ -42,7 +42,7 @@ const startRun = async () => {
     const mod = await import('./js/modes/ultimate.js');
     const world = await import('./js/modes/ultimate/world.js');
     const Q = Math.PI / 2;
-    const T = window.__t = { mod, world, Q, deg: (r) => r * 180 / Math.PI };
+    const T = window.__t = { mod, world, Q, deg: (r) => +(r * 180 / Math.PI).toFixed(6) };
     // (A run's steps are the game's own business, not the mode's: ticked here too.)
     T.frames = (seconds, hz = 60) => { for (let i = 0; i < Math.round(seconds * hz); i++) { g._tickStride(1 / hz); g.updateUltimateMode(1 / hz); } };
     T.land = () => { for (let i = 0; i < 90 && g.ut.turn && g.ut.turn.quick; i++) g.updateUltimateMode(1 / 60); };
@@ -184,21 +184,24 @@ check(Math.abs(facing.wrapped - 90) < 1e-9 && Math.abs(facing.wrappedBack - 270)
 check(facing.behindFacingNorth === 0 && facing.behindFacingSouth === 1 && facing.behindFacingEast === 0 && facing.behindFacingSouthEast > 0.3 && facing.behindFacingSouthEast < 1,
   `the dull copy for what is behind you follows the way you face: a sound to the north is ${facing.behindFacingNorth} behind facing north, ${facing.behindFacingSouth} facing south, ${facing.behindFacingEast} facing east, ${facing.behindFacingSouthEast.toFixed(2)} facing south-east`);
 
-// --------------------------------------------------------------- 2. a quick turn: to the next main direction
+// --------------------------------------------------------------- 2. a quick turn: thirty degrees, to the next step (web 4.1.0; a quarter turn before)
 const quick = await page.evaluate(async () => {
   const g = window.__el.game; const u = g.ut; const T = window.__t;
-  const { TURN_QUICK } = T.mod;
+  const { TURN_QUICK, TURN_STEP } = T.mod;
   T.open();
-  const out = {};
+  const out = { step: T.deg(TURN_STEP) };
   const turn = (side) => { g.input(side); T.land(); return T.deg(u.face); };
-  // Squared up: a quarter turn each time, right round, and back.
+  // Squared up: thirty degrees each time, three to a quarter turn, right round, and back.
   T.face(0);
-  out.right = [turn('right'), turn('right'), turn('right'), turn('right')];
-  out.left = [turn('left'), turn('left'), turn('left'), turn('left')];
-  // In between: it squares you up, to the next main direction that way.
+  out.right = []; for (let i = 0; i < 12; i++) out.right.push(turn('right'));
+  out.left = []; for (let i = 0; i < 12; i++) out.left.push(turn('left'));
+  // The main directions are met exactly: squared up to the last digit.
+  T.face(0); for (let i = 0; i < 3; i++) turn('right');
+  out.eastExact = u.face === Math.PI / 2 && g._utForward().join() === '1,0';
+  // Stopped between two steps (by a held turn): on to the next step that way.
   const from = (deg, side) => { T.face(deg); return turn(side); };
-  out.slants = { r30: from(30, 'right'), l30: from(30, 'left'), r100: from(100, 'right'), l100: from(100, 'left'), r350: from(350, 'right'), l350: from(350, 'left'), r89: from(89, 'right'), l1: from(1, 'left') };
-  // It is a turn you hear, not a jump: a quarter turn takes about a quarter of a second.
+  out.slants = { r10: from(10, 'right'), l10: from(10, 'left'), r100: from(100, 'right'), l100: from(100, 'left'), r350: from(350, 'right'), l350: from(350, 'left'), r89: from(89, 'right'), l1: from(1, 'left'), r45: from(45, 'right'), l45: from(45, 'left') };
+  // It is a turn you hear, not a jump: thirty degrees take an eighth of a second.
   T.face(0);
   const at = [...g.playerPos];
   T.played.length = 0;
@@ -206,28 +209,34 @@ const quick = await page.evaluate(async () => {
   const begun = { turning: !!(u.turn && u.turn.quick), face: T.deg(u.face) };
   let frames = 0; const path = [];
   while (u.turn && frames < 200) { g.updateUltimateMode(1 / 60); frames += 1; path.push(T.deg(u.face)); }
-  out.sweep = { begun, frames, seconds: frames / 60, wanted: (Math.PI / 2) / TURN_QUICK, rising: path.every((v, i) => i === 0 || v > path[i - 1]), mid: path[Math.floor(path.length / 2)], end: T.deg(u.face) };
+  out.sweep = { begun, frames, seconds: frames / 60, wanted: TURN_STEP / TURN_QUICK, rising: path.every((v, i) => i === 0 || v > path[i - 1]), mid: path[Math.floor(path.length / 2) - 1], end: T.deg(u.face) };
   out.stood = g.playerPos[0] === at[0] && g.playerPos[1] === at[1];
-  out.sounds = T.played.map(([n]) => n).filter((n) => /^step_|^wall$|^boundary$|^ut_tick/.test(n));
-  // Two swipes before the first has landed: a half turn. One each way: back where you were.
-  T.face(0); g.input('right'); T.frames(0.05); g.input('right'); T.land(); out.twoRight = T.deg(u.face);
-  T.face(0); g.input('right'); T.frames(0.05); g.input('left'); T.land(); out.rightLeft = T.deg(u.face);
-  T.face(0); g.input('left'); T.frames(0.05); g.input('left'); T.frames(0.05); g.input('left'); T.land(); out.threeLeft = T.deg(u.face);
-  // The tick of each landing: north the higher one.
+  out.sounds = T.played.map(([n]) => n).filter((n) => /^step_|^wall$|^boundary$|^ut_tick|^ut_click/.test(n));
+  // Swipes before the first has landed add up. One each way: back where you were.
+  T.face(0); g.input('right'); T.frames(0.03); g.input('right'); T.land(); out.twoRight = T.deg(u.face);
+  T.face(0); g.input('right'); T.frames(0.03); g.input('left'); T.land(); out.rightLeft = T.deg(u.face);
+  T.face(0); g.input('left'); T.frames(0.03); g.input('left'); T.frames(0.03); g.input('left'); T.land(); out.threeLeft = T.deg(u.face);
+  // Each landing is heard: a soft click between two main directions, the tick on
+  // one, the higher tick on north.
   T.face(0); T.played.length = 0;
-  for (let i = 0; i < 4; i++) { g.input('right'); T.land(); }
-  out.ticks = T.played.filter(([n]) => /^ut_tick/.test(n)).map(([n, o]) => [n, !!o.direct]);
+  for (let i = 0; i < 12; i++) { g.input('right'); T.land(); }
+  out.ticks = T.played.filter(([n]) => /^ut_tick|^ut_click/.test(n)).map(([n, o]) => [n, !!o.direct, o.volume]);
+  out.levels = [T.mod.CLICK_LEVEL, T.mod.TICK_LEVEL];
   T.face(0);
   return out;
 });
-check(quick.right.join() === '90,180,270,0' && quick.left.join() === '270,180,90,0', `squared up, a swipe is a quarter turn: right ${quick.right.join(', ')}; left ${quick.left.join(', ')}`);
-check(quick.slants.r30 === 90 && quick.slants.l30 === 0 && quick.slants.r100 === 180 && quick.slants.l100 === 90 && quick.slants.r350 === 0 && quick.slants.l350 === 270 && quick.slants.r89 === 90 && quick.slants.l1 === 0,
-  'in between, a swipe squares you up to the next main direction that way: ' + JSON.stringify(quick.slants));
-check(quick.sweep.begun.turning && quick.sweep.begun.face === 0 && quick.sweep.rising && Math.abs(quick.sweep.seconds - quick.sweep.wanted) < 0.05 && quick.sweep.mid > 20 && quick.sweep.mid < 70 && quick.sweep.end === 90,
-  `a quick turn sweeps round, it does not jump: a quarter turn in ${quick.sweep.seconds.toFixed(2)} seconds, ${quick.sweep.mid.toFixed(0)} degrees half way ` + JSON.stringify(quick.sweep));
-check(quick.stood && quick.sounds.join() === 'ut_tick', 'turning does not move you and makes no footstep: only the tick of the landing is heard (' + quick.sounds.join(', ') + ')');
-check(quick.twoRight === 180 && quick.rightLeft === 0 && quick.threeLeft === 90, `swipes before the first has landed add up: two right ${quick.twoRight}, right then left ${quick.rightLeft}, three left ${quick.threeLeft}`);
-check(JSON.stringify(quick.ticks) === JSON.stringify([['ut_tick', true], ['ut_tick', true], ['ut_tick', true], ['ut_tick_north', true]]), 'each landing has its tick, a higher one for north, played past the world\'s filter: ' + JSON.stringify(quick.ticks));
+check(quick.step === 30 && quick.right.join() === '30,60,90,120,150,180,210,240,270,300,330,0' && quick.left.join() === '330,300,270,240,210,180,150,120,90,60,30,0' && quick.eastExact,
+  `a swipe turns you thirty degrees, three to a quarter turn, and the main directions are met exactly: right ${quick.right.join(', ')}; left ${quick.left.join(', ')}`);
+check(quick.slants.r10 === 30 && quick.slants.l10 === 0 && quick.slants.r100 === 120 && quick.slants.l100 === 90 && quick.slants.r350 === 0 && quick.slants.l350 === 330 && quick.slants.r89 === 90 && quick.slants.l1 === 0 && quick.slants.r45 === 60 && quick.slants.l45 === 30,
+  'stopped between two steps, a swipe takes you on to the next step that way: ' + JSON.stringify(quick.slants));
+check(quick.sweep.begun.turning && quick.sweep.begun.face === 0 && quick.sweep.rising && Math.abs(quick.sweep.seconds - quick.sweep.wanted) < 0.03 && quick.sweep.mid > 5 && quick.sweep.mid < 25 && quick.sweep.end === 30,
+  `a quick turn sweeps round, it does not jump: thirty degrees in ${quick.sweep.seconds.toFixed(2)} seconds, ${quick.sweep.mid.toFixed(0)} degrees part way ` + JSON.stringify(quick.sweep));
+check(quick.stood && quick.sounds.join() === 'ut_click', 'turning does not move you and makes no footstep: only the click of the landing is heard (' + quick.sounds.join(', ') + ')');
+check(quick.twoRight === 60 && quick.rightLeft === 0 && quick.threeLeft === 270, `swipes before the first has landed add up: two right ${quick.twoRight}, right then left ${quick.rightLeft}, three left ${quick.threeLeft}`);
+{
+  const want = []; for (let i = 1; i <= 12; i++) want.push(i % 3 ? ['ut_click', true, quick.levels[0]] : [i === 12 ? 'ut_tick_north' : 'ut_tick', true, quick.levels[1]]);
+  check(JSON.stringify(quick.ticks) === JSON.stringify(want) && quick.levels[0] < quick.levels[1], 'every landing is heard, past the world\'s filter: a softer click between two main directions, the tick on one, the higher tick on north: ' + quick.ticks.map(([n]) => n.replace('ut_', '')).join(' '));
+}
 
 // --------------------------------------------------------------- 3. a held turn: free, slow at first, stopped where it is let go
 const held = await page.evaluate(async () => {
@@ -275,11 +284,12 @@ const held = await page.evaluate(async () => {
     T.face(from); T.played.length = 0;
     g.input(`turn_${side}_start`); T.frames(seconds); const mid = T.deg(u.face);
     g.input('turn_end'); g.input(side); T.land();
-    return { mid, end: T.deg(u.face), ticks: T.played.filter(([n]) => /^ut_tick/.test(n)).map(([n]) => n) };
+    return { mid, end: T.deg(u.face), ticks: T.played.filter(([n]) => /^ut_tick|^ut_click/.test(n)).map(([n]) => n) };
   };
-  out.briefPlain = brief('right', 10);       // on from 10 degrees to east
-  out.briefOver = brief('right', 87);        // carried just past east by the hold: back to east, not on to south
-  out.briefOverLeft = brief('left', 3);      // carried just past north: back to north, not on to west
+  out.briefPlain = brief('right', 10);       // on from 10 degrees to the step at 30
+  out.briefOver = brief('right', 87);        // carried just past east by the hold: back to east, not on to 120
+  out.briefOverLeft = brief('left', 3);      // carried just past north: back to north, not on to 330
+  out.briefOverStep = brief('right', 28);    // carried just past the step at 30: back to it
   // A swipe that comes a moment later is a swipe of its own, from where you are by then.
   T.face(87); g.input('turn_right_start'); T.frames(0.15); g.input('turn_end'); T.frames(0.1); g.input('right'); T.land(); out.laterSwipe = T.deg(u.face);
   // And after a real hold, a swipe straight after is never taken back to where the hold began.
@@ -295,13 +305,14 @@ check(held.stays && held.stoppedAt > 5 && held.stoppedAt % 90 !== 0, `let go, yo
 check(held.ticksRight.join() === 'ut_tick,ut_tick,ut_tick,ut_tick_north' && held.afterRight > 0 && held.afterRight < 90, `a held turn ticks at each main direction as it passes, the higher one at north: ${held.ticksRight.join(', ')} (ending at ${held.afterRight.toFixed(0)} degrees)`);
 check(held.ticksLeft[0] === 'ut_tick' && held.ticksLeft.length >= 1 && held.ticksLeaving === 0, `turning left ticks too (${held.ticksLeft.join(', ')}), and the direction you set off from does not tick (${held.ticksLeaving})`);
 check(held.strayEnd && held.gaveUp, 'an end with no turn under way is nothing, and a turn never ended gives up by itself');
-check(held.briefPlain.mid > 11 && held.briefPlain.end === 90 && held.briefPlain.ticks.join() === 'ut_tick'
+check(held.briefPlain.mid > 11 && held.briefPlain.end === 30 && held.briefPlain.ticks.join() === 'ut_click'
   && held.briefOver.mid > 90 && held.briefOver.end === 90 && held.briefOver.ticks.join() === 'ut_tick'
-  && held.briefOverLeft.mid > 350 && held.briefOverLeft.end === 0 && held.briefOverLeft.ticks.join() === 'ut_tick_north',
-  `a hold let go at once with a swipe after it is that swipe, counted from where the hold began: from 10 degrees to ${held.briefPlain.end}; from 87, carried to ${held.briefOver.mid.toFixed(1)}, back to ${held.briefOver.end} with one tick; from 3 turning left, carried to ${held.briefOverLeft.mid.toFixed(1)}, back to ${held.briefOverLeft.end}`);
-check(held.laterSwipe === 180 && held.longThenSwipe[0] > 95 && held.longThenSwipe[1] === 180,
+  && held.briefOverLeft.mid > 350 && held.briefOverLeft.end === 0 && held.briefOverLeft.ticks.join() === 'ut_tick_north'
+  && held.briefOverStep.mid > 30 && held.briefOverStep.end === 30 && held.briefOverStep.ticks.join() === 'ut_click',
+  `a hold let go at once with a swipe after it is that swipe, counted from where the hold began: from 10 degrees to ${held.briefPlain.end}; from 87, carried to ${held.briefOver.mid.toFixed(1)}, back to ${held.briefOver.end} with one tick; from 3 turning left, carried to ${held.briefOverLeft.mid.toFixed(1)}, back to ${held.briefOverLeft.end}; from 28, carried to ${held.briefOverStep.mid.toFixed(1)}, back to ${held.briefOverStep.end} with one click`);
+check(held.laterSwipe === 120 && held.longThenSwipe[0] > 95 && held.longThenSwipe[0] < 120 && held.longThenSwipe[1] === 120,
   `a swipe that comes later, or after a real hold, counts from where you are: ${held.laterSwipe}; ${held.longThenSwipe[0].toFixed(0)} then ${held.longThenSwipe[1]}`);
-check(held.onTop.face === 90 && held.onTop.free && held.quickAfterHeld % 90 === 0, `a hold on top of a quick turn lets that one land first (${held.onTop.face}), and a swipe ends a hold by squaring up (${held.quickAfterHeld})`);
+check(held.onTop.face === 30 && held.onTop.free && held.quickAfterHeld % 30 === 0, `a hold on top of a quick turn lets that one land first (${held.onTop.face}), and a swipe ends a hold by taking you onto a step (${held.quickAfterHeld})`);
 
 // --------------------------------------------------------------- 4. a step goes exactly where you face
 const walking = await page.evaluate(async () => {
@@ -516,7 +527,7 @@ const report = await page.evaluate(async () => {
   const g = window.__el.game; const u = g.ut; const T = window.__t;
   T.open();
   const said = {};
-  for (const deg of [0, 45, 90, 135, 180, 225, 270, 315, 20, 25, 340, 359.5, 68]) { T.face(deg); g.input('enter'); said[deg] = (/Facing ([a-z-]+)\.$/.exec(document.getElementById('said').textContent) || [])[1]; }
+  for (const deg of [0, 30, 45, 60, 90, 120, 135, 150, 180, 210, 225, 240, 270, 300, 315, 330, 10, 13, 350, 359.5, 80]) { T.face(deg); g.input('enter'); said[deg] = (/Facing ([a-z-]+)\.$/.exec(document.getElementById('said').textContent) || [])[1]; }
   T.face(90);
   g.input('enter');
   const whole = document.getElementById('said').textContent;
@@ -525,8 +536,11 @@ const report = await page.evaluate(async () => {
   return { said, whole, line };
 });
 check(report.said[0] === 'north' && report.said[45] === 'north-east' && report.said[90] === 'east' && report.said[135] === 'south-east' && report.said[180] === 'south' && report.said[225] === 'south-west' && report.said[270] === 'west' && report.said[315] === 'north-west',
-  'the report ends with the way you face, as one of eight words: ' + JSON.stringify(report.said));
-check(report.said[20] === 'north' && report.said[25] === 'north-east' && report.said[340] === 'north' && report.said['359.5'] === 'north' && report.said[68] === 'east', 'in between, the nearest of the eight');
+  'the report ends with the way you face: ' + JSON.stringify(report.said));
+// (Sixteen words since web 4.1.0, so that each of a quick turn's twelve steps has its own.)
+check(report.said[30] === 'north-north-east' && report.said[60] === 'east-north-east' && report.said[120] === 'east-south-east' && report.said[150] === 'south-south-east' && report.said[210] === 'south-south-west' && report.said[240] === 'west-south-west' && report.said[300] === 'west-north-west' && report.said[330] === 'north-north-west',
+  'each step of a quick turn has its own word: thirty degrees is north-north-east, sixty east-north-east, and so on round');
+check(report.said[10] === 'north' && report.said[13] === 'north-north-east' && report.said[350] === 'north' && report.said['359.5'] === 'north' && report.said[80] === 'east', 'in between, the nearest of the sixteen');
 check(/^\d+ health\. \d+ points?\. \d+ shots?\. \d+ items?\. Facing east\.$/.test(report.whole), 'the whole report: ' + report.whole);
 check(/ Facing east\.$/.test(report.line), 'the line on the screen says it too: ' + report.line);
 
@@ -551,13 +565,17 @@ const compass = await page.evaluate(async () => {
   g.input('hold');
   out.on = u.compass.on; out.briefing = T.spoken[T.spoken.length - 1];
   out.toward = beepsOver(1.0);
-  // A quick turn is a real turn: it lands, says what lies ahead now, and the beep drops.
+  // A quick turn is a real turn: it lands, says where the way is now, and the beep drops.
   const at = [...g.playerPos];
   T.spoken.length = 0;
   g.input('right'); T.land();
+  out.oneRight = { face: T.deg(u.face), said: T.spoken[T.spoken.length - 1], stood: g.playerPos[0] === at[0] && g.playerPos[1] === at[1] };
+  out.oneStep = beepsOver(1.0);
+  // Two more make the quarter turn: a main direction, described, and where the way is.
+  g.input('right'); T.land(); g.input('right'); T.land();
   out.afterRight = { face: T.deg(u.face), said: T.spoken[T.spoken.length - 1], stood: g.playerPos[0] === at[0] && g.playerPos[1] === at[1] };
   out.across = beepsOver(1.0);
-  g.input('right'); T.land();
+  for (let i = 0; i < 3; i++) { g.input('right'); T.land(); }
   out.awayFace = T.deg(u.face); out.awaySaid = T.spoken[T.spoken.length - 1];
   out.away = beepsOver(1.0);
   // No walking and no shot while it is on; a swipe up says the way ahead again.
@@ -572,11 +590,11 @@ const compass = await page.evaluate(async () => {
   g.input('turn_end');
   out.turning = { beeps: turning.length, distinct: new Set(turning).size, slant: u.face % (Math.PI / 2) !== 0 };
   out.every = [COMPASS_BEEP_EVERY, COMPASS_BEEP_TURNING];
-  // At a slant, a swipe up says the way you face.
-  T.face(45); T.spoken.length = 0; g.input('up'); out.slantSaid = T.spoken[T.spoken.length - 1];
+  // At a slant, a swipe up says the way you face and where the way to go is.
+  T.face(legAt * 90 + 45); T.spoken.length = 0; g.input('up'); out.slantSaid = T.spoken[T.spoken.length - 1];
   // Turn to the way to go by ear, turn the compass off, and you are facing it: walk.
   T.face(((legAt + 3) % 4) * 90);
-  g.input('right'); T.land();
+  for (let i = 0; i < 3; i++) { g.input('right'); T.land(); }
   out.homeSaid = T.spoken[T.spoken.length - 1];
   g.input('hold');
   out.off = !u.compass.on; out.facingWay = T.deg(u.face) === legAt * 90;
@@ -584,24 +602,40 @@ const compass = await page.evaluate(async () => {
   g.input('up');
   out.walked = [g.playerPos[0] - p0[0], g.playerPos[1] - p0[1]]; out.legDir = leg.dir;
   // The briefing counts the way to start from the way you face.
-  const start = (deg) => { T.face(deg); T.spoken.length = 0; g.input('hold'); const s = T.spoken[T.spoken.length - 1]; g.input('hold'); return (/starting (ahead|right|behind|left)\./.exec(s) || [])[1]; };
+  const start = (deg) => { T.face(deg); T.spoken.length = 0; g.input('hold'); const s = T.spoken[T.spoken.length - 1]; g.input('hold'); out.lastBriefing = s; return (/ away, starting ((?:north|east|south|west), [a-z0-9 ]+)\./.exec(s) || [])[1]; };
   g.playerPos = p0;
+  out.legName = ['north', 'east', 'south', 'west'][legAt];
   out.starts = [0, 1, 2, 3].map((k) => start(((legAt + 4 - k) % 4) * 90));
+  out.acrossBriefing = (start(((legAt + 3) % 4) * 90), out.lastBriefing);
   out.startSlant = start(legAt * 90 + 30);
+  out.startFree = start(legAt * 90 - 72);
   T.face(0);
   return out;
 });
 if (compass.skipped) console.log('SKIP no way to go from the place chosen');
 else {
-  check(compass.on && /^Compass on\. You are .* This way, \d+ steps?(, then (right|left)| to (the safe zone|the bus|the way out))\.$/.test(compass.briefing), 'facing the way to go, the compass comes on with the briefing and then the leg ahead: ' + compass.briefing);
+  const WAYNAME = '(the way to the safe zone|the way to the bus|the way out)';
+  const DIR = '(north|east|south|west)';
+  const WAYCAP = '(The way to the safe zone|The way to the bus|The way out)';
+  const DIRCAP = '(North|East|South|West)';
+  const WALK = `Walk \\d+ steps? this way(, and you are there|, then turn (right|left), to face ${DIR})\\.`;
+  check(compass.on && new RegExp(`^Compass on\\. You are .* \\d+ steps? away, starting ${compass.legName}, straight ahead\\. .*${compass.legName[0].toUpperCase() + compass.legName.slice(1)}, ${WAYNAME}\\. .*${WALK}$`).test(compass.briefing),
+    'facing the way to go, the compass comes on with the briefing, then names the way you face, says it is the way, describes it and gives the walk: ' + compass.briefing);
+  check(!/This way/.test(compass.briefing + compass.afterRight.said + compass.awaySaid + compass.homeSaid + compass.oneRight.said), 'nowhere does it say only "This way"');
   check(compass.toward.length >= 2 && compass.toward.every((s) => s === 8), 'the beep is at its highest when you face the way to go: ' + compass.toward.join(' '));
-  check(compass.afterRight.face === ((compass.legAt + 1) % 4) * 90 && compass.afterRight.stood && /The way is to your left\.$/.test(compass.afterRight.said), 'a swipe right with the compass on is a real quarter turn, where you stand, and it says what lies ahead and that the way is now to your left: ' + compass.afterRight.said);
-  check(compass.across.every((s) => s === 4) && compass.away.every((s) => s === 0) && /The way is behind you\.$/.test(compass.awaySaid), `the beep drops as you turn away: across the way ${compass.across.join(' ')}, with your back to it ${compass.away.join(' ')} ("${compass.awaySaid}")`);
+  check(compass.oneRight.face === (compass.legAt * 90 + 30) % 360 && compass.oneRight.stood && new RegExp(`^Facing [a-z-]+\\. ${WAYCAP} is ${compass.legName}, 30 degrees to your left\\.$`).test(compass.oneRight.said) && compass.oneStep.every((s) => s < 8 && s > 4),
+    `one swipe right with the compass on turns you thirty degrees where you stand, and it says the way you face and where the way to go now is: ${compass.oneRight.said} (beeps ${compass.oneStep.join(' ')})`);
+  check(compass.afterRight.face === ((compass.legAt + 1) % 4) * 90 && compass.afterRight.stood && new RegExp(`^${DIRCAP}\\. .*${WAYCAP} is ${compass.legName}, to your left\\.$`).test(compass.afterRight.said),
+    'two more make the quarter turn: it names the direction, describes what lies that way, and says the way to go is now to your left, by name: ' + compass.afterRight.said);
+  check(compass.across.every((s) => s === 4) && compass.away.every((s) => s === 0) && new RegExp(` is ${compass.legName}, behind you\\.$`).test(compass.awaySaid), `the beep drops as you turn away: across the way ${compass.across.join(' ')}, with your back to it ${compass.away.join(' ')} ("${compass.awaySaid}")`);
   check(compass.frozen && compass.again === compass.awaySaid, 'with the compass on you cannot walk or shoot; a swipe up says the way ahead again');
   check(compass.turning.beeps >= 5 && compass.turning.distinct >= 3 && compass.turning.slant && compass.every[1] < compass.every[0], `while you hold a turn the beeps come quicker and their pitch follows the turn (${compass.turning.beeps} beeps, ${compass.turning.distinct} pitches in 1.2 seconds)`);
-  check(/^Facing (north|south)-(east|west)\.$/.test(compass.slantSaid), 'at a slant a swipe up says the way you face: ' + compass.slantSaid);
-  check(/^This way, /.test(compass.homeSaid) && compass.off && compass.facingWay && compass.walked[0] === compass.legDir[0] * 3 && compass.walked[1] === compass.legDir[1] * 3, 'turned to the way to go, the compass turned off, you are facing it: the next step is along the way (' + compass.homeSaid + ')');
-  check(compass.starts.join() === 'ahead,right,behind,left' && ['ahead', 'right'].includes(compass.startSlant), 'the briefing counts the way to start from the way you face: ' + compass.starts.join(', ') + '; at a slant the nearest of the four (' + compass.startSlant + ')');
+  check(new RegExp(`^Facing [a-z-]+\\. ${WAYCAP} is ${compass.legName}, 45 degrees to your left\\.$`).test(compass.slantSaid), 'at a slant a swipe up says the way you face and where the way to go is, in degrees: ' + compass.slantSaid);
+  check(new RegExp(`^${compass.legName[0].toUpperCase() + compass.legName.slice(1)}, ${WAYNAME}\\. .*${WALK}$`).test(compass.homeSaid) && compass.off && compass.facingWay && compass.walked[0] === compass.legDir[0] * 3 && compass.walked[1] === compass.legDir[1] * 3, 'turned to the way to go, the compass turned off, you are facing it: the next step is along the way (' + compass.homeSaid + ')');
+  const n = compass.legName;
+  check(compass.starts.join('; ') === `${n}, straight ahead; ${n}, to your right; ${n}, behind you; ${n}, to your left` && compass.startSlant === `${n}, 30 degrees to your left` && compass.startFree === `${n}, 70 degrees to your right`,
+    'the briefing names the way to start and says where it is from the way you face: ' + compass.starts.join('; ') + '; at a slant in degrees (' + compass.startSlant + '; ' + compass.startFree + ')');
+  check(!/The way (to|out)[^.]* is /.test(compass.acrossBriefing) && / away, starting /.test(compass.acrossBriefing), 'coming on, it says where the way is once, in the briefing, not twice: ' + compass.acrossBriefing);
 }
 
 // --------------------------------------------------------------- 9. the throw, the bus at the door, the lift's square
@@ -615,7 +649,7 @@ const others = await page.evaluate(async () => {
     u.area = tw; u.place = 'world'; g.playerPos = W.posOf(tw.x0 + 16, tw.y0 + 16); g._utRefreshRooms(); g._utListenerMix(); T.calm();
     const put = (deg, steps) => { const t = deg * Math.PI / 180; e.x = g.playerPos[0] - tw.centre[0] + Math.sin(t) * steps * 3; e.y = g.playerPos[1] - tw.centre[1] - Math.cos(t) * steps * 3; };
     const thrown = (faceDeg, atDeg, steps) => { T.face(faceDeg); put(atDeg, steps); e.hitsTaken = 0; e.hitsNeeded = 99; u.items = 5; g.input('space'); return { hit: e.hitsTaken === 1, spent: 5 - u.items }; };
-    out.throwAhead = thrown(0, 0, 8); out.throwSide = thrown(0, 90, 8); out.throwBehind = thrown(0, 180, 8); out.throwTurned = thrown(180, 180, 8); out.throwClose = thrown(0, 180, 1.5); out.throwEdge = thrown(90, 50, 8);
+    out.throwAhead = thrown(0, 0, 8); out.throwSide = thrown(0, 90, 8); out.throwBehind = thrown(0, 180, 8); out.throwTurned = thrown(180, 180, 8); out.throwClose = thrown(0, 180, 1.5); out.throwEdge = thrown(90, 65, 8); out.throwOutside = thrown(90, 50, 8);
   }
   // The lift: stepping onto its square starts the ride, wherever on the square you cross it.
   const isl = u.world.areas.find((x) => x.kind === 'island');
@@ -629,7 +663,7 @@ const others = await page.evaluate(async () => {
       const rode = u.place === 'ride';
       if (u.ride && u.ride.voice) u.ride.voice.stop();
       u.place = 'world'; u.ride = null; u.rideMix = null;
-      if (u.seabed) { for (const k of ['under', 'hum', 'breath']) if (u.seabed[k]) u.seabed[k].stop(); u.seabed = null; }
+      if (u.seabed) { for (const k of ['under', 'underWide', 'hum', 'breath']) if (u.seabed[k]) u.seabed[k].stop(); u.seabed = null; }
       return rode;
     };
     out.liftSquare = rideFrom(W.posOf(ex, ey + 1), 0);                       // straight on, through the middle
@@ -652,8 +686,8 @@ const others = await page.evaluate(async () => {
   T.face(0);
   return out;
 });
-check(!others.throwAhead || (others.throwAhead.hit && others.throwAhead.spent === 1 && !others.throwSide.hit && !others.throwBehind.hit && others.throwTurned.hit && others.throwClose.hit && others.throwEdge.hit),
-  'a throw takes the thrower in front of you, not one to the side or behind; turn to face it and it does; within two steps it does anyway: ' + JSON.stringify(others));
+check(!others.throwAhead || (others.throwAhead.hit && others.throwAhead.spent === 1 && !others.throwSide.hit && !others.throwBehind.hit && others.throwTurned.hit && others.throwClose.hit && others.throwEdge.hit && !others.throwOutside.hit),
+  'a throw takes the thrower in front of you, not one to the side or behind; turn to face it and it does; 25 degrees off centre it does, 40 it does not (it did until web 4.1.0); within two steps it does anyway: ' + JSON.stringify(others));
 check(others.liftSquare === undefined || (others.liftSquare && others.liftCorner && others.liftSlant && !others.liftMiss), `stepping onto the lift's square starts the ride wherever you cross it (middle ${others.liftSquare}, off to one side ${others.liftCorner}, at a slant ${others.liftSlant}), and the next square along does not (${others.liftMiss})`);
 check(others.busAhead && Math.abs(others.busAhead[0] - 1.5) < 0.01 && Math.abs(others.busAhead[2]) < 0.01, 'the bus\'s engine at the door is in front of you whichever way you face (facing east: ' + JSON.stringify(others.busAhead) + ')');
 
@@ -696,7 +730,7 @@ const stops = await page.evaluate(async () => {
   return out;
 });
 check(stops.paused && stops.endedByPause && stops.noStartPaused && stops.resumedStill, 'a pause ends a held turn where it is, nothing turns while paused, and resuming does not carry it on');
-check(stops.quickLanded === 90, 'a quick turn under way when the pause comes lands where it was going (' + stops.quickLanded + ')');
+check(stops.quickLanded === 30, 'a quick turn under way when the pause comes lands where it was going (' + stops.quickLanded + ')');
 check(stops.asking && stops.endedByQuit && stops.backInRun && stops.inHelp && stops.endedByHelp && stops.backFromHelp, 'the quit question and help end a turn too');
 check(stops.newWorld >= 2 && Math.abs(stops.keptFacing - 135) < 1e-9, `a new world leaves you facing as you were (${stops.keptFacing})`);
 const fresh = await (async () => {
@@ -721,7 +755,7 @@ const gesture = (script) => page.evaluate(async (script) => {
   const snaps = [];
   for (const [ms, what, x, y, id = 0] of script) {
     if (ms) await new Promise((r) => setTimeout(r, ms));
-    if (what === 'snap') { const u = g.ut; snaps.push({ face: u ? u.face * 180 / Math.PI : null, turn: u && u.turn ? (u.turn.free ? 'free' : 'quick') : null, pos: [...g.playerPos], log: T.log.map(([n]) => n) }); continue; }
+    if (what === 'snap') { const u = g.ut; snaps.push({ face: u ? +(u.face * 180 / Math.PI).toFixed(6) : null, turn: u && u.turn ? (u.turn.free ? 'free' : 'quick') : null, pos: [...g.playerPos], log: T.log.map(([n]) => n) }); continue; }
     const t = new Touch({ identifier: id, target: el, clientX: x, clientY: y });
     if (what === 'touchend') down.delete(id); else down.set(id, t);
     const still = [...down.values()];
@@ -729,17 +763,17 @@ const gesture = (script) => page.evaluate(async (script) => {
   }
   return snaps;
 }, script);
-const state = () => page.evaluate(() => { const g = window.__el.game; const u = g.ut; return { face: u ? u.face * 180 / Math.PI : null, turn: u && u.turn ? (u.turn.free ? 'free' : 'quick') : null, pos: [...g.playerPos], log: window.__t.log.map(([x]) => x) }; });
+const state = () => page.evaluate(() => { const g = window.__el.game; const u = g.ut; return { face: u ? +(u.face * 180 / Math.PI).toFixed(6) : null, turn: u && u.turn ? (u.turn.free ? 'free' : 'quick') : null, pos: [...g.playerPos], log: window.__t.log.map(([x]) => x) }; });
 const reset = (deg = 0) => page.evaluate((deg) => { const T = window.__t; T.open(); T.face(deg); T.log.length = 0; T.spoken.length = 0; }, deg);
 const ranFrom = await page.evaluate(() => { const T = window.__t; const a = T.open(); return [(a.x0 + 16) * 3, (a.y0 + 16) * 3]; });
 
 await reset();
 // A swipe: the finger slides and lifts. One quick turn, taken when it lifts.
 let snaps = await gesture([[0, 'touchstart', 200, 400], [15, 'touchmove', 232, 402], [15, 'touchmove', 265, 404], [0, 'snap'], [15, 'touchend', 265, 404], [0, 'snap'], [450, 'snap']]);
-check(snaps[0].log.length === 0 && snaps[1].log.join() === 'right' && snaps[2].face === 90 && snaps[2].turn === null, `a swipe right is one quick turn, taken when the finger lifts: you face east (${snaps[2].log.join(', ')}; ${snaps[2].face})`);
+check(snaps[0].log.length === 0 && snaps[1].log.join() === 'right' && snaps[2].face === 30 && snaps[2].turn === null, `a swipe right is one quick turn of thirty degrees, taken when the finger lifts (${snaps[2].log.join(', ')}; ${snaps[2].face})`);
 await reset();
 snaps = await gesture([[0, 'touchstart', 200, 400], [15, 'touchmove', 165, 400], [15, 'touchmove', 130, 398], [15, 'touchend', 130, 398], [450, 'snap']]);
-check(snaps[0].log.join() === 'left' && snaps[0].face === 270, `a swipe left turns you to the west (${snaps[0].face})`);
+check(snaps[0].log.join() === 'left' && snaps[0].face === 330, `a swipe left turns you thirty degrees to the left (${snaps[0].face})`);
 
 // Slide and hold: once the finger rests, you turn until it lifts, and stop there.
 await reset();
@@ -753,16 +787,16 @@ check(snaps[0].log.join() === 'turn_left_start' && snaps[0].face > 270 && snaps[
 // However slowly you swipe, a swipe is a quick turn: the finger never came to rest.
 await reset();
 snaps = await gesture([[0, 'touchstart', 200, 400], ...[1, 2, 3, 4, 5, 6, 7, 8, 9].map((i) => [45, 'touchmove', 200 + i * 14, 400]), [20, 'touchend', 326, 400], [500, 'snap']]);
-check(snaps[0].face === 90 && snaps[0].log.includes('right') && snaps[0].turn === null, `a slow swipe is still a quick turn: you end facing east, squared up (${snaps[0].log.join(', ')}; ${snaps[0].face})`);
+check(snaps[0].face === 30 && snaps[0].log.includes('right') && snaps[0].turn === null, `a slow swipe is still a quick turn: you end on the step, thirty degrees round (${snaps[0].log.join(', ')}; ${snaps[0].face})`);
 
 // A finger that pauses for a moment before it lifts has still swiped: the hold
 // that began ends at once, and the turn goes on to the next main direction.
 await reset();
 snaps = await gesture([[0, 'touchstart', 200, 400], [15, 'touchmove', 232, 400], [15, 'touchmove', 262, 400], [190, 'touchend', 262, 400], [0, 'snap'], [450, 'snap']]);
-check(snaps[0].log.join() === 'turn_right_start,turn_end,right' && snaps[1].face === 90 && snaps[1].turn === null, `a swipe that pauses before it lifts is still a swipe: you end facing east, squared up (${snaps[0].log.join(', ')}; ${snaps[1].face})`);
+check(snaps[0].log.join() === 'turn_right_start,turn_end,right' && snaps[1].face === 30 && snaps[1].turn === null, `a swipe that pauses before it lifts is still a swipe: you end on the step, thirty degrees round (${snaps[0].log.join(', ')}; ${snaps[1].face})`);
 await reset();
 snaps = await gesture([[0, 'touchstart', 200, 400], [15, 'touchmove', 168, 400], [15, 'touchmove', 138, 400], [190, 'touchend', 138, 400], [450, 'snap']]);
-check(snaps[0].log.join() === 'turn_left_start,turn_end,left' && snaps[0].face === 270, `and the same to the left (${snaps[0].log.join(', ')}; ${snaps[0].face})`);
+check(snaps[0].log.join() === 'turn_left_start,turn_end,left' && snaps[0].face === 330, `and the same to the left (${snaps[0].log.join(', ')}; ${snaps[0].face})`);
 // Held a little longer, it is a hold: a small nudge, stopped where it is.
 await reset();
 snaps = await gesture([[0, 'touchstart', 200, 400], [15, 'touchmove', 232, 400], [15, 'touchmove', 262, 400], [420, 'touchend', 262, 400], [300, 'snap']]);
@@ -793,13 +827,13 @@ await reset();
 await page.keyboard.down('ArrowRight'); await sleep(60); await page.keyboard.up('ArrowRight');
 await sleep(450);
 const tapped = await state();
-check(tapped.log.join() === 'right' && tapped.face === 90, `one press of the right arrow is a quick turn (${tapped.log.join(', ')}; facing ${tapped.face})`);
+check(tapped.log.join() === 'right' && tapped.face === 30, `one press of the right arrow is a quick turn of thirty degrees (${tapped.log.join(', ')}; facing ${tapped.face})`);
 await reset();
 await page.keyboard.down('ArrowLeft'); await sleep(60); await page.keyboard.up('ArrowLeft');
 await page.keyboard.down('ArrowLeft'); await sleep(60); await page.keyboard.up('ArrowLeft');
 await sleep(700);
 const tappedTwice = await state();
-check(tappedTwice.log.join() === 'left,left' && tappedTwice.face === 180, `two presses are a half turn (facing ${tappedTwice.face})`);
+check(tappedTwice.log.join() === 'left,left' && tappedTwice.face === 300, `two presses are sixty degrees (facing ${tappedTwice.face})`);
 
 await reset();
 await page.keyboard.down('ArrowRight');
@@ -825,11 +859,11 @@ const pressFor = (key, ms) => page.evaluate(async ([key, ms]) => {
 await reset();
 await pressFor('ArrowRight', 270);
 const slowPress = await state();
-check(slowPress.log.join() === 'turn_right_start,turn_end,right' && slowPress.face === 90 && slowPress.turn === null, `a slow press of the right arrow is still a quick turn (${slowPress.log.join(', ')}; facing ${slowPress.face})`);
+check(slowPress.log.join() === 'turn_right_start,turn_end,right' && slowPress.face === 30 && slowPress.turn === null, `a slow press of the right arrow is still a quick turn (${slowPress.log.join(', ')}; facing ${slowPress.face})`);
 await reset();
 await pressFor('ArrowLeft', 270);
 const slowLeft = await state();
-check(slowLeft.log.join() === 'turn_left_start,turn_end,left' && slowLeft.face === 270, `and of the left arrow (${slowLeft.log.join(', ')}; facing ${slowLeft.face})`);
+check(slowLeft.log.join() === 'turn_left_start,turn_end,left' && slowLeft.face === 330, `and of the left arrow (${slowLeft.log.join(', ')}; facing ${slowLeft.face})`);
 await reset();
 await pressFor('ArrowRight', 480);
 const nudged = await state();
@@ -947,6 +981,67 @@ else {
   const side = ([l, r]) => (r - l) / (r + l);
   check(side(ears.before) > 0.3 && side(ears.after) < -0.3 && side(ears.mid) < side(ears.before) && side(ears.mid) > side(ears.after),
     `a turn in small steps sweeps it across: right before (${side(ears.before).toFixed(2)}), on its way part through (${side(ears.mid).toFixed(2)}), left after (${side(ears.after).toFixed(2)})`);
+}
+
+// --------------------------------------------------------------- 15. the backgrounds turn with you too (web 4.1.0)
+// Until then an area's own background, heard from inside it, was plain stereo and
+// stayed put while everything else swept round. Now its left side stands in the
+// world's west and its right side in the east.
+await page.evaluate(() => { const g = window.__el.game; if (g.state !== 'menu') { g._stopRunSounds(); g.runId += 1; g.state = 'menu'; g._refreshMenu(); } });
+await startRun();
+const wideBg = await page.evaluate(async () => {
+  const g = window.__el.game; const u = g.ut; const T = window.__t; const W = T.world;
+  T.calm();
+  const area = u.area;
+  for (let i = 0; i < 20; i++) g.updateUltimateMode(1 / 30);
+  await new Promise((r) => setTimeout(r, 1500));     // (the recording decodes)
+  for (let i = 0; i < 20; i++) g.updateUltimateMode(1 / 30);
+  const s = u.areaSounds.get(area.id);
+  const wide = s.ambIn; const placed = s.amb;
+  const x = (p) => (p && p.positionX ? +p.positionX.value.toFixed(3) : null);
+  const out = {
+    kind: area.kind, wide: wide.wide === true, placedWide: placed.wide === true, begun: !!wide.dry,
+    west: wide.dry && wide.dry.wide ? x(wide.dry.wide.west) : null, east: wide.dry && wide.dry.wide ? x(wide.dry.wide.east) : null,
+    hrtf: !!(wide.dry && wide.dry.wide && wide.dry.wide.west.panningModel === 'HRTF' && wide.dry.wide.east.panningModel === 'HRTF'),
+    level: wide.l, placedLevel: placed.l, noPlace: wide.pos3 === null,
+  };
+  // Turning leaves the two sides where they stand in the world: only the listener turns.
+  T.face(120); for (let i = 0; i < 5; i++) g.updateUltimateMode(1 / 30);
+  out.afterTurn = [x(wide.dry.wide.west), x(wide.dry.wide.east), +T.deg(window.__el.audio.facing).toFixed(0)];
+  T.face(0);
+  // Every area's wide copies are of this kind, and nothing else of the world is.
+  out.allWide = [...u.areaSounds.values()].every((o) => ['ambIn', 'drumsIn', 'crowdIn'].every((k) => !o[k] || o[k].wide === true) && ['amb', 'drums', 'crowd', 'hum'].every((k) => !o[k] || o[k].wide !== true));
+  // The method, rendered and measured: a recording with sound on its left side only.
+  const set = window.__el.audio.constructor.prototype.setFacing;
+  const RATE = 44100; const D = Math.PI / 180;
+  const render = async (deg) => {
+    const ctx = new OfflineAudioContext(2, RATE, RATE);
+    const buf = ctx.createBuffer(2, RATE, RATE);
+    const L = buf.getChannelData(0);
+    let seed = 777; for (let i = 0; i < L.length; i++) { seed = (seed * 1103515245 + 12345) & 0x7fffffff; L[i] = ((seed / 0x7fffffff) * 2 - 1) * 0.3; }
+    const src = ctx.createBufferSource(); src.buffer = buf;
+    const split = ctx.createChannelSplitter(2); src.connect(split);
+    const side = (px) => { const p = ctx.createPanner(); p.panningModel = 'HRTF'; p.distanceModel = 'linear'; p.rolloffFactor = 0; p.positionX.value = px; p.positionY.value = 0; p.positionZ.value = 0; return p; };
+    const west = side(-1); const east = side(1);
+    split.connect(west, 0); split.connect(east, 1); west.connect(ctx.destination); east.connect(ctx.destination);
+    if (ctx.listener.upX) { ctx.listener.upX.value = 0; ctx.listener.upY.value = 1; ctx.listener.upZ.value = 0; }
+    set.call({ ctx, facing: 0 }, deg * D, true);
+    src.start();
+    const o = await ctx.startRendering();
+    const rms = (ch) => { let t = 0; for (let i = RATE / 4; i < ch.length; i++) t += ch[i] * ch[i]; return Math.sqrt(t / (ch.length - RATE / 4)); };
+    return [rms(o.getChannelData(0)), rms(o.getChannelData(1))];
+  };
+  out.ears = { north: await render(0), east: await render(90), south: await render(180), west: await render(270) };
+  return out;
+});
+check(wideBg.wide && !wideBg.placedWide && wideBg.begun && wideBg.west === -1 && wideBg.east === 1 && wideBg.hrtf && wideBg.noPlace && wideBg.level > 0 && wideBg.placedLevel === 0 && wideBg.allWide,
+  `inside an area its background is the wide copy, its left side in the world's west and its right side in the east, each through the 3D panner (${wideBg.kind}): ` + JSON.stringify({ west: wideBg.west, east: wideBg.east, level: wideBg.level }));
+check(wideBg.afterTurn.join() === '-1,1,120', 'turn, and the two sides stay where they stand in the world: it is you who turned (' + wideBg.afterTurn.join(', ') + ')');
+{
+  const lr = ([l, r]) => `left ${l.toFixed(3)}, right ${r.toFixed(3)}`;
+  const e = wideBg.ears;
+  check(e.north[0] > 2 * e.north[1] && e.south[1] > 2 * e.south[0] && Math.abs(e.east[0] - e.east[1]) < 0.05 * e.east[0] && Math.abs(e.west[0] - e.west[1]) < 0.05 * e.west[0],
+    `rendered and measured, a recording's left side is in your left ear facing north (${lr(e.north)}), in your right ear facing south (${lr(e.south)}), and behind or ahead of you, the same in both ears, facing east or west (${lr(e.east)}; ${lr(e.west)})`);
 }
 
 check(errors.length === 0, 'no page errors' + (errors.length ? ': ' + errors.slice(0, 4).join(' | ') : ''));

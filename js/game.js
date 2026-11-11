@@ -344,6 +344,7 @@ export class Game {
   resetGameState() {
     this.runId += 1;
     this.stride = null;          // a run or backward walk never carries into a new run
+    this.strideStepping = null;
     this.battleSteps = [];
     for (const v of this.pausedVoices) v.stop();
     this.pausedVoices = [];
@@ -1484,7 +1485,10 @@ export class Game {
   _strideStep(dir) {
     const before = [...this.playerPos];
     const sig = this._strideSig();
-    this.input(dir);
+    // (While the step is made, a mode can tell a run's step from a swipe's:
+    // Ultimate Mode's pool, where a run is swimming. Web 4.1.0.)
+    this.strideStepping = dir;
+    try { this.input(dir); } finally { this.strideStepping = null; }
     if (!this.playing || this.isPaused || this._strideSig() !== sig) return false;
     // (A mode where forward is not always north says for itself whether the step
     // carried on: Ultimate Mode, where you walk the way you face.)

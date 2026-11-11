@@ -27,6 +27,10 @@ const MUFFLE_CLOSED_HZ = 650;
 // let go when they have not been used for a while, so a phone never holds every
 // drone in memory at once.
 const BIG_FRAMES = RATE * 6;
+// A wide recording placed in the world's west and east (Voice._branch, web 4.1.0):
+// what the two panners take off it, put back (measured with noise: 0.135 against
+// 0.174 plain, facing north; a drone's low notes lose less, so a little under).
+const WIDE_GAIN = 1.2;
 const BIG_KEEP = 3;
 // A looping sound's own echoes (see _loopWet) are kept up to this many bytes.
 const LOOP_WET_KEEP = 32e6;
@@ -731,7 +735,10 @@ export class AudioEngine {
   // sound's echo level in place of its family's (a background's light echo).
   // `keep`: a cue that must be heard out (a bus's chime, the countdown): it is
   // never the one-shot that gives way to a newer one.
-  play(name, { loops = 0, volume = 1.0, fadeMs = 0, at = null, pos = null, height = 0, areaMix = null, direct = false, send = null, keep = false } = {}) {
+  // `wide` (3D only, web 4.1.0): a recording with no place of its own that still
+  // turns with the world: its left side stands in the world's west and its right
+  // side in the east (see Voice._branch).
+  play(name, { loops = 0, volume = 1.0, fadeMs = 0, at = null, pos = null, height = 0, areaMix = null, direct = false, send = null, keep = false, wide = false } = {}) {
     const pair = this.entries.get(name);
     if (!pair || !pair.dry) return null;
     if (loops === -1) {
@@ -773,6 +780,7 @@ export class AudioEngine {
     if (this.spatial) {
       v.direct = !!direct;
       if (pos) v.pos3 = [pos[0], height, pos[1]];
+      else v.wide = !!wide && !direct;
       const mix = areaMix || (direct ? null : this.listenerMix);
       if (mix) v.areaMix = { ...mix };
       if (send !== null && send !== undefined) { v.send = send; v.sendSet = true; }
@@ -841,6 +849,7 @@ export class Voice {
     this.pos3 = null;
     this.areaMix = null;
     this.direct = false;
+    this.wide = false;        // a recording with no place that still turns with the world (AudioEngine.play, _branch)
     this.keep = false;        // a cue that is never stopped to make room for a newer one-shot (AudioEngine.play)
     this.jump = false;        // its next place is set at once, not glided to (see resume)
   }
@@ -864,6 +873,37 @@ export class Voice {
     split.connect(gl, 0); split.connect(gr, 1);
     gl.connect(merge, 0, 0); gr.connect(merge, 0, 1);
     let panner = null;
+    let wide = null;
+    if (this.audio.spatial && this.wide && !this.direct) {
+      // A wide recording in the 3D world (web 4.1.0): until now it was plain
+      // stereo, all round you, and stayed put while everything else swept round
+      // as you turned. Now its left side stands in the world's west and its right
+      // side in the world's east, each through its own HRTF panner, always the
+      // same way from you wherever you walk. Facing north it is left and right as
+      // it always was; turn, and the recording turns round your head with the
+      // rest of the world. (A recording whose two sides are the same has nothing
+      // to turn: it sounds the same whichever way you face.)
+      const side = (x) => {
+        const p = ctx.createPanner();
+        p.panningModel = 'HRTF';
+        p.distanceModel = 'linear';
+        p.refDistance = 1;
+        p.maxDistance = 10000;
+        p.rolloffFactor = 0;
+        Voice._place(p, x, 0, 0, ctx.currentTime, true);
+        return p;
+      };
+      const west = side(-1); const east = side(1);
+      // (The panners take a little off a sound straight to the side: put back.)
+      const lift = ctx.createGain();
+      lift.gain.value = WIDE_GAIN;
+      gl.connect(west); gr.connect(east);
+      west.connect(lift); east.connect(lift);
+      lift.connect(this.audio.bus);
+      // (The merged pair is left unconnected: nothing of this sound goes out plain.)
+      wide = { west, east, lift };
+      return { buffer, fade, split, gl, gr, merge, panner, wide };
+    }
     if (this.placed) {
       // The HRTF panner places the sound; the game still sets its loudness by
       // distance itself, so the panner's own distance rolloff is turned off.
@@ -880,7 +920,7 @@ export class Voice {
     } else {
       merge.connect(this.direct ? this.audio.out : this.audio.bus);
     }
-    return { buffer, fade, split, gl, gr, merge, panner };
+    return { buffer, fade, split, gl, gr, merge, panner, wide };
   }
 
   static _place(panner, x, y, z, now, instant) {
@@ -1088,6 +1128,7 @@ export class Voice {
     for (const br of [this.dry, this.dull]) {
       if (!br) continue;
       try { br.merge.disconnect(); } catch (e) { /* already */ }
+      if (br.wide) { try { br.wide.lift.disconnect(); } catch (e) { /* already */ } }
     }
     if (this.wet) {
       try { this.wet.merge.disconnect(); } catch (e) { /* already */ }

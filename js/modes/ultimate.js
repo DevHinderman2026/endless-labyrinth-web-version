@@ -129,15 +129,21 @@ export const QUARTER = Math.PI / 2;
 export const TURN_SLOW = 30 * DEG;              // a held turn begins this slowly (a second), so a short hold is a small nudge for aiming
 export const TURN_FAST = 150 * DEG;             // and comes up to this: a full circle in 2.4 seconds
 export const TURN_EASE = [0.25, 0.85];          // seconds held: slow until the first, at full speed by the second
-export const TURN_QUICK = 360 * DEG;            // a quick turn sweeps at this rate: a quarter turn in a quarter of a second
+export const TURN_STEP = 30 * DEG;              // a quick turn (a swipe, one press of an arrow): to the next step of this size, so three make a quarter turn (web 4.1.0, Russell's choice; until then a swipe was a whole quarter turn, too wide to centre anything)
+export const TURN_STEPS = 12;                   // of them in a full circle
+export const TURN_QUICK = 240 * DEG;            // a quick turn sweeps at this rate: its 30 degrees in an eighth of a second
 export const TURN_LIMIT = 30;                   // seconds: no held turn lasts longer (a finger or a key whose lifting never arrived)
 export const TURN_BRIEF = 0.3;                  // seconds: a held turn let go within this may have been a swipe after all (gestures.js says so by sending the swipe at once)
 export const TICK_LEVEL = 0.5;                  // the tick at each main direction, as you turn
-export const AIM_HALF = 45.5 * DEG;             // the aim: this far either side of straight ahead (the front quarter; the half degree over is so that an enemy exactly on a diagonal is in two quarters, never in none)
+export const CLICK_LEVEL = 0.3;                 // the softer click of a quick turn that lands between two main directions
+export const AIM_HALF = 30.5 * DEG;              // the aim: this far either side of straight ahead (web 4.1.0: 30 degrees, and the half over so that one exactly on the line is in; it was 45.5, the front quarter. A quick turn's steps are 30 degrees, so some step always has an enemy within 15)
 export const SLIDE_MIN = 0.75;                  // units: a blocked step still slides along the wall when its part along the wall is at least this
 export const WALL_TOUCH = 0.45;                 // the wall's level when you slide along it instead of stopping at it
 export const STEP_SAMPLE = 0.25;                // units: how finely a step's path is checked against the walls
-export const FACING_WORDS = ['north', 'north-east', 'east', 'south-east', 'south', 'south-west', 'west', 'north-west'];
+// (Sixteen since web 4.1.0: a quick turn's steps of 30 degrees fall between the eight.)
+export const FACING_WORDS = ['north', 'north-north-east', 'north-east', 'east-north-east', 'east', 'east-south-east', 'south-east', 'south-south-east',
+  'south', 'south-south-west', 'south-west', 'west-south-west', 'west', 'west-north-west', 'north-west', 'north-north-west'];
+export const MAIN_WORDS = ['north', 'east', 'south', 'west'];
 // ---- the first run after web 4.0.0, once on each device: the game says that the
 // controls have changed (Russell, 11 November 2026). Nothing can hurt you until
 // it has been said. Written for touch; keywords.js has its keyboard wording.
@@ -281,6 +287,43 @@ export const BACKGROUND_SEND = 0.15;
 export const SAFE_WALL_SEND = 0.05;
 const STEPS_STONE = ['step_stone_1', 'step_stone_2', 'step_stone_3', 'step_stone_4'];
 const STEPS_SAND = ['step_sand_1', 'step_sand_2', 'step_sand_3', 'step_sand_4'];
+// ---- the pool at the foot of a water slide (web 4.1.0; Russell, 11 November
+// 2026): you splash down in the middle of a pool and have to get out of it, a few
+// steps whichever way you go. A step in it is a wading step; a run in it is
+// swimming, a stroke for each step. Walk back into it and you are in the water
+// again. (Recordings from Pixabay, in the ultimate pack.)
+export const POOL_RADIUS = 10.6;                // units: from its middle three steps are in the water, and the fourth is out of it
+export const STEPS_WATER = ['ut_water_step_1', 'ut_water_step_2', 'ut_water_step_3', 'ut_water_step_4'];
+export const SWIM_STROKES = ['ut_swim_1', 'ut_swim_2', 'ut_swim_3', 'ut_swim_4'];
+// ---- the glass cases (web 4.1.0; Russell, 11 November 2026): here and there in
+// battle areas, on islands and in labyrinths stands a case made of glass, humming.
+// Come within a step of it and it chimes; your attack then smashes it, at no cost
+// in shots. What was in it is yours at once, and the voice says what. But the
+// enemies hear glass break: two to five chasers come from far off, fast, and the
+// voice does not say how many. Shoot them, or get out of the area: they do not
+// follow you out of it. The broken glass lies round where the case stood, and
+// crunches underfoot.
+export const CASE_KINDS = ['battle', 'island', 'labyrinth'];   // never a safe zone (nothing can hurt you there), never a tower area (no laser there)
+export const CASE_CHANCE = 0.5;                 // each such area, until the world has CASE_MAX
+export const CASE_MAX = 3;
+export const CASE_SOUND = 'evt_crystal_hum';    // its own sound: a humming crystal (already in the game, for events)
+export const CASE_CHIME = 'evt_chime_clear';    // within reach of it: a clear bell (already in the game too)
+export const CASE_SMASH = 'ut_glass_smash';
+export const CASE_GAIN = 0.75;
+export const CASE_REACH = 4.5;                  // units: the squares beside it and the ones at its corners
+export const CASE_REARM = 9.0;                  // go this far from it and it will chime again when you come back
+export const CASE_HUNTERS = [[2, 0.35], [3, 0.40], [4, 0.15], [5, 0.10]];   // how many come, and how often: mostly two or three, five if you are very unlucky
+export const HUNTER_FROM = [70, 60, 50, 40, 30, 20, 14];   // units: they start as far from you as the area has floor, trying the furthest first (70 is out of earshot)
+export const HUNTER_QUIET = 1.2;                // seconds before one can be heard at all, wherever it started ...
+export const HUNTER_RISE = 2.0;                 // ... and seconds over which its sound then comes up to what the distance gives
+export const HUNTER_SPEED = [6.5, 10.0];        // units a second, from the start of a run to the enemies' fastest: three to four and a half times an area's own chasers at the start (2.2), but always slower than your run (14)
+export const GLASS_RADIUS = 6.5;                // units: the broken glass lies two steps round where the case stood
+export const STEPS_GLASS = ['ut_glass_step_1', 'ut_glass_step_2', 'ut_glass_step_3', 'ut_glass_step_4'];
+export const CASE_POINTS = 60;                  // times the multiplier, as everything you earn
+export const CASE_SHOTS_OVER = [1, 3];          // shots: this many more than the chasers that are coming
+export const CASE_TIME = 30;                    // seconds put back on the world's clock
+export const CASE_HEALTH = 30;
+export const CASE_ITEMS = [2, 3];
 
 // ------------------------------------------------------------------ helpers
 const rand = Math.random;
@@ -387,6 +430,7 @@ function joined(parts, gapSeconds) {
 }
 export const COMPASS_HZ = [392, 1046];   // the beep, lowest away from the route, highest toward it
 export const TICK_HZ = [1320, 1980];     // the tick of a turn at east, south and west, and at north
+export const CLICK_HZ = 880;             // the softer click of a quick turn landing between two of them (web 4.1.0)
 export function compassName(step) { return `ut_compass_${step}`; }   // step 0..8
 export function makeSounds(audio) {
   if (audio.has('ut_low_ammo_1')) return;
@@ -406,7 +450,12 @@ export function makeSounds(audio) {
   // higher one for north.
   addMade(audio, 'ut_tick', tone(TICK_HZ[0], 0.07, 0.3));
   addMade(audio, 'ut_tick_north', tone(TICK_HZ[1], 0.07, 0.3));
-  addMade(audio, 'ut_tick_demo', joined([TICK_HZ[0], TICK_HZ[0], TICK_HZ[0], TICK_HZ[1]].map((hz) => tone(hz, 0.07, 0.3)), 0.45));
+  // The click of a quick turn that lands between two main directions (web 4.1.0).
+  addMade(audio, 'ut_click', tone(CLICK_HZ, 0.05, 0.3));
+  // The demo: six quick turns, half way round to north: click, click, a main
+  // direction's tick, click, click, and north's higher tick.
+  { const c = () => tone(CLICK_HZ, 0.05, 0.3 * CLICK_LEVEL / TICK_LEVEL);
+    addMade(audio, 'ut_tick_demo', joined([c(), c(), tone(TICK_HZ[0], 0.07, 0.3), c(), c(), tone(TICK_HZ[1], 0.07, 0.3)], 0.4)); }
   for (const n of ['ut_low_ammo_demo', 'ut_compass_demo', 'ut_slide', 'ut_bus_chime', 'ut_tick_demo']) ensureCopies(audio, n);
 }
 
@@ -568,7 +617,7 @@ const mixin = {
     u.safe = SAFE_SECONDS + (first ? 0 : FADE_IN);
     u.enemies = []; u.projectiles = []; u.pickups = []; u.timers = []; u.respawn = new Map();
     u.towerItems = new Map(); u.potionDue = new Map();    // (the items in your hands stay there: they are carried like ammo)
-    u.place = 'world'; u.ride = null; u.rideMix = null; u.seabed = null; u.lift = null; u.liftArmed = false; u.dingTimer = 0; u.slide = null; u.slides = []; u.bus = null; u.busAt = null; u.shSafe = 0; u.shBus = 0;
+    u.place = 'world'; u.ride = null; u.rideMix = null; u.seabed = null; u.lift = null; u.liftArmed = false; u.dingTimer = 0; u.slide = null; u.slides = []; u.cases = []; u.glass = []; u.bus = null; u.busAt = null; u.shSafe = 0; u.shBus = 0;
     this._utCompassOff(true);
     u.worldPoints = 0; u.worldDamage = 0;
     u.steps = [];
@@ -632,9 +681,30 @@ const mixin = {
     u.slides = [];
     for (const a of w.areas.filter((x) => x.waterPark)) {
       const pos = randomFloor(u.world, a, rand, { from: this.playerPos, minDist: 12.0, avoid: u.pickups.map((p) => p.pos), clearance: 6.0 });
-      if (pos) u.slides.push({ area: a, pos, voice: null });
+      if (!pos) continue;
+      // Its pool: somewhere else in the park, where you splash down.
+      // (All of it inside the park where there is room, so that every way out of
+      // it is the same few steps; and never so near the slide that it reaches it.)
+      let pool = null;
+      const inside = (p) => p[0] - a.x0 * CELL >= POOL_RADIUS && a.x1 * CELL - p[0] >= POOL_RADIUS && p[1] - a.y0 * CELL >= POOL_RADIUS && a.y1 * CELL - p[1] >= POOL_RADIUS;
+      for (let i = 0; i < 40 && !pool; i++) {
+        const p = randomFloor(u.world, a, rand, { from: pos, minDist: SLIDE_LAND_AWAY, avoid: u.pickups.map((q) => q.pos), clearance: POOL_RADIUS });
+        if (p && inside(p)) pool = p;
+      }
+      if (!pool) pool = randomFloor(u.world, a, rand, { from: pos, minDist: SLIDE_LAND_AWAY }) || randomFloor(u.world, a, rand, { from: pos, minDist: 8.0 });
+      u.slides.push({ area: a, pos, voice: null, pool });
     }
     u.slide = null;
+    // The glass cases: one in some of the battle areas, islands and labyrinths.
+    u.cases = []; u.glass = [];
+    if (this.audio.has(CASE_SOUND)) {
+      for (const a of shuffle(w.areas.filter((x) => CASE_KINDS.includes(x.kind)))) {
+        if (u.cases.length >= CASE_MAX || rand() >= CASE_CHANCE) continue;
+        const avoid = [...u.pickups.map((p) => p.pos), ...u.enemies.filter((e) => e.area === a).map((e) => [e.x, e.y]), ...(a.elevator ? [posOf(a.elevator[0], a.elevator[1])] : [])];
+        const pos = randomFloor(u.world, a, rand, { from: this.playerPos, minDist: 15.0, avoid, clearance: 6.0 });
+        if (pos) u.cases.push({ area: a, pos, voice: null, near: false, smashed: false });
+      }
+    }
     // The bus, if this world has one: due at a random moment of the world's
     // middle; it comes the first time, from then, that a safe zone is far from you.
     u.bus = null;
@@ -660,6 +730,7 @@ const mixin = {
     for (const s of u.projectiles) s.channel = null;
     for (const it of u.towerItems.values()) it.channel = null;
     for (const sl of u.slides || []) sl.voice = null;
+    for (const c of u.cases || []) c.voice = null;
     if (u.bus) { if (u.bus.pullVoice) u.bus.pullVoice.stop(); u.bus.voice = null; u.bus.rideVoice = null; u.bus.pullVoice = null; u.bus.doorVoice = null; }
     u.lift = null;
     if (u.ride && u.ride.voice) { u.ride.voice.stop(); u.ride.voice = null; }
@@ -672,10 +743,11 @@ const mixin = {
   // A sound of this world: played, remembered, and placed.
   // (`keep`: a cue that is never stopped to make room for newer one-shots; see
   // AudioEngine.play.)
-  _utPlay(name, pos, { loops = 0, volume = 1.0, fadeMs = 0, height = 0, direct = false, send = null, keep = false } = {}) {
+  // (`wide`: a recording with no place that still turns with the world as you turn.)
+  _utPlay(name, pos, { loops = 0, volume = 1.0, fadeMs = 0, height = 0, direct = false, send = null, keep = false, wide = false } = {}) {
     const u = this.ut;
     const rel = this._utRel(pos);
-    const v = this.audio.play(name, { loops, volume: 0.0, fadeMs, pos: pos ? rel : null, height, areaMix: pos ? this._utMixAt(pos) : null, direct, send, keep });
+    const v = this.audio.play(name, { loops, volume: 0.0, fadeMs, pos: pos ? rel : null, height, areaMix: pos ? this._utMixAt(pos) : null, direct, send, keep, wide });
     if (!v) return null;
     if (pos) v.setSpatial(volume, rel[0], rel[1], this._behind(pos), height); else v.setVolume(volume, volume);
     if (loops === -1) u.voices.add(v); else u.shots.add(v);
@@ -717,7 +789,9 @@ const mixin = {
   _utFace(angle, instant = false) {
     const u = this.ut;
     const k = mainIndex(angle);
-    u.face = k >= 0 ? k * QUARTER : wrapAngle(angle);   // exactly, when squared up
+    const st = Math.round(angle / TURN_STEP);
+    // Exactly, when squared up; and exactly on a quick turn's step.
+    u.face = k >= 0 ? k * QUARTER : Math.abs(angle / TURN_STEP - st) < 1e-6 ? wrapAngle(st * TURN_STEP) : wrapAngle(angle);
     this.playerFacing = this._utForward();
     this.audio.setFacing(u.face, instant);
   },
@@ -737,14 +811,30 @@ const mixin = {
     return ['ahead', 'right', 'behind', 'left'][Math.round(rel / QUARTER) % 4];
   },
 
+  // Where a main direction of the world lies from the way you face, in words that
+  // name it: "north, straight ahead", "east, to your right", "south, behind you",
+  // "west, 30 degrees to your left" (to the nearest five degrees).
+  _utBearing(dir) {
+    const name = MAIN_WORDS[COMPASS_DIRS.findIndex((d) => d[0] === dir[0] && d[1] === dir[1])];
+    let off = wrapAngle(Math.atan2(dir[0], -dir[1]) - this.ut.face);
+    if (off > Math.PI) off -= TWO_PI;          // (to your right when it is more than nothing)
+    const deg = Math.round(Math.abs(off) / DEG / 5) * 5;
+    const side = off > 0 ? 'right' : 'left';
+    if (deg < 5) return `${name}, straight ahead`;
+    if (deg > 175) return `${name}, behind you`;
+    if (deg === 90) return `${name}, to your ${side}`;
+    return `${name}, ${deg} degrees to your ${side}`;
+  },
+
   // You can turn on the ground and on the seabed: not on a ride, and not between worlds.
   _utCanTurn() {
     const u = this.ut;
     return !!u && u.phase !== 'silence' && (u.place === 'world' || u.place === 'seabed');
   },
 
-  // A quick turn (a swipe, one press of an arrow): to the next main direction
-  // that way. Squared up, a quarter turn; in between, it squares you up.
+  // A quick turn (a swipe, one press of an arrow): to the next step of 30 degrees
+  // that way, so three of them from a main direction reach the next one. Stopped
+  // in between two steps by a held turn, it takes you onto the next step.
   _utTurnQuick(dir) {
     const u = this.ut;
     const was = u.turnWas;
@@ -752,8 +842,8 @@ const mixin = {
     if (!this._utCanTurn()) return;
     if (u.turn && u.turn.quick) {
       // A second swipe before the first has landed carries on from where that one
-      // is going (two swipes are a half turn; one each way brings you back).
-      const target = (Math.round(u.turn.target / QUARTER) + dir) * QUARTER;
+      // is going (three swipes are a quarter turn; one each way brings you back).
+      const target = (Math.round(u.turn.target / TURN_STEP) + dir) * TURN_STEP;
       u.turn = { quick: true, at: u.turn.at, target, dir: target >= u.turn.at ? 1 : -1 };
       return;
     }
@@ -762,9 +852,9 @@ const mixin = {
     // it had already turned never carries it past the direction it was going to.
     let from = u.face; let at = u.face;
     if (was && was.dir === dir) { from = was.from; at = was.from + dir * wrapAngle((u.face - was.from) * dir); }
-    const q = from / QUARTER;
+    const q = from / TURN_STEP;
     const k = dir > 0 ? Math.floor(q + 1e-6) + 1 : Math.ceil(q - 1e-6) - 1;
-    u.turn = { quick: true, at, target: k * QUARTER, dir };
+    u.turn = { quick: true, at, target: k * TURN_STEP, dir };
   },
 
   // A held turn: free, slow at first and then faster, until it is let go; you stop
@@ -802,6 +892,11 @@ const mixin = {
     this.audio.play(((k % 4) + 4) % 4 === 0 ? 'ut_tick_north' : 'ut_tick', { direct: true, volume: TICK_LEVEL });
   },
 
+  // The softer, lower click of a quick turn that lands between two main directions.
+  _utClick() {
+    this.audio.play('ut_click', { direct: true, volume: CLICK_LEVEL });
+  },
+
   // The turn, every frame.
   _utUpdateTurn(dt) {
     const u = this.ut;
@@ -813,12 +908,14 @@ const mixin = {
       const step = TURN_QUICK * dt;
       const left = (t.target - t.at) * t.dir;
       if (left > step + 1e-9) { t.at += t.dir * step; this._utFace(t.at); return; }
-      // Landed, squared up: its tick (unless a brief hold had already carried you
-      // just past it, and ticked there), and with the compass on, what lies ahead.
+      // Landed on its step: on a main direction its tick (unless a brief hold had
+      // already carried you just past it, and ticked there), between two of them
+      // the softer click; and with the compass on, what lies ahead.
       u.turn = null;
       this._utFace(t.target);
       const k = mainIndex(u.face);
-      if (left > -1e-9) this._utTick(k);
+      if (k < 0) this._utClick();
+      else if (left > -1e-9) this._utTick(k);
       if (u.compass.on) {
         u.compass.t = COMPASS_BEEP_EVERY;   // a beep at once, for the new way
         this.tts.speak(this._utCompassWords(k), { interrupt: true });
@@ -927,7 +1024,9 @@ const mixin = {
       // Its throws in the air go with it.
       for (const s of [...u.projectiles]) if (s.owner === e) this._utDropProjectile(s);
     }
-    // Another comes, in a while.
+    // Another comes, in a while (not for one that came for the glass: those are
+    // only as many as came).
+    if (e.hunter) return;
     const a = e.area;
     const t = u.respawn.get(a.id) || [];
     t.push(uniform(RESPAWN_ENEMY[0], RESPAWN_ENEMY[1]));
@@ -1134,6 +1233,7 @@ const mixin = {
     this._utUpdateEnemies(dt);
     if (this.state !== STATE) return;
     this._utUpdatePickups();
+    this._utUpdateCases();
     this._utUpdateTower(dt);
     this._utUpdateLift(dt);
     this._utUpdateSounds(dt);
@@ -1199,10 +1299,28 @@ const mixin = {
       if (e.kind === 'thrower') { this._utUpdateThrower(e, dt, e.area === here); continue; }
       const a = e.area;
       const was = [e.x, e.y];
+      // A chaser woken by breaking glass hunts you only while you are on the ground
+      // in its area: get out of the area (or onto a bus, or down the lift) and it
+      // gives up and is gone.
+      if (e.hunter && a !== here) { this._utDropHunter(e); continue; }
+      if (e.hunter) e.age += dt;
       if (a === here) {
-        const dx = this.playerPos[0] - e.x; const dy = this.playerPos[1] - e.y;
+        // Straight at you; but in a labyrinth a hunter cannot come through the
+        // walls, so it follows the corridors, square by square, the shortest way.
+        let to = this.playerPos;
+        if (e.hunter && a.kind === 'labyrinth') {
+          const mine = cellOf([e.x, e.y]); const yours = cellOf(this.playerPos);
+          e.pathT = (e.pathT || 0) - dt;
+          if (!e.path || e.pathT <= 0 || !e.pathGoal || e.pathGoal[0] !== yours[0] || e.pathGoal[1] !== yours[1]) {
+            e.path = routeToward(u.world, mine, null, yours) || [];
+            e.pathGoal = yours; e.pathT = 0.6;
+          }
+          while (e.path.length && e.path[0][0] === mine[0] && e.path[0][1] === mine[1]) e.path.shift();
+          if (e.path.length) to = posOf(e.path[0][0], e.path[0][1]);
+        }
+        const dx = to[0] - e.x; const dy = to[1] - e.y;
         const d = Math.hypot(dx, dy);
-        if (d > 0) { e.x += dx / d * e.speed * dt; e.y += dy / d * e.speed * dt; }
+        if (d > 0) { const go = Math.min(d, e.speed * dt); e.x += dx / d * go; e.y += dy / d * go; }
       } else {
         // Not in its area: it wanders slowly between spots of its own area.
         e.goalTimer -= dt;
@@ -1222,7 +1340,7 @@ const mixin = {
         if (this.state !== STATE) return;
         // It struck: set back, and it comes again.
         const back = randomFloor(u.world, a, rand, { from: this.playerPos, minDist: CHASER_PUSH });
-        if (back) [e.x, e.y] = back;
+        if (back) { [e.x, e.y] = back; e.path = null; }
       }
     }
   },
@@ -1522,10 +1640,13 @@ const mixin = {
     } else if (r.stage === 'down' && r.t >= SLIDE_DOWN) {
       // The splash, the points, and up somewhere else in the park.
       if (this.audio.has('evt_water_splash')) this._utPlay('evt_water_splash', null, { keep: true });
+      // (Since web 4.1.0 you come up in the middle of the park's pool, and have to
+      // wade or swim out of it; until then, on dry floor somewhere at random.)
       const a = r.sl.area;
-      const spot = randomFloor(u.world, a, rand, { from: r.sl.pos, minDist: SLIDE_LAND_AWAY, avoid: u.pickups.map((p) => p.pos), clearance: 3.0 })
+      const spot = r.sl.pool
+        || randomFloor(u.world, a, rand, { from: r.sl.pos, minDist: SLIDE_LAND_AWAY, avoid: u.pickups.map((p) => p.pos), clearance: 3.0 })
         || randomFloor(u.world, a, rand, { from: r.sl.pos, minDist: 8.0 });
-      if (spot) { this.playerPos = spot; u.area = a; }
+      if (spot) { this.playerPos = [spot[0], spot[1]]; u.area = a; }
       u.place = 'world';
       u.slide = null;
       this._utScore(SLIDE_POINTS, { safeOk: true });
@@ -1585,6 +1706,8 @@ const mixin = {
       if (rand() < 0.3) { const v = choice(CREDIT_VALUES); u.seabed.pickups.push({ kind: 'credit', pos: spot(), value: v, beacon: `credit_beacon_${v}`, gain: 0.7 }); }
       // The water, placed so it can rise from below you on the way down.
       u.seabed.under = this._utPlay('underwater', this.playerPos, { loops: -1, volume: 0.0, height: -6 });
+      // And a wide copy, in step, for when it is all round you (see _utPlaceWater).
+      u.seabed.underWide = this._utPlay('underwater', null, { loops: -1, volume: 0.0, wide: true });
     } else {
       for (const p of u.seabed.pickups) if (p.voice) { p.voice.stop(); u.voices.delete(p.voice); p.voice = null; }
       if (u.seabed.hum) { u.seabed.hum.stop(); u.voices.delete(u.seabed.hum); u.seabed.hum = null; }
@@ -1635,6 +1758,7 @@ const mixin = {
     } else {
       // The water is left behind (it was already down to nothing with the ride).
       if (u.seabed && u.seabed.under) { u.seabed.under.stop(); u.voices.delete(u.seabed.under); }
+      if (u.seabed && u.seabed.underWide) { u.seabed.underWide.stop(); u.voices.delete(u.seabed.underWide); }
       u.place = 'world';
       u.seabed = null;
       u.area = r.area;
@@ -1675,12 +1799,17 @@ const mixin = {
     return spots.reduce((best, pos) => (far(pos) > far(best) ? pos : best));
   },
 
-  // The water: under you on the ride, and on the seabed a hair in front of your
-  // face, whichever way you are facing, so it does not swing round your head as
-  // you turn (it is all about you, not a thing in a place).
+  // The water. On the ride it is a thing in a place, below you and rising (or
+  // sinking away under you on the way up). Round you, on the seabed, it is its
+  // wide copy: the recording's left side in the world's west and its right side
+  // in the east, so it turns round you as you turn (web 4.1.0; in 4.0.0 it was
+  // kept in front of your face and did not turn). The two cross over as it
+  // reaches you.
   _utPlaceWater(level, height) {
-    const f = this._utForward();
-    this.ut.seabed.under.setSpatial(level, f[0] * 0.05, f[1] * 0.05, 0, height);
+    const s = this.ut.seabed;
+    const around = s.underWide ? Math.max(0, 1 - Math.abs(height) / 6) : 0;
+    if (s.under) s.under.setSpatial(level * (1 - around), 0, -0.05, 0, height);
+    if (s.underWide) s.underWide.setVolume(level * around, level * around);
   },
 
   _utUpdateSeabed(dt) {
@@ -1762,21 +1891,23 @@ const mixin = {
       }
       if (!s) {
         // Each background twice, in step: a wide copy for standing inside the area
-        // (plain stereo, all round you), and a placed copy for hearing it from
-        // outside, through its doorway or across its border. Every background but
-        // an island's shore rings lightly in its own room.
+        // (all round you: its left side in the world's west, its right side in the
+        // east, so since web 4.1.0 it turns round you as you turn, like everything
+        // else), and a placed copy for hearing it from outside, through its doorway
+        // or across its border. Every background but an island's shore rings
+        // lightly in its own room.
         const send = a.kind === 'island' ? 0 : BACKGROUND_SEND;
         s = {
           amb: this._utPlay(a.ambience, a.centre, { loops: -1, volume: 0.0, fadeMs: 600, send }),
-          ambIn: this._utPlay(a.ambience, null, { loops: -1, volume: 0.0, fadeMs: 600, send }),
+          ambIn: this._utPlay(a.ambience, null, { loops: -1, volume: 0.0, fadeMs: 600, send, wide: true }),
         };
         if (a.drums) {
           s.drums = this._utPlay(a.drums, a.centre, { loops: -1, volume: 0.0, fadeMs: 600, send });
-          s.drumsIn = this._utPlay(a.drums, null, { loops: -1, volume: 0.0, fadeMs: 600, send });
+          s.drumsIn = this._utPlay(a.drums, null, { loops: -1, volume: 0.0, fadeMs: 600, send, wide: true });
         }
         if (a.crowd) {
           s.crowd = this._utPlay(a.crowd, a.centre, { loops: -1, volume: 0.0, fadeMs: 600, send });
-          s.crowdIn = this._utPlay(a.crowd, null, { loops: -1, volume: 0.0, fadeMs: 600, send });
+          s.crowdIn = this._utPlay(a.crowd, null, { loops: -1, volume: 0.0, fadeMs: 600, send, wide: true });
         }
         if (a.kind === 'island') s.hum = this._utPlay('elevator_hum', posOf(a.elevator[0], a.elevator[1]), { loops: -1, volume: 0.0 });
         u.areaSounds.set(a.id, s);
@@ -1841,7 +1972,9 @@ const mixin = {
     for (const e of u.enemies) {
       const pos = this._utEnemyPos(e);
       const d = dist2(pos, this.playerPos);
-      const level = e.area !== u.area ? 0 : levelAt(d) * (onWorld ? 1 : (ride ? ride.above * 0.6 : 0));
+      // (One that came for broken glass is not heard at once: silent at first, then rising.)
+      const woke = e.hunter ? Math.max(0, Math.min(1, (e.age - HUNTER_QUIET) / HUNTER_RISE)) : 1;
+      const level = e.area !== u.area ? 0 : levelAt(d) * woke * (onWorld ? 1 : (ride ? ride.above * 0.6 : 0));
       if (!e.voice && level > 0.01) e.voice = this._utPlay(e.soundName, pos, { loops: -1, volume: 0.0 });
       // (One in another area is let go at once: it would only play on unheard, and
       // its sound starts afresh when you come back into its area.)
@@ -1887,6 +2020,15 @@ const mixin = {
       else if (sl.voice && level <= 0.001 && d > HEAR_RANGE + 10) { sl.voice.stop(); u.voices.delete(sl.voice); sl.voice = null; }
       if (sl.voice) this._utFollow(sl.voice, sl.pos, level, aboveHeight, dullOf(sl.area));
     }
+    // The glass cases: each hums where it stands, until it is smashed.
+    for (const c of u.cases || []) {
+      if (c.smashed) continue;
+      const d = dist2(c.pos, this.playerPos);
+      const level = reach(c.area, c.pos) * CASE_GAIN * (onWorld ? 1 : 0);
+      if (!c.voice && level > 0.01) c.voice = this._utPlay(CASE_SOUND, c.pos, { loops: -1, volume: 0.0, fadeMs: 300 });
+      else if (c.voice && level <= 0.001 && d > HEAR_RANGE + 10) { c.voice.stop(); u.voices.delete(c.voice); c.voice = null; }
+      if (c.voice) this._utFollow(c.voice, c.pos, level, aboveHeight, dullOf(c.area));
+    }
     for (const it of u.towerItems.values()) {
       const pos = this._utItemPos(it);
       const d = dist2(pos, this.playerPos);
@@ -1906,6 +2048,122 @@ const mixin = {
         if (p.voice) { const rel = this._utRel(p.pos); p.voice.setSpatial(level, rel[0], rel[1], this._behind(p.pos), h); }
       }
     }
+  },
+
+  // ---------------------------------------------------------------- the pool, the glass, the cases
+  // Whether a place is in a water park's pool.
+  _utInPool(pos) {
+    const u = this.ut;
+    if (u.place !== 'world') return false;
+    for (const sl of u.slides || []) if (sl.pool && sl.area === u.area && dist2(sl.pool, pos) < POOL_RADIUS) return true;
+    return false;
+  },
+
+  // Whether broken glass lies there (round a smashed case, until the world ends).
+  _utOnGlass(pos) {
+    const u = this.ut;
+    for (const g of u.glass || []) if (g.area === u.area && dist2(g.pos, pos) < GLASS_RADIUS) return true;
+    return false;
+  },
+
+  // What a step sounds like where you now stand: in the pool a wading step, or a
+  // swimming stroke when the step is a run's (game.js marks those); on broken glass its crunch; otherwise
+  // the area's own floor. (A missing recording falls back to the floor.)
+  _utStepSound(a) {
+    const pick = (list) => { const have = list.filter((n) => this.audio.has(n)); return have.length ? choice(have) : null; };
+    let name = null;
+    if (this._utInPool(this.playerPos)) name = pick(this.strideStepping === 'up' ? SWIM_STROKES : STEPS_WATER);
+    else if (this._utOnGlass(this.playerPos)) name = pick(STEPS_GLASS);
+    return name || choice(a.steps);
+  },
+
+  // The glass case within reach, if there is one: in your area, not yet smashed.
+  _utCaseInReach() {
+    const u = this.ut;
+    if (u.place !== 'world') return null;
+    for (const c of u.cases || []) if (!c.smashed && c.area === u.area && dist2(c.pos, this.playerPos) < CASE_REACH) return c;
+    return null;
+  },
+
+  // The chime as you come within reach of a case (again, if you have been away).
+  _utUpdateCases() {
+    const u = this.ut;
+    if (u.place !== 'world') return;
+    for (const c of u.cases || []) {
+      if (c.smashed || c.area !== u.area) continue;
+      const d = dist2(c.pos, this.playerPos);
+      if (d < CASE_REACH) {
+        if (!c.near) { c.near = true; if (this.audio.has(CASE_CHIME)) this._utPlay(CASE_CHIME, c.pos, { volume: 0.8, keep: true }); }
+      } else if (d > CASE_REARM) c.near = false;
+    }
+  },
+
+  // Smash it. The reward is yours at once and the voice says what it is; the
+  // chasers that heard the glass are on their way, and the voice does not say so.
+  _utSmash(c) {
+    const u = this.ut;
+    c.smashed = true;
+    if (c.voice) { c.voice.stop(); u.voices.delete(c.voice); c.voice = null; }
+    if (this.audio.has(CASE_SMASH)) this._utPlay(CASE_SMASH, c.pos, { keep: true }); else this._utPlay('explosion', c.pos, { keep: true });
+    u.glass.push({ area: c.area, pos: [c.pos[0], c.pos[1]] });
+    u.smashed = (u.smashed || 0) + 1;
+    // The chasers: mostly two or three, from as far off as the area allows.
+    let roll = rand(); let count = CASE_HUNTERS[0][0];
+    for (const [n, share] of CASE_HUNTERS) { count = n; roll -= share; if (roll < 0) break; }
+    // Their speed: the lower figure at the start of a run, the upper one once the
+    // enemies are as fast as they ever get.
+    const pace = Math.max(0, Math.min(1, (this._utSpeedMul() - 1) / (SPEED_CAP - 1)));
+    const speed = HUNTER_SPEED[0] + (HUNTER_SPEED[1] - HUNTER_SPEED[0]) * pace;
+    let came = 0;
+    for (let i = 0; i < count; i++) {
+      const avoid = u.enemies.filter((e) => e.area === c.area).map((e) => [e.x, e.y]);
+      let pos = null;
+      for (const far of HUNTER_FROM) { pos = randomFloor(u.world, c.area, rand, { from: this.playerPos, minDist: far, avoid, clearance: 4.0, tries: 80 }); if (pos) break; }
+      if (!pos) continue;
+      const e = new Chaser(c.area, pos, speed, randint(0, 9));
+      e.hunter = true; e.age = 0;
+      u.enemies.push(e);
+      came += 1;
+    }
+    // The reward, one of five (health only if you have any to gain).
+    // (No points while the compass is on, as everywhere; so then it is not points.
+    // As things stand the compass takes the attack away altogether, so this is only a guard.)
+    const kinds = ['shots', 'time', 'items'];
+    if (!u.compass.on) kinds.push('points');
+    if (u.hp < START_HP) kinds.push('health');
+    const kind = choice(kinds);
+    let words;
+    if (kind === 'points') {
+      const got = Math.round(CASE_POINTS * this._utMultiplier());
+      u.points += got; u.worldPoints += CASE_POINTS;
+      words = `${got} ${plural(got, 'point')}`;
+    } else if (kind === 'shots') {
+      const got = came + randint(CASE_SHOTS_OVER[0], CASE_SHOTS_OVER[1]);
+      u.ammo += got;
+      words = `${got} ${plural(got, 'shot')}`;
+    } else if (kind === 'time') {
+      u.worldTime += CASE_TIME;
+      words = `${CASE_TIME} more seconds in this world`;
+    } else if (kind === 'items') {
+      const got = randint(CASE_ITEMS[0], CASE_ITEMS[1]);
+      u.items += got;
+      words = `${got} tower ${plural(got, 'item')}`;
+    } else {
+      const got = Math.min(CASE_HEALTH, START_HP - u.hp);
+      u.hp += got;
+      if (u.hp > 35) u.lowWarned = false;
+      words = `${got} health`;
+    }
+    u.lastCase = { kind, came };
+    this.tts.speak(`Glass case: ${words}.`, { interrupt: true });
+  },
+
+  // A hunter that has lost you: gone, with no bang and no points, and no other in its place.
+  _utDropHunter(e) {
+    const u = this.ut;
+    if (e.voice) { e.voice.stop(); u.voices.delete(e.voice); e.voice = null; }
+    const i = u.enemies.indexOf(e);
+    if (i >= 0) u.enemies.splice(i, 1);
   },
 
   // ---------------------------------------------------------------- walking and shooting
@@ -1949,7 +2207,8 @@ const mixin = {
       this._utListenerMix();
       // Pickups are taken the moment you step onto them, not a frame later.
       this._utUpdatePickups();
-      this.audio.play(choice(a.steps));
+      this._utUpdateCases();
+      this.audio.play(this._utStepSound(a));
     }
     // (The seabed makes no sound underfoot, as in Island Mode.)
   },
@@ -1959,6 +2218,9 @@ const mixin = {
     if (u.place === 'ride' || u.place === 'slide' || u.place === 'bus') return;   // nothing fires in the car (Island Mode), on the slide or on the bus
     if (u.place !== 'world') { this.audio.play('empty_click'); return; }   // the seabed: Island Mode's click
     const a = u.area;
+    // Within a step of a glass case, the attack smashes it, and no shot is spent.
+    const glassCase = this._utCaseInReach();
+    if (glassCase) { this._utSmash(glassCase); return; }
     // In a tower area only items are thrown, as on a tower floor: with none held
     // the attack is the empty click, never the laser (Russell, 8 Nov: ammo is no
     // fallback there; get more items or leave the area).
@@ -2024,7 +2286,7 @@ const mixin = {
   },
 
   // The way you face, to the nearest of eight.
-  _utFacingWord() { return FACING_WORDS[Math.round(this.ut.face / (QUARTER / 2)) % 8]; },
+  _utFacingWord() { return FACING_WORDS[Math.round(this.ut.face / (QUARTER / 4)) % 16]; },
 
   // ---------------------------------------------------------------- the compass
   // (Russell, 8 Nov, fourth and fifth reports: the compass costs time to use, so
@@ -2046,10 +2308,8 @@ const mixin = {
     u.compass.t = 0;
     this.stride = null;
     this.audio.setMuffle(true, 0.4);
-    // The briefing, then what lies ahead of you (when you are squared up: a slant
-    // has no leg and no wall of its own to describe).
-    const k = mainIndex(u.face);
-    this.tts.speak(`Compass on. ${this._utCompassBriefing()}${k >= 0 ? ' ' + this._utCompassWords(k) : ''}`, { interrupt: true });
+    // The briefing, which says where the way to go is, then what lies ahead of you.
+    this.tts.speak(`Compass on. ${this._utCompassBriefing()} ${this._utCompassWords(mainIndex(u.face), true)}`, { interrupt: true });
   },
 
   _utCompassOff(quiet = false) {
@@ -2118,7 +2378,7 @@ const mixin = {
       const from = cellOf(this.playerPos);
       const here = target.goalCell ? (target.goalCell[0] === from[0] && target.goalCell[1] === from[1]) : (a && target.isGoal && target.isGoal(a));
       parts.push(here ? `${cap(target.name)} is here.` : `No way to ${target.name} from here.`);
-    } else parts.push(`${cap(target.name)} is ${path.length} ${plural(path.length, 'step')} away, starting ${this._utSide(leg.dir)}.`);
+    } else parts.push(`${cap(target.name)} is ${path.length} ${plural(path.length, 'step')} away, starting ${this._utBearing(leg.dir)}.`);
     const near = this._utCompassNearby();
     parts.push(near.length ? `Nearby: ${near.join('; ')}.` : 'Nothing to pick up nearby.');
     return parts.join(' ');
@@ -2139,6 +2399,7 @@ const mixin = {
     const item = a.kind === 'tower' ? u.towerItems.get(a.id) : null;
     if (item) things.push({ name: 'a tower item', pos: this._utItemPos(item) });
     for (const sl of u.slides || []) if (sl.area === a) things.push({ name: 'the water slide', pos: sl.pos });
+    for (const c of u.cases || []) if (c.area === a && !c.smashed) things.push({ name: 'a glass case', pos: c.pos });
     if (a.kind === 'island' && a.elevator && u.place === 'world') things.push({ name: 'the elevator', pos: posOf(a.elevator[0], a.elevator[1]) });
     // The six nearest as the crow flies, then the three shortest walks among them.
     const byAir = things.map((t) => ({ ...t, d: dist2(t.pos, this.playerPos) })).filter((t) => t.d < COMPASS_NEAR_RANGE)
@@ -2155,35 +2416,51 @@ const mixin = {
     return walked.slice(0, COMPASS_NEAR_COUNT).map((t) => t.steps === 0 ? `${t.name}, right here` : `${t.name}, ${this._utDistanceWords(t)}`);
   },
 
-  // "6 steps, starting left" for a route of that many steps whose first leg goes
-  // that way, counted from the way you face.
+  // "6 steps away, starting west, to your left" for a route of that many steps
+  // whose first leg goes that way: the direction by name, and where it is from
+  // the way you face.
   _utDistanceWords(t) {
     const steps = t.steps !== undefined ? t.steps : t.path ? t.path.length : null;
     const leg = t.leg || t;
     const n = steps !== null && steps !== undefined ? steps : leg.steps;
-    return `${n} ${plural(n, 'step')} away, starting ${this._utSide(leg.dir)}`;
+    return `${n} ${plural(n, 'step')} away, starting ${this._utBearing(leg.dir)}`;
   },
 
-  // What the compass says when you face a main direction (0 north, 1 east, 2
-  // south, 3 west). The way to go: the leg and its turn ("This way, 6 steps, then
-  // left", or "This way, 9 steps to the safe zone"). Any other way: how far it is
-  // open, what stops you and what lies beyond, and then where the way to go is
-  // from here ("The way is to your right").
-  _utCompassWords(idx) {
-    const d = COMPASS_DIRS[idx];
+  // What the compass says for the way you face (web 4.1.0: it describes, where it
+  // used to say only "This way"). Every answer begins with the direction's name.
+  // Facing a main direction (idx 0 north, 1 east, 2 south, 3 west): how far that
+  // way is open, what stops you and what lies beyond. If it is the way to go, it
+  // says so first, and ends with the walk: "North, the way to the safe zone. Open
+  // for 6 steps, then a wall. Beyond, a tower area, 9 steps away. Walk 6 steps this
+  // way, then turn left, to face west." If it is not, it ends with where the way
+  // is: "The way to the safe zone is north, to your left." Facing between two main
+  // directions (idx -1) there is no row of squares to describe: it names the way
+  // you face and where the way to go is, in degrees. `brief`: without where the
+  // way is (the briefing has just said it).
+  _utCompassWords(idx, brief = false) {
     const { target, leg } = this._utRoute();
+    const cap = (t) => t[0].toUpperCase() + t.slice(1);
+    // ("The way to the safe zone", "the way to the bus"; "the way out" and "the way up" as they are.)
+    const wayName = target && /^the way /.test(target.name) ? target.name : `the way to ${target ? target.name : 'go'}`;
+    if (idx < 0) {
+      const facing = `Facing ${this._utFacingWord()}.`;
+      return leg && !brief ? `${facing} ${cap(wayName)} is ${this._utBearing(leg.dir)}.` : facing;
+    }
+    const d = COMPASS_DIRS[idx];
+    const name = cap(MAIN_WORDS[idx]);
+    const way = this._utCompassWay(idx);
+    const said = way ? cap(way) + ' ' : '';
     if (leg && leg.dir[0] === d[0] && leg.dir[1] === d[1]) {
       const n = leg.steps;
-      if (leg.arrives) return `This way, ${n} ${plural(n, 'step')} to ${target.name}.`;
+      const walk = `Walk ${n} ${plural(n, 'step')} this way`;
+      if (leg.arrives) return `${name}, ${wayName}. ${said}${walk}, and you are there.`;
       // (Clockwise from the leg to the one after it is a turn to the right.)
       const right = leg.dir[0] * leg.next[1] - leg.dir[1] * leg.next[0] > 0;
-      return `This way, ${n} ${plural(n, 'step')}, then ${right ? 'right' : 'left'}.`;
+      const next = MAIN_WORDS[COMPASS_DIRS.findIndex((o) => o[0] === leg.next[0] && o[1] === leg.next[1])];
+      return `${name}, ${wayName}. ${said}${walk}, then turn ${right ? 'right' : 'left'}, to face ${next}.`;
     }
-    const way = this._utCompassWay(idx);
-    const said = way ? way[0].toUpperCase() + way.slice(1) : '';
-    if (!leg) return said || 'Nothing to say this way.';
-    const side = { right: 'to your right', left: 'to your left', behind: 'behind you', ahead: 'ahead' }[this._utSide(leg.dir)];
-    return `${said}${said ? ' ' : ''}The way is ${side}.`;
+    if (!leg || brief) return `${name}. ${said}`.trim() || `${name}.`;
+    return `${name}. ${said}${cap(wayName)} is ${this._utBearing(leg.dir)}.`;
   },
 
   // That way from here: open for how many steps, what stops you (a wall, the
@@ -2219,13 +2496,11 @@ const mixin = {
     return open ? `open for ${steps(open)}, then ${blocker}. ${beyondWords}` : `${blocker}. ${beyondWords}`;
   },
 
-  // Swipe up with the compass on: what lies ahead, said again (or, at a slant,
-  // the way you face).
+  // Swipe up with the compass on: what lies ahead, said again.
   _utCompassAgain() {
     const u = this.ut;
-    const k = mainIndex(u.face);
     u.compass.t = COMPASS_BEEP_EVERY;   // and a beep at once
-    this.tts.speak(k >= 0 ? this._utCompassWords(k) : `Facing ${this._utFacingWord()}.`, { interrupt: true });
+    this.tts.speak(this._utCompassWords(mainIndex(u.face)), { interrupt: true });
   },
 
   // The beep: highest when you face the way to go, lowest with your back to it,

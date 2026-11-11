@@ -62,7 +62,7 @@ const setup = await page.evaluate(async () => {
 });
 check(setup.menu.indexOf('Ultimate Mode') === setup.menu.indexOf('Chaos Mode') + 1, 'main menu: Ultimate Mode right after Chaos: ' + setup.menu.join(', '));
 check(setup.names.indexOf('Ultimate Mode') === setup.names.indexOf('Chaos Mode') + 1 && setup.names.indexOf('Demos, Ultimate Mode') > setup.names.indexOf('Demos, Chaos Mode'), 'help sections in order: ' + setup.names.join(' | '));
-check(setup.topics === 18 && setup.demos === 16, `help: ${setup.topics} topics, ${setup.demos} demos`);
+check(setup.topics === 19 && setup.demos === 22, `help: ${setup.topics} topics, ${setup.demos} demos`);
 check(setup.silentBeforeRun.length === 0, 'every demo plays before any run' + (setup.silentBeforeRun.length ? ': silent ' + setup.silentBeforeRun.join(', ') : ''));
 check(setup.missingBeforeRun.length === 0, 'every demo sound exists before any run, for Help from the main menu' + (setup.missingBeforeRun.length ? ': missing ' + setup.missingBeforeRun.join(', ') : ''));
 check(setup.missing.length === 0, 'every demo sound exists' + (setup.missing.length ? ': missing ' + setup.missing.join(', ') : ''));
@@ -85,8 +85,10 @@ await page.evaluate(() => {
     go(way) { this.face(way); g.input('up'); },
     // The frames a quick turn takes to land.
     land() { for (let i = 0; i < 60 && g.ut.turn; i++) g.updateUltimateMode(1 / 60); },
-    // A quick turn, landed.
+    // A quick turn, landed: thirty degrees (web 4.1.0; a quarter turn before).
     turn(side) { g.input(side); this.land(); },
+    // Three of them: a quarter turn.
+    quarter(side) { for (let i = 0; i < 3; i++) this.turn(side); },
   };
 });
 
@@ -100,6 +102,10 @@ const w0 = await page.evaluate(async () => {
   for (const e of u.enemies) perArea[e.area.id] = (perArea[e.area.id] || 0) + 1;
   const near = [...a.live].filter((v) => v.loop).map((v) => v.name);
   const placed = [...a.live].filter((v) => v.loop && v.placed).length;
+  // (Looked at here, where the run began: the echo check below moves the player
+  // into another area, where an enemy may well be near. It used to be looked at
+  // after that, and failed now and then.)
+  const farFromEnemies = u.enemies.every((e) => Math.hypot(g._utEnemyPos(e)[0] - g.playerPos[0], g._utEnemyPos(e)[1] - g.playerPos[1]) >= 10);
   return {
     worldNo: u.worldNo, areas: kinds, hp: u.hp, ammo: u.ammo, items: u.items, points: u.points, worldTime: u.worldTime, safe: u.safe,
     enemies: u.enemies.length, enemyAreas: enemyAreas.length, perArea, easyOk: enemyAreas.every((x) => { const n = perArea[x.id] || 0; return x.kind === 'tower' ? n === 1 : n >= 1 && n <= 2; }), labsQuiet: u.enemies.every((e) => e.area.kind !== 'labyrinth' && e.area.kind !== 'event'),
@@ -125,7 +131,7 @@ const w0 = await page.evaluate(async () => {
       const t = [...v.wet.taps.values()][0];
       return { name: v.name, taps: v.wet.taps.size, gain: t.gain.value, wl: v.wet.wl.gain.value, conv: !!(t.bus && t.bus.conv && t.bus.conv.buffer), room: area.room };
     })(),
-    farFromEnemies: u.enemies.every((e) => Math.hypot(g._utEnemyPos(e)[0] - g.playerPos[0], g._utEnemyPos(e)[1] - g.playerPos[1]) >= 10),
+    farFromEnemies,
     towerItems: u.towerItems.size, towers: kinds.filter((k) => k === 'tower').length,
   };
 });
@@ -165,8 +171,11 @@ const walk = await page.evaluate(async () => {
   u.ammo = 1; u.items = 1; g.input('enter');
   const reportOne = document.getElementById('said').textContent;
   // With nothing loaded (and, in a tower area, nothing to throw) the attack spends nothing.
+  // (Not beside a glass case, web 4.1.0: there the attack smashes it, and what is in it may be shots.)
   u.ammo = 0; u.items = 0;
+  const cases = u.cases; u.cases = [];
   g.input('space');
+  u.cases = cases;
   const empty = u.ammo;
   [u.ammo, u.items] = had;
   return { moved, walls, report, wanted, reportOne, empty, faced0, area: u.area.kind, same: before[0] === g.playerPos[0] && before[1] === g.playerPos[1],
@@ -188,6 +197,9 @@ const shoot = await page.evaluate(async () => {
   g.playerPos = [cell[0] * 3, cell[1] * 3];
   u.area = battle; g._utRefreshRooms();
   u.safe = 0;
+  // (No glass case within reach here, web 4.1.0: the attack would smash it instead of firing.)
+  for (const c of u.cases || []) if (c.voice) { c.voice.stop(); u.voices.delete(c.voice); }
+  u.cases = [];
   const chaser = u.enemies.find((e) => e.area === battle && e.kind === 'chaser');
   if (!chaser) return { skipped: true };
   chaser.x = g.playerPos[0]; chaser.y = g.playerPos[1] - 12;
@@ -260,8 +272,12 @@ const compass = await page.evaluate(async () => {
   const saidOn = document.getElementById('said').textContent;
   g.input('up'); const stillThere = g.playerPos[0] === pos0[0] && g.playerPos[1] === pos0[1];
   const saidAgain = document.getElementById('said').textContent;
-  // A swipe right with the compass on is a real turn: you face east, and it says what lies ahead now.
-  T.turn('right'); const saidRight = document.getElementById('said').textContent;
+  // A swipe right with the compass on is a real turn of thirty degrees: it says the
+  // way you face and where the way to go is. Two more and you face east, and it
+  // says what lies ahead now.
+  T.turn('right'); const saidStep = document.getElementById('said').textContent;
+  const facedStep = Math.abs(u.face - Math.PI / 6) < 1e-9;
+  T.turn('right'); T.turn('right'); const saidRight = document.getElementById('said').textContent;
   const facedEast = u.face === Math.PI / 2 && g.playerPos[0] === pos0[0] && g.playerPos[1] === pos0[1];
   const played = [];
   const orig = a.play.bind(a);
@@ -280,6 +296,7 @@ const compass = await page.evaluate(async () => {
   const safe = u.world.areas.find((x) => x.kind === 'event');
   const sc = safe.floorCells[Math.floor(safe.floorCells.length / 2)];
   g.playerPos = [sc[0] * 3, sc[1] * 3]; u.area = safe;
+  T.face('north');
   g.input('hold');
   const saidSafe = document.getElementById('said').textContent;
   const onInSafe = u.compass.on;
@@ -287,20 +304,30 @@ const compass = await page.evaluate(async () => {
   const outLands = outRoute.path ? W.areaAt(u.world, W.posOf(...outRoute.path[outRoute.path.length - 1])) !== safe : null;
   g.input('hold');
   const beeps = played.filter(([n]) => /^ut_compass_\d$/.test(n));
-  return { on, saidOn, stillThere, saidAgain, facedEast, saidRight, beeps: beeps.length, direct: beeps.every(([, o]) => o && o.direct), f0, fOn, fOff, ammo0, ammoAfter, route, off, saidSafe, onInSafe, outTarget: outRoute.target.name, outLands };
+  return { on, saidOn, stillThere, saidAgain, facedEast, saidRight, saidStep, facedStep, beeps: beeps.length, direct: beeps.every(([, o]) => o && o.direct), f0, fOn, fOff, ammo0, ammoAfter, route, off, saidSafe, onInSafe, outTarget: outRoute.target.name, outLands };
 });
 check(compass.on && /Compass on/.test(compass.saidOn), 'a held finger turns the compass on: ' + compass.saidOn);
-const WAY = String.raw`(This way, \d+ steps?, then (right|left)\.|This way, \d+ steps? to (the safe zone|the bus|the way out)\.|(A wall|The island's edge|Open for \d+ steps?, then (a wall|the island's edge)|Open to the border, \d+ steps?, into .*)[.;].*The way is (to your right|to your left|behind you)\.)`;
+// What it says for a main direction (web 4.1.0: it names the direction and
+// describes, where it said only "This way"): the direction that is the way to go,
+// or any other, which ends with where the way is, by name.
+const LIES = String.raw`(A wall|The island's edge|Open for \d+ steps?, then (a wall|the island's edge)|Open to the border, \d+ steps?, into .*)[.;].*`;
+const WAYNAME = String.raw`(the way to the safe zone|the way to the bus|the way out)`;
+const THEWAY = String.raw`(North|East|South|West), ${WAYNAME}\. ${LIES}Walk \d+ steps? this way(, and you are there|, then turn (right|left), to face (north|east|south|west))\.`;
+const OTHER = String.raw`(North|East|South|West)\. ${LIES}`;
+const WHERE = String.raw`(The way to the safe zone|The way to the bus|The way out) is (north|east|south|west), (to your right|to your left|behind you)\.`;
+const WAY = `(${THEWAY}|${OTHER}${WHERE})`;
 check(compass.stillThere && new RegExp('^' + WAY + '$').test(compass.saidAgain), 'while the compass is on, a swipe up says the way ahead again and the player does not move: ' + compass.saidAgain);
-check(compass.facedEast, 'with the compass on, a swipe right is a real turn: you face east, where you stood');
-check(new RegExp('^' + WAY + '$').test(compass.saidRight), 'landing on a main direction says what lies ahead: the leg and its turn when it is the way, else how far it is open, what lies beyond, and where the way is: ' + compass.saidRight);
+check(compass.facedStep && new RegExp(String.raw`^Facing north-north-east\. (The way to the safe zone|The way to the bus|The way out) is (north|east|south|west), (30|60|120|150) degrees to your (left|right)\.$`).test(compass.saidStep),
+  'with the compass on, a swipe right is a real turn of thirty degrees, and it says the way you face and where the way to go is: ' + compass.saidStep);
+check(compass.facedEast, 'two more, and you face east, where you stood');
+check(new RegExp('^' + WAY + '$').test(compass.saidRight) && /^East/.test(compass.saidRight) && !/This way,/.test(compass.saidRight + compass.saidAgain + compass.saidOn), 'landing on a main direction names it and describes what lies that way: the walk when it is the way to go, else how far it is open, what lies beyond, and where the way is: ' + compass.saidRight);
 check(compass.beeps >= 3 && compass.direct, `the compass beeps (${compass.beeps} in two seconds), played direct (never muffled)`);
 check(compass.f0 >= 19000 && compass.fOn < 2000 && compass.fOff >= 19000, `the world is muffled while the compass is on (${Math.round(compass.f0)} Hz, ${Math.round(compass.fOn)}, ${Math.round(compass.fOff)})`);
 check(compass.ammo0 === compass.ammoAfter, 'the weapon does not fire while the compass is on');
 check(Array.isArray(compass.route) && compass.route.length === 2, 'the route to the nearest safe zone has a first step: ' + JSON.stringify(compass.route));
 check(!compass.off, 'C turns the compass off');
-check(compass.onInSafe && compass.outTarget === 'the way out' && compass.outLands === true && /^Compass on\. You are in a safe zone\. The way out is \d+ steps? away, starting (ahead|right|behind|left)\. /.test(compass.saidSafe), 'in a safe zone the compass works and leads out of it, to a cell of another area: ' + compass.saidSafe);
-check(new RegExp(String.raw`^Compass on\. You are (in|on) (a labyrinth|an island|a tower area|a battle area|a safe zone)\. (The safe zone|The bus|The way out) is \d+ steps? away, starting (ahead|right|behind|left)\. (Nearby: .*|Nothing to pick up nearby\.) ` + WAY + '$').test(compass.saidOn), 'turning the compass on gives the briefing: where you are, the goal and the way to start, what is nearby, then the way ahead: ' + compass.saidOn);
+check(compass.onInSafe && compass.outTarget === 'the way out' && compass.outLands === true && /^Compass on\. You are in a safe zone\. The way out is \d+ steps? away, starting (north|east|south|west), (straight ahead|to your right|to your left|behind you)\. /.test(compass.saidSafe), 'in a safe zone the compass works and leads out of it, to a cell of another area: ' + compass.saidSafe);
+check(new RegExp(String.raw`^Compass on\. You are (in|on) (a labyrinth|an island|a tower area|a battle area|a safe zone)\. (The safe zone|The bus|The way out) is \d+ steps? away, starting (north|east|south|west), (straight ahead|to your right|to your left|behind you)\. (Nearby: .*|Nothing to pick up nearby\.) ` + `(${THEWAY}|${OTHER})` + '$').test(compass.saidOn), 'turning the compass on gives the briefing: where you are, the goal and the way to start, what is nearby, then the way ahead: ' + compass.saidOn);
 
 // --------------------------------------------------------------- the island elevator and the seabed
 const island = await page.evaluate(async () => {

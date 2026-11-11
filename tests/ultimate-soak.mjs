@@ -66,7 +66,7 @@ for (let round = 0; round < 400 && worlds < worldsWanted; round++) {
     const mem = performance.memory ? Math.round(performance.memory.usedJSHeapSize / 1e6) : null;
     return {
       over: false, worldNo: u.worldNo, elapsed: Math.round(u.elapsed), live: a.live.size, loops: [...a.live].filter((v) => v.loop).length,
-      running: [...a.live].filter((v) => v.loop && !v.paused).length, shots: [...a.live].filter((v) => !v.loop).length, maxShots: a.maxShots3d,
+      running: [...a.live].filter((v) => v.loop && !v.paused && v.dry).length, shots: [...a.live].filter((v) => !v.loop).length, maxShots: a.maxShots3d,
       buffers: a.buffers.size, big: a.bigUsed.size, buses: a.areaBuses.size, enemies: u.enemies.length, pickups: u.pickups.length, mem,
       place: u.place, dmg: g._utDamage(), mul: g._utSpeedMul().toFixed(2),
       onFloor, slant, offCentre, pos: g.playerPos.map((x) => +x.toFixed(2)), face: +(u.face * 180 / Math.PI).toFixed(1),
@@ -94,6 +94,9 @@ const loops = samples.map((s) => s.loops);
 check(Math.max(...loops) < 40, `looping sounds stay bounded (most ${Math.max(...loops)}; live at most ${Math.max(...samples.map((s) => s.live))})`);
 // (web 3.3.0) The loops of areas nobody can hear are held, so far fewer run than
 // are alive; and one-shots never pass their own ceiling, whatever the bot does.
+// (A loop whose recording is still being decoded has not begun, and cannot be held
+// until it does: it is not counted as running. In a run's first seconds, in a
+// world of ten areas, that is most of them. Web 4.1.0.)
 const running = every.map((s) => s.running);
 check(Math.max(...running) < 30 && Math.max(...running) <= Math.max(...every.map((s) => s.loops)), `the loops actually running stay well below those alive (most ${Math.max(...running)} running; most alive ${Math.max(...every.map((s) => s.loops))})`);
 check(every.every((s) => s.shots <= s.maxShots + 4), `one-shots stay at their ceiling of ${every.length ? every[0].maxShots : '?'} (most ${Math.max(...every.map((s) => s.shots))}; a few cues may sound above it)`);
