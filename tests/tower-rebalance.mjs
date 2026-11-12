@@ -66,9 +66,9 @@ const r = await page.evaluate(async () => {
 });
 
 const near = (a, b, tol = 0.02) => Math.abs(a - b) <= tol;
-check(near(r.t1.race, 9.0) && near(r.t1.throwSpeed, 5.0) && near(r.t1.every, 7.0) && near(r.t1.windup, 1.5) && !r.t1.guard && near(r.t1.notice, 1.5), `tower one: race at about two thirds of a run (9), throws at 5 units a second every 7 seconds, wind-up 1.5 s, no guard, 1.5 s head start: ${JSON.stringify(r.t1)}`);
-check(near(r.t2.race, 9.45) && near(r.t2.throwSpeed, 5.4) && near(r.t2.every, 6.44) && near(r.t2.windup, 1.4) && near(r.t2.notice, 1.3), `tower two: 5% faster race, 0.2 s less head start, 8% faster and more often throws, wind-up 0.1 s shorter: ${JSON.stringify(r.t2)}`);
-check(r.t11.windup === 0.85 && r.t21.windup === 0.85 && r.t11.race > 14 && r.t21.race > r.t11.race, `no level-off: by tower 11 the rival races faster than a run (${r.t11.race}), still rising at tower 21 (${r.t21.race}), and the wind-up never drops below 0.85 s`);
+check(near(r.t1.race, 7.5) && near(r.t1.throwSpeed, 5.0) && near(r.t1.every, 7.0) && near(r.t1.windup, 1.5) && !r.t1.guard && near(r.t1.notice, 1.5), `tower one: race just over a walk (7.5), throws at 5 units a second every 7 seconds, wind-up 1.5 s, no guard, 1.5 s head start: ${JSON.stringify(r.t1)}`);
+check(near(r.t2.race, 7.875) && near(r.t2.throwSpeed, 5.4) && near(r.t2.every, 6.44) && near(r.t2.windup, 1.4) && near(r.t2.notice, 1.3), `tower two: 5% faster race, 0.2 s less head start, 8% faster and more often throws, wind-up 0.1 s shorter: ${JSON.stringify(r.t2)}`);
+check(r.t11.windup === 0.85 && r.t21.windup === 0.85 && r.t11.race < 14 && r.t21.race > 14 && r.t21.race > r.t11.race, `no level-off: under a run at tower 11 (${r.t11.race}), faster than a run by tower 21 (${r.t21.race}), and the wind-up never drops below 0.85 s`);
 check(r.t1f3.race > r.t1.race && r.t1f3.race < r.t2.race, `it rises floor by floor within a tower: ${r.t1.race} < ${r.t1f3.race} < ${r.t2.race}`);
 check(near(r.boost.speed, Math.pow(1.03, 5), 0.001) && near(r.boost.every, Math.pow(1.03, 5), 0.001) && r.boost.times === 5, `each pickup: 3% faster and 3% more often, five times at most: ${JSON.stringify(r.boost)}`);
 check(r.items.near >= 12 && r.items.far <= 30.01 && r.items.rival >= 12 && r.items.notice >= 1.5, `new items 12 to 30 units from you, 12 or more from the rival, each with a head start: ${JSON.stringify(r.items)}`);
