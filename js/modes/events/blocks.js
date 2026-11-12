@@ -427,7 +427,11 @@ export const BlocksMixin = {
     const ev = this.ev;
     this.bLevel += 1;
     this._bClearThings();
+    const glass = new Set(this.bGlassExtra);
     this._bLayRoom();
+    // The glass of the cases already smashed stays where it lies, as long as no wall
+    // of the new level stands on it.
+    this.bGlassExtra = new Set([...glass].filter((k) => !this.bWalls.has(k)));
     if (ev.mission === 'song') this._bNewTune();
     this._bLevelItems();
     this._bLevelCreatures(ev.levels.more_creatures_each);
