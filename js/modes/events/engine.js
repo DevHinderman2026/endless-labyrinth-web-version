@@ -6,11 +6,12 @@
 
 import { EventFeed, EventScores, EVENT_START_CHECK } from './feed.js';
 import { status as eventStatus, describeDuration, hasClock, ITEMS_NEEDED, canEndWithoutClock, TOTAL_UNUSED,
-  soundFiles, pyRound } from './schema.js';
+  soundFiles, pyRound, BEHAVIORS_3, MISSIONS_3 } from './schema.js';
 import { aliasRecording, addMade, fromBuffer, ringPeriodCopy, warpCopy, padded, ensureCopies } from './sounds.js';
 import { uniform, randint, randrange, choice, sample, choices, random, shuffle } from './py.js';
 
 import { gestureWords } from './wording.js';
+import { X_OWN } from './more.js';
 export { gestureWords };
 
 export const S_EVENT = 'event';
@@ -21,7 +22,7 @@ const S_GAME_OVER = 'game_over';
 
 const EVENT_REACH = 3.0;              // one step: the size of the square a thing sits in
 // Missions that never use the ordinary items: none are laid out when the run starts.
-const NO_ORDINARY_ITEMS = ['memory', 'pairs', 'detector', 'dodge', 'hold', 'bomb', 'reflex', 'chairs', 'keys', 'rhythm', 'lamps', 'whack'];
+const NO_ORDINARY_ITEMS = ['memory', 'pairs', 'detector', 'dodge', 'hold', 'bomb', 'reflex', 'chairs', 'keys', 'rhythm', 'lamps', 'whack', 'silent', 'storm', ...X_OWN];
 // Walking into things, in events only: a thing is reached only on an Up or Down step
 // that lands the player in its square.
 export const EVENT_SQUARE_HALF = 1.5;
@@ -105,10 +106,25 @@ export class Thing {
     this.extra = null;        // a second sound played with it (the light's shimmer)
     this.note = null;         // a decoys bell: which recording it is ringing now
     this.full = null;
+    // web 5.0.0, for the building blocks (blocks.js)
+    this.kind = null;         // a creature of the second or third kind, or a chaser: its settings
+    this.state = null;        // a listener: 'rest', 'growl' or 'charge'; a thrower: 'idle' or 'windup'
+    this.timer = 0.0;
+    this.face = null;         // a listener: the way it faces
+    this.target = null;       // where a woken listener is going, a thrower is aiming, a teleport leads
+    this.cased = false;       // an item locked in a glass case
+    this.near = false;        // a case whose bell has rung
+    this.knock = 0.0;         // seconds to a case's next knock, or a fragment's next call
+    this.frag = null;         // an item's own fragment of the tune
+    this.role = null;         // 'chaser', or which supply it is
+    this.fade = null;         // a chaser: seconds since it came
+    this.path = null; this.pathGoal = null; this.pathAt = -99.0;     // a creature's way round walls
   }
 }
 
 export const EngineMixin = {
+  _Thing: Thing,              // for blocks.js, which cannot import this file (it is imported here)
+
   // ------------------------------------------------------------ setting up
   _eventSetup() {
     // The desktop makes a sound's dull copy just before it first plays if it is not
@@ -259,6 +275,12 @@ export const EngineMixin = {
     const now = nowFor === null ? ev._start : nowFor;
     const desc = ev.description.trim() ? ' ' + gestureWords(ev.description.trim()) : '';
     const st = eventStatus(ev, now);
+    if (ev._website_only) {
+      // Made for a newer version of the game than the one this device is holding.
+      if (st !== 'live' && st !== 'upcoming') return `${ev.name} has ended.`;
+      const when = st === 'live' ? `Ends in ${describeDuration(ev._end - now)}.` : `Starts in ${describeDuration(ev._start - now)}.`;
+      return `${ev.name}. This event needs a newer version of the game than the one open here. Close the game and open it again to update. ${when}`;
+    }
     if (st === 'ended') return `${ev.name} has ended.`;
     if (st === 'stopped') return `${ev.name} has been stopped for now.`;
     if (st === 'upcoming') return `${ev.name}, coming soon: starts in ${describeDuration(ev._start - now)}.${desc}`;
@@ -330,6 +352,12 @@ export const EngineMixin = {
       const why = this.eventFeed.online ? 'That event is no longer available. '
         : 'The internet could not be reached, so that event cannot be checked right now. ';
       this.tts.speak(why + this._eventLine(this.eventMenu[this.eventMenuIndex]));
+      return;
+    }
+    if (ev._website_only) {
+      this._eventBuildMenu();
+      this.tts.speak(`${ev.name} needs a newer version of the game: close the game and open it again to update. `
+        + this._eventLine(this.eventMenu[this.eventMenuIndex]));
       return;
     }
     const cur = this.eventFeed.nowFor(ev);
@@ -426,7 +454,10 @@ export const EngineMixin = {
     return Math.abs(pos[0] - this.playerPos[0]) <= half && Math.abs(pos[1] - this.playerPos[1]) <= half;
   },
 
-  startEvent(ev) {
+  startEvent(ev, _carry = null) {
+    // web 5.0.0: an event in stages plays the stage it has reached, and an event in
+    // levels a copy of itself (_carry: what the run has earned, into a new stage).
+    ev = this._bRunCopy(ev, _carry);
     this.state = S_EVENT;
     this.resetGameState();
     this.evLastStep = [0, -1];      // as if facing north: nothing is near at the start
@@ -462,6 +493,8 @@ export const EngineMixin = {
     this.evRingsLevel = null;
     this.evBonuses = 0;
     this.lastBeepSecond = -1;
+    if (_carry) this._bCarryIn(_carry);
+    this._bPrepare(ev);             // web 5.0.0: walls, floor, the level's items, the ending
     this._syncRoom();
     this._wake(true);
     if (this.ambienceChannel) this.ambienceChannel.stop();
@@ -490,7 +523,7 @@ export const EngineMixin = {
     this.evBonusPickup = `event_pickup_${it.bonus_theme}`;
     this.evLives = ev.hazards.lives;
     this.evEndSound = this.loadEventRecording(ev.messages.end_sound, 'sting') || 'event_toll_end';
-    this.audio.play(this.loadEventRecording(ev.messages.start_sound, 'sting') || 'event_toll');
+    this.audio.play(_carry ? 'stairs_climb' : (this.loadEventRecording(ev.messages.start_sound, 'sting') || 'event_toll'));
     // No spoken intro: the event's description, read in the Events menu, already said
     // what to do. This only cuts off the menu's speech.
     this.tts.speak('', { interrupt: true });
@@ -529,9 +562,14 @@ export const EngineMixin = {
     if (snd === 'guardian') this.evHazardSounds = ['guardian'];
     else if (snd === 'enemy') this.evHazardSounds = sample([...Array(10).keys()], 10).map((i) => `obstacle_${i}`);
     else this.evHazardSounds = [this.loadEventRecording(snd, 'beacon_hazard') || 'guardian'];
-    if (ev.mission !== 'escape') for (let i = 0; i < hz.count; i++) this._eventSpawnHazard(i);
+    if (!['escape', 'silent'].includes(ev.mission)) for (let i = 0; i < hz.count; i++) this._eventSpawnHazard(i);
     // The mission's own set-up.
     this._mStart(ev);
+    // web 5.0.0: the other kinds of creature, the things in the room, the new missions.
+    this._bStart(ev, Boolean(_carry));
+    // web 5.0.0: the 25 further missions (more.js), last, so that whatever one says
+    // first (a treasure map's directions) comes after the stage's number.
+    this._xStart(ev);
   },
 
   // A tower drone for an event's background, never the one just played (_pick_amb).
@@ -554,10 +592,11 @@ export const EngineMixin = {
       if (th && th.x !== undefined) taken.push([th.x, th.y]);
     }
     for (const t of this.mAmmo || []) taken.push([t.x, t.y]);
+    taken.push(...this._bTaken());          // web 5.0.0: traps, safe spots, teleports, chests, supplies, stones
     // Never in the player's own square, nor where the mission would take it at once.
     const clear = EVENT_SQUARE_HALF * 1.5;
-    const zones = this._eventClearZones();
-    const used = new Set(taken.map(([a, b]) => sq(a, b)));
+    const zones = [...this._eventClearZones(), ...this._bClearZones()];
+    const used = new Set([...taken.map(([a, b]) => sq(a, b)), ...this._bBlockedSquares()]);     // (web 5.0.0: never in a wall)
     for (let attempt = 0; attempt < 300; attempt++) {
       const relax = attempt < 200 ? 1.0 : 0.5;
       const x = uniform(-lim, lim); const y = uniform(-lim, lim);
@@ -587,6 +626,19 @@ export const EngineMixin = {
     return best !== null ? best : least;
   },
 
+  // The calling sound of a new item. With several recordings, each item picks one at
+  // random; in the missions web 5.0.0 added, one that the fewest items out now are
+  // using, so that as far as the recordings go round every item has a sound of its own.
+  _eventPickBeacon() {
+    let pool = [...(this.evBeacons && this.evBeacons.length ? this.evBeacons : [this.evBeacon])];
+    if (pool.length > 1 && MISSIONS_3.includes(this.ev.mission)) {
+      const count = (b) => this.evItems.filter((t) => t.beacon === b).length;
+      const fewest = Math.min(...pool.map(count));
+      pool = pool.filter((b) => count(b) === fewest);
+    }
+    return choice(pool);
+  },
+
   _eventSpawnItem() {
     const it = this.ev.item;
     if (it.total && this.evSpawned >= it.total) return;
@@ -594,10 +646,11 @@ export const EngineMixin = {
     const th = new Thing(x, y);
     // Now and then a rare bonus item (never in sorting: no bin takes it).
     th.value = (it.bonus_chance && this.ev.mission !== 'sort' && random() < it.bonus_chance) ? 1 : 0;
-    th.beacon = th.value ? this.evBonusBeacon : choice(this.evBeacons || [this.evBeacon]);
+    th.beacon = th.value ? this.evBonusBeacon : this._eventPickBeacon();
     if (this.ev.mission !== 'seek') th.channel = this.audio.play(th.beacon, { loops: -1, volume: 0.0 });
     this.evItems.push(th);
     this.evSpawned += 1;
+    this._bItemSpawned(th);             // web 5.0.0: its fragment of the tune, and its glass case
   },
 
   // The corner farthest from the player: the one spot always well clear.
@@ -607,9 +660,9 @@ export const EngineMixin = {
     return [px > 0 ? -lim : lim, py > 0 ? -lim : lim];
   },
 
-  _eventHazardHome(respawn = false) {
+  _eventHazardHome(respawn = false, hz = null) {
     const lim = this.arenaLimit - 3.0;
-    const home = this.ev.mission === 'defend' ? 'edge' : this.ev.hazards.home;
+    const home = this.ev.mission === 'defend' ? 'edge' : (hz || this.ev.hazards).home;
     const [px, py] = this.playerPos;
     for (let i = 0; i < 100; i++) {
       let x; let y;
@@ -630,12 +683,24 @@ export const EngineMixin = {
     return this._eventFarSpot();
   },
 
-  _eventSpawnHazard(i = 0, th = null) {
+  // kind: the settings of a second or third kind of creature (web 5.0.0); null for the
+  // first kind. sounds: that kind's voices.
+  _eventSpawnHazard(i = 0, th = null, kind = null, sounds = null) {
     const respawn = th !== null;
-    const [x, y] = this._eventHazardHome(respawn || (this.evElapsed || 0.0) > 0.0);
+    if (respawn) kind = th.kind;
+    let [x, y] = this._eventHazardHome(respawn || (this.evElapsed || 0.0) > 0.0, kind);
+    [x, y] = this._bOpenNear(x, y);       // (web 5.0.0: never inside a wall)
+    for (let n = 0; n < 40; n++) {
+      // web 5.0.0: a creature that listens never settles on an item or beside one.
+      if (!this._bCrowdsAnItem(x, y, kind)) break;
+      [x, y] = this._eventHazardHome(true, kind);
+      [x, y] = this._bOpenNear(x, y);
+    }
     if (th === null) {
       th = new Thing(x, y);
-      th.beacon = this.evHazardSounds[i % this.evHazardSounds.length];
+      th.kind = kind;
+      const voices = sounds || this.evHazardSounds;
+      th.beacon = voices[i % voices.length];
       this.evHazards.push(th);
     }
     th.x = x; th.y = y; th.home = [x, y];
@@ -645,19 +710,22 @@ export const EngineMixin = {
     th.channel = this.audio.play(th.beacon, { loops: -1, volume: 0.0 });
     th.note = null;
     if (respawn && this.ev && this.ev.mission === 'sneak') this._mSneakSound(th, this.mGuardAsleep());
+    this._bCreatureReady(th);           // web 5.0.0: a listener settles, a thrower waits
     return th;
   },
 
   _eventMoveHazard(th, dt) {
-    const hz = this.ev.hazards;
+    if (this._xMoves(th, dt)) return;           // web 5.0.0, turn the tables: with the power, they run from you
+    const hz = th.kind || this.ev.hazards;      // (web 5.0.0: each kind of creature has its own settings)
     const [px, py] = this.playerPos;
     const lim = this.arenaLimit - 1.0;
     let beh = hz.behavior;
-    if (this.ev.mission === 'sneak') {
+    if (th.kind || th.role) {
+      // a second or third kind, or a chaser: never the mission's own
+    } else if (this.ev.mission === 'sneak') {
       if (this.mGuardAsleep()) return;
       beh = 'hunt';
-    }
-    if (this.ev.mission === 'defend') {
+    } else if (this.ev.mission === 'defend') {
       // Straight for the treasure in the middle, a little faster each time one comes back.
       const dx = -th.x; const dy = -th.y;
       const d = Math.hypot(dx, dy);
@@ -666,6 +734,10 @@ export const EngineMixin = {
         th.x += dx / d * stepd;
         th.y += dy / d * stepd;
       }
+      return;
+    }
+    if (th.role || BEHAVIORS_3.includes(beh)) {
+      this._bMove(th, dt, hz, lim);           // web 5.0.0: a chaser, listener, runner, statue or thrower
       return;
     }
     let gx; let gy;
@@ -677,13 +749,21 @@ export const EngineMixin = {
       if (th.goal === null || Math.hypot(th.goal[0] - th.x, th.goal[1] - th.y) < 1.0) th.goal = [uniform(-lim, lim), uniform(-lim, lim)];
       [gx, gy] = th.goal;
     }
-    const dx = gx - th.x; const dy = gy - th.y;
-    const d = Math.hypot(dx, dy);
-    if (d > 0.05) {
-      const stepd = Math.min(d, hz.speed * EVENT_STEP * dt);     // speed is in steps a second
-      th.x = Math.max(-lim, Math.min(lim, th.x + dx / d * stepd));
-      th.y = Math.max(-lim, Math.min(lim, th.y + dy / d * stepd));
-    }
+    // (speed is in steps a second. web 5.0.0: straight there in an open room, as it
+    // always was, and by the passages in a walled one.)
+    if (!this._bMoveToward(th, gx, gy, hz.speed * EVENT_STEP * dt, lim) && beh === 'wander') th.goal = null;
+  },
+
+  // Whether this event's laser never runs out (web 5.0.0, Windows 3.0.0).
+  evUnlimited() {
+    const wp = (this.ev && this.ev.weapon) || {};
+    return !!(wp.enabled && wp.unlimited_shots);
+  },
+
+  // The shots as the voice says them: 5 shots, 1 shot, or unlimited shots.
+  evShotsWords() {
+    if (this.evUnlimited()) return 'Unlimited shots.';
+    return `${this.evShots} shot${this.evShots === 1 ? '' : 's'}.`;
   },
 
   // Space: the laser, aimed exactly as in battle mode - whatever is centred between
@@ -693,10 +773,15 @@ export const EngineMixin = {
     if (ev && ev.mission === 'seek') { this.mPing(); return; }
     if (ev && ev.mission === 'fishing') { this.mCast(); return; }
     if (ev && ev.mission === 'rhythm') { this.mTap(); return; }
+    if (ev && this._xFire()) return;        // web 5.0.0: the attack is the mission's own (a replay, a ping, a dig, its own shot)
+    if (ev && this._bFire()) return;        // web 5.0.0: it smashed the glass case beside you, or threw a stone
     if (!ev || !ev.weapon.enabled) { this.audio.play('empty_click'); return; }
-    if (this.evShots <= 0) { this.audio.play('empty_click'); return; }
-    this.evShots -= 1;
+    if (!this.evUnlimited()) {
+      if (this.evShots <= 0) { this.audio.play('empty_click'); return; }
+      this.evShots -= 1;
+    }
     this.audio.play('laser');
+    this._bNoise('shots', [...this.playerPos]);       // web 5.0.0: creatures that listen may hear it
     let best = null;
     for (const th of this.evHazards) {
       if (th.downFor >= 0) continue;
@@ -707,10 +792,10 @@ export const EngineMixin = {
         if (best === null || dist < best[0]) best = [dist, th];
       }
     }
-    if (best === null || !ev.hazards.can_be_shot) return;
+    if (best === null || !(best[1].kind || ev.hazards).can_be_shot) return;
     const th = best[1];
     th.hits += 1;
-    const hz = ev.hazards;
+    const hz = th.kind || ev.hazards;
     if (th.hits >= hz.hits_to_down) {
       th.downFor = 0.0;
       if (th.channel) { th.channel.stop(); th.channel = null; }
@@ -729,20 +814,22 @@ export const EngineMixin = {
   },
 
   _eventUpdateHazards(dt) {
-    const hz = this.ev.hazards;
-    for (const th of this.evHazards) {
+    const first = this.ev.hazards;
+    for (const th of [...this.evHazards]) {
+      const hz = th.kind || first;            // (web 5.0.0: each kind of creature has its own settings)
       if (th.downFor >= 0) {
         th.downFor += dt;
         if (this.ev.mission !== 'defend' && hz.respawn_seconds && th.downFor >= hz.respawn_seconds) this._eventSpawnHazard(0, th);
         continue;
       }
       this._eventMoveHazard(th, dt);
-      const [left, right, dist] = this._battleLevels([th.x, th.y], hz.volume * this.mSleepingGain());
+      const [left, right, dist] = this._battleLevels([th.x, th.y], hz.volume * this.mSleepingGain() * this._bGain(th, hz));
       if (th.channel) th.channel.setVolume(Math.min(1.0, left), Math.min(1.0, right), this._behind([th.x, th.y]));
       th.age += dt;
-      if (dist < EVENT_HAZARD_REACH && this.evElapsed > EVENT_HAZARD_GRACE && th.age >= EVENT_HAZARD_COOLDOWN && !this.mHazardsHeld()) {
+      if (dist < EVENT_HAZARD_REACH && this.evElapsed > EVENT_HAZARD_GRACE && th.age >= EVENT_HAZARD_COOLDOWN && !this.mHazardsHeld()
+        && !this._bSafe()) {
         th.age = 0.0;
-        if (this.mTouchHandled(th)) continue;
+        if (this._xTouchHandled(th) || this.mTouchHandled(th) || this._bTouchHandled(th)) continue;
         this.audio.play('player_hit');
         this._mTouched();
         if (hz.on_touch === 'end_run') {
@@ -1068,6 +1155,7 @@ export const EngineMixin = {
       if (this.evSteppedOnto([ex.x, ex.y], EVENT_REACH)) {
         this.evPoints += dc.points_per_level;
         this.evLevelsDone += 1;
+        if (this._bEndingReached(this.evLevelsDone)) return true;      // web 5.0.0: the run's last one, by its ending (blocks.js)
         this.evLevel += 1;
         this.audio.play('stairs_climb');
         this._decoyLevel();
@@ -1177,6 +1265,7 @@ export const EngineMixin = {
       this._eventFinish(ev.mission === 'survive' ? 'survived' : 'time');
       return;
     }
+    if (this._bUpdate(dt)) return;          // web 5.0.0: the building blocks' own work (blocks.js) ended the run
     if (ev.mission === 'survive') this.evAlivePoints += ev.survive.points_per_second * dt;
     if (this.evHazards.length && this._eventUpdateHazards(dt)) return;
     if (this.evEndsByCreaturesOnly && this.evHazards.length && this.evHazards.every((h) => h.downFor >= 0)) {
@@ -1199,27 +1288,22 @@ export const EngineMixin = {
         return;
       }
     }
+    if (this.MORE.includes(ev.mission)) {
+      if (this._xUpdate(dt)) return;          // web 5.0.0: one of the 25 further missions ended the run
+      if (this.X_OWN.includes(ev.mission)) {
+        this._eventUpdateCredits(dt, step);
+        return;
+      }
+    }
     // The items.
     const it = ev.item;
     for (const th of [...this.evItems]) {
       const [left, right] = this._battleLevels([th.x, th.y], it.volume);
       if (th.channel) th.channel.setVolume(left, right, this._behind([th.x, th.y]));
-      if (this.evSteppedOnto([th.x, th.y], EVENT_REACH)) {
-        if (th.channel) th.channel.stop();
-        this.evItems.splice(this.evItems.indexOf(th), 1);
-        this.audio.play(th.value ? this.evBonusPickup : this.evPickup, { at: [th.x, th.y] });
-        this.evCollected += 1;
-        this.evPoints += th.value ? it.bonus_points : it.points;
-        this.evBonuses = (this.evBonuses || 0) + (th.value ? 1 : 0);
-        if (ev.mission === 'steps') this._mStepsCollected();
-        if (it.total && this.evCollected >= it.total) {
-          this.evPoints += it.all_found_bonus;
-          this.evTimeBonus = Math.trunc(Math.max(0, this.timeLeft)) * it.time_bonus;
-          this.evPoints += this.evTimeBonus;
-          this._eventFinish('all');
-          return;
-        }
-        this._eventSpawnItem();
+      // (web 5.0.0: an item locked in a glass case is not taken by walking onto it;
+      // the case is smashed with the attack. See blocks.js.)
+      if (!th.cased && this.evSteppedOnto([th.x, th.y], EVENT_REACH)) {
+        if (this._eventTakeItem(th)) return;
       }
     }
     if (ev.mission === 'steps' && this.mStepsLeft <= 0) {
@@ -1229,6 +1313,32 @@ export const EngineMixin = {
       return;
     }
     this._eventUpdateCredits(dt, step);
+  },
+
+  // Collect an ordinary item: walked onto, or (web 5.0.0) in a glass case that has
+  // just been smashed. True if that was the last one, so the run has ended or a new
+  // level has begun.
+  _eventTakeItem(th) {
+    const ev = this.ev; const it = ev.item;
+    if (th.channel) th.channel.stop();
+    if (this.evItems.includes(th)) this.evItems.splice(this.evItems.indexOf(th), 1);
+    // (web 5.0.0: an item that is a musical fragment plays its own notes.)
+    this.audio.play(th.frag || (th.value ? this.evBonusPickup : this.evPickup), { at: [th.x, th.y] });
+    this.evCollected += 1;
+    this.evPoints += th.value ? it.bonus_points : it.points;
+    this.evBonuses = (this.evBonuses || 0) + (th.value ? 1 : 0);
+    if (ev.mission === 'steps') this._mStepsCollected();
+    this._bItemTaken(th);
+    if (this._xItemTaken(th)) return true;
+    if (it.total && this.evCollected >= it.total) {
+      this.evPoints += it.all_found_bonus;
+      this.evTimeBonus = Math.trunc(Math.max(0, this.timeLeft)) * it.time_bonus;
+      this.evPoints += this.evTimeBonus;
+      this._eventFinish('all');
+      return true;
+    }
+    this._eventSpawnItem();
+    return false;
   },
 
   // The time credits: laid out, collected, and gone again if they wait too long.
@@ -1262,6 +1372,12 @@ export const EngineMixin = {
 
   eventStatusReport() {
     const it = this.ev.item;
+    if (this.MORE.includes(this.ev.mission)) {
+      let msg = this._xStatus();
+      if (this.evClock) msg += ` ${Math.trunc(Math.max(0, this.timeLeft))} seconds left.`;
+      this.tts.speak((msg + this._bStatusExtra()).trim(), { interrupt: true });
+      return;
+    }
     if (this.NEW_MISSIONS.includes(this.ev.mission)) {
       let msg = this._mStatus() || '';
       // How many are left, in the missions that end at a set total and whose own
@@ -1275,7 +1391,7 @@ export const EngineMixin = {
         msg = msg.trimEnd() + ` ${Math.max(0, it.total - done)} ${what}.`;
       }
       if (this.evClock) msg += ` ${Math.trunc(Math.max(0, this.timeLeft))} seconds left.`;
-      this.tts.speak(msg.trim());
+      this.tts.speak((msg + this._bStatusExtra()).trim());
       return;
     }
     if (this.ev.mission === 'decoys') {
@@ -1288,14 +1404,14 @@ export const EngineMixin = {
       }
       msg += ` ${pts(this.evPoints)}.`;
       if (this.evExit) msg += ' The way out is open.';
-      if (this.ev.weapon.enabled) msg += ` ${this.evShots} shot${this.evShots === 1 ? '' : 's'}.`;
+      if (this.ev.weapon.enabled) msg += ' ' + this.evShotsWords();
       const hz = this.ev.hazards;
       if (hz.count && hz.on_touch === 'end_run' && hz.lives > 1) {
         const lv = this.evLives === undefined ? 1 : this.evLives;
         msg += ` ${lv} li${lv === 1 ? 'fe' : 'ves'} left.`;
       }
       if (this.evClock) msg += ` ${Math.trunc(Math.max(0, this.timeLeft))} seconds left.`;
-      this.tts.speak(msg);
+      this.tts.speak(msg + this._bStatusExtra());
       return;
     }
     const n = this.evCollected;
@@ -1303,7 +1419,7 @@ export const EngineMixin = {
     const p = this.evPoints + Math.trunc(this.evAlivePoints);
     let msg = it.at_once ? `${n} ${word}, ${pts(p)}.` : `${pts(p)}.`;
     if (it.total && it.at_once && !it.hide_left) msg += ` ${it.total - n} left to find.`;
-    if (this.ev.weapon.enabled) msg += ` ${this.evShots} shot${this.evShots === 1 ? '' : 's'}.`;
+    if (this.ev.weapon.enabled) msg += ' ' + this.evShotsWords();
     const up = this.evHazards.filter((h) => h.downFor < 0);
     if (this.ev.hazards.count) {
       const name = this.ev.hazards.name;
@@ -1314,7 +1430,7 @@ export const EngineMixin = {
       }
     }
     if (this.evClock) msg += ` ${Math.trunc(Math.max(0, this.timeLeft))} seconds left.`;
-    this.tts.speak(msg);
+    this.tts.speak(msg + this._bStatusExtra());
   },
 
   _eventStopAll() {
@@ -1330,6 +1446,9 @@ export const EngineMixin = {
     this.evFakes = []; this.evExit = null; this.evDarkExit = null;
     this.evZones = [];
     this._mStopAll();
+    this._bStopAll();
+    this._xStopAll();
+    if (this._bStageTurn) return;       // web 5.0.0: a new stage of the same run keeps its recordings
     // Web only: let go of the long recordings unpacked for this run.
     // The end sound is about to play (the game over's message plays it), so it is
     // kept until it has started; then it goes too.
@@ -1350,6 +1469,11 @@ export const EngineMixin = {
   // The run is over: the game's own game over (which stops every sound, and calls
   // the mode's finish for the message, _eventFinishMessage).
   _eventFinish(reason) {
+    // web 5.0.0: finding a level's last item starts the next level, and finishing a
+    // stage starts the next stage: the run goes on (blocks.js).
+    this._xClosing(reason);             // web 5.0.0: a mission's last bonus, before anything is counted
+    if (this._bInterceptFinish(reason)) return;
+    this.bLastReason = reason;
     this._evReason = reason;
     this._evFinishing = true;
     this.triggerGameOver();
@@ -1402,12 +1526,16 @@ export const EngineMixin = {
       msg += 'Time up. You survived! ';
     } else if (reason === 'caught') {
       msg += `The ${ev.hazards.name} got you. `;
+    } else if (this._bReason(reason)) {
+      msg += this._bReason(reason);
+    } else if (this._xReason(reason)) {
+      msg += this._xReason(reason);
     } else if (this._mReason(reason)) {
       msg += this._mReason(reason);
     } else {
       msg += 'Time up. ';
     }
-    const missionResult = this.NEW_MISSIONS.includes(ev.mission) ? this._mResult() : null;
+    const missionResult = this._bResult() || this._xResult() || (this.NEW_MISSIONS.includes(ev.mission) ? this._mResult() : null);
     if (missionResult) {
       msg += missionResult;
       const downs = this.evDowns || 0;
@@ -1449,7 +1577,7 @@ export const EngineMixin = {
       const what = { relay: ['checkpoint', 'checkpoints'], bomb: ['bomb', 'bombs'] }[ev.mission] || [it.name, it.plural];
       msg += `There ${tot === 1 ? 'was' : 'were'} ${tot} ${tot === 1 ? what[0] : what[1]} in all. `;
     }
-    if (!this.evClock) msg += `The run lasted ${minsSecs(this.evElapsed)}. `;
+    if (!this.evClock) msg += `The run lasted ${minsSecs(this.evElapsed + (this.bElapsedBefore || 0.0))}. `;
     const bonuses = this.evBonuses || 0;
     if (bonuses) msg += `${bonuses} of them ${bonuses === 1 ? 'was a bonus' : 'were bonuses'}. `;
     msg += this._eventMedalText(ev, this.evPoints);

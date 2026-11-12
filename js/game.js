@@ -8,21 +8,30 @@ import { RATES } from './speech.js';
 import { keyboardDevice, windowsOnly } from './device.js';
 
 // ------------------------------------------------------------------ constants
+import {
+  newTurn, turnQuick, turnStart, turnEnd, turnStop, updateTurn, forwardOf, snapFace, facingWord, walkStep, relTo,
+  TICK_LEVEL, CLICK_LEVEL,
+} from './turning.js';
+
 const FPS = 30;
 const BATTLE_AIM_PAN = 0.72;
-const BATTLE_SPAWN_PAN = 0.55;
+const BATTLE_SPAWN_PAN = 0.55;      // (the desktop's: enemies ahead or behind only; since web 5.0.0 they come from any side)
 const BATTLE_AMMO_CLEARANCE = 14.0;
 // 2.0.0 (Russell, by ear): 45 seconds at the start, one fewer each wave, never under 30.
-const BATTLE_BREAK_START = 45.0;
+const BATTLE_BREAK_START = 52.0;         // a wave break's length at first (5.0.0: 15 percent longer; was 45)
 const BATTLE_BREAK_DECAY = 1.0;
-const BATTLE_BREAK_MIN = 30.0;
+const BATTLE_BREAK_MIN = 25.0;           // and its shortest, in the hardest waves (5.0.0; was 30)
 const BATTLE_MAX_PICKUPS = 1;
 const BATTLE_PICKUP_BANDS = [[8.0, 16.0], [16.0, 26.0], [26.0, 38.0]];
 const BATTLE_BEAT_SWAP = [34.0, 62.0];
 const BATTLE_AMB_SWAP = [23.0, 41.0];
-const BATTLE_TIME_LIMIT = 60.0;
+const BATTLE_TIME_LIMIT = 80.0;          // 5.0.0 (was 60): turning takes time
 const BATTLE_TIME_ANNOUNCE = 60.0;
-const BATTLE_CREDIT_VALUES = [10, 15, 20];
+const BATTLE_CREDIT_VALUES = [15, 25, 35];   // 5.0.0 (were 10, 15, 20): the 35 is the rarest
+const BATTLE_BREAK_CREDITS = [3, 6];     // 5.0.0: credits in one wave break; once taken, no more until the next
+const BATTLE_FIRST_WAVE = 6;             // 5.0.0: enemies in the first wave, and never fewer in any
+const BATTLE_AT_ONCE_MAX = 4;            // 5.0.0: the most enemies after you at once, ever
+const BATTLE_AT_ONCE_EVERY = 3;          // one more at once every this many waves (in chaos: battles)
 const BATTLE_CREDIT_WEIGHTS = [55, 30, 15];
 const BATTLE_EMERGENCY_DIST = [12.0, 26.0];
 const BATTLE_EMERGENCY_MIN_SHOTS = 3;   // the emergency cartridge finishes the wave, never fewer than this
@@ -30,10 +39,12 @@ const BATTLE_CREDIT_MIN_DIST = 15.0;
 const BATTLE_CREDIT_GAIN = 0.7;
 const BATTLE_BREAK_COUNTDOWN = 5;
 const LAB_DENSITY_CAP = 0.25;            // the most of a labyrinth's cells that may be walls (2.0.0; was 0.35)
-const STANDARD_CREDIT_VALUES = [15, 20, 30];
+const STANDARD_CREDIT_VALUES = [20, 30, 40];   // 5.0.0 (were 15, 20, 30)
 const STANDARD_CREDIT_WEIGHTS = [70, 22, 8];
 const STANDARD_CREDIT_CHANCE = 0.35;
-const STANDARD_START_TIME = 45.0;
+const STANDARD_START_TIME = 60.0;        // 5.0.0 (was 45): turning takes time to get used to
+const LAB_STEP = 1.0;                    // a step in a labyrinth: one square
+const ARENA_STEP = 3.0;                  // a step in the arena
 const CREDIT_STEPS = [4, 8];
 const AMBIENCE_CROSSFADE = 0.8;
 const BATTLE_SWAP_FADE = 1.5;
@@ -93,10 +104,9 @@ const HELP = (() => {
 })();
 export { HELP, isRunState, modeOf };
 
-// The help the game itself shows. On a Windows computer the game is Ultimate
-// Mode alone (web 2.0.0), so its help is the General section, that mode's, and
-// its demos; the website's Help page shows everything, on every device.
-const WINDOWS_HELP = ['General', 'Ultimate Mode', 'Demos, Ultimate Mode'];
+// The help the game itself shows. (From web 2.0.0 to 4.1.2 a Windows computer
+// played Ultimate Mode alone, and saw only that mode's help. Since 5.0.0 it plays
+// every mode and the events, so it sees all of it.)
 // Windows only: how the game works with a Braille display and a Braille keyboard
 // (js/braille.js), added to the General section.
 export const BRAILLE_HELP = { title: 'General Braille Keyboard and Display', sound: null, desc: 'On a Windows computer the game works with a Braille display and a Braille keyboard, through NVDA or JAWS, as the Windows version does. '
@@ -108,7 +118,7 @@ export const BRAILLE_HELP = { title: 'General Braille Keyboard and Display', sou
   + 'Two settings on the main menu are for Windows: Speech, On, or Off, which silences the game\'s own voice, so that your screen reader speaks instead or you read on the display alone; and the Braille Key Test, which names every key or Braille word that arrives, and the letter the game understands, until you press Escape: try it first with a new device.' };
 export function gameHelp() {
   if (!windowsOnly()) return HELP;
-  return HELP.filter(([name]) => WINDOWS_HELP.includes(name)).map(([name, items]) => (name === 'General' ? [name, [...items, BRAILLE_HELP]] : [name, items]));
+  return HELP.map(([name, items]) => (name === 'General' ? [name, [...items, BRAILLE_HELP]] : [name, items]));
 }
 
 // The room a help section's demos ring in (the website's Help page uses it too).
@@ -164,8 +174,9 @@ class Obstacle {
     this.x = null;
     for (const [clearance, minRange] of [[BATTLE_AMMO_CLEARANCE, 12.0], [8.0, 12.0]]) {
       for (let i = 0; i < 500; i++) {
-        const off = uniform(-BATTLE_SPAWN_PAN, BATTLE_SPAWN_PAN);
-        const angle = Math.asin(off) + (rand() < 0.5 ? 0.0 : Math.PI);
+        // From any side (5.0.0: you turn to face them; until then they came from
+        // ahead or behind only, where a shot could reach them without turning).
+        const angle = uniform(0.0, Math.PI * 2);
         const dist = uniform(20.0, 32.0);
         const tx = px + Math.sin(angle) * dist;
         const ty = py - Math.cos(angle) * dist;
@@ -241,8 +252,10 @@ class TimeCredit {
   constructor(x, y, battle = false, chaos = false) {
     if (battle) {
       this.value = weighted(BATTLE_CREDIT_VALUES, BATTLE_CREDIT_WEIGHTS);
-      this.soundName = { 10: 'credit_10', 15: 'credit_20', 20: 'credit_30' }[this.value];
-      this.beaconName = 'credit_beacon_battle_' + this.value;
+      // (The three sounds and beacons are the desktop's, lowest to highest; only what they are worth changed in 5.0.0.)
+      const tier = BATTLE_CREDIT_VALUES.indexOf(this.value);
+      this.soundName = ['credit_10', 'credit_20', 'credit_30'][tier];
+      this.beaconName = 'credit_beacon_battle_' + [10, 15, 20][tier];
     } else if (chaos) {
       // Chaos mode: 40, 50 or 60 seconds, a beacon per value, one pickup for all.
       this.value = choice(CHAOS_CREDIT_VALUES);
@@ -250,7 +263,7 @@ class TimeCredit {
       this.beaconName = 'credit_beacon_' + this.value;
     } else {
       this.value = weighted(STANDARD_CREDIT_VALUES, STANDARD_CREDIT_WEIGHTS);
-      this.soundName = { 15: 'credit_10', 20: 'credit_20', 30: 'credit_30' }[this.value];
+      this.soundName = ['credit_10', 'credit_20', 'credit_30'][STANDARD_CREDIT_VALUES.indexOf(this.value)];
       this.beaconName = 'credit_beacon';
     }
     this.x = x; this.y = y;
@@ -270,6 +283,12 @@ export class Game {
     this.leave = leave;
     this.audio.sourceEffect = (p) => this._sourceEffect(p);
     this.audio.behindOf = (p) => this._behind(p);
+    // Web 5.0.0: every mode is heard in binaural 3D (audio.js), and the walking
+    // modes turn with you (js/turning.js): the way you face in them is kept here.
+    this.audio.binaural = true;
+    this.audio.relOf = (p) => this._relDir(p);
+    this.audio.turnsNow = () => this._turnsNow();
+    this.tn = newTurn();
     this.state = S.MENU;
     this.prevState = S.MENU;
     this.menuIndex = 0;
@@ -298,12 +317,12 @@ export class Game {
   _menuKeys() {
     // Gesture Practice is for touch screens: a computer is played with the keyboard.
     const practice = keyboardDevice() ? [] : ['practice'];
-    // A Windows computer (web 2.0.0): Ultimate Mode, the scores and the
-    // settings; the other modes and the events are the Windows game's.
-    // Its Braille settings: the game's own voice on or off, and a key test for a
-    // new device (3.2.0: the Braille Keyboard setting is gone; js/braille.js).
-    if (windowsOnly()) return ['ultimate', 'scores', 'speech', 'keytest', 'rate', 'leave'];
-    return ['standard', 'battle', ...this._menuItems().map((i) => i.key), 'scores', ...practice, 'rate', 'leave'];
+    // A Windows computer plays every mode and the events (web 5.0.0; from 2.0.0
+    // it played Ultimate Mode alone). Its two Braille settings come before the
+    // speech rate: the game's own voice on or off, and a key test for a new
+    // device (js/braille.js).
+    const windows = windowsOnly() ? ['speech', 'keytest'] : [];
+    return ['standard', 'battle', ...this._menuItems().map((i) => i.key), 'scores', ...practice, ...windows, 'rate', 'leave'];
   }
 
   _menuLabel(k) {
@@ -325,10 +344,6 @@ export class Game {
   welcome() {
     let line = 'Welcome to Endless Labyrinth. Please wear headphones as this is a 3D audio game. '
       + 'Swipe up and down to navigate. Double tap to select. Tap four times for Help. ';
-    if (windowsOnly()) {
-      line += 'On this Windows computer the web version plays Ultimate Mode, in binaural 3D sound. '
-        + 'The other modes and the events are played in the Windows version of Endless Labyrinth; the play page links to its download. ';
-    }
     if (!this.scores.settings.practiced) line += 'New here? Try Gesture Practice, on this menu. ';
     const ios = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
     const standalone = window.navigator.standalone || (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches);
@@ -354,6 +369,10 @@ export class Game {
     this.level = 1;
     this.playerPos = [0.0, 0.0];
     this.playerFacing = [0, -1];
+    // A new run begins facing north.
+    this.tn = newTurn();
+    if (this.audio && !this.audio.spatial) this.audio.setFacing(0, true);
+    this.breakCreditsLeft = 0;
     this.timeLeft = 30.0;
     this.isPaused = false;
     this.arenaLimit = 40.0;
@@ -614,7 +633,7 @@ export class Game {
     if (c.channel) c.channel.setVolume(l, r, this._behind([c.x, c.y]));
     // In a labyrinth, on the grid, from its own cell: never through a wall.
     const taken = this.state === S.STANDARD
-      ? Math.trunc(this.playerPos[0]) === Math.trunc(c.x) && Math.trunc(this.playerPos[1]) === Math.trunc(c.y)
+      ? Math.round(this.playerPos[0]) === Math.round(c.x) && Math.round(this.playerPos[1]) === Math.round(c.y)
       : dist < 3.0;
     if (taken) {
       this.timeLeft += c.value;
@@ -674,20 +693,33 @@ export class Game {
   _battleEndless() { return this.state === S.BATTLE && !this.chaosMode; }
 
   _battleTargetsNeeded() {
-    const rate = this._battleEndless() ? 1.2 : 0.6;
-    return 3 + Math.trunc(this._difficultyLevel() * rate);
+    // Battle mode's first wave has six (5.0.0), and no wave fewer; a chaos battle keeps its own count.
+    if (this._battleEndless()) return Math.max(BATTLE_FIRST_WAVE, 3 + Math.trunc(this._difficultyLevel() * 1.2));
+    return 3 + Math.trunc(this._difficultyLevel() * 0.6);
   }
 
   _battleMaxConcurrent() {
-    // One more enemy at once every three waves in battle mode, every six in chaos,
-    // and chaos keeps its ceiling of four.
-    const step = this._battleEndless() ? 3 : 6;
-    const base = 1 + Math.floor(this._difficultyLevel() / step);
-    return this._battleEndless() ? Math.min(8, base) : Math.min(4, base);
+    // Enemies come in turns, never all at once (5.0.0, Russell: so many came at
+    // once that you could only fire ahead and behind, with no time to turn). How
+    // many may be after you at once: one in waves 1 to 3 (the next appears only
+    // after you shoot the current one), two in waves 4 to 6, three in 7 to 9,
+    // and four, the most there will ever be, from wave 10. In chaos the count is
+    // of the battles played in that run.
+    return Math.min(BATTLE_AT_ONCE_MAX, 1 + Math.floor((Math.max(1, this._difficultyLevel()) - 1) / BATTLE_AT_ONCE_EVERY));
+  }
+
+  // Whether anything is after you right now. While a wave is on and nothing is
+  // (the ones so far are shot and the next has not appeared), the clock waits
+  // (5.0.0). A wave break's clock runs as it always did.
+  _battleClockWaits() {
+    if (this.obstacles.length) return false;
+    if (this._battleEndless()) return !this.inWaveBreak;
+    return !this._chaosLevelWon();
   }
 
   _battleOpenBreak() {
     this.breakLastBeep = null;
+    this.breakCreditsLeft = randint(...BATTLE_BREAK_CREDITS);
     this.waveBreakTimer = Math.max(BATTLE_BREAK_MIN, BATTLE_BREAK_START - (this.battleWave - 1) * BATTLE_BREAK_DECAY);
     this._battleRestock();
   }
@@ -734,6 +766,7 @@ export class Game {
       if (enemies.some(([ex, ey]) => Math.hypot(tx - ex, ty - ey) < BATTLE_AMMO_CLEARANCE)) continue;
       this.timeCredit = new TimeCredit(tx, ty, true);
       this.timeCredit.channel = this.audio.play(this.timeCredit.beaconName, { loops: -1 });
+      this.breakCreditsLeft -= 1;
       return;
     }
   }
@@ -771,11 +804,11 @@ export class Game {
   _battleLocked() {
     let best = null; let bestD = Infinity;
     for (const o of this.obstacles) {
-      const dx = o.x - this.playerPos[0];
-      const dy = o.y - this.playerPos[1];
-      const dist = Math.hypot(dx, dy);
+      // Centred ahead of you or directly behind, by the way you face (5.0.0).
+      const [side] = this._rel([o.x, o.y]);
+      const dist = Math.hypot(o.x - this.playerPos[0], o.y - this.playerPos[1]);
       if (dist <= 0) continue;
-      if (Math.abs(dx / dist) < BATTLE_AIM_PAN && dist < bestD) { best = o; bestD = dist; }
+      if (Math.abs(side / dist) < BATTLE_AIM_PAN && dist < bestD) { best = o; bestD = dist; }
     }
     return best;
   }
@@ -816,13 +849,14 @@ export class Game {
     const steps = this.battleSteps;
     this.battleSteps = [];
     // In chaos mode the global run timer keeps ticking during battle levels.
+    // (5.0.0: in either, the clock waits while a wave is on and nothing is after you.)
     if (this.chaosMode) {
-      if (this._advanceTimer(dt)) return;
+      if (!this._battleClockWaits() && this._advanceTimer(dt)) return;
       if (this.state !== S.BATTLE) return;
     }
     // Standard battle's own clock, which runs through the breaks as well.
     if (this._battleEndless()) {
-      if (this._advanceTimer(dt)) return;
+      if (!this._battleClockWaits() && this._advanceTimer(dt)) return;
     }
     this.battleBeatTimer -= dt;
     if (this.battleBeatTimer <= 0) { this.battleBeatTimer = uniform(...BATTLE_BEAT_SWAP); this._battleSwapBeat(); }
@@ -882,7 +916,7 @@ export class Game {
     }
 
     // Battle mode credits, during wave breaks only.
-    if (this._battleEndless() && this.inWaveBreak && this.waveBreakTimer > 0 && this.timeCredit === null) this._battleSpawnCredit();
+    if (this._battleEndless() && this.inWaveBreak && this.waveBreakTimer > 0 && this.timeCredit === null && this.breakCreditsLeft > 0) this._battleSpawnCredit();
 
     if (!this.inWaveBreak && this.obstacles.length < maxConcurrent && this.spawnedEnemies < totalNeeded) {
       if (rand() < perFrameChance(0.03 + 0.01 * this._difficultyLevel(), dt)) {
@@ -1147,6 +1181,7 @@ export class Game {
     // finger may lift, or a key be let go, during a pause or the quit question).
     if (g === 'turn_left_start' || g === 'turn_right_start' || g === 'turn_end') {
       for (const md of MODES) if (md.turnInput) md.turnInput(this, g);
+      this._turnInput(g);      // (the other modes that turn: the game's own, since 5.0.0)
       return;
     }
     for (const md of MODES) {
@@ -1370,6 +1405,7 @@ export class Game {
       // A mode may hold or restart something of its own with the pause (Ultimate
       // Mode's world fade).
       if (blocker && blocker.paused) blocker.paused(this, this.isPaused);
+      if (this.isPaused) this._turnStop();
       if (this.isPaused) {
         this._pauseSounds();
         this.tts.speak('Game paused. Tap with three fingers to resume. Triple tap to quit, or tap four times for help.');
@@ -1397,8 +1433,8 @@ export class Game {
         }
         const left = Math.max(0, this._battleTargetsNeeded() - this.waveKills);
         const shots = `${this.ammo} shot${this.ammo === 1 ? '' : 's'}. ${this.kills} down. `;
-        if (this.inWaveBreak) this.tts.speak(`${shots}Wave break, ${Math.trunc(this.waveBreakTimer) + 1} seconds. Clock ${Math.trunc(this.timeLeft)} seconds.`);
-        else this.tts.speak(`${shots}Wave ${this.battleWave}, ${left} left. Clock ${Math.trunc(this.timeLeft)} seconds.`);
+        if (this.inWaveBreak) this.tts.speak(`${shots}Wave break, ${Math.trunc(this.waveBreakTimer) + 1} seconds. Clock ${Math.trunc(this.timeLeft)} seconds.${this._facingTail()}`);
+        else this.tts.speak(`${shots}Wave ${this.battleWave}, ${left} left. Clock ${Math.trunc(this.timeLeft)} seconds.${this._facingTail()}`);
         return;
       }
     }
@@ -1408,29 +1444,48 @@ export class Game {
       this._report(`${t} second${t === 1 ? '' : 's'} left.`);
       return;
     }
-    let [nx, ny] = this.playerPos;
-    const step = this.state === S.STANDARD ? 1.0 : 3.0;
-    if (g === 'up') { ny -= step; this.playerFacing = [0, -1]; }
-    else if (g === 'down') { ny += step; this.playerFacing = [0, 1]; }
-    else if (g === 'left') { nx -= step; this.playerFacing = [-1, 0]; }
-    else if (g === 'right') { nx += step; this.playerFacing = [1, 0]; }
-    else return;
+
+    // 5.0.0: you turn where you stand, and walk the way you face (js/turning.js).
+    if (g === 'left' || g === 'right') { this._turnQuick(g === 'right' ? 1 : -1); return; }
+    if (g !== 'up' && g !== 'down') return;
+    const f = forwardOf(this.tn.face);
+    const dir = g === 'up' ? f : [-f[0], -f[1]];
+    this.playerFacing = f;
     if (this.state === S.STANDARD) {
+      // A labyrinth: squares one step wide. A wall stops you; met at a slant, you
+      // slide along it, in silence (as in Ultimate Mode since 4.1.2).
       const gs = this.gridSize;
-      if (gs && (Math.abs(nx) > gs || Math.abs(ny) > gs)) this.audio.play('wall', { at: [nx, ny] });
-      else if (this.grid.has(key(Math.trunc(nx), Math.trunc(ny)))) this.audio.play('wall', { at: [nx, ny] });
-      else {
-        this.playerPos = [nx, ny];
-        this._playStep();
-        if (Math.trunc(nx) === this.exitPos[0] && Math.trunc(ny) === this.exitPos[1]) this.nextLevel();
+      const cell = (p) => [Math.round(p[0]), Math.round(p[1])];
+      const open = (p) => { const [cx, cy] = cell(p); return !(gs && (Math.abs(cx) > gs || Math.abs(cy) > gs)) && !this.grid.has(key(cx, cy)); };
+      const w = walkStep([...this.playerPos], dir, LAB_STEP, open, cell, (cx, cy) => [cx, cy], LAB_STEP / 3);
+      if (w.moved <= 0) {
+        // (The wall is heard where it stands: the middle of the square in your way.)
+        this.audio.play('wall', { at: w.hit ? cell(w.hit) : [this.playerPos[0] + dir[0], this.playerPos[1] + dir[1]] });
+        return;
       }
-    } else if (nx >= -this.arenaLimit && nx <= this.arenaLimit && ny >= -this.arenaLimit && ny <= this.arenaLimit) {
-      this.battleSteps.push([[...this.playerPos], [nx, ny]]);
-      this.playerPos = [nx, ny];
+      this.playerPos = w.pos;
       this._playStep();
+      if (Math.round(w.pos[0]) === this.exitPos[0] && Math.round(w.pos[1]) === this.exitPos[1]) this.nextLevel();
     } else {
-      this.audio.play('boundary');
+      const w = this._walkArena(dir, ARENA_STEP);
+      if (w) this.battleSteps.push(w);
     }
+  }
+
+  // One step across an open floor (the arena, a tower floor, an island, the
+  // seabed), the way `dir` points. The edge stops you: walked straight at, the
+  // boundary buzzes and you stay put, as always; met at a slant, the part of the
+  // step that runs along the edge carries on, in silence (as a labyrinth's wall
+  // does). Returns [from, to], or null when the step went nowhere.
+  _walkArena(dir, step, lim = this.arenaLimit, { sound = true } = {}) {
+    const from = [...this.playerPos];
+    const nx = from[0] + dir[0] * step; const ny = from[1] + dir[1] * step;
+    const okx = nx >= -lim && nx <= lim; const oky = ny >= -lim && ny <= lim;
+    const to = [okx ? nx : from[0], oky ? ny : from[1]];
+    if ((!okx || !oky) && Math.hypot(to[0] - from[0], to[1] - from[1]) < step * 0.25) { this.audio.play('boundary'); return null; }
+    this.playerPos = to;
+    if (sound) this._playStep();
+    return [from, to];
   }
 
   _playStep() { this.audio.play(choice(STEPS)); }
@@ -1447,8 +1502,94 @@ export class Game {
   _report(text, clock = false) {
     if (clock) text = text.trimEnd() + this._clockTail();
     if (this.chaosMode) text = text.trimEnd() + ` ${(this.chaosPoints || 0) + (this.islandPoints || 0)} points total.`;
-    this.tts.speak(text);
+    this.tts.speak(text.trimEnd() + this._facingTail());
   }
+
+  // -------------------------------------------------------------- turning (web 5.0.0)
+  // Standard, Battle, Tower, Island and Chaos's walking levels turn with you, on
+  // the code Ultimate Mode has turned on since 4.0.0 (js/turning.js): a flick or
+  // one press of an arrow is a quick turn of 30 degrees, a slide or a held arrow
+  // turns for as long as it is held, a step goes the way you face, and the
+  // listener turns (AudioEngine.setFacing), so every sound sweeps round with you.
+  // Driving, chaos's roads, the events and an elevator ride do not turn: north
+  // stays ahead there. Ultimate Mode keeps the way it faces for itself.
+  _turnsNow() {
+    if (!this.playing) return false;
+    if (this.state === S.STANDARD || this.state === S.BATTLE) return true;
+    const md = this.mode;
+    return !!(md && md.turns && md.turns(this));
+  }
+
+  _face(angle, instant = false) {
+    this.tn.face = snapFace(angle);
+    this.playerFacing = forwardOf(this.tn.face);
+    this.audio.setFacing(this.tn.face, instant);
+  }
+
+  _turnQuick(dir) {
+    if (!this._turnsNow() || this.isPaused) { this.tn.turnWas = null; return; }
+    turnQuick(this.tn, dir);
+  }
+
+  // The start and the end of a held turn. The end is taken whatever else is going
+  // on (a finger may lift during a pause); a start only in play.
+  _turnInput(g) {
+    if (g === 'turn_end') { turnEnd(this.tn); return; }
+    if (!this._turnsNow() || this.isPaused) return;
+    turnStart(this.tn, g === 'turn_right_start' ? 1 : -1, (a) => this._face(a));
+  }
+
+  _turnStop() { turnStop(this.tn, (a, instant) => this._face(a, instant)); }
+
+  // Every frame: the turn under way, and the listener kept facing the way the
+  // mode says (north wherever nothing turns).
+  _tickTurn(dt) {
+    const a = this.audio;
+    if (a.spatial) return;                       // Ultimate Mode: its own
+    const on = this._turnsNow();
+    a.turns = on;
+    if (!on) {
+      if (this.tn.turn) this._turnStop();
+      // In a run where nothing turns (a road, an event), north is ahead, and a
+      // walking level that follows begins facing north. An elevator ride keeps
+      // the way you faced (the mode says: keepFacing), so the shore does not
+      // swing round as the doors close. Outside a run (help, the quit question)
+      // nothing is touched: you come back facing as you did.
+      const md = this.mode;
+      if (this.playing && !this.isPaused && !(md && md.keepFacing && md.keepFacing(this))) {
+        this.tn.face = 0;
+        if (a.facing !== 0) a.setFacing(0, true);
+      }
+      return;
+    }
+    if (this.isPaused) { if (this.tn.turn) this._turnStop(); return; }
+    if (a.facing !== this.tn.face) a.setFacing(this.tn.face, true);
+    updateTurn(this.tn, dt, {
+      face: (ang, instant) => this._face(ang, instant),
+      // The tick of a main direction as you pass it or land on it (north the
+      // higher one), and the softer click of a quick turn landing between two.
+      tick: (k) => this.audio.play(((k % 4) + 4) % 4 === 0 ? 'ut_tick_north' : 'ut_tick', { volume: TICK_LEVEL }),
+      click: () => this.audio.play('ut_click', { volume: CLICK_LEVEL }),
+    });
+  }
+
+  // The way you face, as a unit vector in the world ([east, south]); north wherever nothing turns.
+  _forward() { return forwardOf(this._turnsNow() ? this.tn.face : 0); }
+
+  // A place as you meet it: [to your right, ahead of you], by the way you face
+  // (north, wherever nothing turns).
+  _rel(pos) { return relTo(this._turnsNow() ? this.tn.face : 0, this.playerPos, pos); }
+
+  // The way a place lies from you in the world ([east, south], a unit vector):
+  // what the sound engine places a sound played there by (AudioEngine.relOf).
+  _relDir(pos) {
+    const dx = pos[0] - this.playerPos[0]; const dy = pos[1] - this.playerPos[1];
+    const d = Math.hypot(dx, dy);
+    return d > 1e-6 ? [dx / d, dy / d] : null;
+  }
+
+  // The end of a report in a mode that turns: the way you face.
+  _facingTail() { return this._turnsNow() ? ` Facing ${facingWord(this.tn.face)}.` : ''; }
 
   // -------------------------------------------------------------- running and walking back
   // On a touch screen (web 1.2.0): slide up and hold to run, forward, at
@@ -1494,6 +1635,12 @@ export class Game {
     // carried on: Ultimate Mode, where you walk the way you face.)
     const md = this.mode;
     if (md && md.strideMoved) return md.strideMoved(this, before, dir);
+    if (this._turnsNow()) {
+      // A step goes the way you face: it carried on if it moved you (sliding
+      // along a wall counts; stopped by one, the run ends).
+      const d = Math.hypot(this.playerPos[0] - before[0], this.playerPos[1] - before[1]);
+      return d > 0.2 && d < 3.5;
+    }
     const dx = this.playerPos[0] - before[0];
     const dy = this.playerPos[1] - before[1];
     const moved = dir === 'up' ? -dy : dy;
@@ -1531,14 +1678,14 @@ export class Game {
     this.scores.settings.practiced = true;
     this.scores.save();
     this.tts.speak('Gesture practice. Try any gesture and the game says what it felt. '
-      + 'Swipe in four directions, slide up and hold, slide down and hold, slide left or right and hold, hold a finger still, double tap, triple tap, tap four times, tap with two fingers or with three. '
+      + 'Swipe in four directions, slide up and hold, slide down and hold, slide left or right and keep your finger down, hold a finger still, double tap, triple tap, tap four times, tap with two fingers or with three. '
       + 'Triple tap twice in a row to leave, or wait twenty seconds.');
   }
 
   _practiceInput(g) {
     const names = {
       up: 'Swipe up.', down: 'Swipe down.',
-      left: 'Swipe left. In Ultimate Mode, that turns you to the left.', right: 'Swipe right. In Ultimate Mode, that turns you to the right.',
+      left: 'Swipe left. In the modes that turn, that is a quick turn to the left.', right: 'Swipe right. In the modes that turn, that is a quick turn to the right.',
       enter: 'Double tap. Choose, like Enter.', help: 'Four taps. Help.', tap: 'One tap. It does nothing.',
       space: 'Two-finger tap. Fire, like Space.', pause: 'Three-finger tap. Pause and resume.',
       clock: 'T. The clock.', yes: 'Y. Yes.', no: 'N. No.',
@@ -1587,12 +1734,12 @@ export class Game {
     // become a hold; a slide that lifts before that is a plain swipe.
     if (g === 'turn_left_start' || g === 'turn_right_start') {
       this.audio.play('menu_move');
-      this.tts.speak(`Slide ${g === 'turn_left_start' ? 'left' : 'right'} and hold. In Ultimate Mode only, you keep turning ${g === 'turn_left_start' ? 'left' : 'right'} until you lift your finger.`);
+      this.tts.speak(`Slide ${g === 'turn_left_start' ? 'left' : 'right'} and keep your finger down. In the modes that turn, you keep turning ${g === 'turn_left_start' ? 'left' : 'right'} until you lift your finger.`);
       return;
     }
     if (g === 'turn_end') {
       this.audio.play('menu_move');
-      this.tts.speak('Lifted. In Ultimate Mode, that stops your turn exactly there.');
+      this.tts.speak('Lifted. In the modes that turn, that stops your turn exactly there.');
       return;
     }
     this.audio.play('menu_move');
@@ -1663,7 +1810,7 @@ export class Game {
   _labSurroundings(pos = null) {
     if (!this.grid.size) return [1.0, 0.0];
     const p = pos || this.playerPos;
-    const x = Math.trunc(p[0]); const y = Math.trunc(p[1]);
+    const x = Math.round(p[0]); const y = Math.round(p[1]);
     let around = 0;
     for (const dx of [-1, 0, 1]) for (const dy of [-1, 0, 1]) if ((dx || dy) && this.grid.has(key(x + dx, y + dy))) around += 1;
     const near = Math.min(1.0, around / 4.0);
@@ -1737,7 +1884,8 @@ export class Game {
     // (Ultimate Mode, web 4.0.0), and in Gesture Practice, which names it. There
     // a keyboard's held arrows turn and run too.
     this.gestures.turnHold = this.state === S.PRACTICE
-      || !!(this.playing && !this.isPaused && md && md.turnGesture && md.turnGesture(this));
+      || !!(this.playing && !this.isPaused && ((md && md.turnGesture && md.turnGesture(this)) || this._turnsNow()));
+    this._tickTurn(dt);
     if (this.state === S.PRACTICE && performance.now() - (this.lastInputAt || 0) > 20000) {
       this.menuIndex = this.menuKeys.indexOf('practice');
       this._toMenu('Gesture practice closed. ');

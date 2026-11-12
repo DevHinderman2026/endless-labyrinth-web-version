@@ -84,7 +84,7 @@ const feed = await page.evaluate(() => {
     from: f.clockFrom, now: f.internetNow(), label: window.__el.game._menuLabel('events') };
 });
 check(feed.online && feed.from === 'site' && Math.abs(feed.now - NOW / 1000) < 60, `the time comes from the site's Date header (${feed.from}, ${new Date(feed.now * 1000).toISOString()})`);
-check(JSON.stringify(feed.ids) === JSON.stringify(['call-of-fate-2026', 'pumpkin-hunt-2026', 'the-angry-papa-2026', 'the-music-box-2026', 'turkey-hunt-2026-2']),
+check(JSON.stringify(feed.ids) === JSON.stringify(['call-of-fate-2026', 'pumpkin-hunt-2026', 'the-angry-papa-2026', 'the-music-box-2026', 'trapped-in-darkness-2026', 'turkey-hunt-2026-2']),
   'every published event is read: ' + feed.ids.join(', '));
 const refused = Object.fromEntries(feed.problems);
 check(/does not match/.test(refused['zz-altered.json'] || ''), 'an altered event is refused: ' + refused['zz-altered.json']);
@@ -312,7 +312,8 @@ const scores = await page.evaluate(() => {
 check(/^Event High Scores: \d+ events$/.test(scores.label) && /^Event High Scores\. Your best run in \d+ events\./.test(scores.first) && scores.kept >= 9,
   `Event High Scores list the best runs (${scores.label}) and survive a high score reset`);
 
-// The help section (38 topics since web 1.3.0 moved the item and collected demos into Demos, Events).
+// The help section (38 topics since web 1.3.0 moved the item and collected demos into Demos, Events;
+// 79 since web 5.0.0: 16 for the building blocks and their missions, 25 for the further missions).
 const help = await page.evaluate(async () => {
   const { HELP } = await import('./js/game.js');
   const sec = HELP.find(([n]) => n === 'Events');
@@ -321,7 +322,7 @@ const help = await page.evaluate(async () => {
     sounds: sec ? sec[1].filter((t) => t.sound).every((t) => window.__el.audio.has(t.sound)) : false,
     keys: sec ? sec[1].filter((t) => /\b(Enter|Escape|Space|arrow|Arrow)\b/.test(t.desc.replace(/Descriptions are written for the computer version too[^.]*\./, ''))).map((t) => t.title) : [] };
 });
-check(help.n === 38 && help.after && help.sounds && help.keys.length === 0, `the help has an Events section of ${help.n} topics, before the demos, every demo sound in the pack, no key names (but the one sentence on descriptions written for a keyboard)`);
+check(help.n === 79 && help.after && help.sounds && help.keys.length === 0, `the help has an Events section of ${help.n} topics, before the demos, every demo sound in the pack, no key names (but the one sentence on descriptions written for a keyboard)`);
 
 // ------------------------------------------------------------ protected events are kept on the device
 listing404 = true;

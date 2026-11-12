@@ -74,13 +74,13 @@ async function open(opts = {}, before = null) {
   const names = async (id) => page.locator(`#${id} article h3`).allTextContents();
   const live = await names('live'); const up = await names('upcoming'); const past = await names('past');
   check(live.join('|') === 'Turkey Hunt', `on now: ${live}`);
-  check(up.join('|') === 'Call of Fate|The Angry Papa|The Music Box', `coming soon, soonest first: ${up}`);
+  check(up.join('|') === 'Trapped in Darkness|Call of Fate|The Angry Papa|The Music Box', `coming soon, soonest first: ${up}`);
   check(past.join('|') === 'Pumpkin Hunt', `past: ${past}`);
   const all = [...live, ...up, ...past];
   check(!all.some((n) => /Altered|Unsigned/.test(n)), 'an altered or unsigned event is never shown');
   check(await page.locator('#live').evaluate((e) => e.compareDocumentPosition(document.getElementById('upcoming')) & 4), 'on now comes before coming soon');
   const status = await page.textContent('#events-status');
-  check(status === '5 events: 1 on now, 3 coming soon, 1 past.', `the count line: ${status}`);
+  check(status === '6 events: 1 on now, 4 coming soon, 1 past.', `the count line: ${status}`);
   const turkey = page.locator('#event-turkey-hunt-2026-2');
   check(/^On now\. Ends in \d+ days? /.test(await turkey.locator('.event-status').textContent()), `Turkey Hunt says it is on now: ${await turkey.locator('.event-status').textContent()}`);
   check(/your local time\.$/.test(await turkey.locator('.event-dates').textContent()), 'dates are shown in local time');

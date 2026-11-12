@@ -14,6 +14,28 @@ const check = (ok, what) => { console.log((ok ? 'PASS ' : 'FAIL ') + what); if (
 
 const browser = await chromium.launch({ args: ['--autoplay-policy=no-user-gesture-required'] });
 const page = await browser.newPage();
+// Web 5.0.0: the walking modes turn with you. These bots still think in the
+// world's own directions, so `go` takes one step north, east, south or west
+// whichever way the player faces, and leaves them facing north, where the old
+// rules of thumb (an enemy due north or south is in the line of fire) still hold.
+// Turning itself is tested in tests/turning5.mjs.
+await page.addInitScript(() => {
+  window.go = (d) => {
+    const g = window.__el.game;
+    const way = { up: 0, right: Math.PI / 2, down: Math.PI, left: 3 * Math.PI / 2 }[d];
+    if (way === undefined || !g._turnsNow()) { g.input(d); return; }
+    g._turnStop(); g._face(way, true); g.input('up');
+    if (g._turnsNow()) g._face(0, true);
+  };
+  // Turn to face an enemy, fire, and face north again: how a shot is aimed now.
+  window.shootAt = (o) => {
+    const g = window.__el.game;
+    if (!g._turnsNow()) { g.input('space'); return; }
+    g._turnStop(); g._face(Math.atan2(o.x - g.playerPos[0], -(o.y - g.playerPos[1])), true);
+    g.input('space');
+    if (g._turnsNow()) g._face(0, true);
+  };
+});
 const errors = [];
 page.on('pageerror', (e) => errors.push(String(e)));
 page.on('console', (m) => { if (m.type() === 'error') errors.push(m.text()); });
@@ -64,7 +86,7 @@ check(setup.names.indexOf('Chaos Mode') === setup.names.indexOf('Island Mode') +
   && setup.names.indexOf('Demos, Chaos Mode') === setup.names.indexOf('Demos, Island Mode') + 1, 'help has Chaos Mode and its demos in menu order');
 check(setup.missing.length === 0, 'every chaos sound, its demos and the elevator\'s muffled drones are in the packs' + (setup.missing.length ? ': missing ' + setup.missing.join(', ') : ''));
 check(setup.keys.length === 0, 'no key names in the chaos help: ' + setup.keys.join(', '));
-check(JSON.stringify(setup.general) === JSON.stringify(['Help Menu', 'General Gestures', 'General Sound on Your Device', 'General Room Reverb',
+check(JSON.stringify(setup.general) === JSON.stringify(['Help Menu', 'General Gestures', 'General Turning', 'General Sound on Your Device', 'General Room Reverb',
   'General Behind You', 'General Pause and Resume', 'General Quitting a Run', 'General High Scores', 'General Checking Where You Stand', 'General The Soundtrack'])
   && setup.generalKeys.length === 0, 'General help: the desktop topics without Braille, with gestures: ' + setup.generalKeys.join(', '));
 
@@ -92,7 +114,7 @@ await page.evaluate(async () => {
   t.towards = (tx, ty) => {
     const [px, py] = g.playerPos;
     const dx = tx - px; const dy = ty - py;
-    if (Math.abs(dx) >= Math.abs(dy)) g.input(dx > 0 ? 'right' : 'left'); else g.input(dy > 0 ? 'down' : 'up');
+    if (Math.abs(dx) >= Math.abs(dy)) window.go(dx > 0 ? 'right' : 'left'); else window.go(dy > 0 ? 'down' : 'up');
   };
   // A chaos credit laid by hand (the desktop's TimeCredit(x, y, chaos=True)).
   t.credit = (x, y, value = 50, tower = false) => {
@@ -123,7 +145,7 @@ await page.evaluate(async () => {
     }
     let at = k(...goal); let move = null;
     while (prev.get(at)) { const [x, y, gname] = prev.get(at); move = gname; if (x === start[0] && y === start[1]) break; at = k(x, y); }
-    if (move) g.input(move);
+    if (move) window.go(move);
   };
   t.battle = () => {
     const [px, py] = g.playerPos;
@@ -131,7 +153,7 @@ await page.evaluate(async () => {
     const near = g.obstacles.slice().sort((p, q) => Math.hypot(p.x - px, p.y - py) - Math.hypot(q.x - px, q.y - py))[0];
     if (g.ammo <= 1 && g.ammoPickups.length && (!near || Math.hypot(near.x - px, near.y - py) > 12)) { t.towards(g.ammoPickups[0].x, g.ammoPickups[0].y); return; }
     if (g._battleLocked() && g.ammo > 0) { g.input('space'); return; }
-    if (near) { g.input(near.x > px ? 'right' : 'left'); return; }
+    if (near) { if (g.ammo > 0) window.shootAt(near); else window.go(near.x > px ? 'right' : 'left'); return; }
     if (g.ammoPickups.length && g.ammo < 6) t.towards(g.ammoPickups[0].x, g.ammoPickups[0].y);
   };
   t.dodge = 0;
@@ -142,7 +164,7 @@ await page.evaluate(async () => {
     if (!e) return;
     if ((e.winding > 0 || e.pending > 0) && t.dodge < 2) {
       const lx = px - e.x; const ly = py - e.y;
-      if (Math.abs(ly) >= Math.abs(lx)) g.input(px > 0 ? 'left' : 'right'); else g.input(py > 0 ? 'up' : 'down');
+      if (Math.abs(ly) >= Math.abs(lx)) window.go(px > 0 ? 'left' : 'right'); else window.go(py > 0 ? 'up' : 'down');
       t.dodge += 1;
       return;
     }
@@ -151,7 +173,7 @@ await page.evaluate(async () => {
     const left = e.hitsNeeded - e.hitsTaken;
     if (g.towerItems <= left && g.towerItem) { t.towards(g.towerItem.x, g.towerItem.y); return; }
     if (g.towerItems > 0 && dist > 0 && Math.abs((e.x - px) / dist) < 0.72) { g.input('space'); return; }
-    g.input(e.x > px ? 'right' : 'left');
+    window.go(e.x > px ? 'right' : 'left');
   };
   t.road = () => {
     const ahead = (lane, kind, range, oncoming) => g.driveThings.filter((r) => r.kind === kind && r.lane === lane
@@ -193,7 +215,7 @@ await page.evaluate(async () => {
     if (regular.length) {
       let near = regular[0];
       for (const o of regular) if (Math.hypot(o.x - px, o.y - py) < Math.hypot(near.x - px, near.y - py)) near = o;
-      g.input(near.x > px ? 'right' : 'left');
+      if (g.ammo > 0) window.shootAt(near); else window.go(near.x > px ? 'right' : 'left');
       return;
     }
     if (guardian) {
@@ -411,7 +433,7 @@ check(gapTimes.length > 0 && gapTimes.every((x) => x === 0.1) && run.done.filter
 check(run.climb && run.climb.climb === 'stairs_climb' && run.climb.gap > 0.5 && run.climb.gap <= 1.5,
   'from one tower floor to the next the climb is heard and the floor waits for it: ' + JSON.stringify(run.climb));
 check(/^\d+ seconds? remaining\.$/.test(run.gapClock), 'T between levels says the clock: ' + run.gapClock);
-check(/^\d+ seconds? left\. \d+ points total\.$/.test(run.report), 'double tap in a chaos labyrinth: ' + run.report);
+check(/^\d+ seconds? left\. \d+ points total\. Facing [a-z-]+\.$/.test(run.report), 'double tap in a chaos labyrinth: ' + run.report);
 
 // Each kind scales on its own count.
 const seen = {};
@@ -536,7 +558,7 @@ const reports = await page.evaluate(async () => {
   return out;
 });
 for (const [kind, [state, said]] of Object.entries(reports)) {
-  check(state === kind && / Clock \d+ seconds?\. \d+ points total\.$/.test(said), `double tap on a chaos ${kind} level ends with the clock: ${said}`);
+  check(state === kind && (kind === 'drive' ? / Clock \d+ seconds?\. \d+ points total\.$/ : / Clock \d+ seconds?\. \d+ points total\. Facing [a-z-]+\.$/).test(said), `double tap on a chaos ${kind} level ends with the clock: ${said}`);
 }
 
 // A fresh standard run after chaos is plain standard again.

@@ -204,30 +204,32 @@ const smash = await page.evaluate(async () => {
   out.hum = c.voice ? { name: c.voice.name, placed: !!c.voice.placed, level: c.voice.l, loops: c.voice.loops } : null;
   // The compass's nearby list names it.
   out.nearby = g._utCompassNearby().join('; ');
-  // Its ping (web 4.1.1): from where it stands, highest when you face it, lower
-  // off to the side and lowest behind you; faster the closer you are; not from
-  // beyond its range.
+  // Its knock (web 5.0.0; it replaces 4.1.1's ping): two raps on glass from where
+  // it stands, within fifteen steps and in its own area, faster and louder the
+  // closer you are; the same sound whichever way you face.
   {
-    const { CASE_PING_RANGE, casePingName } = T.mod;
-    const pings = []; const op = a.play.bind(a);
-    a.play = (n, o) => { if (/^ut_case_ping_\d$/.test(n)) pings.push([n, o && o.pos ? o.pos.map((x) => +x.toFixed(2)) : null]); return op(n, o); };
-    const listen = (seconds) => { pings.length = 0; for (let i = 0; i < 30 * seconds; i++) g.updateUltimateMode(1 / 30); return pings.map((x) => x[0]); };
+    const { CASE_KNOCK, CASE_KNOCK_RANGE } = T.mod;
+    const knocks = []; const op = a.play.bind(a);
+    a.play = (n, o) => { const v = op(n, o); if (n === CASE_KNOCK) knocks.push([o && o.pos ? o.pos.map((x) => +x.toFixed(2)) : null, v]); if (/^ut_case_ping/.test(n)) out.pinged = true; return v; };
+    const listen = (seconds) => { knocks.length = 0; for (let i = 0; i < 30 * seconds; i++) g.updateUltimateMode(1 / 30); return knocks.slice(); };
     const toCase = Math.atan2(-dx, dy);          // the way to the case from where we stand (it lies the other way from the open squares)
-    const at = (deg) => { g._utTurnStop(); g._utFace(toCase + deg * Math.PI / 180, true); return listen(2); };
+    // (Each count begins with a knock due at once and lasts four seconds, so it does not depend on where the last one left off.)
+    const at = (deg) => { g._utTurnStop(); g._utFace(toCase + deg * Math.PI / 180, true); c.knockT = 0; return listen(4); };
     const ahead = at(0);
-    out.ping = { ahead, placed: pings[0] ? pings[0][1] : null, want: [-dx * 18, -dy * 18].map((x) => +x.toFixed(2)), has: [0, 8].every((k) => a.has(casePingName(k))) && a.has('ut_case_ping_demo') };
-    out.ping.byAngle = [0, 7, 15, 30, -30, 45, 90, -90, 120, 180].map((deg) => [deg, [...new Set(at(deg))].join(',')]);
-    out.ping.count18 = at(0).length;
+    out.knock = { n: ahead.length, placed: ahead[0] ? ahead[0][0] : null, want: [-dx * 18, -dy * 18].map((x) => +x.toFixed(2)),
+      has: a.has(CASE_KNOCK) && a.has('ut_case_knock_demo') && !a.has('ut_case_ping_8'), vol18: ahead[0] && ahead[0][1] ? ahead[0][1].l : 0 };
+    out.knock.behind = at(180).length;
+    out.knock.count18 = at(0).length;
     g.playerPos = [c.pos[0] + dx * 6, c.pos[1] + dy * 6]; g._utListenerMix();
-    out.ping.count6 = at(0).length;
+    const close = at(0);
+    out.knock.count6 = close.length; out.knock.vol6 = close[0] && close[0][1] ? close[0][1].l : 0;
     // Beyond its range, and from the next area, nothing.
     g.playerPos = [c.pos[0] + dx * 18, c.pos[1] + dy * 18]; g._utListenerMix();
     const keepPos = [c.pos[0], c.pos[1]];
-    c.pos = [g.playerPos[0] - dx * (CASE_PING_RANGE + 1), g.playerPos[1] - dy * (CASE_PING_RANGE + 1)];
-    out.ping.beyond = at(0).length;
+    c.pos = [g.playerPos[0] - dx * (CASE_KNOCK_RANGE + 1), g.playerPos[1] - dy * (CASE_KNOCK_RANGE + 1)];
+    out.knock.beyond = at(0).length;
     c.pos = keepPos;
-    const here = u.area; u.area = u.world.areas.find((x) => x !== area); out.ping.otherArea = listen(2).length; u.area = here;
-    // With the compass on it carries on (the hum does too).
+    const here = u.area; u.area = u.world.areas.find((x) => x !== area); out.knock.otherArea = listen(2).length; u.area = here;
     a.play = op;
     g._utTurnStop(); g._utFace({ north: 0, east: 1, south: 2, west: 3 }[back] * Math.PI / 2, true);
     g.playerPos = [c.pos[0] + dx * 18, c.pos[1] + dy * 18]; g._utListenerMix();
@@ -251,6 +253,28 @@ const smash = await page.evaluate(async () => {
   for (let i = 0; i < 4; i++) T.go(name);
   for (let i = 0; i < 4; i++) T.go(back);
   out.chimedAgain = chimes() === 2;
+  // Lined up (web 5.0.0): beside it but facing away, the attack is the laser and no
+  // bell rings; turn back to face it and the bell rings, once more.
+  {
+    const { CASE_GUARD_RANGE, CASE_GUARD_SECONDS } = T.mod;
+    const faced = u.face;
+    // (Only the cases' own check is run here, so the world stands still meanwhile.)
+    const tick = (n) => { for (let i = 0; i < n; i++) { g._utUpdateCases(1 / 30); if (u.safe > 0) u.safe -= 1 / 30; } };
+    g._utTurnStop(); g._utFace(faced + Math.PI, true);
+    tick(10);
+    const away = { reach: !!g._utCaseInReach(), chimes: chimes() };
+    g._utFace(faced, true);
+    tick(10);
+    out.lined = { away, back: { reach: !!g._utCaseInReach(), chimes: chimes() } };
+    // Protection: within three steps of it nothing can hit you, for fifteen seconds in all.
+    const safeWas = u.safe;
+    c.guard = 0; u.safe = 0;
+    tick(30);
+    const during = u.safe > 0;
+    tick(30 * (CASE_GUARD_SECONDS + 1));
+    out.guard = { during, after: u.safe > 0, used: +c.guard.toFixed(1), range: CASE_GUARD_RANGE, seconds: CASE_GUARD_SECONDS };
+    u.safe = safeWas;
+  }
   out.rearm = [CASE_REACH, CASE_REARM];
   // Smash it: no shot spent, no laser; the smash where it stood; its hum gone;
   // the reward spoken and nothing about who is coming.
@@ -286,8 +310,8 @@ const smash = await page.evaluate(async () => {
   for (let i = 0; i < Math.ceil(30 * (HUNTER_QUIET + HUNTER_RISE)); i++) g.updateUltimateMode(1 / 30);
   out.heardLater = hs.filter((e) => u.enemies.includes(e)).some((e) => e.voice && e.voice.l > 0.05);
   out.stillThere = hs.filter((e) => u.enemies.includes(e)).length;
-  // (Through those four seconds beside it, the smashed case never pinged.)
-  out.pingAfter = L.played.filter((n) => /^ut_case_ping_/.test(n)).length;
+  // (Through those four seconds beside it, the smashed case never knocked.)
+  out.pingAfter = L.played.filter((n) => n === 'event_case_knock').length;
   // The glass on the floor: it crunches within two steps of where the case stood.
   L.played.length = 0;
   const stepsOf = () => L.played.filter((n) => /^(step_|ut_glass_step_|ut_water_step_)/.test(n));
@@ -320,14 +344,16 @@ if (smash.found) {
   check(smash.sounds, 'the hum, the chime, the smash and the four glass steps are loaded');
   check(smash.hum && smash.hum.name === 'evt_crystal_hum' && smash.hum.placed && smash.hum.level > 0.3, 'a case hums where it stands (the crystal hum, placed): ' + JSON.stringify(smash.hum));
   check(/a glass case/.test(smash.nearby), 'the compass names it among the things nearby: ' + smash.nearby);
-  const pg = smash.ping; const stepOf = Object.fromEntries(pg.byAngle);
-  check(pg.has && pg.ahead.length >= 2 && pg.ahead.every((n) => n === 'ut_case_ping_8') && pg.placed && Math.abs(pg.placed[0] - pg.want[0]) < 0.01 && Math.abs(pg.placed[1] - pg.want[1]) < 0.01,
-    `a case pings from where it stands, at its highest pitch when you face it (${pg.ahead.length} pings in two seconds from six squares off)`);
-  check(stepOf[0] === 'ut_case_ping_8' && stepOf[7] === 'ut_case_ping_8' && stepOf[15] === 'ut_case_ping_7' && stepOf[30] === 'ut_case_ping_6' && stepOf[-30] === 'ut_case_ping_6'
-    && stepOf[45] === 'ut_case_ping_5' && stepOf[90] === 'ut_case_ping_2' && stepOf[-90] === 'ut_case_ping_2' && stepOf[120] === 'ut_case_ping_0' && stepOf[180] === 'ut_case_ping_0',
-    'the ping drops a step for every 15 degrees the case is off to either side, to its lowest behind you: ' + JSON.stringify(pg.byAngle));
-  check(pg.count6 > pg.count18 && pg.count18 >= 2, `it repeats faster as you close: ${pg.count18} in two seconds from six squares, ${pg.count6} from two`);
-  check(pg.beyond === 0 && pg.otherArea === 0, 'no ping from beyond twelve steps, nor from another area');
+  const kn = smash.knock;
+  check(kn.has && kn.n >= 2 && kn.placed && Math.abs(kn.placed[0] - kn.want[0]) < 0.01 && Math.abs(kn.placed[1] - kn.want[1]) < 0.01 && !smash.pinged,
+    `a case knocks from where it stands (${kn.n} knocks in four seconds from six squares off), and the ping of 4.1.1 is gone`);
+  check(kn.behind === kn.count18, `it knocks the same whichever way you face: ${kn.behind} behind you, ${kn.count18} ahead`);
+  check(kn.count6 > kn.count18 && kn.count18 >= 2 && kn.vol6 > kn.vol18, `it knocks faster and louder as you close: ${kn.count18} in four seconds from six squares, ${kn.count6} from two`);
+  check(kn.beyond === 0 && kn.otherArea === 0, 'no knock from beyond fifteen steps, nor from another area');
+  check(smash.lined && !smash.lined.away.reach && smash.lined.away.chimes === 2 && smash.lined.back.reach && smash.lined.back.chimes === 3,
+    'beside a case but facing away you are not lined up and no bell rings; turn to face it and the bell rings: ' + JSON.stringify(smash.lined));
+  check(smash.guard && smash.guard.during && !smash.guard.after && smash.guard.used >= smash.guard.seconds - 0.1,
+    `within three steps of an unbroken case nothing can hit you, for ${smash.guard.seconds} seconds in all: ` + JSON.stringify(smash.guard));
   check(smash.farShot.laser && smash.farShot.ammo === 4 && !smash.farShot.smashed, 'out of reach of it, the attack is the laser as ever');
   check(smash.chimedOnce && smash.approach.every(([d, n]) => (d < smash.rearm[0]) === (n === 1)) && smash.reach < smash.rearm[0],
     'the chime rings once, as you come within a step of it: ' + JSON.stringify(smash.approach));
@@ -339,7 +365,7 @@ if (smash.found) {
   const k = smash.last && smash.last.kind; const dl = smash.delta;
   const rewardOk = (k === 'shots' && dl.ammo > smash.hunters && dl.ammo <= smash.hunters + 3 && new RegExp(`^${dl.ammo} shots\\.$`).test(smash.spoken[0]))
     || (k === 'points' && dl.points > 0 && dl.ammo === 0 && new RegExp(`^${dl.points} points\\.$`).test(smash.spoken[0]))
-    || (k === 'time' && dl.time === 30 && dl.ammo === 0 && /30 more seconds in this world/.test(smash.spoken[0]))
+    || (k === 'time' && dl.time === 60 && dl.ammo === 0 && /60 more seconds in this world/.test(smash.spoken[0]))
     || (k === 'items' && dl.items >= 2 && dl.items <= 3 && dl.ammo === 0 && new RegExp(`${dl.items} tower items`).test(smash.spoken[0]))
     || (k === 'health' && dl.hp === 30 && dl.ammo === 0 && /30 health/.test(smash.spoken[0]));
   check(rewardOk, `the reward (${k}) is yours at once, as spoken, and smashing spent no shot: ${JSON.stringify(dl)}`);
@@ -349,7 +375,7 @@ if (smash.found) {
     `they come fast: ${smash.closing.join(', ')} units nearer in a second`);
   check(smash.quietAtFirst && (smash.heardLater || smash.stillThere === 0), 'they are not heard at once, and are heard a few seconds on');
   check(smash.second.laser && !smash.second.smashAgain, 'a smashed case cannot be smashed again');
-  check(smash.pingAfter === 0, 'a smashed case no longer pings');
+  check(smash.pingAfter === 0, 'a smashed case no longer knocks');
   check(smash.glass === 1 && smash.glassSteps.length === 4 && smash.glassSteps.slice(0, 3).every((n) => /^ut_glass_step_/.test(n)) && smash.areaSteps.includes(smash.glassSteps[3]),
     'broken glass crunches underfoot for two steps round where the case stood, and not beyond: ' + JSON.stringify(smash.glassSteps));
   check(!/a glass case/.test(smash.nearbyAfter), 'the compass no longer names a smashed case');

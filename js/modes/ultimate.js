@@ -41,12 +41,24 @@
 
 import { TowerEnemy, TowerItem, TowerProjectile, volleySpread, TOWER_DRONES } from './tower.js';
 import { addMade, aliasRecording, ensureCopies } from './events/sounds.js';
+import { knockSound } from './events/blocks.js';
 import { HELP_SECTIONS, HELP_DEMOS } from './ultimate/help.js';
 import { RULES } from '../sound-rules.js';
 import {
   makeWorld, makeSeabed, CELL, AREA_CELLS, key, cellOf, posOf, isFloor, areaAt, nearestPointOf, leakPoint, echoMix,
   randomFloor, routeToward,
 } from './ultimate/world.js';
+
+import {
+  DEG, TWO_PI, QUARTER, TURN_SLOW, TURN_FAST, TURN_EASE, TURN_STEP, TURN_STEPS, TURN_QUICK, TURN_LIMIT, TURN_BRIEF,
+  TICK_LEVEL, CLICK_LEVEL, SLIDE_MIN, STEP_SAMPLE, COMPASS_DIRS, FACING_WORDS, MAIN_WORDS,
+  wrapAngle, mainIndex, snapFace, forwardOf, facingWord, turnQuick, turnStart, turnEnd, turnStop, updateTurn,
+  walkStep as walkSquares,
+} from '../turning.js';
+export {
+  QUARTER, TURN_SLOW, TURN_FAST, TURN_EASE, TURN_STEP, TURN_STEPS, TURN_QUICK, TURN_LIMIT, TURN_BRIEF,
+  TICK_LEVEL, CLICK_LEVEL, SLIDE_MIN, STEP_SAMPLE, FACING_WORDS, MAIN_WORDS,
+};
 
 export const STATE = 'ultimate';
 export const BOARD = 'ultimate';
@@ -121,47 +133,39 @@ export const THROWER_MAX = 20;                  // its difficulty never goes abo
 export const COMPASS_HOLD_MS = 1000;
 export const COMPASS_BEEP_EVERY = 0.45;
 export const COMPASS_BEEP_TURNING = 0.16;       // while you turn with the compass on, so the pitch follows the turn
-const COMPASS_DIRS = [[0, -1], [1, 0], [0, 1], [-1, 0]];   // the main directions: north, east, south, west (exact, so a squared-up step is cell to cell)
-// ---- turning (web 4.0.0). The facing is an angle, clockwise from north.
-const DEG = Math.PI / 180;
-const TWO_PI = Math.PI * 2;
-export const QUARTER = Math.PI / 2;
-export const TURN_SLOW = 30 * DEG;              // a held turn begins this slowly (a second), so a short hold is a small nudge for aiming
-export const TURN_FAST = 150 * DEG;             // and comes up to this: a full circle in 2.4 seconds
-export const TURN_EASE = [0.25, 0.85];          // seconds held: slow until the first, at full speed by the second
-export const TURN_STEP = 30 * DEG;              // a quick turn (a swipe, one press of an arrow): to the next step of this size, so three make a quarter turn (web 4.1.0, Russell's choice; until then a swipe was a whole quarter turn, too wide to centre anything)
-export const TURN_STEPS = 12;                   // of them in a full circle
-export const TURN_QUICK = 240 * DEG;            // a quick turn sweeps at this rate: its 30 degrees in an eighth of a second
-export const TURN_LIMIT = 30;                   // seconds: no held turn lasts longer (a finger or a key whose lifting never arrived)
-export const TURN_BRIEF = 0.3;                  // seconds: a held turn let go within this may have been a swipe after all (gestures.js says so by sending the swipe at once)
-export const TICK_LEVEL = 0.5;                  // the tick at each main direction, as you turn
-export const CLICK_LEVEL = 0.3;                 // the softer click of a quick turn that lands between two main directions
+// ---- turning (web 4.0.0; shared with every mode that turns since 5.0.0: js/turning.js).
+// The facing is an angle, clockwise from north.
 export const AIM_HALF = 30.5 * DEG;              // the aim: this far either side of straight ahead (web 4.1.0: 30 degrees, and the half over so that one exactly on the line is in; it was 45.5, the front quarter. A quick turn's steps are 30 degrees, so some step always has an enemy within 15)
-export const SLIDE_MIN = 0.75;                  // units: a blocked step still slides along the wall when its part along the wall is at least this
 export const WALL_TOUCH = 0.45;                 // the wall's level when you slide along it instead of stopping at it
-export const STEP_SAMPLE = 0.25;                // units: how finely a step's path is checked against the walls
-// (Sixteen since web 4.1.0: a quick turn's steps of 30 degrees fall between the eight.)
-export const FACING_WORDS = ['north', 'north-north-east', 'north-east', 'east-north-east', 'east', 'east-south-east', 'south-east', 'south-south-east',
-  'south', 'south-south-west', 'south-west', 'west-south-west', 'west', 'west-north-west', 'north-west', 'north-north-west'];
-export const MAIN_WORDS = ['north', 'east', 'south', 'west'];
-// ---- the first run after web 4.0.0, once on each device: the game says that the
-// controls have changed (Russell, 11 November 2026). Nothing can hurt you until
-// it has been said. Written for touch; keywords.js has its keyboard wording.
-export const NOTICE_SAFE = 20;                  // seconds nothing can hurt you from the moment the notice begins
-export const NOTICE_AFTER = 3;                  // and this long after it has been said, if saying it takes longer
-export const NOTICE_LIMIT = 45;                 // but never longer than this in all (a voice whose end is never heard of)
-export const TURN_NOTICE = 'New in version 4: you now turn where you stand, and the whole world turns with you. '
-  + 'Nothing can hurt you while you hear this. '
-  + 'Swipe left or right for a quick turn. '
-  + 'Slide left or right and hold to keep turning. '
-  + 'Swipe up to walk the way you are facing. ';
-// (A Windows computer may be a Braille notetaker, whose held key is a string of presses.)
-export const TURN_NOTICE_WINDOWS = 'On a Braille notetaker, each press is one quick turn or one step. ';
-export const TURN_NOTICE_END = 'The help for Ultimate Mode explains more.';
+// (Web 4.0.0 to 4.1.2 said once, on a device's first run, that turning had changed.
+// Since 5.0.0 nothing is announced inside the game: the Update History says it.)
 export const COMPASS_NEAR_RANGE = 60;           // units: how far the compass briefing looks for things to pick up
 export const COMPASS_NEAR_COUNT = 3;            // how many it names
 export const ARENA = (AREA_CELLS - 1) / 2 * CELL;   // an area, as a tower floor sees it: 31.5 each way
-export const SEABED_RANGE = 30.0;
+export const SEABED_RANGE = 60.0;               // how far the seabed's things carry (web 5.0.0, with the bigger seabed; was 30)
+export const SEABED_FLOOR = 0.12;               // and they are never quieter than this, however far (Island Mode's own floor): everything down there can be found by ear
+const seaLevel = (d) => Math.max(SEABED_FLOOR, 1 - d / SEABED_RANGE);
+// Treasure chests (web 5.0.0, Russell, 11 November 2026): about one seabed in
+// three has one, far from the lift. Swim onto it and it opens: an assortment,
+// worth more than a glass case, and the voice says only what was inside.
+export const CHEST_CHANCE = 1 / 3;
+export const CHEST_FAR = 7;                     // squares: at least this far from the lift
+export const CHEST_GAIN = 0.7;
+export const CHEST_REWARDS = [2, 3];            // how many different things are inside
+export const CHEST_SHOTS = [6, 10];
+export const CHEST_POINTS = 100;                // times the multiplier
+export const CHEST_HEALTH = 40;
+export const CHEST_FULL_HEAL = 0.1;             // the chance its health is a full heal instead
+export const CHEST_ITEMS = [4, 6];              // a bundle of tower items
+export const CHEST_TIME = 90;                   // seconds more in the world above
+export const CHEST_TIME_CHANCE = 0.1;           // and how often a chest holds them
+// Its sounds, and the strokes of swimming along the seabed: recordings of their
+// own once the sound packs carry them; until then the island treasure's shimmer
+// and pickup, and the silence the seabed has always had underfoot.
+export const CHEST_SOUNDS = ['ut_chest', 'treasure_beacon'];
+export const CHEST_OPEN_SOUNDS = ['ut_chest_open', 'treasure_pickup'];
+export const DIVE_STROKES = ['ut_dive_stroke_1', 'ut_dive_stroke_2', 'ut_dive_stroke_3', 'ut_dive_stroke_4'];
+export const DIVE_STROKE_LEVEL = 0.6;
 export const RIDE_MIN = 4.0;
 export const RIDE_MAX = 16.0;
 export const RIDE_TIME = 8.0;
@@ -317,12 +321,24 @@ export const CASE_REARM = 9.0;                  // go this far from it and it wi
 // stands, made by the game itself. Its pitch says how squarely you face the case:
 // highest when it is straight ahead, a step lower for every 15 degrees it is off
 // to either side, lowest behind you. It repeats faster as you come closer.
-export const CASE_PING_RANGE = 36.0;            // units: twelve steps; no ping from further off, nor from another area
-export const CASE_PING_EVERY = [0.16, 0.9];     // seconds between pings: beside the case, and at the edge of the range
-export const CASE_PING_LEVEL = [0.3, 0.7];      // its level: at the edge of the range, and beside the case
-export const CASE_PING_HZ = [1175, 2349];       // its pitch: the case behind you, and straight ahead (an octave)
-export const CASE_PING_PER_STEP = 15 * DEG;     // one of its nine pitches for every 15 degrees off straight ahead
-export function casePingName(step) { return `ut_case_ping_${step}`; }   // step 0 (lowest) to 8 (straight ahead)
+// The knock (web 5.0.0, Russell, 11 November 2026; it replaces 4.1.1's ping): two
+// quick raps on glass, made by the game, from where the case stands. It starts
+// within fifteen steps, faster and louder as you close, so you can turn until it
+// is centred between your ears. The numbers are the events' display cases' own
+// (js/modes/events/blocks.js), so a case sounds the same wherever you meet one.
+export const CASE_KNOCK = 'event_case_knock';
+export const CASE_KNOCK_RANGE = 45.0;           // units: fifteen steps; no knock from further off, nor from another area (the hum leads you in from there)
+export const CASE_KNOCK_EVERY = [0.35, 1.1];    // seconds between knocks: beside the case, and at the edge of the range
+export const CASE_KNOCK_LEVEL = [0.35, 0.9];    // its level: at the edge of the range, and beside the case
+// Lined up (web 5.0.0): beside the case and facing it. The bell says so, once, and
+// then your attack smashes it. (Until then the bell rang as you came beside it,
+// whichever way you faced, and the attack smashed it from there.)
+export const CASE_LINED = 30.5 * DEG;           // this far either side of straight ahead (the aim's own width)
+export const CASE_UNLINED = 45 * DEG;           // turned further off than this, the bell will ring again when you come back
+// Protection while you line up (web 5.0.0): within three steps of a case not yet
+// broken, nothing can hit you, for at most this long in all at any one case.
+export const CASE_GUARD_RANGE = 9.0;            // units: three steps
+export const CASE_GUARD_SECONDS = 15;
 export const CASE_HUNTERS = [[2, 0.35], [3, 0.40], [4, 0.15], [5, 0.10]];   // how many come, and how often: mostly two or three, five if you are very unlucky
 export const HUNTER_FROM = [70, 60, 50, 40, 30, 20, 14];   // units: they start as far from you as the area has floor, trying the furthest first (70 is out of earshot)
 export const HUNTER_QUIET = 1.2;                // seconds before one can be heard at all, wherever it started ...
@@ -332,7 +348,7 @@ export const GLASS_RADIUS = 6.5;                // units: the broken glass lies 
 export const STEPS_GLASS = ['ut_glass_step_1', 'ut_glass_step_2', 'ut_glass_step_3', 'ut_glass_step_4'];
 export const CASE_POINTS = 60;                  // times the multiplier, as everything you earn
 export const CASE_SHOTS_OVER = [1, 3];          // shots: this many more than the chasers that are coming
-export const CASE_TIME = 30;                    // seconds put back on the world's clock
+export const CASE_TIME = 60;                    // seconds put back on the world's clock (web 5.0.0; was 30)
 export const CASE_HEALTH = 30;
 export const CASE_ITEMS = [2, 3];
 
@@ -352,64 +368,9 @@ const levelAt = (d, range = HEAR_RANGE) => Math.max(0, 1 - d / range);
 // nothing behind you; a chaser within two steps is still hit wherever it is.
 export const AIM_CLOSE = 6.0;                   // units: two steps
 
-const wrapAngle = (a) => { a %= TWO_PI; return a < 0 ? a + TWO_PI : a; };
-// Which main direction an angle is (0 north, 1 east, 2 south, 3 west), or -1 when
-// it lies between two of them.
-function mainIndex(angle) {
-  const q = wrapAngle(angle) / QUARTER;
-  const k = Math.round(q);
-  return Math.abs(q - k) < 1e-6 ? k % 4 : -1;
-}
-
-// One step's walk over the floor: from `from`, `len` units along `dir` (a unit
-// vector), wherever `open(pos)` says there is floor. Clear all the way: there.
-// Something in the way: along it instead, by the part of the step that runs along
-// it, when that part is worth taking (SLIDE_MIN); otherwise nowhere. So squared up
-// against a wall you stop, as you always did, and at a slant you slide. Returns
-// { pos, moved, hit }: hit is the first place found shut (where the wall's sound
-// belongs), or null when nothing was in the way.
-export function walkStep(from, dir, len, open) {
-  // The square you stand in never stops you leaving it. You are always on floor,
-  // so this changes nothing; but if a fault ever put you inside a wall, you could
-  // still walk out of it, as you could when a step was square to square.
-  const home = cellOf(from);
-  const clear = (p) => { const c = cellOf(p); return (c[0] === home[0] && c[1] === home[1]) || open(p); };
-  const shutAt = (vx, vy) => {
-    const n = Math.max(1, Math.ceil(Math.hypot(vx, vy) / STEP_SAMPLE));
-    let prev = from;
-    for (let i = 1; i <= n; i++) {
-      // (The last look is at the very place the step would end, to the last digit.)
-      const p = i === n ? [from[0] + vx, from[1] + vy] : [from[0] + vx * i / n, from[1] + vy * i / n];
-      if (!clear(p)) return p;
-      // Never between two shut squares that meet at a corner.
-      const a = cellOf(prev); const b = cellOf(p);
-      if (a[0] !== b[0] && a[1] !== b[1] && !clear(posOf(b[0], a[1])) && !clear(posOf(a[0], b[1]))) return p;
-      prev = p;
-    }
-    return null;
-  };
-  const vx = dir[0] * len; const vy = dir[1] * len;
-  const hit = shutAt(vx, vy);
-  if (!hit) return { pos: [from[0] + vx, from[1] + vy], moved: len, hit: null };
-  // Along it: the bigger part of the step first. When the way along it is the
-  // way you are mostly facing (a corridor you face a little off its line), the
-  // step glides a whole step down it (web 4.1.2, Russell: since 4.1.0's turns of
-  // 30 degrees, a corridor walked at a slant gave a short step and a wall sound
-  // every time). Otherwise, only the part of the step that runs along it.
-  const bigX = Math.abs(vx) >= Math.abs(vy);
-  const parts = bigX ? [[vx, 0], [0, vy]] : [[0, vy], [vx, 0]];
-  for (let i = 0; i < parts.length; i++) {
-    const [sx, sy] = parts[i];
-    const part = Math.abs(sx) + Math.abs(sy);
-    if (part < SLIDE_MIN) continue;
-    if (i === 0) {
-      const gx = sx ? Math.sign(sx) * len : 0; const gy = sy ? Math.sign(sy) * len : 0;
-      if (!shutAt(gx, gy)) return { pos: [from[0] + gx, from[1] + gy], moved: len, hit };
-    }
-    if (!shutAt(sx, sy)) return { pos: [from[0] + sx, from[1] + sy], moved: part, hit };
-  }
-  return { pos: [from[0], from[1]], moved: 0, hit };
-}
+// One step's walk over the floor (js/turning.js: stopped by a wall, sliding along
+// it at a slant), on this mode's squares.
+export function walkStep(from, dir, len, open) { return walkSquares(from, dir, len, open, cellOf, posOf); }
 
 function pointToSegment(x, y, a, b) {
   const [ax, ay] = a; const [bx, by] = b;
@@ -467,17 +428,10 @@ export function makeSounds(audio) {
   }), 0.3));
   addMade(audio, 'ut_slide', slideRush(SLIDE_DOWN));
   addMade(audio, 'ut_bus_chime', joined([tone(BUS_CHIME_HZ[0], 0.5, 0.4), tone(BUS_CHIME_HZ[1], 0.7, 0.4)], 0.05));
-  // A glass case's ping (web 4.1.1): a short clear note with a fainter one high
-  // above it, as struck glass has; nine of them, an octave from lowest to highest.
-  const ping = (s) => {
-    const hz = CASE_PING_HZ[0] * Math.pow(CASE_PING_HZ[1] / CASE_PING_HZ[0], s / 8);
-    const a = tone(hz, 0.11, 0.26); const b = tone(hz * 2.76, 0.07, 0.09);
-    for (let i = 0; i < b[0].length; i++) { a[0][i] += b[0][i]; a[1][i] += b[1][i]; }
-    return a;
-  };
-  for (let s = 0; s <= 8; s++) addMade(audio, casePingName(s), ping(s));
-  // The demo: turning toward a case, from behind you to straight ahead.
-  addMade(audio, 'ut_case_ping_demo', joined([0, 2, 4, 6, 7, 8, 8, 8].map((s) => ping(s)), 0.28));
+  // A glass case's knock (web 5.0.0): the events' own, made here too so that Help
+  // has it before any event is played; and its demo, three knocks closing in.
+  if (!audio.has(CASE_KNOCK)) addMade(audio, CASE_KNOCK, knockSound());
+  { const k = knockSound(); addMade(audio, 'ut_case_knock_demo', joined([k, k, k, k], 0.5)); }
   // The ticks of a turn (web 4.0.0): one as you pass east, south or west, a
   // higher one for north.
   addMade(audio, 'ut_tick', tone(TICK_HZ[0], 0.07, 0.3));
@@ -488,7 +442,7 @@ export function makeSounds(audio) {
   // direction's tick, click, click, and north's higher tick.
   { const c = () => tone(CLICK_HZ, 0.05, 0.3 * CLICK_LEVEL / TICK_LEVEL);
     addMade(audio, 'ut_tick_demo', joined([c(), c(), tone(TICK_HZ[0], 0.07, 0.3), c(), c(), tone(TICK_HZ[1], 0.07, 0.3)], 0.4)); }
-  for (const n of ['ut_low_ammo_demo', 'ut_compass_demo', 'ut_slide', 'ut_bus_chime', 'ut_tick_demo', 'ut_case_ping_demo']) ensureCopies(audio, n);
+  for (const n of ['ut_low_ammo_demo', 'ut_compass_demo', 'ut_slide', 'ut_bus_chime', 'ut_tick_demo', 'ut_case_knock_demo']) ensureCopies(audio, n);
 }
 
 // The rush of a water slide: noise through a resonant band that falls from a
@@ -563,22 +517,12 @@ const mixin = {
       place: 'world', ride: null, seabed: null, lift: null, liftArmed: false, dingTimer: 0,
       compass: { on: false, t: 0 }, prox: 0, steps: [],
       face: 0, turn: null, turnWas: null,   // the way you face (radians clockwise from north), the turn in progress, if any, and a held turn only just let go (_utTurnEnd)
-      notice: null,              // the first run's notice while it is being said (startUltimate)
       voices: new Set(), shots: new Set(),
     };
-    // The menu's words stop; the world says the rest. Except once on each device,
-    // the first run after web 4.0.0, which says that the controls have changed.
-    const tell = !this.scores.settings.turnTold;
-    this.tts.speak(tell ? TURN_NOTICE + (this.braille && this.braille.enabled ? TURN_NOTICE_WINDOWS : '') + TURN_NOTICE_END : '', { interrupt: true });
+    // The menu's words stop; the world says the rest. (Nothing is announced: the
+    // one-time notice of 4.0.0 is gone since 5.0.0.)
+    this.tts.speak('', { interrupt: true });
     this._utNewWorld(true);
-    if (tell) {
-      this.scores.settings.turnTold = true;
-      this.scores.save();
-      // Nothing can hurt you until it has been said (see updateUltimateMode); read
-      // on a Braille display with the voice off, it has the longest wait there is.
-      u.notice = { said: this.tts.current, t: 0 };
-      u.safe = Math.max(u.safe, this.tts.muted && this.tts.muted() ? NOTICE_LIMIT : NOTICE_SAFE);
-    }
   },
 
   // ---------------------------------------------------------------- difficulty (tune)
@@ -811,19 +755,12 @@ const mixin = {
   // ---------------------------------------------------------------- turning (web 4.0.0)
   // The way you face, as a unit vector in the world ([east, south]). Squared up it
   // is exact, so a step is cell to cell with nothing left over.
-  _utForward() {
-    const k = mainIndex(this.ut.face);
-    if (k >= 0) return COMPASS_DIRS[k];
-    return [Math.sin(this.ut.face), -Math.cos(this.ut.face)];
-  },
+  _utForward() { return forwardOf(this.ut.face); },
 
   // Face a new way: the listener turns, and every placed sound with it.
   _utFace(angle, instant = false) {
     const u = this.ut;
-    const k = mainIndex(angle);
-    const st = Math.round(angle / TURN_STEP);
-    // Exactly, when squared up; and exactly on a quick turn's step.
-    u.face = k >= 0 ? k * QUARTER : Math.abs(angle / TURN_STEP - st) < 1e-6 ? wrapAngle(st * TURN_STEP) : wrapAngle(angle);
+    u.face = snapFace(angle);
     this.playerFacing = this._utForward();
     this.audio.setFacing(u.face, instant);
   },
@@ -869,55 +806,21 @@ const mixin = {
   // in between two steps by a held turn, it takes you onto the next step.
   _utTurnQuick(dir) {
     const u = this.ut;
-    const was = u.turnWas;
-    u.turnWas = null;
-    if (!this._utCanTurn()) return;
-    if (u.turn && u.turn.quick) {
-      // A second swipe before the first has landed carries on from where that one
-      // is going (three swipes are a quarter turn; one each way brings you back).
-      const target = (Math.round(u.turn.target / TURN_STEP) + dir) * TURN_STEP;
-      u.turn = { quick: true, at: u.turn.at, target, dir: target >= u.turn.at ? 1 : -1 };
-      return;
-    }
-    // A swipe that began as a hold (the finger paused before it lifted, or the key
-    // was let go a moment late) counts from where that hold began, so the little
-    // it had already turned never carries it past the direction it was going to.
-    let from = u.face; let at = u.face;
-    if (was && was.dir === dir) { from = was.from; at = was.from + dir * wrapAngle((u.face - was.from) * dir); }
-    const q = from / TURN_STEP;
-    const k = dir > 0 ? Math.floor(q + 1e-6) + 1 : Math.ceil(q - 1e-6) - 1;
-    u.turn = { quick: true, at, target: k * TURN_STEP, dir };
+    if (!this._utCanTurn()) { u.turnWas = null; return; }
+    turnQuick(u, dir);
   },
 
-  // A held turn: free, slow at first and then faster, until it is let go; you stop
-  // exactly there.
+  // A held turn: free until it is let go; you stop exactly there.
   _utTurnStart(dir) {
-    const u = this.ut;
     if (!this._utCanTurn()) return;
-    if (u.turn && u.turn.quick) this._utFace(u.turn.target);    // (a hold on top of a quick turn: that one lands first)
-    u.turn = { free: true, dir, t: 0, from: u.face };
-    u.turnWas = null;
+    turnStart(this.ut, dir, (a) => this._utFace(a));
   },
 
-  _utTurnEnd() {
-    const u = this.ut;
-    if (!u || !u.turn || !u.turn.free) return;
-    // (Let go almost at once, it may have been a swipe: remembered until the next
-    // frame, in case the swipe follows; see _utTurnQuick.)
-    u.turnWas = u.turn.t < TURN_BRIEF ? { from: u.turn.from, dir: u.turn.dir } : null;
-    u.turn = null;
-  },
+  _utTurnEnd() { turnEnd(this.ut); },
 
   // Whatever turn is under way ends now (a pause, help, a ride): a quick turn
   // lands where it was going, a held one stops where it is.
-  _utTurnStop() {
-    const u = this.ut;
-    if (!u) return;
-    u.turnWas = null;
-    if (!u.turn) return;
-    if (u.turn.quick) this._utFace(u.turn.target, true);
-    u.turn = null;
-  },
+  _utTurnStop() { turnStop(this.ut, (a, instant) => this._utFace(a, instant)); },
 
   // The tick of a main direction, as you pass it or land on it: north the higher one.
   _utTick(k) {
@@ -932,39 +835,18 @@ const mixin = {
   // The turn, every frame.
   _utUpdateTurn(dt) {
     const u = this.ut;
-    const t = u.turn;
-    u.turnWas = null;      // (a swipe that follows a brief hold arrives with its end, never a frame later)
-    if (!t) return;
-    if (!this._utCanTurn()) { this._utTurnStop(); return; }
-    if (t.quick) {
-      const step = TURN_QUICK * dt;
-      const left = (t.target - t.at) * t.dir;
-      if (left > step + 1e-9) { t.at += t.dir * step; this._utFace(t.at); return; }
-      // Landed on its step: on a main direction its tick (unless a brief hold had
-      // already carried you just past it, and ticked there), between two of them
-      // the softer click; and with the compass on, what lies ahead.
-      u.turn = null;
-      this._utFace(t.target);
-      const k = mainIndex(u.face);
-      if (k < 0) this._utClick();
-      else if (left > -1e-9) this._utTick(k);
-      if (u.compass.on) {
+    if (u.turn && !this._utCanTurn()) { this._utTurnStop(); return; }
+    updateTurn(u, dt, {
+      face: (a, instant) => this._utFace(a, instant),
+      tick: (k) => this._utTick(k),
+      click: () => this._utClick(),
+      // Landed on its step: with the compass on, what lies ahead.
+      landed: (k) => {
+        if (!u.compass.on) return;
         u.compass.t = COMPASS_BEEP_EVERY;   // a beep at once, for the new way
         this.tts.speak(this._utCompassWords(k), { interrupt: true });
-      }
-      return;
-    }
-    t.t += dt;
-    if (t.t > TURN_LIMIT) { u.turn = null; return; }
-    const ease = Math.min(1, Math.max(0, (t.t - TURN_EASE[0]) / (TURN_EASE[1] - TURN_EASE[0])));
-    const speed = TURN_SLOW + (TURN_FAST - TURN_SLOW) * ease;
-    const a = u.face / QUARTER;
-    const to = u.face + t.dir * speed * dt;
-    const b = to / QUARTER;
-    // A tick for each main direction passed (not for the one you set off from).
-    if (t.dir > 0) { for (let m = Math.floor(a + 1e-9) + 1; m <= Math.floor(b + 1e-9); m++) this._utTick(m); }
-    else { for (let m = Math.ceil(a - 1e-9) - 1; m >= Math.ceil(b - 1e-9); m--) this._utTick(m); }
-    this._utFace(to);
+      },
+    });
   },
 
   _utMixAt(pos) {
@@ -1221,13 +1103,6 @@ const mixin = {
     }
     if (u.phase === 'silence') return;
     u.elapsed += dt;
-    // The first run's notice: for as long as it is being said, nothing can hurt
-    // you, and for a moment after. (Cut off by a report or a pause, it is over.)
-    if (u.notice) {
-      u.notice.t += dt;
-      if (u.notice.t > NOTICE_LIMIT || !(this.tts.speaking && this.tts.current === u.notice.said)) u.notice = null;
-      else u.safe = Math.max(u.safe, NOTICE_AFTER);
-    }
     if (u.safe > 0) u.safe -= dt;
     if (u.hitCooldown > 0) u.hitCooldown -= dt;
     // The regeneration countdown runs whatever else is happening (the compass too).
@@ -1265,7 +1140,7 @@ const mixin = {
     this._utUpdateEnemies(dt);
     if (this.state !== STATE) return;
     this._utUpdatePickups();
-    this._utUpdateCases();
+    this._utUpdateCases(dt);
     this._utUpdateTower(dt);
     this._utUpdateLift(dt);
     this._utUpdateSounds(dt);
@@ -1734,8 +1609,18 @@ const mixin = {
         }
         return posOf(ex + g.half, ey);
       };
-      for (let i = 0; i < randint(1, 2); i++) u.seabed.pickups.push({ kind: 'ammo', pos: spot(), shots: this._utShotsPerCartridge(), beacon: 'ammo_beacon', gain: 0.55 });
+      for (let i = 0; i < randint(2, 3); i++) u.seabed.pickups.push({ kind: 'ammo', pos: spot(), shots: this._utShotsPerCartridge(), beacon: 'ammo_beacon', gain: 0.55 });
       if (rand() < 0.3) { const v = choice(CREDIT_VALUES); u.seabed.pickups.push({ kind: 'credit', pos: spot(), value: v, beacon: `credit_beacon_${v}`, gain: 0.7 }); }
+      // A treasure chest, on about one seabed in three: far from the lift.
+      if (rand() < CHEST_CHANCE) {
+        let at = null;
+        for (let i = 0; i < 80 && !at; i++) {
+          const cx = randint(-g.half, g.half); const cy = randint(-g.half, g.half);
+          if (Math.hypot(cx, cy) >= CHEST_FAR) at = posOf(ex + cx, ey + cy);
+        }
+        const beacon = CHEST_SOUNDS.find((n) => this.audio.has(n));
+        if (at && beacon) u.seabed.pickups.push({ kind: 'chest', pos: at, beacon, gain: CHEST_GAIN });
+      }
       // The water, placed so it can rise from below you on the way down.
       u.seabed.under = this._utPlay('underwater', this.playerPos, { loops: -1, volume: 0.0, height: -6 });
       // And a wide copy, in step, for when it is all round you (see _utPlaceWater).
@@ -1853,6 +1738,7 @@ const mixin = {
         if (p.voice) { p.voice.stop(); u.voices.delete(p.voice); }
         s.pickups.splice(s.pickups.indexOf(p), 1);
         if (p.kind === 'ammo') { u.ammo += p.shots; this.audio.play('ammo'); this._utScore(POINTS.ammo); }
+        else if (p.kind === 'chest') this._utOpenChest();
         else { this.audio.play('credit_chaos'); this._utScore(p.value); }
       }
     }
@@ -1866,16 +1752,47 @@ const mixin = {
     u.dingTimer -= dt;
     if (u.dingTimer <= 0) {
       u.dingTimer = 1.6;
-      this._utPlay('elevator_arrive_1', lp, { volume: levelAt(d, SEABED_RANGE) });
+      this._utPlay('elevator_arrive_1', lp, { volume: seaLevel(d) });
     }
     if (!s.hum) s.hum = this._utPlay('elevator_hum', lp, { loops: -1, volume: 0.0 });
-    this._utFollow(s.hum, lp, levelAt(d, SEABED_RANGE));
+    this._utFollow(s.hum, lp, seaLevel(d));
     // Your own bubbles now and then, as on Island Mode's seabed.
     s.bubbleTimer -= dt;
     if (s.bubbleTimer <= 0) {
       s.bubbleTimer = uniform(BUBBLES_EVERY[0], BUBBLES_EVERY[1]);
       this.audio.play('bubbles', { volume: 0.5 });
     }
+  },
+
+  // A treasure chest opens (web 5.0.0): two or three different things at once,
+  // and the voice says only what they are, never "treasure chest".
+  _utOpenChest() {
+    const u = this.ut;
+    const open = CHEST_OPEN_SOUNDS.find((n) => this.audio.has(n));
+    if (open) this.audio.play(open, { keep: true });
+    const kinds = shuffle(['shots', 'points', 'items', ...(u.hp < START_HP ? ['health'] : [])]);
+    const take = kinds.slice(0, randint(CHEST_REWARDS[0], CHEST_REWARDS[1]));
+    if (rand() < CHEST_TIME_CHANCE) take.push('time');
+    const words = [];
+    for (const kind of take) {
+      if (kind === 'shots') { const got = randint(CHEST_SHOTS[0], CHEST_SHOTS[1]); u.ammo += got; words.push(`${got} shots`); }
+      else if (kind === 'points') {
+        const got = Math.round(CHEST_POINTS * this._utMultiplier());
+        u.points += got; u.worldPoints += CHEST_POINTS;
+        words.push(`${got} points`);
+      } else if (kind === 'items') { const got = randint(CHEST_ITEMS[0], CHEST_ITEMS[1]); u.items += got; words.push(`${got} tower items`); }
+      else if (kind === 'health') {
+        const full = rand() < CHEST_FULL_HEAL;
+        const got = full ? START_HP - u.hp : Math.min(CHEST_HEALTH, START_HP - u.hp);
+        u.hp += got;
+        if (u.hp > 35) u.lowWarned = false;
+        words.push(full ? 'full health' : `${got} health`);
+      } else { u.worldTime += CHEST_TIME; words.push(`${CHEST_TIME} more seconds in this world`); }
+    }
+    u.chests = (u.chests || 0) + 1;
+    u.lastChest = take;
+    const said = words.length > 1 ? `${words.slice(0, -1).join(', ')} and ${words[words.length - 1]}` : words[0];
+    this.tts.speak(`${said[0].toUpperCase()}${said.slice(1)}.`, { interrupt: true });
   },
 
   // A seabed position's cell, counted from the elevator.
@@ -2060,13 +1977,13 @@ const mixin = {
       if (!c.voice && level > 0.01) c.voice = this._utPlay(CASE_SOUND, c.pos, { loops: -1, volume: 0.0, fadeMs: 300 });
       else if (c.voice && level <= 0.001 && d > HEAR_RANGE + 10) { c.voice.stop(); u.voices.delete(c.voice); c.voice = null; }
       if (c.voice) this._utFollow(c.voice, c.pos, level, aboveHeight, dullOf(c.area));
-      // Its ping (web 4.1.1), in your own area and within twelve steps: from where
-      // the case stands, higher the more squarely you face it, faster as you close.
-      c.pingT = Math.max(0, (c.pingT || 0) - dt);
-      if (onWorld && c.area === u.area && d < CASE_PING_RANGE && c.pingT <= 0) {
-        const near = 1 - d / CASE_PING_RANGE;
-        c.pingT = CASE_PING_EVERY[1] + (CASE_PING_EVERY[0] - CASE_PING_EVERY[1]) * near;
-        this._utPlay(casePingName(this._utCasePingStep(c)), c.pos, { volume: CASE_PING_LEVEL[0] + (CASE_PING_LEVEL[1] - CASE_PING_LEVEL[0]) * near });
+      // Its knock (web 5.0.0), in your own area and within fifteen steps: from
+      // where the case stands, faster and louder as you close.
+      c.knockT = Math.max(0, (c.knockT || 0) - dt);
+      if (onWorld && c.area === u.area && d < CASE_KNOCK_RANGE && c.knockT <= 0) {
+        const near = 1 - d / CASE_KNOCK_RANGE;
+        c.knockT = CASE_KNOCK_EVERY[1] + (CASE_KNOCK_EVERY[0] - CASE_KNOCK_EVERY[1]) * near;
+        this._utPlay(CASE_KNOCK, c.pos, { volume: CASE_KNOCK_LEVEL[0] + (CASE_KNOCK_LEVEL[1] - CASE_KNOCK_LEVEL[0]) * near });
       }
     }
     for (const it of u.towerItems.values()) {
@@ -2083,7 +2000,7 @@ const mixin = {
       const h = seabed ? 0 : (ride ? -ride.height : -6);
       for (const p of u.seabed.pickups) {
         const d = dist2(p.pos, this.playerPos);
-        const level = levelAt(d, SEABED_RANGE) * p.gain * waterLevel;
+        const level = seaLevel(d) * p.gain * waterLevel;
         if (!p.voice && level > 0.01) p.voice = this._utPlay(p.beacon, p.pos, { loops: -1, volume: 0.0 });
         if (p.voice) { const rel = this._utRel(p.pos); p.voice.setSpatial(level, rel[0], rel[1], this._behind(p.pos), h); }
       }
@@ -2117,37 +2034,45 @@ const mixin = {
     return name || choice(a.steps);
   },
 
-  // Which of its nine pings a case gives now: 8 when it is straight ahead (within
-  // seven and a half degrees), one lower for every 15 degrees further off to
-  // either side, 0 from 113 degrees round to straight behind you. Standing on the
-  // case itself, it is ahead whichever way you face.
-  _utCasePingStep(c) {
+  // How far off straight ahead a case is, in radians (0 when you stand on it).
+  _utCaseOff(c) {
     const f = this._utForward();
     const dx = c.pos[0] - this.playerPos[0]; const dy = c.pos[1] - this.playerPos[1];
     const d = Math.hypot(dx, dy);
-    if (d < 0.5) return 8;
-    const off = Math.acos(Math.max(-1, Math.min(1, (dx * f[0] + dy * f[1]) / d)));
-    return Math.max(0, 8 - Math.round(off / CASE_PING_PER_STEP));
+    if (d < 0.5) return 0;
+    return Math.acos(Math.max(-1, Math.min(1, (dx * f[0] + dy * f[1]) / d)));
   },
 
-  // The glass case within reach, if there is one: in your area, not yet smashed.
+  // The glass case you are lined up with, if there is one: in your area, not yet
+  // smashed, beside you, and in front of you.
   _utCaseInReach() {
     const u = this.ut;
     if (u.place !== 'world') return null;
-    for (const c of u.cases || []) if (!c.smashed && c.area === u.area && dist2(c.pos, this.playerPos) < CASE_REACH) return c;
+    for (const c of u.cases || []) {
+      if (!c.smashed && c.area === u.area && dist2(c.pos, this.playerPos) < CASE_REACH && this._utCaseOff(c) <= CASE_LINED) return c;
+    }
     return null;
   },
 
-  // The chime as you come within reach of a case (again, if you have been away).
-  _utUpdateCases() {
+  // Every frame, and on every step (web 5.0.0). The bell, once, the moment you are
+  // lined up with a case: beside it and facing it (again, if you have turned well
+  // away or walked off and come back). And the protection: within three steps
+  // of a case not yet broken nothing can hit you, for CASE_GUARD_SECONDS in all
+  // at that case, so there is time to line up by ear.
+  _utUpdateCases(dt = 0) {
     const u = this.ut;
     if (u.place !== 'world') return;
     for (const c of u.cases || []) {
       if (c.smashed || c.area !== u.area) continue;
       const d = dist2(c.pos, this.playerPos);
-      if (d < CASE_REACH) {
+      const off = this._utCaseOff(c);
+      if (d < CASE_REACH && off <= CASE_LINED) {
         if (!c.near) { c.near = true; if (this.audio.has(CASE_CHIME)) this._utPlay(CASE_CHIME, c.pos, { volume: 0.8, keep: true }); }
-      } else if (d > CASE_REARM) c.near = false;
+      } else if (d > CASE_REARM || off > CASE_UNLINED) c.near = false;
+      if (dt > 0 && d < CASE_GUARD_RANGE && (c.guard || 0) < CASE_GUARD_SECONDS) {
+        c.guard = (c.guard || 0) + dt;
+        u.safe = Math.max(u.safe, 0.25);
+      }
     }
   },
 
@@ -2265,7 +2190,10 @@ const mixin = {
       this._utUpdateCases();
       this.audio.play(this._utStepSound(a));
     }
-    // (The seabed makes no sound underfoot, as in Island Mode.)
+    // (Until web 5.0.0 the seabed made no sound underfoot, as in Island Mode. Now
+    // each step along it is a swimming stroke under water, once the sound packs
+    // carry that recording.)
+    if (seabed) { const st = DIVE_STROKES.filter((n) => this.audio.has(n)); if (st.length) this.audio.play(choice(st), { volume: DIVE_STROKE_LEVEL }); }
   },
 
   _utAttack() {
@@ -2341,7 +2269,7 @@ const mixin = {
   },
 
   // The way you face, to the nearest of eight.
-  _utFacingWord() { return FACING_WORDS[Math.round(this.ut.face / (QUARTER / 4)) % 16]; },
+  _utFacingWord() { return facingWord(this.ut.face); },
 
   // ---------------------------------------------------------------- the compass
   // (Russell, 8 Nov, fourth and fifth reports: the compass costs time to use, so

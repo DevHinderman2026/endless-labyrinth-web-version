@@ -125,6 +125,7 @@ export const RULES = {
   "event_beacon_snowflake": "beacon",
   "event_beacon_star": "beacon",
   "event_bomb_tick": "event",
+  "event_case_knock": "event",
   "event_checkpoint": "event",
   "event_cue": "event",
   "event_delivered": "event",
@@ -222,6 +223,7 @@ export const RULES = {
   "evt_candle_out": "event",
   "evt_candy_wrapper": "event",
   "evt_car_horn": "event",
+  "evt_car_pass": "event",
   "evt_cat": "event",
   "evt_cat_purr": "event",
   "evt_cauldron": "event",
@@ -251,12 +253,14 @@ export const RULES = {
   "evt_ding": "event",
   "evt_dinosaur_growl": "event",
   "evt_dog_bark": "event",
+  "evt_dog_sniffing": "event",
   "evt_dolphin": "event",
   "evt_door_knock": "event",
   "evt_door_unlock": "event",
   "evt_dragon_roar": "event",
   "evt_drawbridge": "event",
   "evt_drink_slurp": "event",
+  "evt_drum_hit": "event",
   "evt_drum_roll": "event",
   "evt_duck": "event",
   "evt_egg_crack": "event",
@@ -293,6 +297,7 @@ export const RULES = {
   "evt_ghost_whispers": "event",
   "evt_giant_steps": "event",
   "evt_gift_unwrap": "event",
+  "evt_glass_smash": "event",
   "evt_gong": "event",
   "evt_guitar_strum": "event",
   "evt_harp_glissando": "event",
@@ -459,14 +464,34 @@ export const RULES = {
   "prox_9": "beacon",
   "stairs_beacon": "beacon",
   "stairs_climb": "step",
+  "step_glass_1": "step",
+  "step_glass_2": "step",
+  "step_glass_3": "step",
+  "step_glass_4": "step",
+  "step_ice_1": "step",
+  "step_ice_2": "step",
+  "step_ice_3": "step",
+  "step_ice_4": "step",
+  "step_mud_1": "step",
+  "step_mud_2": "step",
+  "step_mud_3": "step",
+  "step_mud_4": "step",
   "step_sand_1": "warning",
   "step_sand_2": "warning",
   "step_sand_3": "warning",
   "step_sand_4": "warning",
+  "step_snow_1": "step",
+  "step_snow_2": "step",
+  "step_snow_3": "step",
+  "step_snow_4": "step",
   "step_stone_1": "step",
   "step_stone_2": "step",
   "step_stone_3": "step",
   "step_stone_4": "step",
+  "step_water_1": "step",
+  "step_water_2": "step",
+  "step_water_3": "step",
+  "step_water_4": "step",
   "tow_01_night_castle": "warning",
   "tow_01_night_castle_muffled": "warning",
   "tow_02_castle_storm": "warning",
@@ -518,6 +543,7 @@ export const RULES = {
    "event_beacon_heart": 0.70509,
    "event_beacon_pumpkin": 0.94918,
    "event_beacon_star": 0.43385,
+   "event_case_knock": 0.931,
    "event_checkpoint": 0.59966,
    "event_cue": 0.63801,
    "event_delivered": 0.44756,
@@ -592,6 +618,7 @@ export const RULES = {
    "evt_dragon_roar": 0.5805,
    "evt_drawbridge": 0.62724,
    "evt_drink_slurp": 0.87369,
+   "evt_drum_hit": 0.85114,
    "evt_drum_roll": 0.55983,
    "evt_duck": 0.69327,
    "evt_egg_crack": 0.50094,
@@ -708,6 +735,8 @@ export const RULES = {
    "prox_6": 0.86705,
    "prox_8": 0.61704,
    "prox_9": 0.4682,
+   "step_snow_1": 0.94374,
+   "step_snow_4": 0.87178,
    "wall": 0.75935,
    "wave_clear": 0.58674,
    "wave_start": 0.58937
@@ -800,6 +829,7 @@ export const RULES = {
    "evt_dragon_roar": 0.61054,
    "evt_drawbridge": 0.61182,
    "evt_drink_slurp": 0.73514,
+   "evt_drum_hit": 0.63976,
    "evt_drum_roll": 0.63564,
    "evt_duck": 0.72004,
    "evt_egg_crack": 0.47886,
@@ -909,6 +939,8 @@ export const RULES = {
    "prox_6": 0.86422,
    "prox_7": 0.68922,
    "prox_9": 0.68098,
+   "step_snow_1": 0.87482,
+   "step_snow_4": 0.90107,
    "wall": 0.72572,
    "wave_clear": 0.69996,
    "wave_start": 0.58596
@@ -996,6 +1028,7 @@ export const RULES = {
    "evt_dragon_roar": 0.61406,
    "evt_drawbridge": 0.55841,
    "evt_drink_slurp": 0.77951,
+   "evt_drum_hit": 0.92065,
    "evt_drum_roll": 0.62237,
    "evt_duck": 0.69679,
    "evt_egg_crack": 0.52193,
@@ -1027,6 +1060,7 @@ export const RULES = {
    "evt_ghost_whispers": 0.87809,
    "evt_giant_steps": 0.44964,
    "evt_gift_unwrap": 0.65792,
+   "evt_glass_smash": 0.90605,
    "evt_gong": 0.73117,
    "evt_guitar_strum": 0.71872,
    "evt_harp_glissando": 0.77543,
@@ -1106,6 +1140,8 @@ export const RULES = {
    "prox_7": 0.84531,
    "prox_8": 0.62331,
    "prox_9": 0.88819,
+   "step_snow_1": 0.70243,
+   "step_snow_4": 0.94592,
    "wall": 0.7528,
    "wave_clear": 0.93411,
    "wave_start": 0.5912
@@ -1403,6 +1439,7 @@ export const RULES = {
    "credit_beacon_battle_demo": 0.83417,
    "credit_beacon_demo": 0.68956,
    "credit_beacon_scale_demo": 0.87277,
+   "event_case_knock": 0.92178,
    "event_checkpoint": 0.58546,
    "event_cue": 0.85421,
    "event_delivered": 0.62891,
@@ -1542,6 +1579,7 @@ export const RULES = {
    "credit_beacon_battle_demo": 0.5415,
    "credit_beacon_demo": 0.76886,
    "credit_beacon_scale_demo": 0.79193,
+   "event_case_knock": 0.93866,
    "event_checkpoint": 0.46465,
    "event_cue": 0.66354,
    "event_delivered": 0.48974,
@@ -2476,6 +2514,7 @@ export const RULES = {
    "credit_beacon_battle_demo": 0.7404,
    "credit_beacon_demo": 0.66306,
    "credit_beacon_scale_demo": 0.78485,
+   "event_case_knock": 0.97562,
    "event_checkpoint": 0.58788,
    "event_cue": 0.63326,
    "event_delivered": 0.60279,
@@ -2771,7 +2810,8 @@ export const RULES = {
    "obstacle_4": 0.59624,
    "obstacle_5": 0.62184,
    "obstacle_9": 0.75699,
-   "player_hit": 0.72061
+   "player_hit": 0.72061,
+   "step_snow_1": 0.81131
   },
   "hall#1": {
    "boundary": 0.5598,
@@ -2793,7 +2833,8 @@ export const RULES = {
    "event_toll_end": 0.56122,
    "event_wrong": 0.5365,
    "guardian_hit": 0.87093,
-   "player_hit": 0.66603
+   "player_hit": 0.66603,
+   "step_snow_1": 0.82955
   },
   "hall#2": {
    "boundary": 0.51977,
@@ -2834,6 +2875,7 @@ export const RULES = {
    "event_beacon_heart": 0.98667,
    "event_beacon_snowflake": 0.71824,
    "event_beacon_star": 0.48729,
+   "event_case_knock": 0.99179,
    "event_cue": 0.50036,
    "event_delivered": 0.54322,
    "event_detector_beep": 0.50172,
@@ -2916,6 +2958,7 @@ export const RULES = {
    "evt_dragon_roar": 0.55524,
    "evt_drawbridge": 0.57598,
    "evt_drink_slurp": 0.76836,
+   "evt_drum_hit": 0.65637,
    "evt_drum_roll": 0.54207,
    "evt_duck": 0.58041,
    "evt_egg_crack": 0.41059,
@@ -2947,6 +2990,7 @@ export const RULES = {
    "evt_ghost_whispers": 0.93116,
    "evt_giant_steps": 0.64119,
    "evt_gift_unwrap": 0.71662,
+   "evt_glass_smash": 0.88023,
    "evt_gong": 0.49281,
    "evt_guitar_strum": 0.67947,
    "evt_harp_glissando": 0.67985,
@@ -3036,7 +3080,10 @@ export const RULES = {
    "prox_7": 0.45532,
    "prox_8": 0.47731,
    "prox_9": 0.51193,
+   "step_snow_1": 0.74659,
+   "step_snow_4": 0.9159,
    "step_stone_3": 0.98975,
+   "step_water_3": 0.82317,
    "wall": 0.81363
   },
   "lab#1": {
@@ -3102,6 +3149,7 @@ export const RULES = {
    "evt_bubble_pop": 0.52857,
    "evt_burp": 0.64173,
    "evt_car_horn": 0.86966,
+   "evt_car_pass": 0.91659,
    "evt_cat": 0.44978,
    "evt_chains": 0.78804,
    "evt_chicken": 0.4698,
@@ -3123,6 +3171,7 @@ export const RULES = {
    "evt_dragon_roar": 0.59898,
    "evt_drawbridge": 0.60611,
    "evt_drink_slurp": 0.80458,
+   "evt_drum_hit": 0.60102,
    "evt_drum_roll": 0.50601,
    "evt_duck": 0.65194,
    "evt_egg_crack": 0.43143,
@@ -3154,6 +3203,7 @@ export const RULES = {
    "evt_ghost_whispers": 0.93461,
    "evt_giant_steps": 0.55113,
    "evt_gift_unwrap": 0.73665,
+   "evt_glass_smash": 0.92897,
    "evt_gong": 0.60529,
    "evt_guitar_strum": 0.63533,
    "evt_harp_glissando": 0.69776,
@@ -3238,6 +3288,9 @@ export const RULES = {
    "prox_7": 0.38735,
    "prox_8": 0.72186,
    "prox_9": 0.54751,
+   "step_glass_3": 0.96906,
+   "step_snow_1": 0.9987,
+   "step_snow_4": 0.86277,
    "step_stone_3": 0.92195,
    "wall": 0.941
   },
@@ -3328,6 +3381,7 @@ export const RULES = {
    "evt_dragon_roar": 0.67624,
    "evt_drawbridge": 0.58745,
    "evt_drink_slurp": 0.67976,
+   "evt_drum_hit": 0.65823,
    "evt_drum_roll": 0.60895,
    "evt_duck": 0.55736,
    "evt_egg_crack": 0.41647,
@@ -3357,6 +3411,7 @@ export const RULES = {
    "evt_ghost_whispers": 0.89855,
    "evt_giant_steps": 0.4667,
    "evt_gift_unwrap": 0.62589,
+   "evt_glass_smash": 0.74421,
    "evt_gong": 0.58771,
    "evt_guitar_strum": 0.7093,
    "evt_harp_glissando": 0.62625,
@@ -3440,6 +3495,9 @@ export const RULES = {
    "prox_7": 0.55539,
    "prox_8": 0.66413,
    "prox_9": 0.53702,
+   "step_glass_3": 0.93881,
+   "step_snow_1": 0.69793,
+   "step_snow_4": 0.64267,
    "wall": 0.80208
   },
   "lab/lab_01_cavewind#0": {
@@ -3545,6 +3603,7 @@ export const RULES = {
    "credit_beacon_battle_demo": 0.83622,
    "credit_beacon_demo": 0.70391,
    "credit_beacon_scale_demo": 0.74641,
+   "event_case_knock": 0.73722,
    "event_checkpoint": 0.49848,
    "event_cue": 0.61249,
    "event_delivered": 0.43905,
@@ -3638,6 +3697,7 @@ export const RULES = {
    "credit_beacon_battle_demo": 0.70982,
    "credit_beacon_demo": 0.57318,
    "credit_beacon_scale_demo": 0.72024,
+   "event_case_knock": 0.9222,
    "event_checkpoint": 0.49291,
    "event_cue": 0.54805,
    "event_delivered": 0.70452,
@@ -3686,6 +3746,7 @@ export const RULES = {
    "credit_beacon_battle_demo": 0.56395,
    "credit_beacon_demo": 0.69496,
    "credit_beacon_scale_demo": 0.72734,
+   "event_case_knock": 0.87066,
    "event_checkpoint": 0.65563,
    "event_cue": 0.61239,
    "event_delivered": 0.54906,
@@ -3864,6 +3925,7 @@ export const RULES = {
    "credit_beacon_battle_demo": 0.66184,
    "credit_beacon_demo": 0.75421,
    "credit_beacon_scale_demo": 0.92503,
+   "event_case_knock": 0.94333,
    "event_checkpoint": 0.49705,
    "event_cue": 0.47299,
    "event_delivered": 0.45008,
@@ -4048,6 +4110,7 @@ export const RULES = {
    "credit_beacon_battle_demo": 0.78751,
    "credit_beacon_demo": 0.69847,
    "credit_beacon_scale_demo": 0.79982,
+   "event_case_knock": 0.89172,
    "event_checkpoint": 0.59205,
    "event_cue": 0.59985,
    "event_delivered": 0.52691,
@@ -4327,6 +4390,7 @@ export const RULES = {
    "credit_beacon_battle_demo": 0.74631,
    "credit_beacon_demo": 0.70255,
    "credit_beacon_scale_demo": 0.61998,
+   "event_case_knock": 0.92616,
    "event_checkpoint": 0.44254,
    "event_cue": 0.77181,
    "event_delivered": 0.48575,
@@ -4374,6 +4438,7 @@ export const RULES = {
    "credit_beacon_battle_demo": 0.77571,
    "credit_beacon_demo": 0.62547,
    "credit_beacon_scale_demo": 0.45177,
+   "event_case_knock": 0.97707,
    "event_checkpoint": 0.54988,
    "event_cue": 0.62252,
    "event_delivered": 0.51815,
@@ -4469,6 +4534,7 @@ export const RULES = {
    "credit_beacon_battle_demo": 0.6771,
    "credit_beacon_demo": 0.94652,
    "credit_beacon_scale_demo": 0.86279,
+   "event_case_knock": 0.92981,
    "event_checkpoint": 0.49379,
    "event_cue": 0.71772,
    "event_delivered": 0.4771,
@@ -4601,6 +4667,7 @@ export const RULES = {
    "credit_beacon_battle_demo": 0.88167,
    "credit_beacon_demo": 0.83266,
    "credit_beacon_scale_demo": 0.82461,
+   "event_case_knock": 0.97784,
    "event_checkpoint": 0.69602,
    "event_cue": 0.57847,
    "event_delivered": 0.62149,
@@ -4737,6 +4804,7 @@ export const RULES = {
    "countdown_high": 0.81307,
    "credit_beacon_battle_demo": 0.49721,
    "credit_beacon_scale_demo": 0.96316,
+   "event_case_knock": 0.84974,
    "event_checkpoint": 0.66198,
    "event_cue": 0.69314,
    "event_delivered": 0.61163,
@@ -4783,6 +4851,7 @@ export const RULES = {
    "credit_beacon_battle_demo": 0.63767,
    "credit_beacon_demo": 0.99421,
    "credit_beacon_scale_demo": 0.80261,
+   "event_case_knock": 0.81329,
    "event_checkpoint": 0.57212,
    "event_cue": 0.50005,
    "event_delivered": 0.60094,
@@ -5057,6 +5126,7 @@ export const RULES = {
    "evt_dragon_roar": 0.58403,
    "evt_drawbridge": 0.55517,
    "evt_drink_slurp": 0.6973,
+   "evt_drum_hit": 0.70663,
    "evt_drum_roll": 0.61283,
    "evt_duck": 0.7395,
    "evt_egg_crack": 0.50801,
@@ -5087,6 +5157,7 @@ export const RULES = {
    "evt_ghost_whispers": 0.92726,
    "evt_giant_steps": 0.62888,
    "evt_gift_unwrap": 0.72771,
+   "evt_glass_smash": 0.79661,
    "evt_gong": 0.57192,
    "evt_guitar_strum": 0.64768,
    "evt_harp_glissando": 0.77932,
@@ -5176,6 +5247,8 @@ export const RULES = {
    "prox_7": 0.6814,
    "prox_8": 0.83853,
    "prox_9": 0.6628,
+   "step_snow_1": 0.67361,
+   "step_snow_4": 0.99266,
    "wall": 0.82603
   },
   "tower#1": {
@@ -5265,6 +5338,7 @@ export const RULES = {
    "evt_dragon_roar": 0.62649,
    "evt_drawbridge": 0.56026,
    "evt_drink_slurp": 0.7838,
+   "evt_drum_hit": 0.76452,
    "evt_drum_roll": 0.60692,
    "evt_duck": 0.68413,
    "evt_egg_crack": 0.56332,
@@ -5295,6 +5369,7 @@ export const RULES = {
    "evt_ghost_whispers": 0.87529,
    "evt_giant_steps": 0.66793,
    "evt_gift_unwrap": 0.67008,
+   "evt_glass_smash": 0.81937,
    "evt_gong": 0.86107,
    "evt_guitar_strum": 0.48792,
    "evt_harp_glissando": 0.77688,
@@ -5371,6 +5446,8 @@ export const RULES = {
    "prox_6": 0.66032,
    "prox_7": 0.72519,
    "prox_9": 0.71744,
+   "step_snow_1": 0.85801,
+   "step_snow_4": 0.89653,
    "wall": 0.81149
   },
   "tower#2": {
@@ -5459,6 +5536,7 @@ export const RULES = {
    "evt_dragon_roar": 0.67161,
    "evt_drawbridge": 0.59476,
    "evt_drink_slurp": 0.75557,
+   "evt_drum_hit": 0.61448,
    "evt_drum_roll": 0.55623,
    "evt_duck": 0.72218,
    "evt_egg_crack": 0.47244,
@@ -5487,6 +5565,7 @@ export const RULES = {
    "evt_ghost_whispers": 0.90604,
    "evt_giant_steps": 0.5095,
    "evt_gift_unwrap": 0.70648,
+   "evt_glass_smash": 0.8188,
    "evt_gong": 0.72377,
    "evt_guitar_strum": 0.76688,
    "evt_harp_glissando": 0.78111,
@@ -5567,6 +5646,8 @@ export const RULES = {
    "prox_7": 0.83161,
    "prox_8": 0.70556,
    "prox_9": 0.67018,
+   "step_snow_1": 0.64394,
+   "step_snow_4": 0.90214,
    "wall": 0.94826
   },
   "tower/tow_01_night_castle#0": {
@@ -5733,6 +5814,7 @@ export const RULES = {
    "enemy_windup_2": 0.99873,
    "enemy_windup_3": 0.98596,
    "enemy_windup_full": 0.68033,
+   "event_case_knock": 0.91406,
    "event_checkpoint": 0.65225,
    "event_cue": 0.52892,
    "event_delivered": 0.63555,
@@ -5978,6 +6060,7 @@ export const RULES = {
    "enemy_grab": 0.7063,
    "enemy_windup": 0.75654,
    "enemy_windup_full": 0.86814,
+   "event_case_knock": 0.96732,
    "event_checkpoint": 0.60576,
    "event_cue": 0.7007,
    "event_delivered": 0.64382,
@@ -6027,6 +6110,7 @@ export const RULES = {
    "enemy_grab": 0.59824,
    "enemy_windup": 0.76914,
    "enemy_windup_full": 0.6278,
+   "event_case_knock": 0.84022,
    "event_checkpoint": 0.68034,
    "event_cue": 0.59839,
    "event_delivered": 0.68097,
@@ -6130,6 +6214,7 @@ export const RULES = {
    "enemy_grab": 0.7546,
    "enemy_windup": 0.77587,
    "enemy_windup_full": 0.6087,
+   "event_case_knock": 0.92161,
    "event_checkpoint": 0.57733,
    "event_cue": 0.59704,
    "event_delivered": 0.58825,
@@ -6275,6 +6360,7 @@ export const RULES = {
    "enemy_grab": 0.55224,
    "enemy_windup": 0.77246,
    "enemy_windup_full": 0.51081,
+   "event_case_knock": 0.95975,
    "event_checkpoint": 0.87949,
    "event_cue": 0.61267,
    "event_delivered": 0.61733,
@@ -6324,6 +6410,7 @@ export const RULES = {
    "enemy_grab": 0.84654,
    "enemy_windup": 0.73064,
    "enemy_windup_full": 0.59602,
+   "event_case_knock": 0.86956,
    "event_checkpoint": 0.58188,
    "event_cue": 0.66017,
    "event_delivered": 0.57815,
@@ -6623,6 +6710,7 @@ export const RULES = {
    "enemy_windup_2": 0.88087,
    "enemy_windup_3": 0.88717,
    "enemy_windup_full": 0.60249,
+   "event_case_knock": 0.92637,
    "event_checkpoint": 0.67105,
    "event_cue": 0.59327,
    "event_delivered": 0.4991,
@@ -6916,6 +7004,7 @@ export const RULES = {
    "enemy_grab": 0.52741,
    "enemy_windup": 0.76434,
    "enemy_windup_full": 0.89736,
+   "event_case_knock": 0.92228,
    "event_checkpoint": 0.70279,
    "event_cue": 0.74389,
    "event_delivered": 0.76557,
@@ -7914,6 +8003,13 @@ export const RULES = {
    "cathedral",
    "hall"
   ],
+  "event_case_knock": [
+   "lab",
+   "tower",
+   "battle",
+   "cathedral",
+   "hall"
+  ],
   "event_checkpoint": [
    "lab",
    "tower",
@@ -8437,6 +8533,11 @@ export const RULES = {
    "tower",
    "battle"
   ],
+  "evt_car_pass": [
+   "lab",
+   "tower",
+   "battle"
+  ],
   "evt_cat": [
    "lab",
    "tower",
@@ -8582,6 +8683,11 @@ export const RULES = {
    "tower",
    "battle"
   ],
+  "evt_dog_sniffing": [
+   "lab",
+   "tower",
+   "battle"
+  ],
   "evt_dolphin": [
    "lab",
    "tower",
@@ -8608,6 +8714,11 @@ export const RULES = {
    "battle"
   ],
   "evt_drink_slurp": [
+   "lab",
+   "tower",
+   "battle"
+  ],
+  "evt_drum_hit": [
    "lab",
    "tower",
    "battle"
@@ -8788,6 +8899,11 @@ export const RULES = {
    "battle"
   ],
   "evt_gift_unwrap": [
+   "lab",
+   "tower",
+   "battle"
+  ],
+  "evt_glass_smash": [
    "lab",
    "tower",
    "battle"
@@ -9465,10 +9581,122 @@ export const RULES = {
    "cathedral",
    "hall"
   ],
+  "step_glass_1": [
+   "lab",
+   "tower",
+   "battle",
+   "cathedral",
+   "hall"
+  ],
+  "step_glass_2": [
+   "lab",
+   "tower",
+   "battle",
+   "cathedral",
+   "hall"
+  ],
+  "step_glass_3": [
+   "lab",
+   "tower",
+   "battle",
+   "cathedral",
+   "hall"
+  ],
+  "step_glass_4": [
+   "lab",
+   "tower",
+   "battle",
+   "cathedral",
+   "hall"
+  ],
+  "step_ice_1": [
+   "lab",
+   "tower",
+   "battle",
+   "cathedral",
+   "hall"
+  ],
+  "step_ice_2": [
+   "lab",
+   "tower",
+   "battle",
+   "cathedral",
+   "hall"
+  ],
+  "step_ice_3": [
+   "lab",
+   "tower",
+   "battle",
+   "cathedral",
+   "hall"
+  ],
+  "step_ice_4": [
+   "lab",
+   "tower",
+   "battle",
+   "cathedral",
+   "hall"
+  ],
+  "step_mud_1": [
+   "lab",
+   "tower",
+   "battle",
+   "cathedral",
+   "hall"
+  ],
+  "step_mud_2": [
+   "lab",
+   "tower",
+   "battle",
+   "cathedral",
+   "hall"
+  ],
+  "step_mud_3": [
+   "lab",
+   "tower",
+   "battle",
+   "cathedral",
+   "hall"
+  ],
+  "step_mud_4": [
+   "lab",
+   "tower",
+   "battle",
+   "cathedral",
+   "hall"
+  ],
   "step_sand_1": [],
   "step_sand_2": [],
   "step_sand_3": [],
   "step_sand_4": [],
+  "step_snow_1": [
+   "lab",
+   "tower",
+   "battle",
+   "cathedral",
+   "hall"
+  ],
+  "step_snow_2": [
+   "lab",
+   "tower",
+   "battle",
+   "cathedral",
+   "hall"
+  ],
+  "step_snow_3": [
+   "lab",
+   "tower",
+   "battle",
+   "cathedral",
+   "hall"
+  ],
+  "step_snow_4": [
+   "lab",
+   "tower",
+   "battle",
+   "cathedral",
+   "hall"
+  ],
   "step_stone_1": [
    "lab",
    "tower",
@@ -9491,6 +9719,34 @@ export const RULES = {
    "hall"
   ],
   "step_stone_4": [
+   "lab",
+   "tower",
+   "battle",
+   "cathedral",
+   "hall"
+  ],
+  "step_water_1": [
+   "lab",
+   "tower",
+   "battle",
+   "cathedral",
+   "hall"
+  ],
+  "step_water_2": [
+   "lab",
+   "tower",
+   "battle",
+   "cathedral",
+   "hall"
+  ],
+  "step_water_3": [
+   "lab",
+   "tower",
+   "battle",
+   "cathedral",
+   "hall"
+  ],
+  "step_water_4": [
    "lab",
    "tower",
    "battle",

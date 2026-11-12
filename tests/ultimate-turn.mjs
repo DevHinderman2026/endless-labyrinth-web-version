@@ -71,75 +71,21 @@ const startRun = async () => {
   });
   await sleep(600);
 };
-// --------------------------------------------------------------- 0. the first run after the update says, once, that turning has changed
-// (Russell, 11 November 2026: yes, once.) This page's storage is new, so the run
-// started here is the first on this device.
+// --------------------------------------------------------------- 0. nothing is announced inside the game (web 5.0.0)
+// (4.0.0 to 4.1.2 said once, at a device's first run, that turning had changed,
+// and kept you safe while it was said. Since 5.0.0 the Update History says such
+// things, and a first run begins as every run does.)
 const notice = await page.evaluate(async () => {
   const g = window.__el.game;
   const mod = await import('./js/modes/ultimate.js');
-  const { keyWords, LEFTOVER } = await import('./js/keywords.js');
-  const { NOTICE_SAFE, NOTICE_AFTER, NOTICE_LIMIT, SAFE_SECONDS } = mod;
-  const out = { NOTICE_SAFE, NOTICE_AFTER, NOTICE_LIMIT, SAFE_SECONDS, toldBefore: g.scores.settings.turnTold };
-  const frames = (seconds) => { for (let i = 0; i < Math.round(seconds * 30); i++) g.updateUltimateMode(1 / 30); };
-  const start = () => { if (g.state !== 'menu') { g._stopRunSounds(); g.runId += 1; g.state = 'menu'; g._refreshMenu(); } g.menuIndex = g.menuKeys.indexOf('ultimate'); g.input('enter'); g.ut.worldTime = 500; return g.ut; };
-  // (The voice held at "still saying it", or let go, as the test needs: a browser with no one listening ends a line when it likes.)
-  const saying = (u, on) => { g.tts.speaking = on; g.tts.current = on ? u.notice.said : ''; };
-  let u = start();
-  out.said = document.getElementById('said').textContent;
-  out.touch = mod.TURN_NOTICE + mod.TURN_NOTICE_END;
-  out.keys = keyWords(out.touch);
-  out.leftover = LEFTOVER.test(out.keys);
-  out.toldAfter = g.scores.settings.turnTold;
-  out.saved = Object.keys(localStorage).some((k) => /"turnTold":true/.test(localStorage.getItem(k)));
-  out.atStart = { safe: u.safe, notice: !!u.notice, current: !!u.notice && g.tts.current === u.notice.said };
-  // For as long as it is being said nothing can hurt you, long after the twenty seconds; and for a moment after it ends.
-  saying(u, true); frames(30);
-  out.at30 = { safe: u.safe, notice: !!u.notice };
-  saying(u, false); frames(0.1);
-  out.ended = { safe: u.safe, notice: !!u.notice };
-  frames(NOTICE_AFTER + 0.2);
-  out.later = u.safe;
-  // The next run says nothing: it has been said.
-  g.tts.speak('', { interrupt: true });
-  u = start();
-  out.second = { safe: u.safe, notice: !!u.notice, current: g.tts.current, speaking: g.tts.speaking };
-  // (As on another device, three times more.) Said quickly, the twenty seconds from its beginning still stand.
-  g.scores.settings.turnTold = false; u = start();
-  saying(u, true); frames(6); saying(u, false); frames(0.1);
-  out.quick = { safe: u.safe, notice: !!u.notice };
-  // A voice that never reports its end does not keep you safe for ever.
-  g.scores.settings.turnTold = false; u = start();
-  saying(u, true); frames(NOTICE_LIMIT + 1);
-  out.limit = { safe: u.safe, notice: !!u.notice };
-  // Cut off by the report, it is over, and is not said again.
-  g.scores.settings.turnTold = false; u = start();
-  frames(2); g.input('enter'); frames(0.1);
-  out.cut = { safe: u.safe, notice: !!u.notice, said: document.getElementById('said').textContent, told: g.scores.settings.turnTold };
-  g.tts.speak('', { interrupt: true });
+  if (g.state !== 'menu') { g._stopRunSounds(); g.runId += 1; g.state = 'menu'; g._refreshMenu(); }
+  g.menuIndex = g.menuKeys.indexOf('ultimate'); g.input('enter');
+  const out = { safe: g.ut.safe, SAFE: mod.SAFE_SECONDS, said: document.getElementById('said').textContent, has: 'TURN_NOTICE' in mod };
+  g._stopRunSounds(); g.runId += 1; g.state = 'menu'; g._refreshMenu();
   return out;
 });
-check(notice.toldBefore === false && notice.toldAfter === true && notice.saved, 'the first run on a device marks the notice as said, and saves that at once');
-// (This page plays as a touch screen does. A computer's wording is the same line
-// through keyWords, as everything the game says there is; braille.mjs hears it on
-// a Windows computer, with the notetaker's sentence.)
-check(notice.said === notice.touch && /^New in version 4: you now turn where you stand, and the whole world turns with you\. Nothing can hurt you while you hear this\. Swipe left or right for a quick turn\. Slide left or right and hold to keep turning\. Swipe up to walk the way you are facing\. The help for Ultimate Mode explains more\.$/.test(notice.said),
-  'on a touch screen it names the gestures: ' + notice.said);
-check(!notice.leftover && /Press the left or right arrow for a quick turn\. Hold the left or right arrow down to keep turning\. Press the up arrow to walk the way you are facing, or hold it down to run\. The help for Ultimate Mode explains more\.$/.test(notice.keys) && !/notetaker/.test(notice.keys),
-  'on a computer the same line is in keys, with no gesture named: ' + notice.keys);
-check(notice.atStart.notice && notice.atStart.current && notice.atStart.safe === notice.NOTICE_SAFE, `nothing can hurt you from the moment it begins: ${notice.atStart.safe} safe seconds`);
-check(notice.at30.notice && notice.at30.safe > notice.NOTICE_AFTER - 0.1 && !notice.ended.notice && notice.ended.safe > notice.NOTICE_AFTER - 0.2 && notice.later <= 0,
-  `still being said after 30 seconds, you are still safe (${notice.at30.safe.toFixed(1)}); when it ends you have ${notice.NOTICE_AFTER} seconds more, and then the run is as any other (${notice.later.toFixed(1)})`);
-check(!notice.second.notice && notice.second.safe === notice.SAFE_SECONDS && !notice.second.speaking, `the next run says nothing and begins as every run does (${notice.second.safe} safe seconds)`);
-check(!notice.quick.notice && notice.quick.safe > notice.NOTICE_SAFE - 6.3 && notice.quick.safe < notice.NOTICE_SAFE - 5.9, `said quickly, the twenty seconds from its beginning still stand (${notice.quick.safe.toFixed(1)} left after six)`);
-check(!notice.limit.notice && notice.limit.safe < notice.NOTICE_AFTER, `a voice that never reports its end keeps you safe for ${notice.NOTICE_LIMIT} seconds at most`);
-check(!notice.cut.notice && notice.cut.told && /health\./.test(notice.cut.said) && notice.cut.safe > 17 && notice.cut.safe < 18.1, `cut off by the report, the notice is over (${notice.cut.said}), and what is left of its twenty seconds still runs (${notice.cut.safe.toFixed(1)})`);
-
-// (A world with an open area, a labyrinth, an island and a tower area: made again until it has them.)
-for (let n = 0; n < 40; n++) {
-  await startRun();
-  const kinds = await page.evaluate(() => window.__el.game.ut.world.areas.map((a) => a.kind));
-  if (['battle', 'labyrinth', 'island', 'tower', 'event'].every((k) => kinds.includes(k))) break;
-}
+check(!notice.has && !/New in version/.test(notice.said) && notice.safe === notice.SAFE, `a device's first run says no notice and begins as every run does (${notice.safe} safe seconds)`);
+await startRun();
 
 // --------------------------------------------------------------- 1. the facing, and the listener that turns with it
 const facing = await page.evaluate(async () => {
@@ -297,8 +243,8 @@ const held = await page.evaluate(async () => {
   T.face(0);
   return out;
 });
-check(held.nudge > 1 && held.nudge < 6 && held.short > held.nudge && held.short < 10 && held.leftNudge > 354 && held.leftNudge < 359,
-  `a held turn begins slowly, so a short hold is a small nudge: ${held.nudge.toFixed(1)} degrees in a tenth of a second, ${held.short.toFixed(1)} in a quarter (left: ${(360 - held.leftNudge).toFixed(1)})`);
+check(held.nudge > 6 && held.nudge < 9 && held.short > held.nudge && held.short < 22 && held.leftNudge > 351 && held.leftNudge < 354,
+  `a held turn begins at 75 degrees a second (5.0.0: a short slide must turn enough to hear): ${held.nudge.toFixed(1)} degrees in a tenth of a second, ${held.short.toFixed(1)} in a quarter (left: ${(360 - held.leftNudge).toFixed(1)})`);
 check(held.second > 60 && held.second < 120 && held.two > 200 && held.two < 290, `and it gathers speed: ${held.second.toFixed(0)} degrees in one second, ${held.two.toFixed(0)} in two`);
 check(Math.abs(held.fullSpeed - held.fast) < 2 && Math.abs(held.fast - 150) < 1e-6, `at full speed it turns ${held.fullSpeed.toFixed(0)} degrees a second: a full circle in ${(360 / held.fullSpeed).toFixed(1)} seconds`);
 check(held.stays && held.stoppedAt > 5 && held.stoppedAt % 90 !== 0, `let go, you stop exactly there and stay there, between the main directions if that is where you are (${held.stoppedAt.toFixed(1)} degrees)`);
@@ -310,7 +256,7 @@ check(held.briefPlain.mid > 11 && held.briefPlain.end === 30 && held.briefPlain.
   && held.briefOverLeft.mid > 350 && held.briefOverLeft.end === 0 && held.briefOverLeft.ticks.join() === 'ut_tick_north'
   && held.briefOverStep.mid > 30 && held.briefOverStep.end === 30 && held.briefOverStep.ticks.join() === 'ut_click',
   `a hold let go at once with a swipe after it is that swipe, counted from where the hold began: from 10 degrees to ${held.briefPlain.end}; from 87, carried to ${held.briefOver.mid.toFixed(1)}, back to ${held.briefOver.end} with one tick; from 3 turning left, carried to ${held.briefOverLeft.mid.toFixed(1)}, back to ${held.briefOverLeft.end}; from 28, carried to ${held.briefOverStep.mid.toFixed(1)}, back to ${held.briefOverStep.end} with one click`);
-check(held.laterSwipe === 120 && held.longThenSwipe[0] > 95 && held.longThenSwipe[0] < 120 && held.longThenSwipe[1] === 120,
+check(held.laterSwipe === 120 && held.longThenSwipe[0] > 125 && held.longThenSwipe[0] < 150 && held.longThenSwipe[1] === 150,
   `a swipe that comes later, or after a real hold, counts from where you are: ${held.laterSwipe}; ${held.longThenSwipe[0].toFixed(0)} then ${held.longThenSwipe[1]}`);
 check(held.onTop.face === 30 && held.onTop.free && held.quickAfterHeld % 30 === 0, `a hold on top of a quick turn lets that one land first (${held.onTop.face}), and a swipe ends a hold by taking you onto a step (${held.quickAfterHeld})`);
 
@@ -810,7 +756,7 @@ check(snaps[0].log.join() === 'turn_left_start,turn_end,left' && snaps[0].face =
 // Held a little longer, it is a hold: a small nudge, stopped where it is.
 await reset();
 snaps = await gesture([[0, 'touchstart', 200, 400], [15, 'touchmove', 232, 400], [15, 'touchmove', 262, 400], [420, 'touchend', 262, 400], [300, 'snap']]);
-check(snaps[0].log.join() === 'turn_right_start,turn_end' && snaps[0].face > 4 && snaps[0].face < 20 && snaps[0].turn === null, `held for a third of a second it is a nudge, not a swipe (${snaps[0].face.toFixed(1)} degrees)`);
+check(snaps[0].log.join() === 'turn_right_start,turn_end' && snaps[0].face > 15 && snaps[0].face < 30 && snaps[0].turn === null, `held for a third of a second it is a held turn, stopped where it is (${snaps[0].face.toFixed(1)} degrees)`);
 
 // A second finger while you turn does nothing; the turn ends when its own finger lifts.
 await reset();
@@ -932,17 +878,20 @@ await sleep(400);
 const resumed = await state();
 check(resumed.face === pausedFace && resumed.turn === null, 'a turn held into a pause does not carry on when the game resumes');
 
-// --------------------------------------------------------------- 13. every other mode is as it was
+// --------------------------------------------------------------- 13. the other walking modes turn too (web 5.0.0)
 await page.evaluate(() => { const g = window.__el.game; g._stopRunSounds(); g.runId += 1; g.state = 'menu'; g._refreshMenu(); g.startGame('standard'); g.grid = new Set(); g.gridSize = 60; g.exitPos = [55, 55]; g.playerPos = [30, 30]; g.timeLeft = 999; window.__t.log.length = 0; });
 await sleep(300);
 snaps = await gesture([[0, 'touchstart', 200, 400], [15, 'touchmove', 265, 400], [0, 'snap'], [300, 'touchend', 265, 400], [50, 'snap']]);
 const stdHold = await page.evaluate(() => window.__el.game.gestures.turnHold);
-check(snaps[0].log.join() === 'right' && snaps[0].pos[0] === 31 && snaps[1].log.join() === 'right' && stdHold === false, 'in Standard Mode a swipe right is taken at once, as the finger slides, and steps right as it always did, held or not: ' + JSON.stringify(snaps[1]));
+await sleep(400);     // (the quick turn lands)
+const stdFace = await page.evaluate(() => Math.round(window.__el.game.tn.face * 180 / Math.PI));
+check(snaps[0].log.length === 0 && snaps[0].pos[0] === 30 && snaps[1].log.join() === 'turn_right_start,turn_end,right' && snaps[1].pos[0] === 30 && stdHold === true && stdFace === 30,
+  `in Standard Mode a slide right turns you where you stand, as in Ultimate Mode (5.0.0): ${snaps[1].log.join(', ')}; facing ${stdFace}`);
 await page.evaluate(() => { window.__t.log.length = 0; });
 await page.keyboard.down('ArrowUp'); await sleep(700); await page.keyboard.up('ArrowUp');
 await page.keyboard.down('ArrowLeft'); await sleep(500); await page.keyboard.up('ArrowLeft');
 const stdKeys = await page.evaluate(() => window.__t.log.map(([x]) => x));
-check(stdKeys.join() === 'up,left', 'and its arrow keys are one step a press, however long they are held: ' + stdKeys.join(', '));
+check(stdKeys[0] === 'run_start' && stdKeys.includes('stride_end') && stdKeys.slice(-2).join() === 'turn_left_start,turn_end', 'and its held arrows run and turn (5.0.0): ' + stdKeys.join(', '));
 
 // --------------------------------------------------------------- 14. the sound itself: rendered by the browser's engine and measured in each ear
 // Everything above checks where the game points the listener. This renders real

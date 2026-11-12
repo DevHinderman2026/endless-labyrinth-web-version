@@ -61,7 +61,7 @@ const menu = await page.evaluate((nameSrc) => {
   const g = window.__el.game;
   return { menu: g.menuOptions.slice(), keys: g.menuKeys.slice(), said: document.getElementById('said').textContent, name: document.getElementById('console').getAttribute('aria-label'), focused: document.activeElement.id };
 });
-check(menu.keys.join() === 'ultimate,scores,speech,keytest,rate,leave' && menu.menu.includes('Speech: On') && menu.menu.includes('Braille Key Test') && !menu.menu.some((m) => /Braille Keyboard/.test(m)), 'the Windows menu: Speech and the Braille Key Test, no Braille Keyboard setting: ' + menu.menu.join(' | '));
+check(menu.keys.join() === 'standard,battle,drive,tower,island,chaos,ultimate,events,event_score,scores,speech,keytest,rate,leave' && menu.menu.includes('Speech: On') && menu.menu.includes('Braille Key Test') && !menu.menu.some((m) => /Braille Keyboard/.test(m)), 'the Windows menu: Speech and the Braille Key Test, no Braille Keyboard setting: ' + menu.menu.join(' | '));
 check(menu.name === menu.said && /Welcome to Endless Labyrinth/.test(menu.name) && !/Braille device/.test(menu.name) && menu.focused === 'console', 'the welcome is the game area\'s name (on the display), with no detection announcement, and the focus stays there');
 
 // --------------------------------------------------------------- helpers
@@ -179,15 +179,13 @@ check((await page.evaluate(() => window.__el.game.state)) === 'menu' && spoken.s
 // the way of what follows.)
 const told = await page.evaluate(() => {
   const g = window.__el.game;
-  const before = g.scores.settings.turnTold;
   g.menuIndex = g.menuKeys.indexOf('ultimate'); g.input('enter');
-  const out = { before, after: g.scores.settings.turnTold, said: document.getElementById('said').textContent, safe: g.ut.safe, notice: !!g.ut.notice };
-  g.tts.speak('', { interrupt: true }); g.ut.notice = null; g.ut.safe = 5;
+  const out = { said: document.getElementById('said').textContent, safe: g.ut.safe };
+  g.tts.speak('', { interrupt: true }); g.ut.safe = 5;
   return out;
 });
-check(told.before === false && told.after === true && told.notice && told.safe >= 20
-  && /^New in version 4: you now turn where you stand, and the whole world turns with you\. Nothing can hurt you while you hear this\. Press the left or right arrow for a quick turn\. Hold the left or right arrow down to keep turning\. Press the up arrow to walk the way you are facing, or hold it down to run\. On a Braille notetaker, each press is one quick turn or one step\. The help for Ultimate Mode explains more\.$/.test(told.said),
-  'the first run on a Windows computer says once that turning has changed, in keys, with the notetaker\'s sentence: ' + told.said);
+// (Web 5.0.0: no notice is said inside the game any more.)
+check(!/New in version/.test(told.said) && told.safe < 20, 'the first run on a Windows computer says no notice (5.0.0): ' + told.said);
 await sleep(800);
 await page.evaluate(() => window.__typeCodeless('can'));
 await sleep(300);

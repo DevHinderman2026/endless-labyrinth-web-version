@@ -8,9 +8,9 @@
   <link rel="icon" href="icons/icon-192.png">
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
   <meta name="theme-color" content="#0c0f14">
-  <link rel="stylesheet" href="css/site.css?v=4.1.2">
+  <link rel="stylesheet" href="css/site.css?v=5.0.0">
 </head>
-<body>
+<body data-update-alert="history">
   <header class="site">
     <h1>Update History</h1>
     <p>What each version of the web version of Endless Labyrinth brought.</p>
@@ -19,6 +19,73 @@
   <main class="page">
     <p>This page lists the web version. For the Windows version, see its <a href="https://github.com/DevHinderman2026/Endless-Labyrinth/blob/main/Credits%20and%20Version%20History/CHANGELOG.md">changelog</a> on GitHub.</p>
     <p>The game updates by itself: the next time you open it, you have the latest version. Only a sound pack that has changed is downloaded again, and your high scores are kept. Events are not listed here: they appear in the Events menu as they open.</p>
+
+    <h2>5.0.0 (12 November 2026)</h2>
+    <p>The whole web game is now heard in binaural 3D sound, and its walking modes turn with you. Until now only Ultimate Mode did either. Standard, Battle, Tower, Island and the walking levels of Chaos now turn exactly as Ultimate Mode does, and several of their numbers have changed to allow for it. Ultimate Mode's glass cases and seabed have grown. Windows computers can now play the whole game on the website. And the events gain everything Windows version 3.0.0 brought: building blocks for rooms, creatures and goals, and thirty-two new kinds of mission.</p>
+    <p>The Windows version and this web version are developed side by side. Compatibility between them, the events included, will be maintained to the highest extent that both can allow. The Windows version stays in stereo, with north always ahead.</p>
+    <h3>New: binaural 3D sound in every mode</h3>
+    <ul>
+      <li>Every enemy, beacon, item, credit, wall and explosion is now placed by the browser's own 3D sound, in front of you, behind you or to one side, as Ultimate Mode's sounds have been since 2.0.0. Wear headphones.</li>
+      <li>This is in every mode: Standard, Battle, Driving, Tower, Island, Chaos and the events. Distance is still loudness, and a thing behind you still sounds duller as well.</li>
+    </ul>
+    <h3>New: the walking modes turn with you</h3>
+    <ul>
+      <li><strong>Which modes:</strong> Standard, Battle, Tower, Island and the walking levels of Chaos, as well as Ultimate Mode. You turn where you stand, the whole world turns round you, the background included, and you walk the way you face.</li>
+      <li><strong>Which do not:</strong> Driving, a road in Chaos, an elevator ride and all the events. There north is always ahead and the controls are as they were. The events stay that way so that they play the same on the website and in the Windows version.</li>
+      <li><strong>On a touch screen:</strong> flick left or right for a quick turn of 30 degrees. Slide left or right and keep your finger down to keep turning; lift to stop exactly there. Swipe up to step the way you face, and down to step straight back. Slide up and hold to run, as before.</li>
+      <li><strong>On a keyboard:</strong> press the left or right arrow for a quick turn, or hold it down to keep turning. Press the up or down arrow to step, or hold it to run or walk backwards. On a Braille notetaker, each press is one quick turn or one step.</li>
+      <li><strong>A flick and a slide are now told apart by one thing only:</strong> how soon your finger lifts. A finger that lifts at once is a flick. A finger that stays down is a slide, whether it keeps moving or rests. Until now a slide that kept moving could be taken for a swipe, so turns sometimes went missing or were too small to hear. A held turn also begins faster than it did. This applies to Ultimate Mode too.</li>
+      <li><strong>Ticks:</strong> as you turn, a soft tick marks east, south and west, a higher tick marks north, and a quick turn that lands between two of them gives a softer click.</li>
+      <li><strong>The report:</strong> a double tap, or Enter, now ends with the way you are facing, such as Facing north-east.</li>
+      <li><strong>Walls and edges:</strong> walked straight into, a wall or an arena's edge stops you with its sound, as before. Met at a slant, you slide along it in silence.</li>
+      <li><strong>Aiming:</strong> in Battle, on a tower floor and on an island, a shot or a throw takes what is centred straight ahead of you or directly behind you, by the way you face. Enemies in Battle and on islands now come from any side.</li>
+    </ul>
+    <h3>Changed: Standard Mode</h3>
+    <ul>
+      <li>You start with 60 seconds (it was 45).</li>
+      <li>Time credits are worth 20, 30 or 40 seconds (they were 15, 20 and 30).</li>
+    </ul>
+    <h3>Changed: Battle Mode</h3>
+    <ul>
+      <li>You start with 80 seconds (it was 60).</li>
+      <li>Enemies come in turns, never all at once. In waves 1 to 3 one at a time: the next appears only after you shoot the one before. In waves 4 to 6 two may be after you at once, in waves 7 to 9 three, and from wave 10 four, which is the most there will ever be (it was up to eight).</li>
+      <li>During a wave the clock waits whenever no enemy is after you, and runs again the moment the next one appears. During a wave break it runs as it always did.</li>
+      <li>The first wave has six enemies, and no wave has fewer.</li>
+      <li>Time credits are worth 15, 25 or 35 seconds (they were 10, 15 and 20); the 35 is the rarest. Each wave break has between three and six of them, and once you have taken them no more come until the next break.</li>
+      <li>Wave breaks begin at 52 seconds (it was 45) and shrink by a second a wave to 25 (it was 30).</li>
+    </ul>
+    <h3>Changed: Tower, Island and Chaos</h3>
+    <ul>
+      <li><strong>Tower:</strong> the rival is a fifth slower, since you now turn to find the item.</li>
+      <li><strong>Island:</strong> every dive now has an air vent on the seabed, and ten seconds after you take one, another appears somewhere else. Until now about half of all dives had one. Your air is still thirty seconds.</li>
+      <li><strong>Chaos:</strong> its walking levels have all of the above. In its battles, how many enemies may be after you at once grows with the battles you have played in that run: one in the first three, then two, then three, then four. Its five minutes and its credits are unchanged.</li>
+    </ul>
+    <h3>Changed: Ultimate Mode</h3>
+    <ul>
+      <li><strong>Glass cases knock.</strong> The ping added in 4.1.1 is replaced by a knock: two quick raps on glass, from where the case stands, within fifteen steps of it, faster and louder as you close. Turn until the knock is centred between your ears. The crystal hum is still there underneath and leads you in from further off.</li>
+      <li><strong>The bell now means you are lined up:</strong> beside the case and facing it. Then your attack smashes it.</li>
+      <li><strong>Time to line up:</strong> within three steps of a case that is not yet broken, no enemy can hit you, for up to fifteen seconds in all at that case.</li>
+      <li>A case's time reward is 60 seconds (it was 30).</li>
+      <li><strong>A bigger seabed,</strong> as big as Island Mode's: twelve steps from the elevator to its edge, with two or three cartridges on it.</li>
+      <li><strong>Treasure chests.</strong> About one seabed in three has a chest, far from the elevator. Swim onto it and it opens: two or three things at once out of shots, points, health, a bundle of tower items and, rarely, ninety more seconds for the world above. The voice says only what was inside.</li>
+      <li>The one-time notice about turning, said at the first run since 4.0.0, is gone. Nothing is announced inside the game any more; this page says it instead.</li>
+    </ul>
+    <h3>Changed: Windows computers</h3>
+    <ul>
+      <li>A Windows computer now plays every mode and the events on the website, with the keyboard, and with a Braille display and Braille keyboard through NVDA or JAWS. Until now it played Ultimate Mode only. The Windows version remains available to download.</li>
+    </ul>
+    <h3>New: events from Windows version 3.0.0</h3>
+    <ul>
+      <li>Events can now be built from general building blocks: a main floor with patches of a second one, walled rooms, glass and display cases, up to three kinds of creature, a listening creature that wakes when it hears you, traps, safe spots, teleports and chests, a meter such as air or warmth, levels, stages, and spoken story lines.</li>
+      <li>Thirty-two new kinds of mission, among them finding memories by their musical fragments, smashing cases against a clock, crossing glass floors without waking anything, and reaching shelter before a storm.</li>
+      <li>An event made with any of these needs web version 5.0.0 or Windows version 3.0.0. Events made the earlier way play as before.</li>
+    </ul>
+    <h3>The website</h3>
+    <ul>
+      <li>The Help page's frequently asked questions have six new questions about turning.</li>
+      <li>For thirty days this page opens with an alert that says what has changed in the controls. It is a region named Alert at the top of the page, like the home page's, and it never interrupts what you are reading.</li>
+      <li>The home page, About, Help, the Accessibility pages and the Terms describe the game as it now is.</li>
+    </ul>
 
     <h2>4.1.2 (11 November 2026), web only</h2>
     <p>Two corrections to Ultimate Mode after playing 4.1.1. Web only: the Windows game is unchanged.</p>
@@ -323,51 +390,57 @@
   <script type="importmap">
   {
     "imports": {
-      "./js/accessibility.js": "./js/accessibility.js?v=4.1.2",
-      "./js/audio.js": "./js/audio.js?v=4.1.2",
-      "./js/backup.js": "./js/backup.js?v=4.1.2",
-      "./js/backups-page.js": "./js/backups-page.js?v=4.1.2",
-      "./js/braille.js": "./js/braille.js?v=4.1.2",
-      "./js/calendar.js": "./js/calendar.js?v=4.1.2",
-      "./js/device.js": "./js/device.js?v=4.1.2",
-      "./js/display.js": "./js/display.js?v=4.1.2",
-      "./js/game.js": "./js/game.js?v=4.1.2",
-      "./js/gestures.js": "./js/gestures.js?v=4.1.2",
-      "./js/help-data.js": "./js/help-data.js?v=4.1.2",
-      "./js/help-page.js": "./js/help-page.js?v=4.1.2",
-      "./js/keywords.js": "./js/keywords.js?v=4.1.2",
-      "./js/main.js": "./js/main.js?v=4.1.2",
-      "./js/modes/chaos.js": "./js/modes/chaos.js?v=4.1.2",
-      "./js/modes/driving.js": "./js/modes/driving.js?v=4.1.2",
-      "./js/modes/events/engine.js": "./js/modes/events/engine.js?v=4.1.2",
-      "./js/modes/events/feed.js": "./js/modes/events/feed.js?v=4.1.2",
-      "./js/modes/events/help.js": "./js/modes/events/help.js?v=4.1.2",
-      "./js/modes/events/missions.js": "./js/modes/events/missions.js?v=4.1.2",
-      "./js/modes/events/py.js": "./js/modes/events/py.js?v=4.1.2",
-      "./js/modes/events/schema.js": "./js/modes/events/schema.js?v=4.1.2",
-      "./js/modes/events/sign.js": "./js/modes/events/sign.js?v=4.1.2",
-      "./js/modes/events/sounds.js": "./js/modes/events/sounds.js?v=4.1.2",
-      "./js/modes/events/wording.js": "./js/modes/events/wording.js?v=4.1.2",
-      "./js/modes/events.js": "./js/modes/events.js?v=4.1.2",
-      "./js/modes/index.js": "./js/modes/index.js?v=4.1.2",
-      "./js/modes/island.js": "./js/modes/island.js?v=4.1.2",
-      "./js/modes/tower.js": "./js/modes/tower.js?v=4.1.2",
-      "./js/modes/ultimate/help.js": "./js/modes/ultimate/help.js?v=4.1.2",
-      "./js/modes/ultimate/world.js": "./js/modes/ultimate/world.js?v=4.1.2",
-      "./js/modes/ultimate.js": "./js/modes/ultimate.js?v=4.1.2",
-      "./js/packs.js": "./js/packs.js?v=4.1.2",
-      "./js/site.js": "./js/site.js?v=4.1.2",
-      "./js/sound-rules.js": "./js/sound-rules.js?v=4.1.2",
-      "./js/speech.js": "./js/speech.js?v=4.1.2",
-      "./js/stats.js": "./js/stats.js?v=4.1.2",
-      "./js/storage.js": "./js/storage.js?v=4.1.2",
-      "./js/update-alert.js": "./js/update-alert.js?v=4.1.2",
-      "./js/version.js": "./js/version.js?v=4.1.2",
-      "./js/wetworker.js": "./js/wetworker.js?v=4.1.2"
+      "./js/accessibility.js": "./js/accessibility.js?v=5.0.0",
+      "./js/audio.js": "./js/audio.js?v=5.0.0",
+      "./js/backup.js": "./js/backup.js?v=5.0.0",
+      "./js/backups-page.js": "./js/backups-page.js?v=5.0.0",
+      "./js/braille.js": "./js/braille.js?v=5.0.0",
+      "./js/calendar.js": "./js/calendar.js?v=5.0.0",
+      "./js/device.js": "./js/device.js?v=5.0.0",
+      "./js/display.js": "./js/display.js?v=5.0.0",
+      "./js/game.js": "./js/game.js?v=5.0.0",
+      "./js/gestures.js": "./js/gestures.js?v=5.0.0",
+      "./js/help-data.js": "./js/help-data.js?v=5.0.0",
+      "./js/help-page.js": "./js/help-page.js?v=5.0.0",
+      "./js/keywords.js": "./js/keywords.js?v=5.0.0",
+      "./js/main.js": "./js/main.js?v=5.0.0",
+      "./js/modes/chaos.js": "./js/modes/chaos.js?v=5.0.0",
+      "./js/modes/driving.js": "./js/modes/driving.js?v=5.0.0",
+      "./js/modes/events/blocks.js": "./js/modes/events/blocks.js?v=5.0.0",
+      "./js/modes/events/engine.js": "./js/modes/events/engine.js?v=5.0.0",
+      "./js/modes/events/feed.js": "./js/modes/events/feed.js?v=5.0.0",
+      "./js/modes/events/help.js": "./js/modes/events/help.js?v=5.0.0",
+      "./js/modes/events/missions.js": "./js/modes/events/missions.js?v=5.0.0",
+      "./js/modes/events/more-spec.js": "./js/modes/events/more-spec.js?v=5.0.0",
+      "./js/modes/events/more.js": "./js/modes/events/more.js?v=5.0.0",
+      "./js/modes/events/py.js": "./js/modes/events/py.js?v=5.0.0",
+      "./js/modes/events/schema.js": "./js/modes/events/schema.js?v=5.0.0",
+      "./js/modes/events/sign.js": "./js/modes/events/sign.js?v=5.0.0",
+      "./js/modes/events/sounds.js": "./js/modes/events/sounds.js?v=5.0.0",
+      "./js/modes/events/tunes.js": "./js/modes/events/tunes.js?v=5.0.0",
+      "./js/modes/events/wording.js": "./js/modes/events/wording.js?v=5.0.0",
+      "./js/modes/events.js": "./js/modes/events.js?v=5.0.0",
+      "./js/modes/index.js": "./js/modes/index.js?v=5.0.0",
+      "./js/modes/island.js": "./js/modes/island.js?v=5.0.0",
+      "./js/modes/tower.js": "./js/modes/tower.js?v=5.0.0",
+      "./js/modes/ultimate/help.js": "./js/modes/ultimate/help.js?v=5.0.0",
+      "./js/modes/ultimate/world.js": "./js/modes/ultimate/world.js?v=5.0.0",
+      "./js/modes/ultimate.js": "./js/modes/ultimate.js?v=5.0.0",
+      "./js/packs.js": "./js/packs.js?v=5.0.0",
+      "./js/site.js": "./js/site.js?v=5.0.0",
+      "./js/sound-rules.js": "./js/sound-rules.js?v=5.0.0",
+      "./js/speech.js": "./js/speech.js?v=5.0.0",
+      "./js/stats.js": "./js/stats.js?v=5.0.0",
+      "./js/storage.js": "./js/storage.js?v=5.0.0",
+      "./js/turning.js": "./js/turning.js?v=5.0.0",
+      "./js/update-alert.js": "./js/update-alert.js?v=5.0.0",
+      "./js/version.js": "./js/version.js?v=5.0.0",
+      "./js/wetworker.js": "./js/wetworker.js?v=5.0.0"
     }
   }
   </script>
   <!-- end of versions -->
-  <script type="module" src="js/site.js?v=4.1.2"></script>
+  <script type="module" src="js/site.js?v=5.0.0"></script>
+  <script type="module" src="js/update-alert.js?v=5.0.0"></script>
 </body>
 </html>

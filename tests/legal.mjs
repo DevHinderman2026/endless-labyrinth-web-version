@@ -77,7 +77,7 @@ for (const [pg, title, must] of [
   ['privacy.html', 'Privacy Policy', [/collects no personal data/, /only when you tap one of their buttons/, /GitHub Pages/, /IP address/, /sends nothing about you during play/,
     /covers the website, the game it plays, and the Windows version/, /players folder, on your own computer/, /newer version of the game has been released/, /only if a sound in its sounds folder is missing or damaged/, /NV Access/,
     /when you choose Check for Updates and confirm the update by pressing Y/, /contains no automatic update facility/, /players folder, containing your Save Data, is not read, transmitted or altered by an update/, /trading as DevHinderman2026/]],
-  ['accessibility-statement.html', 'Accessibility Statement', [/VoiceOver on an iPhone, iPad or Mac, TalkBack on Android, ChromeVox on a Chromebook, and Orca on Linux/, /turn your screen reader off while you play/, /Windows computers are pointed/, /Chrome, Edge and Safari/, /high contrast and bigger text/,
+  ['accessibility-statement.html', 'Accessibility Statement', [/VoiceOver on an iPhone, iPad or Mac, TalkBack on Android, ChromeVox on a Chromebook, and Orca on Linux/, /turn your screen reader off while you play/, /remains available to Windows computers as a download/, /Chrome, Edge and Safari/, /high contrast and bigger text/,
     /NVDA and JAWS/, /Check for Updates/, /region named Alert/]],
 ]) {
   await page.goto(base + '/' + pg);

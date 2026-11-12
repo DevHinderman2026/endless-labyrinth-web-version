@@ -17,7 +17,7 @@ const DEVICES = {
   Chromebook: [{ userAgent: 'Mozilla/5.0 (X11; CrOS x86_64 14541.0.0) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36' }, /^You are on a Chromebook\. ChromeVox reads this website.*Control Alt Z/, 'chromebook', /turn ChromeVox off/],
   Mac: [{ userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.4 Safari/605.1.15', viewport: { width: 1440, height: 900 } }, /^You are on a Mac\. VoiceOver reads this website.*Command F5/, 'mac', /turn VoiceOver off/],
   Linux: [{ userAgent: 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36' }, /^You are on a computer\. Orca reads this website.*Super Alt S/, 'linux', /turn Orca off/],
-  Windows: [{ userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36' }, /^You are on a Windows computer\..*plays Ultimate Mode here/, 'windows', /Windows version/],
+  Windows: [{ userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36' }, /^You are on a Windows computer\..*The whole game plays here/, 'windows', /Windows version/],
 };
 for (const [name, [opts, advice, guide, off]] of Object.entries(DEVICES)) {
   const ctx = await browser.newContext(opts);

@@ -9,7 +9,7 @@
   <link rel="icon" href="icons/icon-192.png">
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
   <meta name="theme-color" content="#0c0f14">
-  <link rel="stylesheet" href="css/site.css?v=4.1.2">
+  <link rel="stylesheet" href="css/site.css?v=5.0.0">
 </head>
 <body>
   <header class="site">
@@ -85,11 +85,11 @@
     <h2 id="web">Phones, tablets and computers</h2>
     <p>On 2 November I wanted to play Endless Labyrinth on my phone. I designed the touch controls myself: swipes are the arrow keys, a double tap is Enter, a two-finger tap is the attack, and in driving you slide a finger up and hold it to accelerate. The game speaks with your phone's own voice while the screen reader is off.</p>
     <p>The first web version had only Standard and Battle. I tested them on my phone, they worked well, and the same day I decided to bring over everything: all six modes and the events. Every mode was converted from the Windows code line by line and checked against it in two rounds of review, with the same rules, timings and sounds.</p>
-    <p>Playing on a real iPhone found what reviews could not. In Chaos, the sound could disappear a few levels into a run, so the way the game builds its room echoes was rebuilt to suit iPhones; that was version 1.0.2. With 1.0.3 the web version also plays on Chromebooks, Macs and Linux computers, with the keyboard. Windows players keep the full Windows version, and since web 2.0.0 a Windows computer can also open the website for Ultimate Mode, the one mode the Windows game does not have. Every web version is listed in the <a href="history.html">Update History</a>, and <a href="about.html">About and how to play</a> explains every mode, gesture and key.</p>
+    <p>Playing on a real iPhone found what reviews could not. In Chaos, the sound could disappear a few levels into a run, so the way the game builds its room echoes was rebuilt to suit iPhones; that was version 1.0.2. With 1.0.3 the web version also plays on Chromebooks, Macs and Linux computers, with the keyboard. Windows players keep the full Windows version, and since web 5.0.0 a Windows computer can also play the whole game on the website. Every web version is listed in the <a href="history.html">Update History</a>, and <a href="about.html">About and how to play</a> explains every mode, gesture and key.</p>
 
     <h2 id="ultimate">Ultimate Mode</h2>
     <p>By November the web version had everything the Windows game had, and I had an idea that could only be done on the web: a mode harder than Chaos. Chaos tests whether you can switch between modes. I wanted a mode where every environment is mixed. Not completing a task and then going to another mode, but one huge environment that you have to navigate and try to make it through: ammo scattered around in certain places and enemies to shoot, labyrinths to find your way out of, islands to walk on with the sounds fading in as you get close, enemies that throw things at you. All of it at once, and the test is survival, not speed. No driving, because a car has nothing to do in a place you walk through. I called it Ultimate Mode, and I kept the name after considering others, because it tells you exactly what it is.</p>
-    <p>The web made it possible because a browser has true binaural 3D sound built in. With headphones it can place a sound in front of you, behind you, or below you, not only left and right. The rest of the game stays in stereo, matching Windows, but a world this big needed the 3D, and the elevator down to an island's seabed is where you hear it best: the water rises from beneath you. Every area of the world has its own echo, sized to the area, and crossing a border blends from one to the next.</p>
+    <p>The web made it possible because a browser has true binaural 3D sound built in. With headphones it can place a sound in front of you, behind you, or below you, not only left and right. At first the rest of the game stayed in stereo, matching Windows, but a world this big needed the 3D, and the elevator down to an island's seabed is where you hear it best: the water rises from beneath you. Every area of the world has its own echo, sized to the area, and crossing a border blends from one to the next.</p>
     <p>The world regenerates. At a random moment, one to four minutes in and with nothing but a five-second countdown to warn you, the whole thing is torn down and built again at random, and you have to find your bearings again by ear, with the ammo and health you had. I wanted that because finding out where you are is the heart of this game, and a world you could learn would stop testing it. The safe zones sound like the places from the Windows game's events, which I think are an important part of making the worlds sound real; the compass, which you turn on by holding a finger still, points the walkable route to the nearest one. I designed all of this in a conversation with Claude on 8 November 2026, question by question, and we wrote it into a plan before any code was touched; then Claude's Fable model built it from that plan as web version 2.0.0, testing it in a browser as it went, and committed it on my laptop for me to publish. It is the first mode made only for the web, it will not come to Windows, and it is the one mode a Windows computer can play on the website.</p>
 
     <h2 id="how">How I make the game</h2>
@@ -141,6 +141,7 @@
       <dt>4 to 6 November 2026</dt><dd>The website grows (web 1.1.0 to 1.3.0); the difficulty overhaul, Windows 2.0.0 and web 1.4.0.</dd>
       <dt>8 November 2026</dt><dd>Ultimate Mode designed and built: web version 2.0.0, web only.</dd>
       <dt>11 November 2026</dt><dd>Ultimate Mode turns with you: web version 4.0.0, web only.</dd>
+      <dt>12 November 2026</dt><dd>Windows version 3.0.0, with a far bigger event system. Web version 5.0.0: the whole web game in binaural 3D, and every walking mode turns with you.</dd>
     </dl>
 
     <h2 id="sources">Sources</h2>
@@ -159,51 +160,56 @@
   <script type="importmap">
   {
     "imports": {
-      "./js/accessibility.js": "./js/accessibility.js?v=4.1.2",
-      "./js/audio.js": "./js/audio.js?v=4.1.2",
-      "./js/backup.js": "./js/backup.js?v=4.1.2",
-      "./js/backups-page.js": "./js/backups-page.js?v=4.1.2",
-      "./js/braille.js": "./js/braille.js?v=4.1.2",
-      "./js/calendar.js": "./js/calendar.js?v=4.1.2",
-      "./js/device.js": "./js/device.js?v=4.1.2",
-      "./js/display.js": "./js/display.js?v=4.1.2",
-      "./js/game.js": "./js/game.js?v=4.1.2",
-      "./js/gestures.js": "./js/gestures.js?v=4.1.2",
-      "./js/help-data.js": "./js/help-data.js?v=4.1.2",
-      "./js/help-page.js": "./js/help-page.js?v=4.1.2",
-      "./js/keywords.js": "./js/keywords.js?v=4.1.2",
-      "./js/main.js": "./js/main.js?v=4.1.2",
-      "./js/modes/chaos.js": "./js/modes/chaos.js?v=4.1.2",
-      "./js/modes/driving.js": "./js/modes/driving.js?v=4.1.2",
-      "./js/modes/events/engine.js": "./js/modes/events/engine.js?v=4.1.2",
-      "./js/modes/events/feed.js": "./js/modes/events/feed.js?v=4.1.2",
-      "./js/modes/events/help.js": "./js/modes/events/help.js?v=4.1.2",
-      "./js/modes/events/missions.js": "./js/modes/events/missions.js?v=4.1.2",
-      "./js/modes/events/py.js": "./js/modes/events/py.js?v=4.1.2",
-      "./js/modes/events/schema.js": "./js/modes/events/schema.js?v=4.1.2",
-      "./js/modes/events/sign.js": "./js/modes/events/sign.js?v=4.1.2",
-      "./js/modes/events/sounds.js": "./js/modes/events/sounds.js?v=4.1.2",
-      "./js/modes/events/wording.js": "./js/modes/events/wording.js?v=4.1.2",
-      "./js/modes/events.js": "./js/modes/events.js?v=4.1.2",
-      "./js/modes/index.js": "./js/modes/index.js?v=4.1.2",
-      "./js/modes/island.js": "./js/modes/island.js?v=4.1.2",
-      "./js/modes/tower.js": "./js/modes/tower.js?v=4.1.2",
-      "./js/modes/ultimate/help.js": "./js/modes/ultimate/help.js?v=4.1.2",
-      "./js/modes/ultimate/world.js": "./js/modes/ultimate/world.js?v=4.1.2",
-      "./js/modes/ultimate.js": "./js/modes/ultimate.js?v=4.1.2",
-      "./js/packs.js": "./js/packs.js?v=4.1.2",
-      "./js/site.js": "./js/site.js?v=4.1.2",
-      "./js/sound-rules.js": "./js/sound-rules.js?v=4.1.2",
-      "./js/speech.js": "./js/speech.js?v=4.1.2",
-      "./js/stats.js": "./js/stats.js?v=4.1.2",
-      "./js/storage.js": "./js/storage.js?v=4.1.2",
-      "./js/update-alert.js": "./js/update-alert.js?v=4.1.2",
-      "./js/version.js": "./js/version.js?v=4.1.2",
-      "./js/wetworker.js": "./js/wetworker.js?v=4.1.2"
+      "./js/accessibility.js": "./js/accessibility.js?v=5.0.0",
+      "./js/audio.js": "./js/audio.js?v=5.0.0",
+      "./js/backup.js": "./js/backup.js?v=5.0.0",
+      "./js/backups-page.js": "./js/backups-page.js?v=5.0.0",
+      "./js/braille.js": "./js/braille.js?v=5.0.0",
+      "./js/calendar.js": "./js/calendar.js?v=5.0.0",
+      "./js/device.js": "./js/device.js?v=5.0.0",
+      "./js/display.js": "./js/display.js?v=5.0.0",
+      "./js/game.js": "./js/game.js?v=5.0.0",
+      "./js/gestures.js": "./js/gestures.js?v=5.0.0",
+      "./js/help-data.js": "./js/help-data.js?v=5.0.0",
+      "./js/help-page.js": "./js/help-page.js?v=5.0.0",
+      "./js/keywords.js": "./js/keywords.js?v=5.0.0",
+      "./js/main.js": "./js/main.js?v=5.0.0",
+      "./js/modes/chaos.js": "./js/modes/chaos.js?v=5.0.0",
+      "./js/modes/driving.js": "./js/modes/driving.js?v=5.0.0",
+      "./js/modes/events/blocks.js": "./js/modes/events/blocks.js?v=5.0.0",
+      "./js/modes/events/engine.js": "./js/modes/events/engine.js?v=5.0.0",
+      "./js/modes/events/feed.js": "./js/modes/events/feed.js?v=5.0.0",
+      "./js/modes/events/help.js": "./js/modes/events/help.js?v=5.0.0",
+      "./js/modes/events/missions.js": "./js/modes/events/missions.js?v=5.0.0",
+      "./js/modes/events/more-spec.js": "./js/modes/events/more-spec.js?v=5.0.0",
+      "./js/modes/events/more.js": "./js/modes/events/more.js?v=5.0.0",
+      "./js/modes/events/py.js": "./js/modes/events/py.js?v=5.0.0",
+      "./js/modes/events/schema.js": "./js/modes/events/schema.js?v=5.0.0",
+      "./js/modes/events/sign.js": "./js/modes/events/sign.js?v=5.0.0",
+      "./js/modes/events/sounds.js": "./js/modes/events/sounds.js?v=5.0.0",
+      "./js/modes/events/tunes.js": "./js/modes/events/tunes.js?v=5.0.0",
+      "./js/modes/events/wording.js": "./js/modes/events/wording.js?v=5.0.0",
+      "./js/modes/events.js": "./js/modes/events.js?v=5.0.0",
+      "./js/modes/index.js": "./js/modes/index.js?v=5.0.0",
+      "./js/modes/island.js": "./js/modes/island.js?v=5.0.0",
+      "./js/modes/tower.js": "./js/modes/tower.js?v=5.0.0",
+      "./js/modes/ultimate/help.js": "./js/modes/ultimate/help.js?v=5.0.0",
+      "./js/modes/ultimate/world.js": "./js/modes/ultimate/world.js?v=5.0.0",
+      "./js/modes/ultimate.js": "./js/modes/ultimate.js?v=5.0.0",
+      "./js/packs.js": "./js/packs.js?v=5.0.0",
+      "./js/site.js": "./js/site.js?v=5.0.0",
+      "./js/sound-rules.js": "./js/sound-rules.js?v=5.0.0",
+      "./js/speech.js": "./js/speech.js?v=5.0.0",
+      "./js/stats.js": "./js/stats.js?v=5.0.0",
+      "./js/storage.js": "./js/storage.js?v=5.0.0",
+      "./js/turning.js": "./js/turning.js?v=5.0.0",
+      "./js/update-alert.js": "./js/update-alert.js?v=5.0.0",
+      "./js/version.js": "./js/version.js?v=5.0.0",
+      "./js/wetworker.js": "./js/wetworker.js?v=5.0.0"
     }
   }
   </script>
   <!-- end of versions -->
-  <script type="module" src="js/site.js?v=4.1.2"></script>
+  <script type="module" src="js/site.js?v=5.0.0"></script>
 </body>
 </html>

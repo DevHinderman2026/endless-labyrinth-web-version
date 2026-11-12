@@ -12,6 +12,28 @@ const check = (ok, what) => { console.log((ok ? 'PASS ' : 'FAIL ') + what); if (
 
 const browser = await chromium.launch({ args: ['--autoplay-policy=no-user-gesture-required'] });
 const page = await browser.newPage();
+// Web 5.0.0: the walking modes turn with you. These bots still think in the
+// world's own directions, so `go` takes one step north, east, south or west
+// whichever way the player faces, and leaves them facing north, where the old
+// rules of thumb (an enemy due north or south is in the line of fire) still hold.
+// Turning itself is tested in tests/turning5.mjs.
+await page.addInitScript(() => {
+  window.go = (d) => {
+    const g = window.__el.game;
+    const way = { up: 0, right: Math.PI / 2, down: Math.PI, left: 3 * Math.PI / 2 }[d];
+    if (way === undefined || !g._turnsNow()) { g.input(d); return; }
+    g._turnStop(); g._face(way, true); g.input('up');
+    if (g._turnsNow()) g._face(0, true);
+  };
+  // Turn to face an enemy, fire, and face north again: how a shot is aimed now.
+  window.shootAt = (o) => {
+    const g = window.__el.game;
+    if (!g._turnsNow()) { g.input('space'); return; }
+    g._turnStop(); g._face(Math.atan2(o.x - g.playerPos[0], -(o.y - g.playerPos[1])), true);
+    g.input('space');
+    if (g._turnsNow()) g._face(0, true);
+  };
+});
 const errors = [];
 page.on('pageerror', (e) => errors.push(String(e)));
 page.on('console', (m) => { if (m.type() === 'error') errors.push(m.text()); });
@@ -83,7 +105,7 @@ await page.goto(base + '/credits.html');
   const links = await page.locator('ul.contents-list a').evaluateAll((as) => as.map((a) => a.getAttribute('href').slice(1)));
   const missing = [];
   for (const id of links) if (!(await page.locator('#' + id).count())) missing.push(id);
-  check(n === 337, `the Credits page lists all 337 recordings: ${n}`);
+  check(n === 342, `the Credits page lists all 342 recordings: ${n}`);
   check(heads.includes('Standard mode') && heads.includes('Events') && heads.includes('Downloaded but not used'), `the Credits page has its headings: ${heads.join(', ')}`);
   check(links.length === 26 && missing.length === 0, `every link in the credits contents has its heading ${missing}`);
 }
@@ -101,13 +123,13 @@ await page.waitForURL(/help\.html#faq$/);
 await page.waitForFunction(() => document.querySelector('#faq button.topic-toggle') && document.querySelector('#faq button.topic-toggle').getAttribute('aria-expanded') === 'true');
 {
   const qs = await page.locator('#faq-panel h3').allTextContents();
-  check(qs.length === 8 && /difference between the website version and the Windows version/.test(qs[0]), `the old questions page opens Help at the eight questions, the versions question first: ${qs.length}`);
+  check(qs.length === 14 && /difference between the website version and the Windows version/.test(qs[0]), `the old questions page opens Help at the fourteen questions (5.0.0: six about turning), the versions question first: ${qs.length}`);
   check(await page.locator('footer.site nav a[href="faq.html"]').count() === 0, 'the footer no longer links to the old questions page');
 }
 await page.goto(base + '/history.html');
-check((await page.locator('main h2').allTextContents()).join(' | ').startsWith('4.1.2 (11 November 2026), web only | 4.1.1 (11 November 2026), web only | 4.1.0 (11 November 2026), web only | 4.0.0 (11 November 2026), web only | 3.3.0 (10 November 2026), web only | 3.2.0 (9 November 2026), web only | 3.1.0 (9 November 2026), web only | 3.0.0 (8 November 2026), web only | 2.0.0 (8 November 2026), web only'), 'the Update History lists the newest version first, 2.1.0 then 2.0.0, marked web only');
+check((await page.locator('main h2').allTextContents()).join(' | ').startsWith('5.0.0 (12 November 2026) | 4.1.2 (11 November 2026), web only | 4.1.1 (11 November 2026), web only | 4.1.0 (11 November 2026), web only | 4.0.0 (11 November 2026), web only | 3.3.0 (10 November 2026), web only | 3.2.0 (9 November 2026), web only | 3.1.0 (9 November 2026), web only | 3.0.0 (8 November 2026), web only | 2.0.0 (8 November 2026), web only'), 'the Update History lists the newest version first, 2.1.0 then 2.0.0, marked web only');
 await page.goto(base + '/credits.html');
-check((await page.locator('ul.credits li').count()) === 337, 'credits list the recordings');
+check((await page.locator('ul.credits li').count()) === 342, 'credits list the recordings');
 
 // The play page on a computer, with the test switch.
 await page.goto(base + '/play.html?desktop=1');
@@ -216,7 +238,7 @@ const std = await page.evaluate(async () => {
     let at = [0, 0];
     for (const p of path) {
       const dx = p[0] - at[0]; const dy = p[1] - at[1];
-      g.input(dx > 0 ? 'right' : dx < 0 ? 'left' : dy > 0 ? 'down' : 'up');
+      window.go(dx > 0 ? 'right' : dx < 0 ? 'left' : dy > 0 ? 'down' : 'up');
       g.frame(0.05);
       at = p;
       out.steps += 1;
@@ -225,7 +247,7 @@ const std = await page.evaluate(async () => {
     if (g.level === start + 1) out.levels += 1;
     // Bump a wall if one is next to the start.
     for (const [dx, dy, gname] of [[0, -1, 'up'], [0, 1, 'down'], [-1, 0, 'left'], [1, 0, 'right']]) {
-      if (g.grid.has(keyOf(dx, dy))) { g.input(gname); out.walls += 1; break; }
+      if (g.grid.has(keyOf(dx, dy))) { window.go(gname); out.walls += 1; break; }
     }
   }
   out.live = [...a.live].map((v) => v.name);
@@ -267,7 +289,7 @@ const bat = await page.evaluate(async () => {
       const t = g.ammoPickups[0] || g.timeCredit;
       if (t) {
         const dx = t.x - px; const dy = t.y - py;
-        if (Math.abs(dx) > Math.abs(dy)) g.input(dx > 0 ? 'right' : 'left'); else g.input(dy > 0 ? 'down' : 'up');
+        if (Math.abs(dx) > Math.abs(dy)) window.go(dx > 0 ? 'right' : 'left'); else window.go(dy > 0 ? 'down' : 'up');
       }
       continue;
     }
@@ -276,11 +298,11 @@ const bat = await page.evaluate(async () => {
     if (g.obstacles.length) {
       let near = g.obstacles[0];
       for (const o of g.obstacles) if (Math.hypot(o.x - px, o.y - py) < Math.hypot(near.x - px, near.y - py)) near = o;
-      g.input(near.x > px ? 'right' : 'left');
+      if (g.ammo > 0) window.shootAt(near); else window.go(near.x > px ? 'right' : 'left');
     } else if (g.ammoPickups.length) {
       const t = g.ammoPickups[0];
       const dx = t.x - px; const dy = t.y - py;
-      if (Math.abs(dx) > Math.abs(dy)) g.input(dx > 0 ? 'right' : 'left'); else g.input(dy > 0 ? 'down' : 'up');
+      if (Math.abs(dx) > Math.abs(dy)) window.go(dx > 0 ? 'right' : 'left'); else window.go(dy > 0 ? 'down' : 'up');
     }
   }
   out.end = g.state;
@@ -290,7 +312,7 @@ const bat = await page.evaluate(async () => {
   out.live = [...window.__el.audio.live].filter((v) => v.loop).map((v) => v.name);
   return out;
 });
-check(bat.state === 'battle' && bat.ammo0 === 7, `battle starts with ${bat.ammo0} shots (wave one's four plus three)`);
+check(bat.state === 'battle' && bat.ammo0 === 9, `battle starts with ${bat.ammo0} shots (wave one's six plus three: web 5.0.0)`);
 check(bat.kills > 0 && bat.waves >= 1, `the scripted player shot ${bat.kills} enemies and reached wave ${bat.wave}, at most ${bat.maxEnemies} at once`);
 check(bat.end === 'game_over' && bat.score === bat.kills, `battle ends and saves ${bat.score}`);
 check(bat.live.length === 0, 'no loops left after battle: ' + bat.live.join(', '));

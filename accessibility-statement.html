@@ -9,7 +9,7 @@
   <link rel="icon" href="icons/icon-192.png">
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
   <meta name="theme-color" content="#0c0f14">
-  <link rel="stylesheet" href="css/site.css?v=4.1.2">
+  <link rel="stylesheet" href="css/site.css?v=5.0.0">
 </head>
 <body>
   <header class="site">
@@ -57,8 +57,8 @@
     <ol type="a">
       <li>Phones and tablets: iPhone and iPad (iOS 18.4 or later) and Android phones and tablets with a current version of Chrome.</li>
       <li>Computers: Chromebook, Mac and Linux, with the keyboard. Chrome, Edge and Safari are the browsers with which the game is tested; Firefox is expected to work but is not tested.</li>
-      <li>Windows computers: Ultimate Mode only, with the keyboard, since web version 2.0.0; the game states how to quiet the speech of NVDA or JAWS while playing. From web version 3.0.0, on a Windows computer the game also works with a Braille display and a Braille keyboard, through NVDA or JAWS: it keeps the keyboard focus in a game area of its own, so that the screen reader remains in focus mode, and presents everything that it speaks there for the Braille display; from web version 3.2.0 this area is not an editable field, so that Braille keyboard input reaches the game at once, a key held down on a Braille notetaker counts as one press, and contracted Braille wordsigns typed as text are translated back into the letters they stand for. The game's own speech may be turned off from its main menu.</li>
-      <li>For every other mode, Windows computers are pointed to the Windows version of the game, which is described in section 6.</li>
+      <li>Windows computers: the whole game, with the keyboard, from web version 5.0.0 (from 2.0.0 to 4.1.2, Ultimate Mode only); the game states how to quiet the speech of NVDA or JAWS while playing. From web version 3.0.0, on a Windows computer the game also works with a Braille display and a Braille keyboard, through NVDA or JAWS: it keeps the keyboard focus in a game area of its own, so that the screen reader remains in focus mode, and presents everything that it speaks there for the Braille display; from web version 3.2.0 this area is not an editable field, so that Braille keyboard input reaches the game at once, a key held down on a Braille notetaker counts as one press, and contracted Braille wordsigns typed as text are translated back into the letters they stand for. The game's own speech may be turned off from its main menu.</li>
+      <li>The Windows version of the game, which is described in section 6, remains available to Windows computers as a download.</li>
       <li>On every other device there is no Braille output during play, because the screen reader is turned off while the game is played.</li>
       <li>On an iPhone or iPad, silent mode mutes the game's sounds while its voice continues to speak; the game therefore asks that silent mode be turned off.</li>
     </ol>
@@ -74,51 +74,56 @@
   <script type="importmap">
   {
     "imports": {
-      "./js/accessibility.js": "./js/accessibility.js?v=4.1.2",
-      "./js/audio.js": "./js/audio.js?v=4.1.2",
-      "./js/backup.js": "./js/backup.js?v=4.1.2",
-      "./js/backups-page.js": "./js/backups-page.js?v=4.1.2",
-      "./js/braille.js": "./js/braille.js?v=4.1.2",
-      "./js/calendar.js": "./js/calendar.js?v=4.1.2",
-      "./js/device.js": "./js/device.js?v=4.1.2",
-      "./js/display.js": "./js/display.js?v=4.1.2",
-      "./js/game.js": "./js/game.js?v=4.1.2",
-      "./js/gestures.js": "./js/gestures.js?v=4.1.2",
-      "./js/help-data.js": "./js/help-data.js?v=4.1.2",
-      "./js/help-page.js": "./js/help-page.js?v=4.1.2",
-      "./js/keywords.js": "./js/keywords.js?v=4.1.2",
-      "./js/main.js": "./js/main.js?v=4.1.2",
-      "./js/modes/chaos.js": "./js/modes/chaos.js?v=4.1.2",
-      "./js/modes/driving.js": "./js/modes/driving.js?v=4.1.2",
-      "./js/modes/events/engine.js": "./js/modes/events/engine.js?v=4.1.2",
-      "./js/modes/events/feed.js": "./js/modes/events/feed.js?v=4.1.2",
-      "./js/modes/events/help.js": "./js/modes/events/help.js?v=4.1.2",
-      "./js/modes/events/missions.js": "./js/modes/events/missions.js?v=4.1.2",
-      "./js/modes/events/py.js": "./js/modes/events/py.js?v=4.1.2",
-      "./js/modes/events/schema.js": "./js/modes/events/schema.js?v=4.1.2",
-      "./js/modes/events/sign.js": "./js/modes/events/sign.js?v=4.1.2",
-      "./js/modes/events/sounds.js": "./js/modes/events/sounds.js?v=4.1.2",
-      "./js/modes/events/wording.js": "./js/modes/events/wording.js?v=4.1.2",
-      "./js/modes/events.js": "./js/modes/events.js?v=4.1.2",
-      "./js/modes/index.js": "./js/modes/index.js?v=4.1.2",
-      "./js/modes/island.js": "./js/modes/island.js?v=4.1.2",
-      "./js/modes/tower.js": "./js/modes/tower.js?v=4.1.2",
-      "./js/modes/ultimate/help.js": "./js/modes/ultimate/help.js?v=4.1.2",
-      "./js/modes/ultimate/world.js": "./js/modes/ultimate/world.js?v=4.1.2",
-      "./js/modes/ultimate.js": "./js/modes/ultimate.js?v=4.1.2",
-      "./js/packs.js": "./js/packs.js?v=4.1.2",
-      "./js/site.js": "./js/site.js?v=4.1.2",
-      "./js/sound-rules.js": "./js/sound-rules.js?v=4.1.2",
-      "./js/speech.js": "./js/speech.js?v=4.1.2",
-      "./js/stats.js": "./js/stats.js?v=4.1.2",
-      "./js/storage.js": "./js/storage.js?v=4.1.2",
-      "./js/update-alert.js": "./js/update-alert.js?v=4.1.2",
-      "./js/version.js": "./js/version.js?v=4.1.2",
-      "./js/wetworker.js": "./js/wetworker.js?v=4.1.2"
+      "./js/accessibility.js": "./js/accessibility.js?v=5.0.0",
+      "./js/audio.js": "./js/audio.js?v=5.0.0",
+      "./js/backup.js": "./js/backup.js?v=5.0.0",
+      "./js/backups-page.js": "./js/backups-page.js?v=5.0.0",
+      "./js/braille.js": "./js/braille.js?v=5.0.0",
+      "./js/calendar.js": "./js/calendar.js?v=5.0.0",
+      "./js/device.js": "./js/device.js?v=5.0.0",
+      "./js/display.js": "./js/display.js?v=5.0.0",
+      "./js/game.js": "./js/game.js?v=5.0.0",
+      "./js/gestures.js": "./js/gestures.js?v=5.0.0",
+      "./js/help-data.js": "./js/help-data.js?v=5.0.0",
+      "./js/help-page.js": "./js/help-page.js?v=5.0.0",
+      "./js/keywords.js": "./js/keywords.js?v=5.0.0",
+      "./js/main.js": "./js/main.js?v=5.0.0",
+      "./js/modes/chaos.js": "./js/modes/chaos.js?v=5.0.0",
+      "./js/modes/driving.js": "./js/modes/driving.js?v=5.0.0",
+      "./js/modes/events/blocks.js": "./js/modes/events/blocks.js?v=5.0.0",
+      "./js/modes/events/engine.js": "./js/modes/events/engine.js?v=5.0.0",
+      "./js/modes/events/feed.js": "./js/modes/events/feed.js?v=5.0.0",
+      "./js/modes/events/help.js": "./js/modes/events/help.js?v=5.0.0",
+      "./js/modes/events/missions.js": "./js/modes/events/missions.js?v=5.0.0",
+      "./js/modes/events/more-spec.js": "./js/modes/events/more-spec.js?v=5.0.0",
+      "./js/modes/events/more.js": "./js/modes/events/more.js?v=5.0.0",
+      "./js/modes/events/py.js": "./js/modes/events/py.js?v=5.0.0",
+      "./js/modes/events/schema.js": "./js/modes/events/schema.js?v=5.0.0",
+      "./js/modes/events/sign.js": "./js/modes/events/sign.js?v=5.0.0",
+      "./js/modes/events/sounds.js": "./js/modes/events/sounds.js?v=5.0.0",
+      "./js/modes/events/tunes.js": "./js/modes/events/tunes.js?v=5.0.0",
+      "./js/modes/events/wording.js": "./js/modes/events/wording.js?v=5.0.0",
+      "./js/modes/events.js": "./js/modes/events.js?v=5.0.0",
+      "./js/modes/index.js": "./js/modes/index.js?v=5.0.0",
+      "./js/modes/island.js": "./js/modes/island.js?v=5.0.0",
+      "./js/modes/tower.js": "./js/modes/tower.js?v=5.0.0",
+      "./js/modes/ultimate/help.js": "./js/modes/ultimate/help.js?v=5.0.0",
+      "./js/modes/ultimate/world.js": "./js/modes/ultimate/world.js?v=5.0.0",
+      "./js/modes/ultimate.js": "./js/modes/ultimate.js?v=5.0.0",
+      "./js/packs.js": "./js/packs.js?v=5.0.0",
+      "./js/site.js": "./js/site.js?v=5.0.0",
+      "./js/sound-rules.js": "./js/sound-rules.js?v=5.0.0",
+      "./js/speech.js": "./js/speech.js?v=5.0.0",
+      "./js/stats.js": "./js/stats.js?v=5.0.0",
+      "./js/storage.js": "./js/storage.js?v=5.0.0",
+      "./js/turning.js": "./js/turning.js?v=5.0.0",
+      "./js/update-alert.js": "./js/update-alert.js?v=5.0.0",
+      "./js/version.js": "./js/version.js?v=5.0.0",
+      "./js/wetworker.js": "./js/wetworker.js?v=5.0.0"
     }
   }
   </script>
   <!-- end of versions -->
-  <script type="module" src="js/site.js?v=4.1.2"></script>
+  <script type="module" src="js/site.js?v=5.0.0"></script>
 </body>
 </html>

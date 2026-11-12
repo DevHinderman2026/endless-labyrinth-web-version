@@ -508,7 +508,7 @@ export const MissionsMixin = {
   // ------------------------------------------------------------ hunt
   _mHuntUpdate(dt) {
     const hu = this.ev.hunt; const hz = this.ev.hazards;
-    if (hu.ammo_every_seconds) {
+    if (hu.ammo_every_seconds && !this.evUnlimited()) {
       this.mAmmoTimer -= dt;
       if (this.mAmmoTimer <= 0) {
         this.mAmmoTimer = hu.ammo_every_seconds;
@@ -537,7 +537,7 @@ export const MissionsMixin = {
     }
     // No clock, no shots left, no ammo to come or to find, and no creature whose touch
     // could end it: nothing more can happen, so the run ends here and is saved.
-    if (!this.evClock && this.evShots <= 0 && !hu.ammo_every_seconds && !this.mAmmo.length && hz.on_touch !== 'end_run') {
+    if (!this.evClock && this.evShots <= 0 && !this.evUnlimited() && !hu.ammo_every_seconds && !this.mAmmo.length && hz.on_touch !== 'end_run') {
       this._eventFinish('no_shots');
       return true;
     }
@@ -676,6 +676,7 @@ export const MissionsMixin = {
         if (!this.mOrderNeed.length) {
           this.evPoints += od.points_per_round;
           this.mRoundsDone += 1;
+          if (this._bEndingReached(this.mRoundsDone)) return true;      // web 5.0.0: the run's last one, by its ending (blocks.js)
           this.mRound += 1;
           this.audio.play('stairs_climb');
           this._mOrderRound();
@@ -712,6 +713,7 @@ export const MissionsMixin = {
     for (const h of this.evHazards) this._mStop(h);
     this.evHazards = [];
     for (let i = 0; i < want; i++) this._eventSpawnHazard(i);
+    this._bSpawnKinds();        // web 5.0.0: the second and third kinds of creature come with each room
     this.mGrace = this.evElapsed + ESCAPE_GRACE;
   },
 
@@ -720,6 +722,7 @@ export const MissionsMixin = {
     if (this.mExit && this._mReached(this.mExit, 0.9)) {
       this.evPoints += ex.points_per_room;
       this.mRoomsDone += 1;
+      if (this._bEndingReached(this.mRoomsDone)) return true;      // web 5.0.0: the run's last one, by its ending (blocks.js)
       this.mRoom += 1;
       this.audio.play('stairs_climb');
       this._mEscapeRoom();
@@ -825,6 +828,7 @@ export const MissionsMixin = {
         if (this.mPos >= this.mTune.length) {
           this.evPoints += me.points_per_round;
           this.mRoundsDone += 1;
+          if (this._bEndingReached(this.mRoundsDone)) return true;      // web 5.0.0: the run's last one, by its ending (blocks.js)
           this.audio.play('stairs_climb');
           if (this.mTune.length < me.longest) this.mTune.push(randrange(this.mPads.length));
           this._mMemoryPlay();
@@ -889,6 +893,7 @@ export const MissionsMixin = {
         if (!this.mPads.length) {
           this.evPoints += pa.points_per_round;
           this.mRoundsDone += 1;
+          if (this._bEndingReached(this.mRoundsDone)) return true;      // web 5.0.0: the run's last one, by its ending (blocks.js)
           this.mRound += 1;
           this.audio.play('stairs_climb');
           this._mPairsRound();
@@ -1289,6 +1294,7 @@ export const MissionsMixin = {
   // A swipe in an event: true if the mission used it (so the player does not walk).
   mArrow(key) {
     if (!this.ev) return false;
+    if (this._xArrow(key)) return true;          // web 5.0.0: the swipes are the mission's own (dance steps)
     if (this.ev.mission === 'steps' && (this.mStepsLeft === undefined ? 1 : this.mStepsLeft) <= 0) return true;
     if (this.ev.mission !== 'reflex') return false;
     if (!this.mCueLive) return true;             // between sounds the swipes do nothing
@@ -1337,6 +1343,7 @@ export const MissionsMixin = {
         this.audio.play(this.evPickup);
         this.mRoundsDone += 1;
         this.evPoints += ch.points_per_round;
+        if (this._bEndingReached(this.mRoundsDone)) return true;      // web 5.0.0: the run's last one, by its ending (blocks.js)
         this._mChairsMusic();
         return false;
       }
@@ -1407,6 +1414,10 @@ export const MissionsMixin = {
     if (!this.ev) return;
     // Which way this step went: only a step forward or back can land the player on anything.
     this.evLastStep = [...(this.playerFacing || [0, -1])];
+    this._bOnStep();            // web 5.0.0: what the floor does, and traps and teleports (blocks.js)
+    if (!this.ev) return;
+    this._xOnStep();            // web 5.0.0: the 25 further missions (more.js)
+    if (!this.ev) return;
     const m = this.ev.mission;
     if (m === 'sneak') {
       this._mSneakStep();
@@ -1417,6 +1428,7 @@ export const MissionsMixin = {
     }
     // Where this step landed is judged now, with no time passing.
     if (this.state === 'event') this.updateEventMode(0.0);
+    this._bAfterStep();         // web 5.0.0: ice slides you one more step
   },
 
   _mStepsCollected() { this.mStepsLeft += this.ev.steps.per_item; },
@@ -1463,6 +1475,7 @@ export const MissionsMixin = {
     if (this._mReached(this.mExit, 0.9)) {
       this.evPoints += ke.points_per_room;
       this.mRoomsDone += 1;
+      if (this._bEndingReached(this.mRoomsDone)) return true;      // web 5.0.0: the run's last one, by its ending (blocks.js)
       this.mRoom += 1;
       this.audio.play('stairs_climb');
       this._mKeysRoom();
@@ -1801,7 +1814,7 @@ export const MissionsMixin = {
       msg = (this.mLost === 0.0 ? 'With the guide. ' : 'The guide is getting away. ') + pts;
     } else if (m === 'hunt') {
       const up = this.evHazards.filter((h) => h.downFor < 0).length;
-      msg = `${up} ${ev.hazards.name}${ss(up)} left. ${this.evShots} shot${ss(this.evShots)}. ` + pts;
+      msg = `${up} ${ev.hazards.name}${ss(up)} left. ${this.evShotsWords()} ` + pts;
     } else if (m === 'seek') {
       const word = this.evCollected === 1 ? it.name : it.plural;
       msg = `${this.evCollected} ${word} found. ` + pts;
@@ -1831,7 +1844,7 @@ export const MissionsMixin = {
       const up = this.evHazards.filter((h) => h.downFor < 0).length;
       const lv = this.mTreasureLives;
       return `The treasure has ${lv} ${li(lv)} left. ${up} ${ev.hazards.name}${ss(up)} `
-        + `coming. ${this.evShots} shot${ss(this.evShots)}. ` + pts;
+        + `coming. ${this.evShotsWords()} ` + pts;
     } else if (m === 'sneak') {
       const word = this.evCollected === 1 ? it.name : it.plural;
       const state = this.mAwake > 0 ? 'The guard is awake! ' : (this.mNoise > 0.6 ? 'The guard is stirring. ' : 'The guard is asleep. ');
@@ -1872,7 +1885,7 @@ export const MissionsMixin = {
     } else {
       return null;
     }
-    if (ev.weapon.enabled && m !== 'hunt') msg += ` ${this.evShots} shot${ss(this.evShots)}.`;
+    if (ev.weapon.enabled && m !== 'hunt') msg += ' ' + this.evShotsWords();
     if (ev.hazards.on_touch === 'end_run' && ev.hazards.lives > 1 && this.evHazards.length) {
       const lv = this.evLives === undefined ? 1 : this.evLives;
       msg += ` ${lv} ${li(lv)} left`;

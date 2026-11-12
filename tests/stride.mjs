@@ -260,11 +260,13 @@ await game(() => { const g = window.__el.game; g._stopRunSounds(); g.state = 'me
   check(r.reflex === false && r.collect === true, `no running in a reflex event, running in other events: ${JSON.stringify(r)}`);
 }
 {
-  // The keyboard is unchanged: a held arrow is one step.
+  // Web 5.0.0: in a mode that turns (a labyrinth here), a held up arrow runs, as
+  // the slide up does on a touch screen and as it has in Ultimate Mode since
+  // 4.0.0. (Until then a held arrow was one step in every mode but that one.)
   await openLabyrinth(); await clear();
   await page.keyboard.down('ArrowUp'); await wait(900); await page.keyboard.up('ArrowUp');
   l = await log();
-  check(steps(l, 'up').length === 1, `a held arrow key is still one step: ${steps(l, 'up').length}`);
+  check(steps(l, 'up').length >= 3, `a held up arrow runs in a labyrinth: ${steps(l, 'up').length} steps`);
 }
 
 // ------------------------------------------------------------ the old setting is gone
@@ -316,11 +318,11 @@ check(!/Holding still/.test(await said()) && (await said()) === before, `practic
 // apart (in Ultimate Mode the first is a quick turn, the second a held turn).
 await down(); await move(165, 400); await move(130, 400); await up(130, 400);
 await wait(150);
-check((await said()) === 'Swipe left. In Ultimate Mode, that turns you to the left.', `practice: a quick slide left is a swipe left: ${await said()}`);
+check((await said()) === 'Swipe left. In the modes that turn, that is a quick turn to the left.', `practice: a quick slide left is a swipe left: ${await said()}`);
 await down(); await move(240, 400); await move(262, 400); await wait(500);
-check(/^Slide right and hold\. In Ultimate Mode only, you keep turning right until you lift your finger\.$/.test(await said()), `practice: slide right and hold is named: ${await said()}`);
+check(/^Slide right and keep your finger down\. In the modes that turn, you keep turning right until you lift your finger\.$/.test(await said()), `practice: slide right and hold is named: ${await said()}`);
 await up(262, 400); await wait(100);
-check(/^Lifted\. In Ultimate Mode, that stops your turn exactly there\.$/.test(await said()), `practice: lifting after it is named: ${await said()}`);
+check(/^Lifted\. In the modes that turn, that stops your turn exactly there\.$/.test(await said()), `practice: lifting after it is named: ${await said()}`);
 await down(); await move(160, 400); await wait(500); await up(160, 400); await wait(100);
 const turnLog = (await log()).map(([x]) => x).filter((x) => /turn|left|right/.test(x));
 check(turnLog.slice(-2).join() === 'turn_left_start,turn_end', `practice: a slide left that is held is a held turn, not a swipe as well: ${turnLog.slice(-4).join(' ')}`);

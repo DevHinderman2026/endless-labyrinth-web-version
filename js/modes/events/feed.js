@@ -12,7 +12,7 @@
 // only if that fails is the device's clock used. From there it counts on with a
 // clock the device's date settings cannot move (performance.now).
 
-import { checkEvent, status as eventStatus } from './schema.js';
+import { checkEvent, status as eventStatus, newerStub } from './schema.js';
 import { checkSignature, pyParse, pyPlain, PyInt } from './sign.js';
 
 export const GITHUB_OWNER = 'DevHinderman2026';
@@ -41,7 +41,14 @@ export async function trusted(text) {
   const [ok, why] = await checkSignature(tree);
   if (!ok) return [null, [why]];
   const fmt = tree instanceof Map ? tree.get('format') : undefined;
-  const [ev, errors] = checkEvent(pyPlain(tree), fmt === undefined || fmt instanceof PyInt);
+  const plain = pyPlain(tree);
+  const [ev, errors] = checkEvent(plain, fmt === undefined || fmt instanceof PyInt);
+  if (errors.length || !ev) {
+    // web 5.0.0: an event made for a newer version of the game is not left out: it
+    // is listed, with what to do about it.
+    const stub = newerStub(plain);
+    if (stub) return [stub, []];
+  }
   return [ev, errors];
 }
 

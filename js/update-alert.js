@@ -16,8 +16,8 @@
 // from this site's own Date header, never by the device's clock, and if the
 // internet time or GitHub cannot be reached it is not shown at all. So a new
 // release turns the alert on the moment it is published, and nothing on the site
-// needs changing for it. Home page only (index.html loads this file; no other
-// page does).
+// needs changing for it. On the home page (index.html); the Update History page
+// loads this file too, for an alert of its own (see the end of the file).
 //
 // The region is added by script, after the checks, at the very top of the page, so
 // it is the first thing a screen reader reaches; being a plain region, not a live
@@ -90,6 +90,44 @@ export async function showUpdateAlert() {
   return true;
 }
 
+// ------------------------------------------------------------------ the Update History's alert (web 5.0.0)
+// Nothing is announced inside the game (Russell, 11 November 2026: no one-time
+// notices there). What a player must know about a version is said here instead:
+// a region named Alert at the top of the Update History page, the same kind of
+// region as the home page's, shown for ALERT_DAYS from the day the version came
+// out, judged by internet time, and gone by itself after that. If the internet
+// time cannot be read it is not shown.
+export const HISTORY_ALERT = {
+  version: '5.0.0',
+  from: Date.UTC(2026, 10, 12) / 1000,        // 12 November 2026, the day 5.0.0 came out
+  heading: 'New in version 5: ',
+  text: 'the walking modes now turn with you. In Standard, Battle, Tower, Island and the walking levels of Chaos you '
+    + 'turn where you stand and walk the way you face, as in Ultimate Mode: flick or press left or right to turn, and '
+    + 'swipe or press up to walk. Driving and the events keep their controls, with north always ahead. The whole game is '
+    + 'now heard in binaural 3D sound, and Windows computers can play all of it here. The Windows version and this web '
+    + 'version are developed side by side: compatibility between them, the events included, will be maintained to the '
+    + 'highest extent that both can allow. ',
+  link: ['help.html#faq-turning', 'How turning works, in the frequently asked questions'],
+};
+
+export function buildHistoryAlert(a = HISTORY_ALERT) {
+  return el('section', { role: 'region', 'aria-label': 'Alert', class: 'site-alert', id: 'history-alert' }, [
+    el('p', {}, [el('strong', { text: a.heading }), a.text, el('a', { href: a.link[0], text: a.link[1] }), '.']),
+  ]);
+}
+
+export async function showHistoryAlert(a = HISTORY_ALERT) {
+  const now = await siteTime();
+  if (!alertDue(a.from, now)) return false;
+  const alert = buildHistoryAlert(a);
+  const header = document.querySelector('header.site');
+  if (header) header.before(alert); else document.body.prepend(alert);
+  return true;
+}
+
 if (typeof document !== 'undefined' && document.body && document.body.dataset.updateAlert === 'home') {
   showUpdateAlert().catch((e) => console.error(e));
+}
+if (typeof document !== 'undefined' && document.body && document.body.dataset.updateAlert === 'history') {
+  showHistoryAlert().catch((e) => console.error(e));
 }

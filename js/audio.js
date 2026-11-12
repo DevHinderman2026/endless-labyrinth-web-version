@@ -21,6 +21,16 @@ const RATE = 44100;
 // regeneration can fade it out and in and the compass can muffle it. The compass
 // beep and the voice's own tones are played 'direct', past that filter. Every
 // other mode is untouched: without spatial, nothing below is used.
+//
+// Web 5.0.0: every mode is heard in binaural 3D (AudioEngine.binaural). The
+// modes still work out a left and a right level for each thing exactly as the
+// desktop does (one side full, the other lowered by how far to the side the
+// thing is) and say how far behind you it is. From those two the engine knows
+// which way the thing lies, and places it there with the same HRTF panner
+// Ultimate Mode uses, at the loudness the mode gave it. Nothing in a mode's own
+// rules changes. In a mode that turns (AudioEngine.turns, js/turning.js), the
+// listener turns (setFacing) and every placed sound sweeps round with it; the
+// backgrounds turn too (a wide recording: see Voice._branch).
 const MUFFLE_OPEN_HZ = 20000;
 const MUFFLE_CLOSED_HZ = 650;
 // Recordings longer than this are decoded only when they are about to play, and
@@ -101,6 +111,12 @@ export class AudioEngine {
     this.behindOf = null;         // set by the game: position -> 0..1
     this.demoVoice = null;
     // Binaural 3D (Ultimate Mode): see spatialOn / spatialOff.
+    // Binaural 3D outside Ultimate Mode (web 5.0.0): see the note at the top.
+    this.binaural = false;        // set by the game: every positioned sound goes through an HRTF panner
+    this.turns = false;           // set by the game, frame by frame: the mode being played turns with you
+    this.turnsNow = null;         // set by the game: the same, asked at the moment a sound starts (a run's first background starts before its first frame)
+    this.relOf = null;            // set by the game: a place in the world -> the way it lies from the player, [east, south], or null
+    this.maxPlaced = 16;          // placed one-shots at once (each has its panners): past it the oldest placed one gives way
     this.spatial = false;
     this.facing = 0;              // the way the listener faces in the 3D world, radians clockwise from north (setFacing)
     this.worldIn = null;          // GainNode: the world's sounds, before the filter and fade
@@ -202,6 +218,7 @@ export class AudioEngine {
     this.areaBuses = new Map();
     this.worldIn = this.worldFilter = this.worldGain = null;
     if (this.spatial) this.spatialOn();
+    else this.setFacing(this.facing || 0, true);     // (a mode that turns keeps the way it faces)
     for (const v of [...this.live]) v.rebind(old);
     // The echoes come after the voices are in the new engine: setAreaRooms points
     // every voice at its area's new bus, which must not be done to a voice whose
@@ -784,6 +801,16 @@ export class AudioEngine {
       const mix = areaMix || (direct ? null : this.listenerMix);
       if (mix) v.areaMix = { ...mix };
       if (send !== null && send !== undefined) { v.send = send; v.sendSet = true; }
+    } else if (this.binaural) {
+      // A sound played at a place is heard from that place.
+      if (at && this.relOf) { try { v.atRel = this.relOf(at) || null; } catch (e) { v.atRel = null; } }
+      // A background in a mode that turns: it turns with the world (see _branch).
+      v.wide = loops === -1 && !v.atRel && !!(this.turnsNow ? this.turnsNow() : this.turns);
+      if (v.atRel && loops !== -1) {
+        let placed = 0; let first = null;
+        for (const o of this.live) if (!o.loop && o.atRel && !o.keep) { placed += 1; if (!first) first = o; }
+        if (placed >= this.maxPlaced && first) { first.stop(); this.culled += 1; }
+      }
     }
     this.live.add(v);
     v.begin();
@@ -852,7 +879,15 @@ export class Voice {
     this.wide = false;        // a recording with no place that still turns with the world (AudioEngine.play, _branch)
     this.keep = false;        // a cue that is never stopped to make room for a newer one-shot (AudioEngine.play)
     this.jump = false;        // its next place is set at once, not glided to (see resume)
+    // Binaural 3D outside Ultimate Mode (web 5.0.0).
+    this.atRel = null;        // played at a place: the way it lies from the player ([east, south], a unit vector)
+    this.posd = false;        // the mode gives it a left and a right level: it has a direction
+    this.dir = [0, -1];       // the way it lies in the world, as last worked out (north: straight ahead)
   }
+
+  // Whether this voice is placed by the engine from its levels (binaural, outside
+  // the 3D world): it was played at a place, or the mode pans it.
+  get binPlaced() { return this.audio.binaural && !this.audio.spatial && !this.direct && (!!this.atRel || this.posd); }
 
   // Whether this voice is placed by the panner: the world is 3D and it has a place.
   get placed() { return this.audio.spatial && !!this.pos3 && !this.direct; }
@@ -874,7 +909,7 @@ export class Voice {
     gl.connect(merge, 0, 0); gr.connect(merge, 0, 1);
     let panner = null;
     let wide = null;
-    if (this.audio.spatial && this.wide && !this.direct) {
+    if (this.wide && !this.direct && (this.audio.spatial || (this.audio.binaural && buffer.numberOfChannels === 2))) {
       // A wide recording in the 3D world (web 4.1.0): until now it was plain
       // stereo, all round you, and stayed put while everything else swept round
       // as you turned. Now its left side stands in the world's west and its right
@@ -904,7 +939,7 @@ export class Voice {
       wide = { west, east, lift };
       return { buffer, fade, split, gl, gr, merge, panner, wide };
     }
-    if (this.placed) {
+    if (this.placed || this.binPlaced) {
       // The HRTF panner places the sound; the game still sets its loudness by
       // distance itself, so the panner's own distance rolloff is turned off.
       panner = ctx.createPanner();
@@ -913,7 +948,7 @@ export class Voice {
       panner.refDistance = 1;
       panner.maxDistance = 10000;
       panner.rolloffFactor = 0;
-      const [x, y, z] = this.pos3;
+      const [x, y, z] = this.placed ? this.pos3 : [this.dir[0], 0, this.dir[1]];
       Voice._place(panner, x, y, z, ctx.currentTime, true);
       merge.connect(panner);
       panner.connect(this.audio.bus);
@@ -1148,26 +1183,79 @@ export class Voice {
     this.l = clamp(left, 0, 1);
     this.r = clamp(right, 0, 1);
     if (behind !== null && behind !== undefined) this.behind = clamp(behind, 0, 1);
+    // (Binaural: a sound the mode pans, or says is in front of or behind you, has a direction.)
+    if (!this.posd && (this.l !== this.r || (behind !== null && behind !== undefined))) this.posd = true;
     this.apply();
   }
 
   setBehind(b) { this.setVolume(this.l, this.r, b); }
 
+  // Binaural (web 5.0.0): a branch that began plain, or as a wide background,
+  // gets its panner the first time the mode gives the sound a direction.
+  _binPanner(br) {
+    if (br.panner) return br.panner;
+    const ctx = this.ctx;
+    const p = ctx.createPanner();
+    p.panningModel = 'HRTF';
+    p.distanceModel = 'linear';
+    p.refDistance = 1;
+    p.maxDistance = 10000;
+    p.rolloffFactor = 0;
+    Voice._place(p, this.dir[0], 0, this.dir[1], ctx.currentTime, true);
+    if (br.wide) {
+      try { br.gl.disconnect(br.wide.west); br.gr.disconnect(br.wide.east); br.wide.lift.disconnect(); } catch (e) { /* already */ }
+      br.wide = null;
+    } else {
+      try { br.merge.disconnect(); } catch (e) { /* already */ }
+    }
+    br.merge.connect(p);
+    p.connect(this.audio.bus);
+    br.panner = p;
+    return p;
+  }
+
   // The clean sound giving way to its dull copy as the thing goes behind the
   // player, and the echo swelling with it.
   apply(instant = false) {
     if (!this.dry) return;
-    const b = this.behind;
+    let b = this.behind; let l = this.l; let r = this.r;
+    if (this.binPlaced) {
+      // The way the thing lies in the world, from the levels the mode worked out:
+      // one side is full and the other lowered by how far to the side it is (the
+      // desktop's pan, east over distance), and `behind` is above nothing only for
+      // a thing to the south. Played at a place, the place itself says.
+      const level = Math.max(l, r);
+      if (this.atRel) this.dir = this.atRel;
+      else if (level > 1e-6) {
+        const pan = clamp((r - l) / level, -1, 1);
+        const c = Math.sqrt(Math.max(0, 1 - pan * pan));
+        this.dir = [pan, b > 0 ? c : -c];
+      }
+      const now = this.ctx.currentTime;
+      const first = !this.dry.panner;
+      for (const br of [this.dry, this.dull]) {
+        if (!br) continue;
+        const had = !!br.panner;
+        Voice._place(this._binPanner(br), this.dir[0], 0, this.dir[1], now, instant || !had);
+      }
+      if (first) instant = true;
+      // How far behind you it is heard: by the way you face now.
+      const f = this.audio.facing || 0;
+      const back = -(this.dir[0] * Math.sin(f) - this.dir[1] * Math.cos(f));
+      b = back <= 0 ? 0 : Math.min(1, Math.pow(back, RULES.BEHIND_CURVE || 1.5));
+      l = r = level;
+    }
+    this.heard = [l, r, b];
     let dg;
     if (this.dull) {
       dg = 1.0 - b * (1.0 - RULES.BEHIND_DRY_MIN);
-      this._set(this.dull.gl.gain, Math.min(1.0, this.l * b), instant);
-      this._set(this.dull.gr.gain, Math.min(1.0, this.r * b), instant);
+      this._set(this.dull.gl.gain, Math.min(1.0, l * b), instant);
+      this._set(this.dull.gr.gain, Math.min(1.0, r * b), instant);
     } else {
       dg = 1.0 - b * RULES.BEHIND_NO_COPY_DROP;
     }
-    this._set(this.dry.gl.gain, this.l * dg, instant);
-    this._set(this.dry.gr.gain, this.r * dg, instant);
+    this._set(this.dry.gl.gain, l * dg, instant);
+    this._set(this.dry.gr.gain, r * dg, instant);
     this.refreshWet(instant);
   }
 
@@ -1175,17 +1263,20 @@ export class Voice {
     if (!this.wet) return;
     const a = this.audio;
     let send = this.send;
-    if (this.family === 'enemy') send *= 1.0 + RULES.REVERB_ENEMY_FAR * (1.0 - Math.min(1.0, Math.max(this.l, this.r)));
-    send *= 1.0 + RULES.BEHIND_WET * this.behind;
+    const [hl, hr, hb] = this.heard || [this.l, this.r, this.behind];
+    if (this.family === 'enemy') send *= 1.0 + RULES.REVERB_ENEMY_FAR * (1.0 - Math.min(1.0, Math.max(hl, hr)));
+    send *= 1.0 + RULES.BEHIND_WET * hb;
     let g = a.roomGain * this.playGain;
     let lean = a.roomLean;
     if (this.srcGain !== null) {
       g = Math.sqrt(Math.max(0.0, a.roomGain * this.srcGain)) * this.playGain;
       lean = 0.5 * (a.roomLean + this.srcLean);
     }
+    // (A wall to the west is on your left facing north, and on your right facing south.)
+    if (a.binaural && !a.spatial && a.facing) lean *= Math.cos(a.facing);
     lean = clamp(lean + this.playLean, -1, 1);
-    let wl = this.l * send * g;
-    let wr = this.r * send * g;
+    let wl = hl * send * g;
+    let wr = hr * send * g;
     if (lean < 0) wr *= 1.0 + lean;
     else if (lean > 0) wl *= 1.0 - lean;
     const k = this.wetScale || 1;

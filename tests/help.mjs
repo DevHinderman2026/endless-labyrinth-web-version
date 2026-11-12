@@ -89,7 +89,7 @@ const HELP = await page.evaluate(async () => (await import('./js/game.js')).HELP
   const demoHint = await page.locator('#help-demos-events-hint').textContent();
   check(/^Opens \d+ sound demos, each with a Play button, from \w+ Item to \w+ Collected\.$/.test(demoHint), `a demo topic's hint: ${demoHint}`);
   const faqHint = await page.locator('#faq-hint').textContent();
-  check(/^Opens the 8 frequently asked questions, from What is the difference between the website version and the Windows version\? to How do events work\?$/.test(faqHint), `the questions' hint: ${faqHint}`);
+  check(/^Opens the 14 frequently asked questions, from What is the difference between the website version and the Windows version\? to How do events work\?$/.test(faqHint), `the questions' hint: ${faqHint}`);
   check(/^Opens every topic at once/.test(await page.locator('#open-all-hint').textContent()) && /^Plays the sound this subtopic describes/.test(await page.locator('#play-hint').textContent()), 'Open every topic and Play have hints too');
   const visible = await page.locator('.sr-hint').first().boundingBox();
   check(visible && visible.width <= 1 && visible.height <= 1, 'the hints are for screen readers, not shown on screen');
@@ -175,7 +175,7 @@ check(await page.locator('nav.site a[href="help.html"][aria-current="page"]').co
 // The phone's wording: gestures.
 {
   const general = await page.evaluate(() => [...document.querySelectorAll('#help-general-panel p')].map((p) => p.textContent).join(' '));
-  check(/Swipe up, down, left or right/.test(general), 'on a phone the help names gestures');
+  check(/flick left or right for a quick turn/.test(general) && /Tap with two fingers to attack/.test(general), 'on a phone the help names gestures');
 }
 check(errors.length === 0, `no page errors on a phone ${errors}`);
 await ctx.close();

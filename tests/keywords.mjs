@@ -71,18 +71,13 @@ check(said.length > 5 && badSaid.length === 0, `nothing said names a gesture (${
 check(said.some((t) => /Press P to resume/.test(t)), 'the pause line names P');
 check(said.some((t) => /Press Y for yes/.test(t)), 'quitting asks for Y or N');
 
-// Ultimate Mode's first run on this computer (web 4.0.0): the notice that turning
-// has changed is said in keys, once, and a Mac hears nothing about notetakers.
+// Web 5.0.0: nothing is announced inside the game. (4.0.0 to 4.1.2 said once, at
+// the first run of Ultimate Mode on a device, that turning had changed; the
+// Update History's alert says such things now.)
 said.length = 0;
 await page.evaluate(() => { const g = window.__el.game; g._stopRunSounds(); g.runId += 1; g.state = 'menu'; g._refreshMenu(); g.menuIndex = g.menuKeys.indexOf('ultimate'); g.input('enter'); });
 await page.waitForTimeout(300);
-const noticeSaid = said.filter((t) => /^New in version 4/.test(t));
-check(noticeSaid.length === 1 && !LEFTOVER.test(noticeSaid[0]) && !/notetaker/.test(noticeSaid[0])
-  && /Press the left or right arrow for a quick turn\. Hold the left or right arrow down to keep turning\. Press the up arrow to walk the way you are facing, or hold it down to run\. The help for Ultimate Mode explains more\.$/.test(noticeSaid[0]),
-  'the first run of Ultimate Mode on a computer says in keys that turning has changed: ' + noticeSaid.join(' | '));
-await page.evaluate(() => { const g = window.__el.game; g._stopRunSounds(); g.runId += 1; g.state = 'menu'; g._refreshMenu(); g.menuIndex = g.menuKeys.indexOf('ultimate'); g.input('enter'); });
-await page.waitForTimeout(300);
-check(said.filter((t) => /^New in version 4/.test(t)).length === 1, 'and the run after that does not say it again');
+check(said.filter((t) => /New in version/.test(t)).length === 0, 'the first run of Ultimate Mode says no notice: ' + said.join(' | ').slice(0, 120));
 check(errors.length === 0, 'no page errors ' + errors.join(' | '));
 await browser.close();
 console.log(failures ? `${failures} FAILED` : 'ALL PASSED');

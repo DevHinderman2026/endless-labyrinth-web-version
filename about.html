@@ -8,7 +8,7 @@
   <link rel="icon" href="icons/icon-192.png">
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
   <meta name="theme-color" content="#0c0f14">
-  <link rel="stylesheet" href="css/site.css?v=4.1.2">
+  <link rel="stylesheet" href="css/site.css?v=5.0.0">
 </head>
 <body>
   <header class="site">
@@ -18,15 +18,15 @@
   <nav class="site" aria-label="Site" data-page="about"></nav>
   <main class="page">
     <h2>What the game is</h2>
-    <p>Endless Labyrinth is a 3D audio game: you play it by ear, with headphones. It began as a game for Windows computers. Since November 2026 the complete game also plays in a web browser, on a phone, a tablet, a Chromebook, a Mac or a Linux computer: all six modes and the events, with the same rules, timings and sounds as the Windows version, and nothing to install. Web version 2.0.0 adds a seventh mode made for the web alone, Ultimate Mode, in binaural 3D sound; see below.</p>
+    <p>Endless Labyrinth is a 3D audio game: you play it by ear, with headphones. It began as a game for Windows computers. Since November 2026 the complete game also plays in a web browser, on a phone, a tablet or a computer: all six modes and the events of the Windows version, and nothing to install. Web version 2.0.0 adds a seventh mode made for the web alone, Ultimate Mode; see below. Since web version 5.0.0 the whole web game is heard in binaural 3D sound and its walking modes turn with you, which the Windows version, in stereo, does not do; the rules of each mode are otherwise kept as close to the Windows version as the two can be, and both play the same events.</p>
     <p>Want to know how the game came to be? <a href="story.html">The Story of the Game</a> tells how it grew from a single labyrinth found by ear into six modes, events, a Windows release and this web version, and how I make it: designing and testing by ear, with Claude writing the code.</p>
     <h2>Supported devices</h2>
     <p>Phones and tablets, played with touch gestures: an iPhone or iPad with iOS 18.4 or newer, or an Android phone or tablet with an up-to-date Chrome.</p>
     <p>Computers, played with the keyboard: a Chromebook, a Mac or a Linux computer. Chrome, Edge or Safari is recommended; Firefox should work, but the game is not tested with it. On a Mac, Safari needs macOS with Safari 18.4 or newer.</p>
-    <p>Windows computers play Ultimate Mode only, with the keyboard, because it is the one mode the Windows game does not have. For the other modes and the events, Endless Labyrinth already has a full Windows version, with Braille display support and its own room echo on the voice: on Windows, play the <a href="https://github.com/DevHinderman2026/Endless-Labyrinth/releases/latest">Windows version</a>.</p>
+    <p>Windows computers play the whole game on the website too, from web version 5.0.0, with the keyboard. Endless Labyrinth also has a full Windows version to download, which works offline, with Braille display support and its own room echo on the voice: the <a href="https://github.com/DevHinderman2026/Endless-Labyrinth/releases/latest">Windows version</a>.</p>
 
     <h2>How the sound works</h2>
-    <p>Everything is placed by sound. Left and right come from the balance between your ears, and in every mode but Ultimate Mode the room never turns: left is always west, and north is always ahead. Distance is loudness: the closer something is, the louder it gets. Something behind you sounds duller, as if heard over your shoulder. In the labyrinth, the battle arena, a tower and a road's tunnels, every sound has a slight echo of the place it is in, shaped by the walls around you and by the air of each level; islands, the seabed and the open road have none. Together these make a space you can move through by ear. Ultimate Mode goes further: it is the one mode heard in binaural 3D, the browser's own head-related panning, so with headphones a sound is placed properly in front of you, behind you, to one side or below you, and every area of its world has an echo sized to that area. And since version 4.0 its world turns with you: you turn where you stand, every sound sweeps round you as you do, and you walk the way you are facing.</p>
+    <p>Everything is placed by sound. From web version 5.0.0 the whole game is heard in binaural 3D, the browser's own head-related panning, so with headphones a sound is placed properly in front of you, behind you or to one side, not only left and right. Distance is loudness: the closer something is, the louder it gets. Something behind you also sounds duller, as if heard over your shoulder. In Standard, Battle, Tower, Island, the walking levels of Chaos and Ultimate Mode the world turns with you: you turn where you stand, every sound sweeps round you as you do, the background included, and you walk the way you are facing. Driving, a road in Chaos, the events and an elevator ride do not turn: there north is always ahead. In the labyrinth, the battle arena, a tower and a road's tunnels, every sound has a slight echo of the place it is in, shaped by the walls around you and by the air of each level; islands, the seabed and the open road have none. In Ultimate Mode every area of the world has an echo sized to that area, and a sound can be below you as well. Together these make a space you can move through by ear.</p>
 
     <h2>Starting</h2>
     <ol>
@@ -39,8 +39,9 @@
 
     <h2>Gestures</h2>
     <dl class="gestures">
-      <dt>Swipe up, down, left or right</dt><dd>Move one step, or move through a menu. In Ultimate Mode a swipe left or right turns you instead, 30 degrees at a time, so three swipes take you from one main direction (north, east, south or west) to the next, and a swipe up or down steps the way you face, or straight back.</dd>
-      <dt>Slide left or right and hold</dt><dd>In Ultimate Mode only: turn freely for as long as your finger stays on the screen, slowly at first and then faster. You stop exactly where you lift.</dd>
+      <dt>Swipe up or down</dt><dd>In a menu, move through it. In a run, one step the way you face, or one step straight back. In an event, where you do not turn, one step north or south.</dd>
+      <dt>Flick left or right</dt><dd>A quick turn of 30 degrees, in every mode that turns: Standard, Battle, Tower, Island, the walking levels of Chaos and Ultimate Mode. Three flicks take you from one main direction (north, east, south or west) to the next. In an event it is one step west or east, and in driving a lane change.</dd>
+      <dt>Slide left or right and keep your finger down</dt><dd>In every mode that turns: you keep turning for as long as your finger stays on the screen, moving or resting, and stop exactly where you lift. A finger that lifts at once was a flick; one that stays down is a slide.</dd>
       <dt>Slide up and hold</dt><dd>Run, during a run: you step forward at once, then keep stepping, fast (280 steps a minute), for as long as your finger stays on the screen.</dd>
       <dt>Slide down and hold</dt><dd>Walk backwards, during a run: you step back at once, then keep stepping, more slowly (200 steps a minute), for as long as your finger stays on the screen.</dd>
       <dt>Double tap</dt><dd>Choose, like Enter. During a run, the report: in standard mode your clock, and in the other modes everything that mode keeps track of, such as your ammo, kills and wave in battle. In driving, and in chaos's battles, roads, tower floors and islands, it also gives the seconds left on the clock; in chaos it ends with your points.</dd>
@@ -51,13 +52,13 @@
       <dt>Hold a finger still for a second</dt><dd>In Ultimate Mode only, the compass, on or off. In every other mode a finger resting still does nothing.</dd>
       <dt>One tap</dt><dd>Nothing.</dd>
     </dl>
-    <p>Only lifting your finger stops a run or a backward walk; you also stop by yourself at a wall, at the edge of an arena, and whenever a new level begins. Turning is unchanged: lift your finger, then swipe left or right. Lift it, too, before you shoot with two fingers or double tap. Running and walking backwards work in every mode and in events, except driving, which has its own accelerator, and an event where up and down are answers rather than steps.</p>
+    <p>Only lifting your finger stops a run or a backward walk; you also stop by yourself at a wall, at the edge of an arena, and whenever a new level begins. On a touch screen you cannot turn while you run: lift your finger, turn, then run again. Lift it, too, before you shoot with two fingers or double tap. Running and walking backwards work in every mode and in events, except driving, which has its own accelerator, and an event where up and down are answers rather than steps.</p>
     <h3>Driving</h3>
     <p>Driving, in driving mode and on a chaos road, works its own way. Put a finger on the screen and slide it up: the car accelerates for as long as that finger stays on the screen. Lift it and the car coasts. Swipe down to brake: each swipe is one brake, and if your accelerating finger slides back down without lifting, it stops accelerating and brakes once. To change lanes, lift your finger and swipe left or right. To shoot or hear the report, lift first, then tap with two fingers or double tap; the car coasts meanwhile.</p>
     <p>During a run only the double tap is counted, so it acts at once and an extra tap can never end a run by accident. The main menu has a Gesture Practice that says the name of every gesture it feels. A Bluetooth keyboard also works, with the Windows game's keys: the arrows, Enter, Space, Escape, P, H and T, and C for the compass.</p>
     <p>Every topic from the game's own help, with a Play button for every sound, is on the <a href="help.html">Help</a> page.</p>
     <h2>Keys, on a computer</h2>
-    <p>On a Chromebook, Mac or Linux computer, the game uses the Windows game's keys, and everything it says names the keys instead of gestures. Gesture Practice is not on the menu. On a Windows computer the same keys play Ultimate Mode.</p>
+    <p>On a Chromebook, Mac, Linux or Windows computer, the game uses the Windows game's keys, and everything it says names the keys instead of gestures. In the modes that turn, the left and right arrows turn you, a press for a quick turn of 30 degrees and a held arrow for as long as you hold it, and the up and down arrows step forward and back, or run and walk back while held. Gesture Practice is not on the menu.</p>
     <dl class="gestures">
       <dt>Arrow keys</dt><dd>Move one step, or move through a menu. In driving, hold the up arrow to accelerate, press the down arrow to brake, and left and right to change lanes. In Ultimate Mode the left and right arrows turn you, a press for a quick turn of 30 degrees and a hold to turn freely, and the up and down arrows step the way you face and straight back; held down, they run and walk backwards, and you can turn while you run.</dd>
       <dt>Enter</dt><dd>Choose. During a run, the report, as the double tap above.</dd>
@@ -106,7 +107,7 @@
       <li>The voice is your device's own, with a Speech Rate setting on the main menu. It has no room echo.</li>
       <li>On a phone, tablet, Chromebook, Mac or Linux computer there is no Braille output, since the screen reader is off while you play. On a Windows computer the game works (from web 3.0.0) with a Braille display and a Braille keyboard through NVDA or JAWS, as the Windows version does: it keeps the keyboard focus in a game area of its own and shows everything it says there on the display, so a Braille keyboard's letters reach the game at once, a key held down on a Braille notetaker counts as one press, contracted wordsigns typed as text are turned back into the letters they stand for, and the main menu has a Speech setting, to turn the game's own voice off, and a Braille Key Test.</li>
       <li>High scores are kept separately from the Windows version's.</li>
-      <li>Ultimate Mode exists only here, and is the only mode a Windows computer plays on the website.</li>
+      <li>Ultimate Mode exists only here. The whole web game is heard in binaural 3D and its walking modes turn with you; the Windows version is in stereo, with north always ahead.</li>
     </ul>
   </main>
   <footer class="site"></footer>
@@ -114,51 +115,56 @@
   <script type="importmap">
   {
     "imports": {
-      "./js/accessibility.js": "./js/accessibility.js?v=4.1.2",
-      "./js/audio.js": "./js/audio.js?v=4.1.2",
-      "./js/backup.js": "./js/backup.js?v=4.1.2",
-      "./js/backups-page.js": "./js/backups-page.js?v=4.1.2",
-      "./js/braille.js": "./js/braille.js?v=4.1.2",
-      "./js/calendar.js": "./js/calendar.js?v=4.1.2",
-      "./js/device.js": "./js/device.js?v=4.1.2",
-      "./js/display.js": "./js/display.js?v=4.1.2",
-      "./js/game.js": "./js/game.js?v=4.1.2",
-      "./js/gestures.js": "./js/gestures.js?v=4.1.2",
-      "./js/help-data.js": "./js/help-data.js?v=4.1.2",
-      "./js/help-page.js": "./js/help-page.js?v=4.1.2",
-      "./js/keywords.js": "./js/keywords.js?v=4.1.2",
-      "./js/main.js": "./js/main.js?v=4.1.2",
-      "./js/modes/chaos.js": "./js/modes/chaos.js?v=4.1.2",
-      "./js/modes/driving.js": "./js/modes/driving.js?v=4.1.2",
-      "./js/modes/events/engine.js": "./js/modes/events/engine.js?v=4.1.2",
-      "./js/modes/events/feed.js": "./js/modes/events/feed.js?v=4.1.2",
-      "./js/modes/events/help.js": "./js/modes/events/help.js?v=4.1.2",
-      "./js/modes/events/missions.js": "./js/modes/events/missions.js?v=4.1.2",
-      "./js/modes/events/py.js": "./js/modes/events/py.js?v=4.1.2",
-      "./js/modes/events/schema.js": "./js/modes/events/schema.js?v=4.1.2",
-      "./js/modes/events/sign.js": "./js/modes/events/sign.js?v=4.1.2",
-      "./js/modes/events/sounds.js": "./js/modes/events/sounds.js?v=4.1.2",
-      "./js/modes/events/wording.js": "./js/modes/events/wording.js?v=4.1.2",
-      "./js/modes/events.js": "./js/modes/events.js?v=4.1.2",
-      "./js/modes/index.js": "./js/modes/index.js?v=4.1.2",
-      "./js/modes/island.js": "./js/modes/island.js?v=4.1.2",
-      "./js/modes/tower.js": "./js/modes/tower.js?v=4.1.2",
-      "./js/modes/ultimate/help.js": "./js/modes/ultimate/help.js?v=4.1.2",
-      "./js/modes/ultimate/world.js": "./js/modes/ultimate/world.js?v=4.1.2",
-      "./js/modes/ultimate.js": "./js/modes/ultimate.js?v=4.1.2",
-      "./js/packs.js": "./js/packs.js?v=4.1.2",
-      "./js/site.js": "./js/site.js?v=4.1.2",
-      "./js/sound-rules.js": "./js/sound-rules.js?v=4.1.2",
-      "./js/speech.js": "./js/speech.js?v=4.1.2",
-      "./js/stats.js": "./js/stats.js?v=4.1.2",
-      "./js/storage.js": "./js/storage.js?v=4.1.2",
-      "./js/update-alert.js": "./js/update-alert.js?v=4.1.2",
-      "./js/version.js": "./js/version.js?v=4.1.2",
-      "./js/wetworker.js": "./js/wetworker.js?v=4.1.2"
+      "./js/accessibility.js": "./js/accessibility.js?v=5.0.0",
+      "./js/audio.js": "./js/audio.js?v=5.0.0",
+      "./js/backup.js": "./js/backup.js?v=5.0.0",
+      "./js/backups-page.js": "./js/backups-page.js?v=5.0.0",
+      "./js/braille.js": "./js/braille.js?v=5.0.0",
+      "./js/calendar.js": "./js/calendar.js?v=5.0.0",
+      "./js/device.js": "./js/device.js?v=5.0.0",
+      "./js/display.js": "./js/display.js?v=5.0.0",
+      "./js/game.js": "./js/game.js?v=5.0.0",
+      "./js/gestures.js": "./js/gestures.js?v=5.0.0",
+      "./js/help-data.js": "./js/help-data.js?v=5.0.0",
+      "./js/help-page.js": "./js/help-page.js?v=5.0.0",
+      "./js/keywords.js": "./js/keywords.js?v=5.0.0",
+      "./js/main.js": "./js/main.js?v=5.0.0",
+      "./js/modes/chaos.js": "./js/modes/chaos.js?v=5.0.0",
+      "./js/modes/driving.js": "./js/modes/driving.js?v=5.0.0",
+      "./js/modes/events/blocks.js": "./js/modes/events/blocks.js?v=5.0.0",
+      "./js/modes/events/engine.js": "./js/modes/events/engine.js?v=5.0.0",
+      "./js/modes/events/feed.js": "./js/modes/events/feed.js?v=5.0.0",
+      "./js/modes/events/help.js": "./js/modes/events/help.js?v=5.0.0",
+      "./js/modes/events/missions.js": "./js/modes/events/missions.js?v=5.0.0",
+      "./js/modes/events/more-spec.js": "./js/modes/events/more-spec.js?v=5.0.0",
+      "./js/modes/events/more.js": "./js/modes/events/more.js?v=5.0.0",
+      "./js/modes/events/py.js": "./js/modes/events/py.js?v=5.0.0",
+      "./js/modes/events/schema.js": "./js/modes/events/schema.js?v=5.0.0",
+      "./js/modes/events/sign.js": "./js/modes/events/sign.js?v=5.0.0",
+      "./js/modes/events/sounds.js": "./js/modes/events/sounds.js?v=5.0.0",
+      "./js/modes/events/tunes.js": "./js/modes/events/tunes.js?v=5.0.0",
+      "./js/modes/events/wording.js": "./js/modes/events/wording.js?v=5.0.0",
+      "./js/modes/events.js": "./js/modes/events.js?v=5.0.0",
+      "./js/modes/index.js": "./js/modes/index.js?v=5.0.0",
+      "./js/modes/island.js": "./js/modes/island.js?v=5.0.0",
+      "./js/modes/tower.js": "./js/modes/tower.js?v=5.0.0",
+      "./js/modes/ultimate/help.js": "./js/modes/ultimate/help.js?v=5.0.0",
+      "./js/modes/ultimate/world.js": "./js/modes/ultimate/world.js?v=5.0.0",
+      "./js/modes/ultimate.js": "./js/modes/ultimate.js?v=5.0.0",
+      "./js/packs.js": "./js/packs.js?v=5.0.0",
+      "./js/site.js": "./js/site.js?v=5.0.0",
+      "./js/sound-rules.js": "./js/sound-rules.js?v=5.0.0",
+      "./js/speech.js": "./js/speech.js?v=5.0.0",
+      "./js/stats.js": "./js/stats.js?v=5.0.0",
+      "./js/storage.js": "./js/storage.js?v=5.0.0",
+      "./js/turning.js": "./js/turning.js?v=5.0.0",
+      "./js/update-alert.js": "./js/update-alert.js?v=5.0.0",
+      "./js/version.js": "./js/version.js?v=5.0.0",
+      "./js/wetworker.js": "./js/wetworker.js?v=5.0.0"
     }
   }
   </script>
   <!-- end of versions -->
-  <script type="module" src="js/site.js?v=4.1.2"></script>
+  <script type="module" src="js/site.js?v=5.0.0"></script>
 </body>
 </html>

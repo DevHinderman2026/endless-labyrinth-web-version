@@ -23,7 +23,7 @@ export const KINDS = ['labyrinth', 'island', 'tower', 'battle', 'event'];
 export const LAB_DENSITY = [0.10, 0.16];   // (0.16 to 0.24 at first: too many turns for the compass)
 export const DOOR_CELLS = 2;           // a doorway is this many cells wide
 export const OPEN_BORDER_CHANCE = 0.45;
-export const SEABED_CELLS = 12;        // the seabed under an island, its own small floor
+export const SEABED_CELLS = 24;        // the seabed under an island: 25 squares each way, 36 units from the lift to its edge, about Island Mode's own seabed (web 5.0.0; it was 12, a small floor)
 
 // A seeded random source, so a world can be made again (the tests), or
 // Math.random when none is given.

@@ -14,6 +14,28 @@ const check = (ok, what) => { console.log((ok ? 'PASS ' : 'FAIL ') + what); if (
 
 const browser = await chromium.launch({ args: ['--autoplay-policy=no-user-gesture-required'] });
 const page = await browser.newPage();
+// Web 5.0.0: the walking modes turn with you. These bots still think in the
+// world's own directions, so `go` takes one step north, east, south or west
+// whichever way the player faces, and leaves them facing north, where the old
+// rules of thumb (an enemy due north or south is in the line of fire) still hold.
+// Turning itself is tested in tests/turning5.mjs.
+await page.addInitScript(() => {
+  window.go = (d) => {
+    const g = window.__el.game;
+    const way = { up: 0, right: Math.PI / 2, down: Math.PI, left: 3 * Math.PI / 2 }[d];
+    if (way === undefined || !g._turnsNow()) { g.input(d); return; }
+    g._turnStop(); g._face(way, true); g.input('up');
+    if (g._turnsNow()) g._face(0, true);
+  };
+  // Turn to face an enemy, fire, and face north again: how a shot is aimed now.
+  window.shootAt = (o) => {
+    const g = window.__el.game;
+    if (!g._turnsNow()) { g.input('space'); return; }
+    g._turnStop(); g._face(Math.atan2(o.x - g.playerPos[0], -(o.y - g.playerPos[1])), true);
+    g.input('space');
+    if (g._turnsNow()) g._face(0, true);
+  };
+});
 const errors = [];
 page.on('pageerror', (e) => errors.push(String(e)));
 page.on('console', (m) => { if (m.type() === 'error') errors.push(m.text()); });
@@ -80,7 +102,7 @@ check(JSON.stringify(start.tags) === '["ambience","item","rival"]', 'the floor l
 check(start.rivalAt >= 10 && start.rivalAt <= 35 * 1.5, `the rival starts ${start.rivalAt.toFixed(1)} units away; needs ${start.hits} hits; difficulty ${start.diff}, damage ${start.dmg}`);
 await page.waitForTimeout(50);
 const report = await page.evaluate(() => { window.__el.game.input('enter'); return document.getElementById('said').textContent; });
-check(new RegExp(`^Floor 1 of ${start.height}, 100 health, 2 items, ${start.hits} to go\\.$`).test(report), 'double tap reports: ' + report);
+check(new RegExp(`^Floor 1 of ${start.height}, 100 health, 2 items, ${start.hits} to go\\. Facing north\\.$`).test(report), 'double tap reports: ' + report);
 
 // The arena edge buzzes and does not move you.
 const edge = await page.evaluate(() => {
@@ -89,10 +111,10 @@ const edge = await page.evaluate(() => {
   const pos = [...g.playerPos];
   g.playerPos = [33.0, 0.0];
   const before = new Set(a.live);
-  g.input('right');
+  window.go('right');
   const buzz = [...a.live].filter((v) => !before.has(v)).map((v) => v.name);
   const stayed = g.playerPos[0] === 33.0;
-  g.input('left');
+  window.go('left');
   const moved = g.playerPos[0] === 30.0;
   const step = [...a.live].filter((v) => !before.has(v)).map((v) => v.name);
   g.playerPos = pos;
@@ -146,7 +168,7 @@ const run = await page.evaluate(() => {
   const towards = (tx, ty) => {
     const [px, py] = g.playerPos;
     const dx = tx - px; const dy = ty - py;
-    if (Math.abs(dx) > Math.abs(dy)) g.input(dx > 0 ? 'right' : 'left'); else g.input(dy > 0 ? 'down' : 'up');
+    if (Math.abs(dx) > Math.abs(dy)) window.go(dx > 0 ? 'right' : 'left'); else window.go(dy > 0 ? 'down' : 'up');
   };
   let dodgeSteps = 0;
   let phase = 'climb';
@@ -171,7 +193,7 @@ const run = await page.evaluate(() => {
     // A wind-up names the spot it is aimed at: two steps sideways off the line.
     if ((e.winding > 0 || e.pending > 0) && dodgeSteps < 2) {
       const lx = px - e.x; const ly = py - e.y;
-      if (Math.abs(ly) >= Math.abs(lx)) g.input(px > 0 ? 'left' : 'right'); else g.input(py > 0 ? 'up' : 'down');
+      if (Math.abs(ly) >= Math.abs(lx)) window.go(px > 0 ? 'left' : 'right'); else window.go(py > 0 ? 'up' : 'down');
       dodgeSteps += 1;
       out.dodges += 1;
       continue;
@@ -194,7 +216,7 @@ const run = await page.evaluate(() => {
       continue;
     }
     // Centre the rival: step across toward it.
-    g.input(e.x > px ? 'right' : 'left');
+    window.go(e.x > px ? 'right' : 'left');
   }
   out.end = g.state;
   out.level = g.level;

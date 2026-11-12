@@ -7,6 +7,29 @@
 // matters: longer phrases before the shorter ones inside them.
 
 const SENTENCES = [
+  // Web 5.0.0: the walking modes turn with you (General Gestures, General Turning
+  // and the modes' own help). On a computer an arrow can be held, to turn or to run.
+  [/In a menu, swipe up and down to move through it\./g, 'In a menu, use the up and down arrows to move through it.'],
+  [/flick left or right for a quick turn of 30 degrees, and swipe up to take one step the way you are facing, or down to take one step straight back\./g,
+    'press the left or right arrow for a quick turn of 30 degrees, and the up arrow to take one step the way you are facing, or the down arrow to take one step straight back.'],
+  [/Slide a finger left or right and keep it on the screen, and you keep turning for as long as it stays there, moving or resting, and stop the moment you lift it\. What tells a flick from a slide is only how soon the finger lifts\./g,
+    'Hold the left or right arrow down and you keep turning until you let go. A press let go at once is always one quick turn.'],
+  [/Slide a finger up and hold it there to run: you keep stepping forward, fast, for as long as that finger stays on the screen\. Slide a finger down and hold it there to walk backwards, more slowly, for as long as it stays there\. On a touch screen you cannot turn while you run: lift, turn, then run again\. A finger resting still on the screen does nothing, except in Ultimate Mode, where holding it still for about a second turns the compass on or off\. Only lifting your finger stops you, and you also stop by yourself at a wall, at the edge of an arena, and whenever a new level begins\. Lift your finger, too, before you shoot or tap\./g,
+    'In those modes, hold the up arrow down to run and the down arrow to walk backwards, and let go to stop; you also stop by yourself at a wall, at the edge of an arena, and whenever a new level begins. You can turn while you run: press or hold the left or right arrow as well, and your run curves. In Ultimate Mode, press C for the compass.'],
+  [/and in an event each swipe up, down, left or right is one step that way\./g, 'and in an event each press of an arrow key is one step that way.'],
+  [/Double tap to choose, like Enter\. In menus, triple tap goes back, and four taps open help\./g, 'Press Enter to choose. In menus, Escape goes back, and H opens help.'],
+  [/The main menu has a Gesture Practice, which says the name of every gesture it feels, running, walking backwards, turning and the held finger included\. /g, ''],
+  [/Flick left or right for a quick turn of 30 degrees, so three flicks are a quarter turn, from one main direction to the next, and six turn you right round\./g,
+    'Press the left or right arrow for a quick turn of 30 degrees, so three presses are a quarter turn, from one main direction to the next, and six turn you right round.'],
+  [/Slide left or right and keep your finger down to keep turning; lift to stop exactly there\./g, 'Hold the left or right arrow down to keep turning; let go to stop exactly there.'],
+  [/Then swipe up to walk the way you are facing\./g, 'Then press the up arrow to walk the way you are facing, or hold it down to run.'],
+  [/A double tap's report ends with the way you are facing/g, 'Enter\'s report ends with the way you are facing'],
+  [/Flick left or right to turn 30 degrees, or slide left or right and keep your finger down to keep turning\./g, 'Press the left or right arrow to turn 30 degrees, or hold one down to keep turning.'],
+  [/flick left or right to turn 30 degrees, slide and keep your finger down to keep turning, and swipe up to walk the way you face/g,
+    'press the left or right arrow to turn 30 degrees, hold one down to keep turning, and press the up arrow to walk the way you face'],
+  [/flick left or right to turn, swipe up to walk the way you face, and your facing carries/g, 'press the left or right arrow to turn, press the up arrow to walk the way you face, and your facing carries'],
+  [/Turn toward it, with a flick or a slide, until/g, 'Turn toward it, with a press or a held arrow, until'],
+  [/flick twice to one side first, then step/g, 'press the left or right arrow twice first, then step'],
   // General Gestures, which becomes General Keys.
   [/Your screen reader must be off while you play, because the game listens to the screen itself and speaks with its own voice\./g,
     'Your screen reader must be off while you play, because the game listens to the keyboard itself and speaks with its own voice.'],
@@ -129,6 +152,10 @@ const PHRASES = [
   [/\bTap with two fingers\b/g, 'Press Space'],
   [/\bYou shoot with a two-finger tap\b/g, 'You shoot with Space'],
   [/\bA two-finger tap fires\b/g, 'Space fires'],
+  [/\bA two-finger tap (throws|plays|sends|puts)\b/g, 'Space $1'],
+  [/\bA double tap repeats\b/g, 'Enter repeats'],
+  [/\bswipe in the same order\b/g, 'press the arrows in the same order'],
+  [/\bA wrong or late swipe\b/g, 'A wrong or late arrow'],
   [/\bwhat a two-finger tap hits\b/g, 'what Space hits'],
   [/\blaser on a two-finger tap\b/g, 'laser on Space'],
   [/\ba two-finger tap is always the attack\b/g, 'Space is always the attack'],

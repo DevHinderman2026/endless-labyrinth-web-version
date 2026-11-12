@@ -32,6 +32,7 @@ const TOWER_LINGER_STEP = 30.0;
 const TOWER_LINGER_MAX = 5;
 const TOWER_HOARD_PATIENCE = 12.0;
 const BATTLE_AIM_PAN = 0.72;
+export const TOWER_RIVAL_PACE = 0.8;      // web 5.0.0: the rival's speed, against the Windows game's
 const AMBIENCE_CROSSFADE = 0.8;     // a new tower floor's air, seconds
 // Chaos only: climbing from one chaos tower floor to the next, the new floor waits
 // for the climb up the stairs (its own length, up to CHAOS_CLIMB_TIME_MAX).
@@ -76,7 +77,8 @@ function pointToSegment(x, y, a, b) {
 function report(game, text) {
   if (game.chaosMode) text = text.replace(/\s+$/, '') + game._clockTail();   // phones have no T
   if (game.chaosMode) text = text.replace(/\s+$/, '') + ` ${(game.chaosPoints || 0) + (game.islandPoints || 0)} points total.`;
-  game.tts.speak(text, { interrupt: true });
+  // (In a mode that turns, a report ends with the way you face: web 5.0.0.)
+  game.tts.speak(text.replace(/\s+$/, '') + game._facingTail(), { interrupt: true });
 }
 
 // ------------------------------------------------------------------ things on a floor
@@ -204,7 +206,7 @@ export class TowerEnemy {
     if (this.alert >= this.alertCap) return;
     this.alert += 1;
     // Alertness only ever makes the rival quicker.
-    this.speed = Math.max(this.baseSpeed, Math.min(8.8, this.baseSpeed * Math.pow(1.09, this.alert)));
+    this.speed = Math.max(this.baseSpeed, Math.min(8.8 * (this.pace || 1), this.baseSpeed * Math.pow(1.09, this.alert)));
     this.throwCd = Math.min(this.baseThrowCd, Math.max(0.9, this.baseThrowCd * Math.pow(0.93, this.alert)));
     // (Never touches this.channel: escalation is a movement and timing change only.)
   }
@@ -363,6 +365,11 @@ const mixin = {
     this.towerLowWarned = false;
 
     const enemy = new TowerEnemy(this.playerPos, this._towerDifficulty(), randint(0, 9), this.arenaLimit, this.towerNumber, this.towerFloor);
+    // Web 5.0.0: the rival is a fifth slower than on Windows, at every pace it
+    // has, since you now turn to find the item (Russell, 11 November 2026).
+    enemy.pace = TOWER_RIVAL_PACE;
+    enemy.speed *= TOWER_RIVAL_PACE;
+    enemy.baseSpeed = enemy.speed;
     enemy.channel = this._towerLoop('rival', enemy.soundName);
     this.towerEnemy = enemy;
     this._towerSpawnItem();
@@ -678,8 +685,9 @@ const mixin = {
     if (dist === 0) return;   // the very same spot: nothing thrown, nothing spent
     this.towerItems -= 1;
     this.audio.play('item_throw');
-    // The same aiming rule, and the same band, as battle mode.
-    const pan = dx / dist;
+    // The same aiming rule, and the same band, as battle mode: centred ahead of
+    // you or directly behind, by the way you face (web 5.0.0).
+    const pan = this._rel([enemy.x, enemy.y])[0] / dist;
     if (Math.abs(pan) < BATTLE_AIM_PAN) {
       enemy.hitsTaken += 1;
       if (enemy.hitsTaken >= enemy.hitsNeeded) {
@@ -847,20 +855,11 @@ function input(game, g) {
     return;
   }
   if (g === 'space') { game.throwTowerItem(); return; }
-  let [nx, ny] = game.playerPos;
-  const step = 3.0;
-  if (g === 'up') { ny -= step; game.playerFacing = [0, -1]; }
-  else if (g === 'down') { ny += step; game.playerFacing = [0, 1]; }
-  else if (g === 'left') { nx -= step; game.playerFacing = [-1, 0]; }
-  else if (g === 'right') { nx += step; game.playerFacing = [1, 0]; }
-  else return;
-  const lim = game.arenaLimit;
-  if (nx >= -lim && nx <= lim && ny >= -lim && ny <= lim) {
-    game.playerPos = [nx, ny];
-    game._playStep();
-  } else {
-    game.audio.play('boundary');
-  }
+  // Web 5.0.0: you turn where you stand and walk the way you face (js/turning.js).
+  if (g === 'left' || g === 'right') { game._turnQuick(g === 'right' ? 1 : -1); return; }
+  if (g !== 'up' && g !== 'down') return;
+  const f = game.playerFacing = game._forward();
+  game._walkArena(g === 'up' ? f : [-f[0], -f[1]], 3.0);
 }
 
 // ------------------------------------------------------------------ help
@@ -870,13 +869,13 @@ const HELP_SECTIONS = [
     { title: 'Tower Mode', sound: null, desc: 'Climb a tower one floor at a time. A single rival guards each floor and the stairs only appear once you have destroyed it. Every tower is between three and ten floors, so a tower is a short sharp run rather than a long haul, and a double tap tells you which floor you are on and how tall the tower is. Each new floor is announced as you reach it, for example floor 2 of 5, and finishing a tower is announced with the bonus items it gave you, for example tower 1 complete, 12 bonus items. Reaching the top hands you a stock of bonus items and starts the next tower, which is one and a half times as hard as the one you just finished. Tower one is the gentlest stretch in the game and is your run-up before that growth starts. There is no clock anywhere in this mode. When your health first drops low on a floor you hear three quick falling low notes and then Health low with the number you have left, and finishing a tower is marked by the bonus chime before it is announced. Your score is the total floors climbed.' },
     { title: 'Tower The Rival', sound: null, desc: 'The rival never charges you and never hurts you by touching you. It wants exactly what you want: the item lying on the floor. It begins every floor holding nothing, so it has to win a race before it can throw anything, and items are placed so those races are close. You get a couple of seconds at the start of each floor before it will contest anything, which is your window to hear where the item is and start moving. Use it, because once that grace is gone it sprints. It also cannot snatch an item while it is winding up, nor for a moment after it has thrown, so every throw it makes hands you a genuine chance at the next one. Once it is holding something it backs off to throwing range and starts hurling items at you. Every item it takes is both a throw it gains and a throw you lose.' },
     { title: 'Tower Winding Up The Rival', sound: null, desc: 'The rival watches you collect. Every item you pick up on a floor makes it move faster and throw more often, and it keeps ramping to a ceiling set by how long that floor is, so on a long floor it always has somewhere left to go. A fresh rival on the next floor starts calm again. This is why you cannot simply farm a floor for supplies: the longer you spend gathering, the faster the thing you still have to bring down becomes, until it is quicker than you and starts winning every race itself. There is no cap on what you may carry, so stockpiling is allowed, it just gets more dangerous the longer you do it. Lingering has a second cost, on every tower, tower one included: for every thirty seconds you stay on a floor without destroying the rival, it can hold one more item, up to five. While it is hoarding it keeps what it takes and goes on racing you for more, and when its arms are full it throws them all at once: a dump of three or more comes behind the long, low wind-up of a full dump, and one of two behind the ordinary two beats. If you keep beating it to the items so it stops gaining any, it throws whatever it holds twelve seconds after the last one it took. The wind-up never gets shorter however alert it becomes, so throws stay dodgeable to the end.' },
-    { title: 'Tower Incoming Throws', sound: null, desc: 'The wind-up is your only warning, and it is quite literally the sound of a throw played backwards, swelling up and cutting off at the moment of release. Count its beats: one beat is one item, two or three beats mean a fan of that many arriving together. Move the instant you hear it. The throw is committed to the spot you were standing when the wind-up started, so a single step to either side takes you off its line before it is even released. Once it is thrown, the item buzzes as it flies, and you can hear the buzz move across the room toward you. If you stepped aside, the buzz goes past you and stops the moment the item is by, so that is how a miss sounds. If it hits you, you hear the hit instead. Step sideways to dodge, never backwards: the item keeps going in a straight line past where you were and it travels faster than you run, so retreating along its path is the one move that guarantees it catches you.' },
+    { title: 'Tower Incoming Throws', sound: null, desc: 'The wind-up is your only warning, and it is quite literally the sound of a throw played backwards, swelling up and cutting off at the moment of release. Count its beats: one beat is one item, two or three beats mean a fan of that many arriving together. Move the instant you hear it. The throw is committed to the spot you were standing when the wind-up started, so a single step off its line, taken before it is released, beats it. Its line runs from the rival to you. If you are facing the rival, a step forward or back stays on that line: flick twice to one side first, then step. If the rival is already off to one side of you, a step forward is a step off the line. Once it is thrown, the item buzzes as it flies, and you can hear the buzz move across the room toward you. If you stepped aside, the buzz goes past you and stops the moment the item is by, so that is how a miss sounds. If it hits you, you hear the hit instead. Step across its path to dodge, never straight back along it: the item keeps going in a straight line past where you were and it travels faster than you run, so retreating along its path is the one move that guarantees it catches you.' },
     { title: 'Tower Bursts', sound: null, desc: 'Deep in a climb the rival stops throwing one item at a time. It hoards a stockpile and throws two or three at once in a fan, then goes straight back to hunting while still carrying the rest. This is the hardest thing in the mode. Listen to the wind-up, because it tells you how many are coming while you still have time to act. One beat is a single item; two or three beats mean a fan of that many, spreading apart as it crosses the floor. The whole fan is committed to the spot you were standing when the wind-up began, exactly like a single throw, so leaving that spot still beats all of it. What changes is how far you have to go. One item is beaten by one step. A fan of three spreads as it flies, about six units across from throwing range and more from far off, so it takes two or three steps, and you must commit to them rather than flinching. Move in one direction and keep going until you have heard the last item pass.' },
     { title: 'Tower The Full Dump', sound: null, desc: 'Learn this one before you need it. It is longer and lower than any other wind-up, with a fast run of beats and a drone underneath, and it means the rival is throwing everything it has at once. It happens for one reason: you let it fill its arms. Every item in that stockpile is a race you did not contest. Up to five items on the early towers, and as many as ten deep in a climb, leave together in a wide fan, committed to where you were standing when the wind-up began, so leaving that spot still beats all of it, but a fan that wide needs three full steps and you must commit the moment you hear it. Do not flinch and do not stop until it is over. Survive one and you get the best moment in the mode: the rival is completely empty and has to win races from nothing before it can threaten you again. That window is yours. Use it to put hits on it.' },
     { title: 'Tower Items', sound: null, desc: 'You do not have a laser here. You throw items, and you have to find them, and so does the rival. A low double knock is the sound of an item lying on the floor, and it carries across the entire floor. Only one item is ever out at a time, and a fresh one appears the moment either of you takes it, so a floor can never become impossible, but you are never collecting in peace either. There is no limit on how many you may carry, so banking a stock on the easier floors is the way to survive the hard ones.' },
     { title: 'Tower Losing The Race', sound: null, desc: 'A short snatch sound means the rival reached the item before you did, and it comes from the exact spot where you lost it, so it tells you where the rival is standing as well as what just happened. When you hear it, that item is gone and a fresh one appears somewhere else. Hearing it repeatedly means the rival is stocking up and you are about to be under heavy fire, so it is often worth abandoning a long trip and contesting the next one instead.' },
-    { title: 'Tower Navigation', sound: null, desc: 'Left and right you can hear straight away from the stereo balance. Forward and backward sit in the same place between your ears, but a thing behind you, south of you, sounds duller (see Behind You). On top of that, two things get a locating beep: the item while the rival is alive, and a health potion whenever one has appeared. The beep rises in pitch and repeats faster the closer you get. If you cannot tell whether something is in front or behind, take one step and listen. Faster and higher means you chose correctly, slower and lower means turn around. The staircase has no beep, because its own rising chimes and metal footsteps are already distinct enough to walk toward.' },
-    { title: 'Tower Controls', sound: null, desc: 'Tap with two fingers to throw an item at the rival. Double tap at any time for a full status report: your health, how many items you are carrying, and how many more hits the rival needs. Aim the same way as battle mode: move until the rival\'s sound sits centred between both ears, then throw.' },
+    { title: 'Tower Navigation', sound: null, desc: 'A tower floor turns with you, as every walking mode does: flick left or right to turn 30 degrees, slide and keep your finger down to keep turning, and swipe up to walk the way you face. Everything is heard from where it is. Turn until a sound is centred between your ears and bright, and it is straight ahead; a thing behind you sounds duller (see Behind You). On top of that, two things get a locating beep: the item while the rival is alive, and a health potion whenever one has appeared. The beep rises in pitch and repeats faster the closer you get. If you cannot tell whether something is in front or behind, take one step and listen. Faster and higher means you chose correctly, slower and lower means turn round. You pick a thing up by coming within a step of it; you need not land exactly on it. The staircase has no beep, because its own rising chimes and metal footsteps are already distinct enough to walk toward. Because you now turn to find things, the rival is a fifth slower than it used to be.' },
+    { title: 'Tower Controls', sound: null, desc: 'Tap with two fingers to throw an item at the rival. Double tap at any time for a full status report: your health, how many items you are carrying, how many more hits the rival needs, and the way you are facing. Aim the same way as battle mode: turn until the rival\'s sound sits centred between both ears, straight ahead of you or directly behind you, then throw.' },
     { title: 'Tower Health and Items Carry Over', sound: null, desc: 'This is the most important rule in the mode. Your health and your items are never restored between floors and never restored between towers. Whatever you finish a floor with is what you start the next one with. There is no free reset, so an item wasted on a bad throw and health lost to a dodge you did not make are gone for the rest of the climb. Only a health potion restores anything.' },
     { title: 'Tower Health Potions', sound: null, desc: 'A shimmering chime is a health potion, and it restores your health completely. Two things have to be true for one to appear. You must have just destroyed a floor\'s rival, and you must be hurt enough to be within two hits of the end. That second test is measured against how hard the rival on that floor hits rather than against a fixed number, so it keeps meaning the same thing as you climb. A potion will never turn up while you are healthy, so do not count on one rescuing you later. When you do qualify, it shows up on roughly one cleared floor in three. It is always placed far away from you but you can hear it from anywhere, and it is the one thing the locating beep will lead you to once a floor is clear. With no clock running you can always afford the walk, so take every one you find.' },
     { title: 'Tower Stairs', sound: null, desc: 'Learn this signal, because the game will not tell you out loud. When you destroy a floor\'s rival you hear an explosion, and then a pattern begins repeating: three short chimes rising from low to high, each with a footstep on metal stairs under it, followed by a pause. That repeating rise is the staircase. Walk toward it to climb. It pans left and right and grows louder as you close in, exactly like every other beacon in the game.' },
@@ -927,6 +926,8 @@ export default {
     return { key: 'tower', score: n, message: `Game Over. You climbed ${n} floor${n === 1 ? '' : 's'}. ` };
   },
   room(game, state) { return state === STATE ? 'tower' : null; },
+  // A tower floor turns with you (web 5.0.0).
+  turns(game) { return game.state === STATE; },
   surroundings(game, pos, room) {
     if (room === 'tower') return game._arenaSurroundings(pos);
     return [1.0, 0.0];

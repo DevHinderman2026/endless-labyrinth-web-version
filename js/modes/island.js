@@ -51,7 +51,7 @@ const ISLAND_LEAVE_HOLD = 0.5;
 // second, after a spoken Low air warning. An air vent tops it back up to full.
 const ISLAND_AIR = 30.0;
 const ISLAND_AIR_WARN = 15.0;          // its beeps are the high countdown, never the clock's
-const ISLAND_VENT_CHANCE = 0.5;        // chance a dive has one air vent somewhere on the seabed
+const ISLAND_VENT_AGAIN = 10.0;         // web 5.0.0: every dive has an air vent, and this long after you take one the next appears somewhere else (Russell, 12 November 2026; until then about half of all dives had one, once)
 // Treasure, trapped divers and guardians: the extras.
 const ISLAND_TREASURE_CHANCE = 0.35;   // per island; it lies on the island until collected
 const ISLAND_DIVER_CHANCE = 0.25;      // per island, from island two on
@@ -117,7 +117,7 @@ const ISLAND_SHORES = ['island_01_maldives_beach', 'island_02_sandy_beach_calm',
 // Sand for an island.
 const STEP_SAND = ['step_sand_1', 'step_sand_2', 'step_sand_3', 'step_sand_4'];
 // Battle's, used by the enemies and cartridges here (the desktop's own values).
-const BATTLE_SPAWN_PAN = 0.55;
+const BATTLE_SPAWN_PAN = 0.55;      // (the desktop's: enemies ahead or behind only; since web 5.0.0 they come from any side)
 const BATTLE_AMMO_CLEARANCE = 14.0;
 // Chaos only (see the chaosMode branches).
 const CHAOS_CREDIT_VALUES = [40, 50, 60];
@@ -170,8 +170,8 @@ class Obstacle {
     this.x = null;
     for (const [clearance, minRange] of [[BATTLE_AMMO_CLEARANCE, 12.0], [8.0, 12.0]]) {
       for (let i = 0; i < 500; i++) {
-        const off = uniform(-BATTLE_SPAWN_PAN, BATTLE_SPAWN_PAN);
-        const angle = Math.asin(off) + (rand() < 0.5 ? 0.0 : Math.PI);
+        // From any side (web 5.0.0: you turn to face them).
+        const angle = uniform(0.0, Math.PI * 2);
         const dist = uniform(20.0, 32.0);
         const tx = px + Math.sin(angle) * dist;
         const ty = py - Math.cos(angle) * dist;
@@ -826,7 +826,8 @@ const mixin = {
     };
     if (!this.islandKey) put('key', 15.0, 40.0);
     if (this.islandDiver) put('diver', 20.0, 44.0);
-    if (rand() < ISLAND_VENT_CHANCE) put('vent', 12.0, 35.0);
+    put('vent', 12.0, 35.0);
+    this.islandVentTimer = 0.0;
     // Drawn once per island, like the island's own credit (chaos only).
     if (this.chaosMode) {
       if (this.islandSeabedCredit === null || this.islandSeabedCredit === undefined) {
@@ -893,6 +894,8 @@ const mixin = {
       this.lastBeepSecond = -1;
       this.audio.play('credit_chaos');
     } else if (kind === 'vent') {
+      // The next one appears somewhere else in a while (see _islandUpdateSeabed).
+      this.islandVentTimer = ISLAND_VENT_AGAIN;
       this.islandAir = ISLAND_AIR;
       this.islandAirWarned = false;
       this.islandLastAirBeep = -1;
@@ -1096,6 +1099,18 @@ const mixin = {
       if (dist < ISLAND_REACH) this._islandTake(it);
     }
 
+    // Another air vent, a while after the last was taken (web 5.0.0).
+    if (this.islandVentTimer > 0) {
+      this.islandVentTimer -= dt;
+      if (this.islandVentTimer <= 0 && !this.islandItems.some((q) => q.kind === 'vent')) {
+        const taken = this.islandItems.map((q) => q.pos).concat(this.islandElevator ? [this.islandElevator] : []);
+        const pos = this._islandPlace(12.0, 35.0, SEABED_ARENA, taken);
+        this.islandItems.push({ kind: 'vent', pos,
+          ch: this.audio.play(ISLAND_ITEM_SOUNDS.vent, { loops: -1, volume: 0.0 }),
+          ch2: this.audio.play('potion_beacon', { loops: -1, volume: 0.0 }) });
+      }
+    }
+
     if (this.islandElevator && this._islandUpdateElevator(dt) < ISLAND_REACH) this._islandStartRide('up');
   },
 
@@ -1185,24 +1200,16 @@ const mixin = {
     if (g === 'enter') { this.islandStatus(); return; }
     // No walking while the elevator is moving.
     if (this.islandRide) return;
-    let [nx, ny] = this.playerPos;
-    const step = 3.0;
-    if (g === 'up') { ny -= step; this.playerFacing = [0, -1]; }
-    else if (g === 'down') { ny += step; this.playerFacing = [0, 1]; }
-    else if (g === 'left') { nx -= step; this.playerFacing = [-1, 0]; }
-    else if (g === 'right') { nx += step; this.playerFacing = [1, 0]; }
-    else return;
-    const lim = this.arenaLimit;
-    if (nx >= -lim && nx <= lim && ny >= -lim && ny <= lim) {
-      // Where the step began, so an enemy it passed straight through counts as
-      // reaching you.
-      this.battleSteps = [...(this.battleSteps || []), [[...this.playerPos], [nx, ny]]];
-      this.playerPos = [nx, ny];
-      // Moving on the seabed makes no sound at all; on an island, sand.
-      if (this.islandPhase !== 'seabed') this.audio.play(choice(STEP_SAND));
-    } else {
-      this.audio.play('boundary');
-    }
+    // Web 5.0.0: you turn where you stand and walk the way you face (js/turning.js).
+    if (g === 'left' || g === 'right') { this._turnQuick(g === 'right' ? 1 : -1); return; }
+    if (g !== 'up' && g !== 'down') return;
+    const f = this.playerFacing = this._forward();
+    // Where the step began, so an enemy it passed straight through counts as
+    // reaching you. Moving on the seabed makes no sound at all; on an island, sand.
+    const w = this._walkArena(g === 'up' ? f : [-f[0], -f[1]], 3.0, this.arenaLimit, { sound: false });
+    if (!w) return;
+    this.battleSteps = [...(this.battleSteps || []), w];
+    if (this.islandPhase !== 'seabed') this.audio.play(choice(STEP_SAND));
   },
 };
 
@@ -1211,11 +1218,11 @@ const mixin = {
 const HELP_SECTIONS = [
   ['Island Mode', [
     { title: 'Island Mode', sound: null, desc: 'A chain of islands with the sea in between, and the only way across is down. Every island has an elevator in the middle that takes you down to the seabed whenever you like, and every island\'s way onward is locked. To reach the next island you need two things: the island cleared of enemies, and its key, which lies somewhere on the seabed. With both, the elevator up from the seabed takes you on to a new island. Without them, it brings you back up to the island you left. If an enemy reaches you, a guardian strikes you, or your air runs out on the seabed, the run is over. Nothing in this mode is ever described to you. You arrive at a random spot on each island, every island sounds different, and everything that happens has its own sound, so this help section is where you learn what each one means. The only words you will hear during play are Low air, and whatever you ask for with a double tap.' },
-    { title: 'Island Enemies and Shooting', sound: null, desc: 'Enemies on an island work exactly like battle mode: whatever sounds centred between your ears is what a two-finger tap hits, in front or behind, and the room never turns, so left and right always mean west and east and an enemy south of you sounds duller (see Behind You). Island one has four enemies and every island after it adds one more, with more of them at once and faster as you go. There is no ammo on an island. You begin with eight shots, and everything after that comes from the seabed.' },
+    { title: 'Island Enemies and Shooting', sound: null, desc: 'Enemies on an island work exactly like battle mode: whatever sounds centred between your ears, straight ahead of you or directly behind you, is what a two-finger tap hits. An island turns with you, as the seabed does: flick left or right to turn 30 degrees, slide and keep your finger down to keep turning, and swipe up to walk the way you face. Enemies come from any side, so turn until one is centred, then fire; one behind you sounds duller (see Behind You). In the elevator you do not turn. Island one has four enemies and every island after it adds one more, with more of them at once and faster as you go. There is no ammo on an island. You begin with eight shots, and everything after that comes from the seabed.' },
     { title: 'Island Elevators', sound: null, desc: 'An elevator is a steady low hum with a soft chime every second or two: two notes on an island, and a single note on the seabed. On an island it stands in the middle, and it works at any time, even mid-fight. When you come up onto an island you step out somewhere away from it, so finding it again is up to your ears. On the seabed the elevator up is always a long swim from where you arrive. A ride takes about fifteen seconds and you cannot move. As the doors close, where you are goes muffled, because you are inside, and it stays with you a few seconds longer, faint through the walls. While the car moves, that gives way to where you are going, which you hear coming through the walls before the doors open; when they open it opens up to its full sound. In chaos mode, if the next level is not an island, it is that level\'s own sound that rises through the doors.' },
     { title: 'Island Reinforcements', sound: null, desc: 'Diving mid-fight to reload is allowed, but the island does not wait for you. Stay down more than ten seconds and one more enemy lands on the island, then another every eight seconds, up to four per dive. Nothing tells you how many arrived; double tap on the island to hear how many enemies are left. Enemies still on the island when you leave are not lost, they are waiting. A cleared island gets no reinforcements, so once it is clear you can take as long as your air allows.' },
     { title: 'Island The Seabed and Air', sound: null, desc: 'On the seabed you are holding your breath: thirty seconds every dive. Nothing is announced when you arrive. With fifteen seconds left you hear Low air and then a high beep every second, and if it runs out you drown. That high beep is not the clock\'s: the clock\'s countdown is the lower one. You cannot shoot underwater and there are no enemies below. Cartridges lie there one at a time, marked by the same fast spinning beacon as battle mode, and the moment you take one the next appears somewhere else, nearer or further, but only until the island\'s supply runs out. Every island\'s seabed holds one supply of ammo, fixed when the island is made and shared by every dive to it: between two and six cartridges, drawn at random, of two to six shots each, and, counting what you already carry, never less than the island needs (a deep island that needs more than six full cartridges gets more) for its enemies, its guardian, three reinforcements, and any guardian waiting on the next island. Some islands are rich and some are lean. What you leave on the seabed is still there on your next dive. When it is gone, it is gone, so every shot you waste up top is a shot the island will not give back. Double tap for your air, your ammo and whether you have the key.' },
-    { title: 'Island Air Vents', sound: null, desc: 'About half of all dives have an air vent somewhere on the seabed: loud, steady bubbling, and quietly underneath it the chime of a tower health potion, the game\'s sound for something that restores you. Swim into it and you hear the rush of your air being refilled, back up to a full thirty seconds. Each vent works once. A vent is what makes a long dive possible, so when you hear one, it is often worth going to it first.' },
+    { title: 'Island Air Vents', sound: null, desc: 'Every dive has an air vent somewhere on the seabed: loud, steady bubbling, and quietly underneath it the chime of a tower health potion, the game\'s sound for something that restores you. Swim into it and you hear the rush of your air being refilled, back up to a full thirty seconds. Each vent works once, but ten seconds after you take one, another appears somewhere else on the seabed, so a long dive is a matter of swimming from vent to vent with your errands in between. When you hear one, it is often worth going to it first.' },
     { title: 'Island The Key', sound: null, desc: 'Every island has a key on the seabed, marked by three small bright metal clinks. You need it to move on: the elevator up takes you to the next island only once the island is clear and you have its key. You can find the key before or after clearing the island, on any dive. Once you have it, it is yours for that island, and a double tap tells you whether you have it.' },
     { title: 'Island Treasure', sound: null, desc: 'Some islands have treasure lying out on the island itself, marked by a soft high shimmer that never stops. It is out in the open where the enemies are, and it waits there until you walk to it. It is worth fifty points.' },
     { title: 'Island Trapped Divers', sound: null, desc: 'From island two on, a diver is sometimes trapped on the seabed, knocking on their tank: three hollow taps, a pause, three more. Swim to them to free them, and they come with you. Get them into the elevator up and they are worth one hundred and fifty points. If you drown with them, the run is over for both of you.' },
@@ -1284,6 +1291,10 @@ export default {
   },
 
   input(game, g) { game._islandInput(g); },
+
+  // An island and its seabed turn with you (web 5.0.0); the elevator does not.
+  turns(game) { return game.state === ISLAND && !game.islandRide; },
+  keepFacing(game) { return game.state === ISLAND; },
 
   stopAll(game) {
     game._holdRide(false, true);

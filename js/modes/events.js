@@ -9,6 +9,8 @@
 
 import { EngineMixin, S_EVENT, S_EVENTS_MENU, S_EVENT_SCORES, EVENT_ROOM_GAIN, EVENT_SQUARE_HALF } from './events/engine.js';
 import { MissionsMixin } from './events/missions.js';
+import { BlocksMixin } from './events/blocks.js';
+import { MoreMixin } from './events/more.js';
 import { eventHelp, eventDemos } from './events/help.js';
 
 export default {
@@ -18,7 +20,7 @@ export default {
     { key: 'event_score', label: (g) => g._eventMenuLabel('event_score'), select: (g) => g._eventSpeakScore() },
   ],
   playStates: [S_EVENT],
-  mixin: { ...EngineMixin, ...MissionsMixin },
+  mixin: { ...EngineMixin, ...MissionsMixin, ...BlocksMixin, ...MoreMixin },
 
   init(game) { game._eventSetup(); },
 
@@ -48,8 +50,10 @@ export default {
     else { nx += step; game.playerFacing = [1, 0]; }
     const lim = game.arenaLimit;
     if (nx >= -lim && nx <= lim && ny >= -lim && ny <= lim) {
+      // web 5.0.0: a wall of an event's labyrinth (it knocks), or mud still holding you.
+      if (game.bStepRefused(nx, ny)) return;
       game.playerPos = [nx, ny];
-      game._playStep();
+      game.audio.play(game.bStepSound());     // the footstep of the floor the event has under you
       // An event mission that counts steps, or listens for them.
       game.mOnStep();
     } else {

@@ -12,6 +12,28 @@ const check = (ok, what) => { console.log((ok ? 'PASS ' : 'FAIL ') + what); if (
 
 const browser = await chromium.launch({ args: ['--autoplay-policy=no-user-gesture-required'] });
 const page = await browser.newPage();
+// Web 5.0.0: the walking modes turn with you. These bots still think in the
+// world's own directions, so `go` takes one step north, east, south or west
+// whichever way the player faces, and leaves them facing north, where the old
+// rules of thumb (an enemy due north or south is in the line of fire) still hold.
+// Turning itself is tested in tests/turning5.mjs.
+await page.addInitScript(() => {
+  window.go = (d) => {
+    const g = window.__el.game;
+    const way = { up: 0, right: Math.PI / 2, down: Math.PI, left: 3 * Math.PI / 2 }[d];
+    if (way === undefined || !g._turnsNow()) { g.input(d); return; }
+    g._turnStop(); g._face(way, true); g.input('up');
+    if (g._turnsNow()) g._face(0, true);
+  };
+  // Turn to face an enemy, fire, and face north again: how a shot is aimed now.
+  window.shootAt = (o) => {
+    const g = window.__el.game;
+    if (!g._turnsNow()) { g.input('space'); return; }
+    g._turnStop(); g._face(Math.atan2(o.x - g.playerPos[0], -(o.y - g.playerPos[1])), true);
+    g.input('space');
+    if (g._turnsNow()) g._face(0, true);
+  };
+});
 const errors = [];
 page.on('pageerror', (e) => errors.push(String(e)));
 page.on('console', (m) => { if (m.type() === 'error') errors.push(m.text()); });
@@ -51,7 +73,7 @@ await page.evaluate(() => {
     const [px, py] = g.playerPos;
     const dx = tx - px; const dy = ty - py;
     if (Math.abs(dx) < 1.5 && Math.abs(dy) < 1.5) return false;
-    if (Math.abs(dx) >= Math.abs(dy)) g.input(dx > 0 ? 'right' : 'left'); else g.input(dy > 0 ? 'down' : 'up');
+    if (Math.abs(dx) >= Math.abs(dy)) window.go(dx > 0 ? 'right' : 'left'); else window.go(dy > 0 ? 'down' : 'up');
     return true;
   };
   window.__t.bot = () => {
@@ -81,7 +103,7 @@ await page.evaluate(() => {
     if (regular.length) {
       let near = regular[0];
       for (const o of regular) if (Math.hypot(o.x - px, o.y - py) < Math.hypot(near.x - px, near.y - py)) near = o;
-      g.input(near.x > px ? 'right' : 'left');
+      if (g.ammo > 0) window.shootAt(near); else window.go(near.x > px ? 'right' : 'left');
       return;
     }
     if (guardian) {
@@ -136,7 +158,7 @@ const run = await page.evaluate(async () => {
         // During a ride: no walking, no pause, no help.
         const pos = [...g.playerPos];
         t.played.length = 0;
-        g.input('up');
+        window.go('up');
         g.input('pause');
         g.input('help');
         out.rideChecks.push({
@@ -185,7 +207,7 @@ const rep = await page.evaluate(async () => {
   await new Promise((r) => setTimeout(r, 50));
   return document.getElementById('said').textContent;
 });
-check(/^\d+ shots?\. (\d+ enem(y|ies) left|Island clear)\..*Key not found\. \d+ points\.$/.test(rep), 'double tap reports on the island: ' + rep);
+check(/^\d+ shots?\. (\d+ enem(y|ies) left|Island clear)\..*Key not found\. \d+ points\. Facing north\.$/.test(rep), 'double tap reports on the island: ' + rep);
 
 // --------------------------------------------------------------- the ride, the quit question and the pause
 const q = await page.evaluate(async () => {

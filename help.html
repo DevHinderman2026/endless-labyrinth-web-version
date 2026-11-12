@@ -9,7 +9,7 @@
   <link rel="icon" href="icons/icon-192.png">
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
   <meta name="theme-color" content="#0c0f14">
-  <link rel="stylesheet" href="css/site.css?v=4.1.2">
+  <link rel="stylesheet" href="css/site.css?v=5.0.0">
 </head>
 <body>
   <header class="site">
@@ -35,7 +35,7 @@
         <span id="faq-hint" class="sr-hint" data-open="Opens the {n} frequently asked questions, from {first} to {last}." data-close="Closes the frequently asked questions.">Opens the frequently asked questions.</span>
         <div id="faq-panel" class="topic-panel" hidden>
       <h3 id="faq-versions">What is the difference between the website version and the Windows version?</h3>
-      <p>They are the same game, with one addition on the website. Both have the same six modes, Standard, Battle, Driving, Tower, Island and Chaos, with the same rules, timings and sounds, and both play the same events, read from the same signed event files. The website also has a seventh mode made for the web alone, Ultimate Mode, in binaural 3D sound, which the Windows game does not have. Otherwise the difference is where each one runs.</p>
+      <p>They are the same game at heart, and they are developed side by side. Both have the same six modes, Standard, Battle, Driving, Tower, Island and Chaos, and both play the same events, read from the same signed event files. Compatibility between the two is maintained to the highest extent that both can allow. The differences come from what each can do. The website also has a seventh mode made for the web alone, Ultimate Mode. And from web version 5.0.0 the whole web game is heard in binaural 3D sound, with walking modes that turn with you, while the Windows version is in stereo with north always ahead; a few numbers in Standard, Battle, Tower and Island differ on the website to allow for the turning, and the Update History lists them. The events are the same on both.</p>
       <ul>
         <li><strong>The website version</strong> plays in the browser of an iPhone, an iPad, an Android phone or tablet, a Chromebook, a Mac or a Linux computer, with nothing to install. On a phone or tablet it is played with touch gestures; on a computer, with the keyboard. It has the website's own extras: this site, the <a href="events.html">Events calendar</a>, <a href="stats.html">Game Stats</a>, <a href="backups.html">Score Backups</a> and the <a href="accessibility.html">display options</a>.</li>
         <li><strong>The Windows version</strong> is a program you download and run on a Windows PC. It works fully offline, supports a Braille display, puts its own room echo on the voice, and keeps its scores in its own folder. Download it from the <a href="https://github.com/DevHinderman2026/Endless-Labyrinth/releases/latest">Releases page of the game's GitHub repository</a>.</li>
@@ -46,8 +46,20 @@
       <p>The website version updates itself: the next time you open it after a new version is published, you have the new version, with nothing to do. The Windows version updates only when you ask, because an update on a computer is your decision. From version 2.0.0, choose Check for Updates on its main menu: the game says the newest version number and what is new, then asks you to press Y to update or N to stay on the version you have. Press Y and it downloads the new version, says how far it has got, closes, installs the update over itself and starts again on its own, keeping your scores and settings. Nothing is downloaded without your Y, and there are no automatic updates. When a new Windows version is published, the <a href="index.html">home page</a> of this site says so for thirty days. If you have Windows version 1.0.1 or older, which has no Check for Updates, download the new version from the <a href="https://github.com/DevHinderman2026/Endless-Labyrinth/releases/latest">Releases page</a> once more and copy your players folder across; every update after that is one key press.</p>
 
       <h3 id="faq-windows">What can a Windows computer play on the website?</h3>
-      <p>Ultimate Mode, and only that. The Windows version is already the complete game for that computer, and a better one there: it works offline, it supports a Braille display, and it has its own voice echo. Running the browser version of the other modes on Windows as well would give you a second copy of the same game, with separate scores, and nothing the Windows version does not already do, so for those the website points Windows computers to the download. Ultimate Mode is different: it exists only on the web, so on a Windows computer the play page offers that mode, with the keyboard, along with High Scores, the speech rate and Leave Game. The start screen says how to quiet NVDA's or JAWS's speech while you play: with NVDA, the NVDA key plus S cycles the speech mode; with JAWS, Insert plus Space, then S, switches between full speech and speech on demand. A Braille display and a Braille keyboard work there too, through NVDA or JAWS, as in the Windows version: the game keeps the keyboard focus in a text box of its own, shows what it says there for the display, turns contracted wordsigns back into letters, and has the Braille Keyboard, Speech and Braille Key Test settings on its main menu.</p>
+      <p>Everything: from web version 5.0.0 a Windows computer plays every mode, the events and Ultimate Mode on the website, with the keyboard. (From 2.0.0 to 4.1.2 it played Ultimate Mode only.) The Windows version is still there to download, and it has things the website does not: it works offline and it has its own voice echo. Scores are kept separately in each. The start screen says how to quiet NVDA's or JAWS's speech while you play: with NVDA, the NVDA key plus S cycles the speech mode; with JAWS, Insert plus Space, then S, switches between full speech and speech on demand. A Braille display and a Braille keyboard work there too, through NVDA or JAWS, as in the Windows version: the game keeps the keyboard focus in a game area of its own, shows what it says there for the display, turns contracted wordsigns back into letters, and has the Speech and Braille Key Test settings on its main menu.</p>
 
+      <h3 id="faq-turning">How does turning work?</h3>
+      <p>From web version 5.0.0 the walking modes turn with you: Standard, Battle, Tower, Island, the walking levels of Chaos, and Ultimate Mode, which has turned since version 4. You turn where you stand, and the whole world turns round you: every enemy, beacon and item, and the background too. On a touch screen, flick left or right for a quick turn of 30 degrees, so three flicks are a quarter turn; or slide left or right and keep your finger down to keep turning, and lift to stop exactly there. On a computer, press the left or right arrow for a quick turn, or hold it down to keep turning. Then swipe up, or press the up arrow, to walk the way you are facing; down takes one step straight back.</p>
+      <h3 id="faq-turning-lost">How do I know which way I am facing?</h3>
+      <p>As you turn, a soft tick marks east, south and west as you pass them or land on them, and a higher tick marks north, so there is always one fixed point to count from. A quick turn that lands between two of them gives a softer click. A double tap, or Enter, gives the report, which ends with the way you are facing, such as Facing north-east. Nothing but you turns you: you face the same way from one level to the next, and a new run begins facing north.</p>
+      <h3 id="faq-turning-aim">How do I find things and aim now that I turn?</h3>
+      <p>Turn until a sound is centred between your ears and bright, then walk: it is straight ahead. A thing behind you sounds duller, so if a centred sound is dull, turn right round. To shoot in Battle, or throw on a tower floor, or shoot on an island, turn until the enemy is centred: a shot takes what is centred straight ahead of you, or directly behind you. Ultimate Mode is stricter: there a shot takes only what is in front of you. Enemies in Battle now come one at a time in the first waves, and never more than four at once, so there is time to turn.</p>
+      <h3 id="faq-turning-walls">What happens when I walk into a wall at an angle?</h3>
+      <p>Walk straight into a wall, or the edge of an arena, and you stop, with the wall's knock or the boundary's buzz. Meet it at a slant and you slide along it, in silence, so a corridor can be walked without squaring up exactly. To square up, flick until you hear a tick: a tick means you are facing north, east, south or west.</p>
+      <h3 id="faq-turning-which">Which parts of the game do not turn?</h3>
+      <p>Driving, a road in Chaos, an elevator ride and all the events. There north is always ahead, as it always was: in an event a swipe up, down, left or right is one step that way, and you can shoot what is ahead of you or behind you without turning. The events are kept that way so that they play the same on the website and in the Windows version. Their sound is in binaural 3D on the website all the same.</p>
+      <h3 id="faq-turning-slide">My slide turns too far, or not far enough. What should I do?</h3>
+      <p>What tells a flick from a slide is only how soon your finger lifts. For a quick turn of exactly 30 degrees, flick and lift at once. To turn freely, slide and leave your finger on the screen: it does not matter whether the finger keeps moving or rests, the turn carries on until you lift. A slide that you lift almost at once is still one whole quick turn. The Gesture Practice on the main menu names each gesture as it feels it, so you can try them there first.</p>
       <h3 id="faq-headphones">Why do I need headphones?</h3>
       <p>Everything in the game is in the sound: where things are, how far away they are, and whether they are in front of you or behind you. Left and right are the whole point. A phone's own speaker, or a laptop's, mixes left and right together, so you cannot tell which way to turn. Any headphones or earbuds will do, wired or Bluetooth, as long as the left one is in your left ear.</p>
 
@@ -72,52 +84,57 @@
   <script type="importmap">
   {
     "imports": {
-      "./js/accessibility.js": "./js/accessibility.js?v=4.1.2",
-      "./js/audio.js": "./js/audio.js?v=4.1.2",
-      "./js/backup.js": "./js/backup.js?v=4.1.2",
-      "./js/backups-page.js": "./js/backups-page.js?v=4.1.2",
-      "./js/braille.js": "./js/braille.js?v=4.1.2",
-      "./js/calendar.js": "./js/calendar.js?v=4.1.2",
-      "./js/device.js": "./js/device.js?v=4.1.2",
-      "./js/display.js": "./js/display.js?v=4.1.2",
-      "./js/game.js": "./js/game.js?v=4.1.2",
-      "./js/gestures.js": "./js/gestures.js?v=4.1.2",
-      "./js/help-data.js": "./js/help-data.js?v=4.1.2",
-      "./js/help-page.js": "./js/help-page.js?v=4.1.2",
-      "./js/keywords.js": "./js/keywords.js?v=4.1.2",
-      "./js/main.js": "./js/main.js?v=4.1.2",
-      "./js/modes/chaos.js": "./js/modes/chaos.js?v=4.1.2",
-      "./js/modes/driving.js": "./js/modes/driving.js?v=4.1.2",
-      "./js/modes/events/engine.js": "./js/modes/events/engine.js?v=4.1.2",
-      "./js/modes/events/feed.js": "./js/modes/events/feed.js?v=4.1.2",
-      "./js/modes/events/help.js": "./js/modes/events/help.js?v=4.1.2",
-      "./js/modes/events/missions.js": "./js/modes/events/missions.js?v=4.1.2",
-      "./js/modes/events/py.js": "./js/modes/events/py.js?v=4.1.2",
-      "./js/modes/events/schema.js": "./js/modes/events/schema.js?v=4.1.2",
-      "./js/modes/events/sign.js": "./js/modes/events/sign.js?v=4.1.2",
-      "./js/modes/events/sounds.js": "./js/modes/events/sounds.js?v=4.1.2",
-      "./js/modes/events/wording.js": "./js/modes/events/wording.js?v=4.1.2",
-      "./js/modes/events.js": "./js/modes/events.js?v=4.1.2",
-      "./js/modes/index.js": "./js/modes/index.js?v=4.1.2",
-      "./js/modes/island.js": "./js/modes/island.js?v=4.1.2",
-      "./js/modes/tower.js": "./js/modes/tower.js?v=4.1.2",
-      "./js/modes/ultimate/help.js": "./js/modes/ultimate/help.js?v=4.1.2",
-      "./js/modes/ultimate/world.js": "./js/modes/ultimate/world.js?v=4.1.2",
-      "./js/modes/ultimate.js": "./js/modes/ultimate.js?v=4.1.2",
-      "./js/packs.js": "./js/packs.js?v=4.1.2",
-      "./js/site.js": "./js/site.js?v=4.1.2",
-      "./js/sound-rules.js": "./js/sound-rules.js?v=4.1.2",
-      "./js/speech.js": "./js/speech.js?v=4.1.2",
-      "./js/stats.js": "./js/stats.js?v=4.1.2",
-      "./js/storage.js": "./js/storage.js?v=4.1.2",
-      "./js/update-alert.js": "./js/update-alert.js?v=4.1.2",
-      "./js/version.js": "./js/version.js?v=4.1.2",
-      "./js/wetworker.js": "./js/wetworker.js?v=4.1.2"
+      "./js/accessibility.js": "./js/accessibility.js?v=5.0.0",
+      "./js/audio.js": "./js/audio.js?v=5.0.0",
+      "./js/backup.js": "./js/backup.js?v=5.0.0",
+      "./js/backups-page.js": "./js/backups-page.js?v=5.0.0",
+      "./js/braille.js": "./js/braille.js?v=5.0.0",
+      "./js/calendar.js": "./js/calendar.js?v=5.0.0",
+      "./js/device.js": "./js/device.js?v=5.0.0",
+      "./js/display.js": "./js/display.js?v=5.0.0",
+      "./js/game.js": "./js/game.js?v=5.0.0",
+      "./js/gestures.js": "./js/gestures.js?v=5.0.0",
+      "./js/help-data.js": "./js/help-data.js?v=5.0.0",
+      "./js/help-page.js": "./js/help-page.js?v=5.0.0",
+      "./js/keywords.js": "./js/keywords.js?v=5.0.0",
+      "./js/main.js": "./js/main.js?v=5.0.0",
+      "./js/modes/chaos.js": "./js/modes/chaos.js?v=5.0.0",
+      "./js/modes/driving.js": "./js/modes/driving.js?v=5.0.0",
+      "./js/modes/events/blocks.js": "./js/modes/events/blocks.js?v=5.0.0",
+      "./js/modes/events/engine.js": "./js/modes/events/engine.js?v=5.0.0",
+      "./js/modes/events/feed.js": "./js/modes/events/feed.js?v=5.0.0",
+      "./js/modes/events/help.js": "./js/modes/events/help.js?v=5.0.0",
+      "./js/modes/events/missions.js": "./js/modes/events/missions.js?v=5.0.0",
+      "./js/modes/events/more-spec.js": "./js/modes/events/more-spec.js?v=5.0.0",
+      "./js/modes/events/more.js": "./js/modes/events/more.js?v=5.0.0",
+      "./js/modes/events/py.js": "./js/modes/events/py.js?v=5.0.0",
+      "./js/modes/events/schema.js": "./js/modes/events/schema.js?v=5.0.0",
+      "./js/modes/events/sign.js": "./js/modes/events/sign.js?v=5.0.0",
+      "./js/modes/events/sounds.js": "./js/modes/events/sounds.js?v=5.0.0",
+      "./js/modes/events/tunes.js": "./js/modes/events/tunes.js?v=5.0.0",
+      "./js/modes/events/wording.js": "./js/modes/events/wording.js?v=5.0.0",
+      "./js/modes/events.js": "./js/modes/events.js?v=5.0.0",
+      "./js/modes/index.js": "./js/modes/index.js?v=5.0.0",
+      "./js/modes/island.js": "./js/modes/island.js?v=5.0.0",
+      "./js/modes/tower.js": "./js/modes/tower.js?v=5.0.0",
+      "./js/modes/ultimate/help.js": "./js/modes/ultimate/help.js?v=5.0.0",
+      "./js/modes/ultimate/world.js": "./js/modes/ultimate/world.js?v=5.0.0",
+      "./js/modes/ultimate.js": "./js/modes/ultimate.js?v=5.0.0",
+      "./js/packs.js": "./js/packs.js?v=5.0.0",
+      "./js/site.js": "./js/site.js?v=5.0.0",
+      "./js/sound-rules.js": "./js/sound-rules.js?v=5.0.0",
+      "./js/speech.js": "./js/speech.js?v=5.0.0",
+      "./js/stats.js": "./js/stats.js?v=5.0.0",
+      "./js/storage.js": "./js/storage.js?v=5.0.0",
+      "./js/turning.js": "./js/turning.js?v=5.0.0",
+      "./js/update-alert.js": "./js/update-alert.js?v=5.0.0",
+      "./js/version.js": "./js/version.js?v=5.0.0",
+      "./js/wetworker.js": "./js/wetworker.js?v=5.0.0"
     }
   }
   </script>
   <!-- end of versions -->
-  <script type="module" src="js/site.js?v=4.1.2"></script>
-  <script type="module" src="js/help-page.js?v=4.1.2"></script>
+  <script type="module" src="js/site.js?v=5.0.0"></script>
+  <script type="module" src="js/help-page.js?v=5.0.0"></script>
 </body>
 </html>

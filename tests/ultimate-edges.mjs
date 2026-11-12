@@ -66,9 +66,9 @@ const seabed = await page.evaluate(async () => {
   const lift = [isl.elevator[0] * 3, isl.elevator[1] * 3];
   const atLift = g.playerPos[0] === lift[0] && g.playerPos[1] === lift[1];
   const origin = u.seabed.origin;
-  // Walk to the seabed's edge: the wall stops you there, six cells out.
+  // Walk to the seabed's edge: the wall stops you there, twelve cells out (web 5.0.0; six until then).
   let steps = 0; let p0 = [...g.playerPos];
-  for (let i = 0; i < 10; i++) { const b = [...g.playerPos]; T.go('east'); if (g.playerPos[0] !== b[0]) steps += 1; }
+  for (let i = 0; i < 16; i++) { const b = [...g.playerPos]; T.go('east'); if (g.playerPos[0] !== b[0]) steps += 1; }
   const edge = (g.playerPos[0] - lift[0]) / 3;
   // Walk onto a seabed pickup: it is taken (ammo or a credit).
   const pk = u.seabed.pickups[0];
@@ -76,7 +76,7 @@ const seabed = await page.evaluate(async () => {
   g.playerPos = [pk.pos[0], pk.pos[1] + 3];
   T.go('north'); g.updateUltimateMode(1 / 30);
   const taken = !u.seabed.pickups.includes(pk) && (u.ammo > a0 || u.points > pts0);
-  const inside = u.seabed.pickups.every((q) => Math.abs(q.pos[0] - lift[0]) <= 18 && Math.abs(q.pos[1] - lift[1]) <= 18);
+  const inside = u.seabed.pickups.every((q) => Math.abs(q.pos[0] - lift[0]) <= 36 && Math.abs(q.pos[1] - lift[1]) <= 36);
   // The compass points back toward the lift.
   g.input('hold');
   const route = g._utRouteStep();
@@ -88,7 +88,7 @@ const seabed = await page.evaluate(async () => {
   return { place: u.place, atLift, origin: JSON.stringify(origin) === JSON.stringify(isl.elevator), steps, edge, taken, inside, route, toward, ambPos, under: !!(u.seabed && u.seabed.under), humInCar, humOnSeabed, hadHum: !!hum };
 });
 check(seabed.place === 'seabed' && seabed.atLift && seabed.origin, 'the ride down lands under the lift; the seabed\'s origin is the elevator\'s cell');
-check(seabed.steps === 6 && seabed.edge === 6, `the seabed is six cells across from the lift, with a wall beyond (${seabed.steps} steps)`);
+check(seabed.steps === 12 && seabed.edge === 12, `the seabed is twelve cells across from the lift, as big as Island Mode's (5.0.0), with a wall beyond (${seabed.steps} steps)`);
 check(seabed.taken && seabed.inside, 'a seabed pickup is walked onto and taken, and every pickup lies within the seabed');
 check(seabed.route && seabed.toward, 'the compass on the seabed points back toward the elevator: ' + JSON.stringify(seabed.route));
 check(seabed.ambPos && Math.abs(seabed.ambPos[0]) < 0.1 && seabed.ambPos[1] > 5 && seabed.under, `on the seabed the shore is straight above (${seabed.ambPos && seabed.ambPos.map((v) => v.toFixed(1)).join(', ')}) and the water plays`);

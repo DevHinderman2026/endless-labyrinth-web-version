@@ -86,15 +86,15 @@ async function computer(name, [ua, kind, srHint]) {
 
 for (const [name, spec] of Object.entries(UA)) await computer(name, spec);
 
-// Windows (web 2.0.0): Ultimate Mode only, with the keyboard; the other modes
-// are the Windows game's. The play page and the home page say so.
+// Windows: from web 2.0.0 to 4.1.2 Ultimate Mode only; since 5.0.0 every mode and
+// the events, with the keyboard. The Windows version stays the game to download.
 {
   const ctx = await browser.newContext({ userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36 Edg/130.0.0.0' });
   const page = await ctx.newPage();
   const errors = [];
   page.on('pageerror', (e) => errors.push(String(e)));
   await page.goto(base + '/play.html');
-  check((await page.locator('#start').isVisible()) && /Ultimate Mode/.test(await page.textContent('#lead')) && /Windows version/.test(await page.textContent('#lead')), 'Windows (Edge): let in for Ultimate Mode, pointed to the Windows version for the rest');
+  check((await page.locator('#start').isVisible()) && !/Ultimate Mode/.test(await page.textContent('#lead')) && (await page.locator('#windows-note').isVisible()) && /Windows version/.test(await page.textContent('#windows-note')), 'Windows (Edge): let in for the whole game (5.0.0), with a link to the Windows version under Start');
   check(await page.locator('#windows-note a[href*="releases/latest"]').isVisible(), 'Windows: the play page links to the Windows download');
   await page.click('#start');
   await page.waitForFunction(() => /Sounds loaded/.test(document.getElementById('lead').textContent), null, { timeout: 90000 });
@@ -108,10 +108,11 @@ for (const [name, spec] of Object.entries(UA)) await computer(name, spec);
     const { gameHelp, HELP } = await import('./js/game.js');
     return { menu: g.menuOptions.slice(), said: document.getElementById('said').textContent, help: gameHelp().map(([n]) => n), all: HELP.length, brailleTopic: gameHelp()[0][1].some((t) => /Braille Keyboard and Display/.test(t.title)) && !HELP[0][1].some((t) => /Braille Keyboard and Display/.test(t.title)) };
   });
-  check(JSON.stringify(w.menu.map((m) => m.replace(/:.*/, ''))) === JSON.stringify(['Ultimate Mode', 'High Scores', 'Speech', 'Braille Key Test', 'Speech Rate', 'Leave Game']), 'Windows: the menu is Ultimate Mode, High Scores, Speech, the Braille Key Test, Speech Rate, Leave Game (3.1.0: no Braille Keyboard setting): ' + w.menu.join(', '));
-  check(/other modes and the events are played in the Windows version/.test(w.said) && /arrow/.test(w.said) && !/Swipe/.test(w.said), 'Windows: the welcome says where the other modes are, in the keyboard\'s words');
-  check(JSON.stringify(w.help) === JSON.stringify(['General', 'Ultimate Mode', 'Demos, Ultimate Mode']) && w.all > 3 && w.brailleTopic, 'Windows: the game\'s help is General (with the Braille topic), Ultimate Mode and its demos (the site keeps all ' + w.all + ')');
-  // Enter starts the mode; the compass is C; Escape then Y quits.
+  check(JSON.stringify(w.menu.map((m) => m.replace(/:.*/, ''))) === JSON.stringify(['Standard Mode', 'Battle Mode', 'Driving Mode', 'Tower Mode', 'Island Mode', 'Chaos Mode', 'Ultimate Mode', 'Events', 'Event High Scores', 'High Scores', 'Speech', 'Braille Key Test', 'Speech Rate', 'Leave Game']), 'Windows: the menu is every mode and the events (5.0.0), then High Scores, Speech, the Braille Key Test, Speech Rate, Leave Game: ' + w.menu.join(', '));
+  check(!/Windows version/.test(w.said) && !/Ultimate Mode/.test(w.said) && /arrow/.test(w.said) && !/Swipe/.test(w.said), 'Windows: the welcome is the one every computer hears, in the keyboard\'s words (5.0.0: nothing sends you elsewhere)');
+  check(w.help.length === w.all && w.all > 3 && w.brailleTopic, 'Windows: the game\'s help is all of it (5.0.0), with the Braille topic in General');
+  // Enter on Ultimate Mode starts it; the compass is C; Escape then Y quits.
+  await page.evaluate(() => { const g = window.__el.game; g.menuIndex = g.menuKeys.indexOf('ultimate'); });
   await page.keyboard.press('Enter');
   await page.waitForTimeout(800);
   const run = await page.evaluate(() => ({ state: window.__el.game.state, spatial: window.__el.audio.spatial }));
