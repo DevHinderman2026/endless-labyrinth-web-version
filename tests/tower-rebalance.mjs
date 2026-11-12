@@ -1,4 +1,4 @@
-// The Tower rebalance (web 5.1.0, Russell, 12 November 2026), for Tower Mode and
+// The Tower rebalance (web 5.1.0, retuned in 5.1.1: Russell, 12 November 2026), for Tower Mode and
 // Chaos's tower floors, and that Ultimate Mode's tower-area rivals are untouched.
 //   node tests/tower-rebalance.mjs http://localhost:8771
 import { chromium } from 'playwright';
@@ -46,18 +46,14 @@ const r = await page.evaluate(async () => {
     dists.push([Math.hypot(it.x, it.y), Math.hypot(it.x - g.towerEnemy.x, it.y - g.towerEnemy.y), g.towerEnemy.notice]);
   }
   out.items = { near: Math.min(...dists.map((d) => d[0])), far: Math.max(...dists.map((d) => d[0])), rival: Math.min(...dists.map((d) => d[1])), notice: Math.min(...dists.map((d) => d[2])) };
-  // The guard: the rival never takes an item within two steps of you, and does not head for it.
+  // No guard (5.1.1): the rival still races you for an item only a step or two from you.
   {
     const en = g.towerEnemy;
     en.notice = 0; en.recover = 0; en.winding = 0; en.pending = 0; en.items = 0;
-    g.playerPos = [0, 0]; g.towerItem.x = 4; g.towerItem.y = 0; en.x = 4.5; en.y = 0;
+    g.playerPos = [0, 0]; g.towerItem.x = 4; g.towerItem.y = 0; en.x = 7; en.y = 0;
     const before = g.towerItem;
-    for (let i = 0; i < 30; i++) g.updateTowerMode(1 / 60);
-    out.guard = { kept: g.towerItem === before, rivalItems: en.items, away: +Math.hypot(en.x - 4, en.y).toFixed(2) };
-    // Step back out of reach: now it can take it.
-    g.playerPos = [-20, 0]; en.x = 4.5; en.y = 0;
     for (let i = 0; i < 60; i++) g.updateTowerMode(1 / 60);
-    out.unguarded = { taken: g.towerItem !== before, rivalItems: en.items };
+    out.close = { taken: g.towerItem !== before, rivalItems: en.items, guard: en.guard };
   }
   g._toMenu();
   // Ultimate Mode's rival, made straight from the class as Ultimate makes it: as before.
@@ -70,14 +66,13 @@ const r = await page.evaluate(async () => {
 });
 
 const near = (a, b, tol = 0.02) => Math.abs(a - b) <= tol;
-check(near(r.t1.race, 2.0) && near(r.t1.throwSpeed, 5.0) && near(r.t1.every, 7.0) && near(r.t1.windup, 1.5) && r.t1.guard === 6, `tower one: race at a third of a walk (2), throws at 5 units a second every 7 seconds, wind-up 1.5 s, guard 2 steps: ${JSON.stringify(r.t1)}`);
-check(near(r.t2.race, 2.2) && near(r.t2.throwSpeed, 5.4) && near(r.t2.every, 6.44) && near(r.t2.windup, 1.4), `tower two: 10% faster race, 8% faster and more often throws, wind-up 0.1 s shorter: ${JSON.stringify(r.t2)}`);
-check(r.t11.windup === 0.85 && r.t21.windup === 0.85 && r.t21.race > 13 && r.t21.race > r.t11.race, `no level-off: by tower 21 the rival races faster than a run (${r.t21.race}), and the wind-up never drops below 0.85 s`);
+check(near(r.t1.race, 9.0) && near(r.t1.throwSpeed, 5.0) && near(r.t1.every, 7.0) && near(r.t1.windup, 1.5) && !r.t1.guard && near(r.t1.notice, 1.5), `tower one: race at about two thirds of a run (9), throws at 5 units a second every 7 seconds, wind-up 1.5 s, no guard, 1.5 s head start: ${JSON.stringify(r.t1)}`);
+check(near(r.t2.race, 9.45) && near(r.t2.throwSpeed, 5.4) && near(r.t2.every, 6.44) && near(r.t2.windup, 1.4) && near(r.t2.notice, 1.3), `tower two: 5% faster race, 0.2 s less head start, 8% faster and more often throws, wind-up 0.1 s shorter: ${JSON.stringify(r.t2)}`);
+check(r.t11.windup === 0.85 && r.t21.windup === 0.85 && r.t11.race > 14 && r.t21.race > r.t11.race, `no level-off: by tower 11 the rival races faster than a run (${r.t11.race}), still rising at tower 21 (${r.t21.race}), and the wind-up never drops below 0.85 s`);
 check(r.t1f3.race > r.t1.race && r.t1f3.race < r.t2.race, `it rises floor by floor within a tower: ${r.t1.race} < ${r.t1f3.race} < ${r.t2.race}`);
 check(near(r.boost.speed, Math.pow(1.03, 5), 0.001) && near(r.boost.every, Math.pow(1.03, 5), 0.001) && r.boost.times === 5, `each pickup: 3% faster and 3% more often, five times at most: ${JSON.stringify(r.boost)}`);
-check(r.items.near >= 12 && r.items.far <= 30.01 && r.items.rival >= 12 && r.items.notice >= 2.5, `new items 12 to 30 units from you, 12 or more from the rival, each with a head start: ${JSON.stringify(r.items)}`);
-check(r.guard.kept && r.guard.rivalItems === 0, `an item within two steps of you is never the rival's: ${JSON.stringify(r.guard)}`);
-check(r.unguarded.taken && r.unguarded.rivalItems === 1, `out of reach, it can take it again: ${JSON.stringify(r.unguarded)}`);
+check(r.items.near >= 12 && r.items.far <= 30.01 && r.items.rival >= 12 && r.items.notice >= 1.5, `new items 12 to 30 units from you, 12 or more from the rival, each with a head start: ${JSON.stringify(r.items)}`);
+check(r.close.taken && r.close.rivalItems === 1 && !r.close.guard, `no guard: the rival still wins an item a step or two from you if it gets there first: ${JSON.stringify(r.close)}`);
 check(r.ultimate.lunge === undefined && !r.ultimate.guard && !r.ultimate.boost && r.ultimate.windup === 0.85 && near(r.ultimate.speedUp, r.ultimate.expect, 0.001) && !r.ultimate.guarded,
   `Ultimate Mode's rival is unchanged (old lunge, no guard, old 9% boost, 0.85 s wind-up): ${JSON.stringify(r.ultimate)}`);
 check(errors.length === 0, `no page errors: ${errors.join(' | ')}`);

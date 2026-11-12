@@ -152,9 +152,9 @@ const rest = await page.evaluate(async () => {
   T.start('tower');
   out.tower = { turns: g._turnsNow(), pace: tower.TOWER_RIVAL_PACE, enemyPace: g.towerEnemy && g.towerEnemy.pace };
   { const probe = new tower.TowerEnemy([0, 0], g._towerDifficulty(), 0, g.arenaLimit, 1, 1); out.tower.slower = g.towerEnemy ? +(g.towerEnemy.baseSpeed / probe.speed).toFixed(2) : null; }
-  // Web 5.1.0: the rival races for an item at a third of a walk in tower one.
+  // Web 5.1.1: the rival races for an item at about two thirds of a run in tower one (5.1.0: a third of a walk).
   out.tower.race = g.towerEnemy ? +(g.towerEnemy.baseSpeed * g.towerEnemy.lunge).toFixed(2) : null;
-  out.tower.walkThird = +(tower.TOWER_WALK / 3).toFixed(2);
+  out.tower.raceStart = tower.RIVAL_RACE_START;
   g.playerPos = [0, 0]; g._face(Math.PI / 2, true); g.input('up'); out.tower.step = [...g.playerPos];
   g.input('left'); T.frames(0.4); out.tower.turned = T.deg(g.tn.face);
   { const e = g.towerEnemy; g._face(Math.PI / 2, true); g.playerPos = [0, 0]; e.x = -15; e.y = 0; e.hitsTaken = 0; e.hitsNeeded = 5; g.towerItems = 3; g.throwTowerItem(); out.tower.hitBehind = e.hitsTaken; e.x = 0; e.y = -15; g.throwTowerItem(); out.tower.hitSide = e.hitsTaken; }
@@ -230,7 +230,7 @@ const rest = await page.evaluate(async () => {
   T.start('drive'); out.drive = { turns: g._turnsNow(), facing: a.facing, hold: g.gestures.turnHold };
   return out;
 });
-check(rest.tower.turns && rest.tower.race !== null && Math.abs(rest.tower.race - rest.tower.walkThird) < 0.25, `a tower floor turns, and in tower one its rival races at about a third of a walk (web 5.1.0): ${JSON.stringify(rest.tower)}`);
+check(rest.tower.turns && rest.tower.race !== null && Math.abs(rest.tower.race - 9.0) < 0.25 && rest.tower.raceStart === 9.0, `a tower floor turns, and in tower one its rival races at about two thirds of a run, 9 units a second (web 5.1.1): ${JSON.stringify(rest.tower)}`);
 check(rest.tower.step[0] === 3 && rest.tower.step[1] === 0 && rest.tower.turned === 60, 'facing east, a step goes three units east; a flick left turns you 30 degrees');
 check(rest.tower.hitBehind === 1 && rest.tower.hitSide === 1, 'a throw takes the rival centred ahead or directly behind, by the way you face, and misses one to the side');
 check(/Facing [a-z-]+\.$/.test(rest.tower.report), 'the tower report ends with the way you face: ' + rest.tower.report);
@@ -270,7 +270,7 @@ check(!rest.drive.turns && rest.drive.facing === 0 && !rest.drive.hold, 'Driving
     && !/fr[eo]z/i.test(during.r.text),
     'for thirty days the Update History opens with a region named Alert: turning, and compatibility between Windows and the web');
   check(before.r === null && after.r === null, 'it is not there before 5.0.0 came out, and it is gone after thirty days');
-  check(/^5\.1\.0 \(12 November 2026\), web only/.test(during.top), 'the Update History begins with 5.1.0 (web 5.1.0 came after 5.0.0): ' + during.top);
+  check(/^5\.1\.1 \(12 November 2026\), web only/.test(during.top), 'the Update History begins with 5.1.1 (web 5.1.1 came after 5.1.0): ' + during.top);
   await page.goto(base + '/help.html');
   const faq = await page.evaluate(() => ['faq-turning', 'faq-turning-lost', 'faq-turning-aim', 'faq-turning-walls', 'faq-turning-which', 'faq-turning-slide'].map((id) => { const h = document.getElementById(id); return h ? h.textContent : null; }));
   check(faq.every(Boolean), 'the frequently asked questions have six questions about turning: ' + faq.join(' | '));
