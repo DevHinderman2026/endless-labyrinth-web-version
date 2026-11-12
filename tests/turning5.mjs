@@ -189,6 +189,30 @@ const rest = await page.evaluate(async () => {
       if (got.includes('shots') !== (u.ammo > b.ammo) || got.includes('items') !== (u.items > b.items) || got.includes('health') !== (u.hp > b.hp) || got.includes('time') !== (u.worldTime > b.time + 50)) ok = false;
     }
     out.chest = { ok, seen: [...seen].sort().join(), words, cells: world.SEABED_CELLS, chance: ult.CHEST_CHANCE, time: ult.CHEST_TIME, caseTime: ult.CASE_TIME };
+    // Its sounds (five recordings in the ultimate pack since 5.0.0), and a stroke for each step along the seabed, never a blur of them.
+    const a2 = window.__el.audio;
+    const names = ['ut_chest', 'ut_dive_stroke_1', 'ut_dive_stroke_2', 'ut_dive_stroke_3', 'ut_dive_stroke_4', 'evt_chest_open'];
+    out.chest.sounds = names.filter((n) => !a2.has(n));
+    out.chest.loop = !!(a2.entries.get('ut_chest') && a2.entries.get('ut_chest').dry.loop);
+    out.chest.beacon = ult.CHEST_SOUNDS[0]; out.chest.opens = ult.CHEST_OPEN_SOUNDS[0];
+    {
+      // A dive, by hand: onto an island's seabed, then steps along it.
+      const isl = u.world.areas.find((x) => x.kind === 'island');
+      if (isl) {
+        const W = world; u.area = isl; u.safe = 999;
+        g.playerPos = W.posOf(isl.elevator[0], isl.elevator[1] + 1); u.liftArmed = false; g.updateUltimateMode(1 / 30);
+        g._utTurnStop(); g._utFace(0, true); g.input('up'); g.updateUltimateMode(1 / 30);      // onto the lift's square: the ride down
+        for (let i = 0; i < 30 * 20 && u.place === 'ride'; i++) { g.updateUltimateMode(1 / 30); if (i % 30 === 0) await new Promise((r) => setTimeout(r, 20)); }
+        const played = []; const op = a2.play.bind(a2); a2.play = (n, o) => { played.push(n); return op(n, o); };
+        g._utTurnStop(); g._utFace(0, true);
+        for (let i = 0; i < 4; i++) g.input('up');                 // four steps at once: one stroke
+        const burst = played.filter((n) => /^ut_dive_stroke_/.test(n)).length;
+        await new Promise((r) => setTimeout(r, 500)); g.input('up');
+        const later = played.filter((n) => /^ut_dive_stroke_/.test(n)).length;
+        a2.play = op;
+        out.chest.dive = { place: u.place, burst, later, moved: Math.round(Math.hypot(g.playerPos[0] - W.posOf(isl.elevator[0], isl.elevator[1])[0], g.playerPos[1] - W.posOf(isl.elevator[0], isl.elevator[1])[1])) };
+      } else out.chest.dive = null;
+    }
   }
   {
     // What keeps the way you face, and what does not.
@@ -210,6 +234,10 @@ check(/Facing [a-z-]+\.$/.test(rest.tower.report), 'the tower report ends with t
 check(rest.island.turns && rest.island.step[1] === 3 && !rest.island.rideTurns, 'an island turns with you (facing south, a step goes south), and the elevator does not');
 check(rest.island.vent.every && rest.island.vent.air === 30 && rest.island.vent.gone === 0 && rest.island.vent.before === 0 && rest.island.vent.after === 1 && rest.island.vent.moved && rest.island.vent.seabedTurns,
   'every dive has an air vent; ten seconds after you take one, the next appears somewhere else; the seabed turns with you: ' + JSON.stringify(rest.island.vent));
+check(rest.chest.sounds.length === 0 && rest.chest.loop && rest.chest.beacon === 'ut_chest' && rest.chest.opens === 'evt_chest_open',
+  'the chest calls with its own looping recording and opens with the chest opening; the four underwater strokes are in the packs ' + rest.chest.sounds.join(', '));
+check(rest.chest.dive === null || (rest.chest.dive.place === 'seabed' && rest.chest.dive.burst === 1 && rest.chest.dive.later === 2 && rest.chest.dive.moved === 15),
+  'each step along the seabed is a swimming stroke, and steps taken at once share one: ' + JSON.stringify(rest.chest.dive));
 check(rest.chest.ok && rest.chest.seen === 'health,items,points,shots,time' && !/chest/i.test(rest.chest.words) && rest.chest.cells === 24 && rest.chest.time === 90 && rest.chest.caseTime === 60,
   `Ultimate Mode: a treasure chest gives two or three things at once (and rarely 90 seconds), the voice says only what they are, the seabed is 25 squares across, and a glass case's time is 60 seconds: "${rest.chest.words}"`);
 check(rest.keep && rest.keep.ride === 90 && rest.keep.help === 90 && rest.keep.gap === 90 && rest.keep.road === 0, 'an elevator ride, the help and the gap between chaos levels keep the way you face; a road puts north ahead again: ' + JSON.stringify(rest.keep));

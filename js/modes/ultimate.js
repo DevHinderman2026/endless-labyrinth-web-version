@@ -159,13 +159,16 @@ export const CHEST_FULL_HEAL = 0.1;             // the chance its health is a fu
 export const CHEST_ITEMS = [4, 6];              // a bundle of tower items
 export const CHEST_TIME = 90;                   // seconds more in the world above
 export const CHEST_TIME_CHANCE = 0.1;           // and how often a chest holds them
-// Its sounds, and the strokes of swimming along the seabed: recordings of their
-// own once the sound packs carry them; until then the island treasure's shimmer
-// and pickup, and the silence the seabed has always had underfoot.
+// Its sounds, and the strokes of swimming along the seabed (recordings from
+// Pixabay, in the ultimate pack since 5.0.0): the chest calls with a sparkling
+// chime, about four seconds long, again and again; it opens with the events'
+// own chest opening; and each step along the seabed is one of four underwater
+// strokes. (The names after the first are what is used if a pack is missing one.)
 export const CHEST_SOUNDS = ['ut_chest', 'treasure_beacon'];
-export const CHEST_OPEN_SOUNDS = ['ut_chest_open', 'treasure_pickup'];
+export const CHEST_OPEN_SOUNDS = ['evt_chest_open', 'treasure_pickup'];
 export const DIVE_STROKES = ['ut_dive_stroke_1', 'ut_dive_stroke_2', 'ut_dive_stroke_3', 'ut_dive_stroke_4'];
 export const DIVE_STROKE_LEVEL = 0.6;
+export const DIVE_STROKE_EVERY = 0.35;          // seconds: no stroke starts sooner than this after the last, so a run along the seabed is a string of strokes, not a blur of them
 export const RIDE_MIN = 4.0;
 export const RIDE_MAX = 16.0;
 export const RIDE_TIME = 8.0;
@@ -1619,7 +1622,11 @@ const mixin = {
           if (Math.hypot(cx, cy) >= CHEST_FAR) at = posOf(ex + cx, ey + cy);
         }
         const beacon = CHEST_SOUNDS.find((n) => this.audio.has(n));
-        if (at && beacon) u.seabed.pickups.push({ kind: 'chest', pos: at, beacon, gain: CHEST_GAIN });
+        if (at && beacon) {
+          u.seabed.pickups.push({ kind: 'chest', pos: at, beacon, gain: CHEST_GAIN });
+          // (Its opening is a recording from the events' library, decoded now so it sounds the moment the chest opens.)
+          this.audio.prepare(CHEST_OPEN_SOUNDS[0]);
+        }
       }
       // The water, placed so it can rise from below you on the way down.
       u.seabed.under = this._utPlay('underwater', this.playerPos, { loops: -1, volume: 0.0, height: -6 });
@@ -2191,9 +2198,12 @@ const mixin = {
       this.audio.play(this._utStepSound(a));
     }
     // (Until web 5.0.0 the seabed made no sound underfoot, as in Island Mode. Now
-    // each step along it is a swimming stroke under water, once the sound packs
-    // carry that recording.)
-    if (seabed) { const st = DIVE_STROKES.filter((n) => this.audio.has(n)); if (st.length) this.audio.play(choice(st), { volume: DIVE_STROKE_LEVEL }); }
+    // each step along it is a swimming stroke under water.)
+    if (seabed) {
+      const st = DIVE_STROKES.filter((n) => this.audio.has(n));
+      const now = this.audio.ctx.currentTime;
+      if (st.length && !(now - (u.strokeAt ?? -9) < DIVE_STROKE_EVERY)) { u.strokeAt = now; this.audio.play(this._utFresh(st, 'lastStroke'), { volume: DIVE_STROKE_LEVEL }); }
+    }
   },
 
   _utAttack() {
