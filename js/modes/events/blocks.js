@@ -26,6 +26,7 @@ const CASE_REARM = 9.0;                // go this far from a case and its bell r
 const CASE_KNOCK_RANGE = 45.0;         // a case knocks from within fifteen steps
 const CASE_KNOCK_EVERY = [0.35, 1.1];  // seconds between knocks: beside the case, and at the edge of the range
 const CASE_KNOCK_LEVEL = [0.35, 0.9];  // the knock's level: at the edge of the range, and beside the case
+const CHARGE_STEP_GAIN = 0.9;          // a charging creature's footsteps, against its own volume
 const LISTENER_ROOM = 2.5 * STEP;      // no item lies this near a resting listener, nor it this near one
 const GLASS_RADIUS = 4.5;              // broken glass: the case's square and the eight round it, three steps across
 export const CHASER_FADE = 4.0;        // seconds a chaser takes to be heard at full, after a smash
@@ -444,8 +445,9 @@ export const BlocksMixin = {
       this.evHazards.splice(this.evHazards.indexOf(th), 1);
     }
     for (const th of this.evHazards) this._eventSpawnHazard(0, th);
+    const most = this.ev.levels.creatures_most || CREATURES_MOST;     // the event's own limit
     for (let i = 0; i < more; i++) {
-      if (this.evHazards.length >= CREATURES_MOST) break;
+      if (this.evHazards.length >= Math.min(most, CREATURES_MOST)) break;
       this._eventSpawnHazard(this.evHazards.length);
     }
   },
@@ -679,6 +681,7 @@ export const BlocksMixin = {
       if (th.state === 'growl') {
         if (th.timer <= 0) {
           th.state = 'charge'; th.timer = hz.charge_seconds;
+          th.knock = STEP;                    // its first footstep lands as the charge begins
           this._bListenerSound(th, hz, false);
         }
         return;
@@ -686,6 +689,14 @@ export const BlocksMixin = {
       const [gx, gy] = th.target || [px, py];
       const ox = th.x; const oy = th.y;
       this._bMoveToward(th, gx, gy, speed, lim);
+      // A charge is heard coming: a footstep for every step it runs, on the floor it
+      // is running over, from where it is.
+      th.knock = (th.knock || 0.0) + Math.hypot(th.x - ox, th.y - oy);
+      if (th.knock >= STEP) {
+        th.knock -= STEP;
+        const bank = this.bBanks[this._bFloorAt([th.x, th.y])] || this.bBanks.stone || STONE;
+        this._bShotAt(choice(bank), [th.x, th.y], CHARGE_STEP_GAIN * hz.volume);
+      }
       const arrived = th.target !== null && Math.hypot(gx - th.x, gy - th.y) < 1.5;
       if (th.timer <= 0 || arrived) {
         const mx = gx - ox; const my = gy - oy;

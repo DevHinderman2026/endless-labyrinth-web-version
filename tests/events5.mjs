@@ -415,6 +415,44 @@ r = await page.evaluate(async () => {
 });
 check(r.errs > 0 && r.stub && /needs a newer version of the game/.test(r.line), 'an event of a newer format is listed, with what to do: ' + r.line.slice(0, 90));
 
+// ------------------------------------------------------------ Trapped in Darkness: creatures by level, and a charge that is heard
+const TID = JSON.parse(fs.readFileSync(path.join(TEMPLATES, 'trapped-in-darkness.json'), 'utf8'));
+await start(TID);
+r = await inGame(`
+  const counts = [G.evHazards.length]; const own = []; let glass = G.bPatch.size + G.bGlassExtra.size;
+  for (let level = 0; level < 5 && G.state === 'event'; level++) {
+    own.push(new Set(G.evItems.map((t) => t.beacon)).size === G.evItems.length);
+    for (const t of [...G.evItems]) { t.cased = false; G._eventTakeItem(t); }
+    if (G.state !== 'event') break;
+    counts.push(G.evHazards.filter((c) => c.role !== 'chaser').length);
+  }
+  return { counts, own, glass };`);
+check(r.counts.slice(0, 4).join() === '1,2,3,3' && Math.max(...r.counts) === 3, 'Trapped in Darkness: one creature on level 1, one more each level, never more than three: ' + r.counts.join(', '));
+check(r.own.every(Boolean) && r.glass === 0, 'each memory on a level has a sound of its own, and no glass lies on the floor before a case is smashed');
+await start(TID);
+r = await inGame(`
+  const L = G.evHazards[0]; const hz = G.ev.hazards;
+  L.x = 0; L.y = -30; L.face = [0, 1]; G.playerPos = [0, 30]; G.evElapsed = 10;
+  const played = []; const shot = G._bShotAt.bind(G);
+  G._bShotAt = (name, pos, gain = 1.0) => { played.push([String(name), pos[0], pos[1]]); return shot(name, pos, gain); };
+  H.run(1.0);
+  const resting = played.filter((p) => p[0].startsWith('step')).length;
+  G._bWake(L, hz); H.run(hz.growl_seconds + 0.1);
+  const state = L.state; played.length = 0; const y0 = L.y;
+  H.run(2.0);
+  const steps = played.filter((p) => p[0].startsWith('step'));
+  G._bShotAt = shot;
+  return { resting, state, steps: steps.length, ran: Math.abs(L.y - y0) / 3, from: steps.every((p) => Math.abs(p[1] - L.x) < 3.1 && p[2] <= L.y + 0.1) };`);
+check(r.resting === 0 && r.state === 'charge', 'a creature at rest makes no footsteps, and after its growl it charges');
+check(r.steps >= 3 && Math.abs(r.steps - r.ran) <= 1.5 && r.from, `a charging creature's footsteps are heard from where it is, one for each step it runs: ${r.steps} over ${r.ran.toFixed(1)} steps`);
+r = await page.evaluate(async () => {
+  const { checkEvent, DEFAULTS } = await import('./js/modes/events/schema.js');
+  const ev = Object.assign(structuredClone(DEFAULTS), { id: 'test-event', name: 'Test', mission: 'collect', start: '2026-01-01T00:00:00Z', end: '2027-01-01T00:00:00Z' });
+  ev.levels.on = true; ev.hazards.count = 4; ev.levels.creatures_most = 3;
+  return { def: DEFAULTS.levels.creatures_most, errs: checkEvent(ev)[1] };
+});
+check(r.def === 0 && r.errs.some((e) => /fewer than the creatures the event starts with/.test(e)), 'the most creatures on a level is off unless set, and one below the starting creatures is refused in words');
+
 // ------------------------------------------------------------ unlimited shots
 const HUNT = { 'weapon.enabled': true, 'hazards.count': 2, 'hazards.can_be_shot': true, 'hazards.respawn_seconds': 5, 'hazards.speed': 0.2, 'hunt.ammo_every_seconds': 1 };
 const SHOOT = `

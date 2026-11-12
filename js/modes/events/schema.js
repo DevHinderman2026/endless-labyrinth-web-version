@@ -117,7 +117,7 @@ export const DEFAULTS = {
   // ---- new in format 2 (written out from the desktop's DEFAULTS)
   floor: { main: "stone", patch: "none", patch_share: 0.0, patch_share_most: 0.0 },
   walls: { on: false, density: 0.15 },
-  levels: { on: false, items_fewest: 3, items_most: 3, more_creatures_each: 0, points_per_level: 0 },
+  levels: { on: false, items_fewest: 3, items_most: 3, more_creatures_each: 0, creatures_most: 0, points_per_level: 0 },
   ending: { kind: "open", levels: 5, levels_most: 10, finish_bonus: 0 },
   cases: { share: 0.0, extra: "none", random_kinds: ["seconds", "shots", "points"], seconds: 20, shots: 5, points: 10, noise: "none", chasers_fewest: 2, chasers_most: 3, chaser_speed: 3.0 },
   noise: { glass: true, smash: true, shots: false, stones: true },
@@ -946,6 +946,11 @@ function checkBlocks(ev, errors) {
   lv.items_most = num(errors, 'The most items on a level', lv.items_most, 1, 30);
   if (lv.items_most < lv.items_fewest) errors.push('The most items on a level must be at least the fewest.');
   lv.more_creatures_each = num(errors, 'More creatures each level', lv.more_creatures_each, 0, 5);
+  lv.creatures_most = num(errors, 'The most creatures on a level', lv.creatures_most, 0, 10);
+  if (lv.creatures_most && lv.creatures_most < kinds(ev).reduce((a, k) => a + k.count, 0)) {
+    errors.push('The most creatures on a level is fewer than the creatures the event starts with. '
+      + 'Make it at least that many, or 0 for no limit.');
+  }
   lv.points_per_level = num(errors, 'Points for finishing a level', lv.points_per_level, 0, 100000);
   if (lv.on === true && !LEVEL_MISSIONS.includes(m)) errors.push('Levels are for the collecting missions (' + LEVEL_MISSIONS.join(', ') + '); this mission is not played in levels this way. Turn levels off.');
   if (levelsOn(ev) && (it.total || it.all_found_bonus || it.time_bonus)) errors.push('With levels, each level sets its own number of items: set the item total, the all found bonus and the time bonus to 0, and use the points for finishing a level.');
