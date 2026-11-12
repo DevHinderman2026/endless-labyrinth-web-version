@@ -223,8 +223,10 @@ export const HIT_REACT_LEVEL = 0.6;
 // without a send of their own they had no echo at all. The two roars cut from a
 // live stadium recording carry the stadium's own echo and get less; the close-up
 // recordings get more. The stadium crowd loop in the background is unchanged.
-export const CROWD_SEND = 0.5;
-export const CROWD_SEND_LIVE = 0.3;
+// Web 5.1.0 (Russell, 12 November 2026): the cheers and every reaction sent
+// further into the arena's echo: 0.8 and 0.5 (were 0.5 and 0.3).
+export const CROWD_SEND = 0.8;
+export const CROWD_SEND_LIVE = 0.5;
 export const CROWD_LIVE_RECORDED = ['ut_crowd_roar_1', 'ut_crowd_roar_2'];
 export const HIT_REACT_AFTER = 0.15;            // seconds after the hit sound
 // The water park (Russell, 8 Nov): a safe zone whose background is water has a

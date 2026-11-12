@@ -8,7 +8,7 @@
   <link rel="icon" href="icons/icon-192.png">
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
   <meta name="theme-color" content="#0c0f14">
-  <link rel="stylesheet" href="css/site.css?v=5.0.0">
+  <link rel="stylesheet" href="css/site.css?v=5.1.0">
 </head>
 <body data-update-alert="history">
   <header class="site">
@@ -19,6 +19,39 @@
   <main class="page">
     <p>This page lists the web version. For the Windows version, see its <a href="https://github.com/DevHinderman2026/Endless-Labyrinth/blob/main/Credits%20and%20Version%20History/CHANGELOG.md">changelog</a> on GitHub.</p>
     <p>The game updates by itself: the next time you open it, you have the latest version. Only a sound pack that has changed is downloaded again, and your high scores are kept. Events are not listed here: they appear in the Events menu as they open.</p>
+
+    <h2>5.1.0 (12 November 2026), web only</h2>
+    <p>Tower Mode and the tower floors of Chaos are much easier to begin, the seabed now has the sound of swimming in every mode, the sound no longer distorts or stutters when many things play at once, and Ultimate Mode's arena crowd rings further into the arena. Web only: the Windows game is unchanged.</p>
+    <h3>Changed: Tower Mode and the tower floors of Chaos</h3>
+    <p>Since the walking modes began to turn, the rival had been far faster than you even in the first tower, and its throws were hard to escape. Everything now starts gentle and still gets harder with every tower, with no limit, so a climb always ends in the end.</p>
+    <ul>
+      <li><strong>The rival's speed:</strong> in tower one it races for an item at about a third of your walking pace, and it gets ten percent faster with every tower. It now passes a steady walk around tower thirteen and a run around tower twenty.</li>
+      <li><strong>Collecting:</strong> each item you take on a floor makes the rival three percent faster and makes it throw three percent more often, at most five times. Until now it was nine percent each time, up to eight times, about double its speed.</li>
+      <li><strong>Your items:</strong> once you are within two steps of an item, the rival cannot take it and keeps off it. Every new item gives you a head start before the rival races for it: two and a half seconds in tower one, a little less in each tower after, never less than half a second. A new item always lies between four and ten steps from you, and never at the rival's feet.</li>
+      <li><strong>Throws:</strong> in tower one an item flies slower than you walk, comes about every seven seconds, and its wind-up warns you for a second and a half, so even after turning you can walk away from it. Each tower after, throws fly eight percent faster and come eight percent more often, with no limit, and the wind-up is a tenth of a second shorter, but never shorter than just under a second.</li>
+      <li>Hits needed to bring a rival down, hoarding, bursts and damage are as they were.</li>
+      <li>Ultimate Mode's tower areas are not changed.</li>
+    </ul>
+    <h3>New: swimming on the seabed</h3>
+    <ul>
+      <li>In Island Mode and on the island levels of Chaos, every step along the seabed is now a swimming stroke under water, the same four recordings as Ultimate Mode's seabed. Until now a step there made no sound. The air vents are unchanged.</li>
+    </ul>
+    <h3>Fixed: distortion and stutter</h3>
+    <ul>
+      <li>When many sounds played at once, most of all on a seabed, the sound could crackle as new sounds came in and stutter, especially while turning. The whole game outside Ultimate Mode is now a little quieter, and everything passes through a gentle limiter at the end, so the sound never goes over the top.</li>
+      <li>The game no longer tells your browser again and again where a sound is when it has not moved, which kept the browser busy for nothing, frame after frame, for every sound at once.</li>
+      <li>At most thirty-two short sounds play at once, twelve of them placed around you. When the oldest has to make room for a new one, it now fades out in a moment instead of being cut off with a click. Background loops are never stopped to make room.</li>
+      <li>The browser is given a few milliseconds more for each slice of sound, too little to hear in a gesture, so a phone does not fall behind.</li>
+    </ul>
+    <h3>Changed: Ultimate Mode</h3>
+    <ul>
+      <li>In the battle areas the crowd's cheers and all its reactions are sent further into the arena's echo, so they sound as if they fill the arena. The stadium crowd in the background is unchanged.</li>
+    </ul>
+    <h3>The website</h3>
+    <ul>
+      <li>For fifteen days the home page opens with an alert asking every Windows player to update to Windows version 3.0.1, which brings many fixes and a rebalanced event system. It is spoken as soon as the page opens, and it stays at the top of the page as a region named Alert, so you can find it again.</li>
+      <li>The Help page's Tower Mode topics describe the new numbers, and Demos, Island Mode has the swimming stroke.</li>
+    </ul>
 
     <h2>5.0.0 (12 November 2026)</h2>
     <p>The whole web game is now heard in binaural 3D sound, and its walking modes turn with you. Until now only Ultimate Mode did either. Standard, Battle, Tower, Island and the walking levels of Chaos now turn exactly as Ultimate Mode does, and several of their numbers have changed to allow for it. Ultimate Mode's glass cases and seabed have grown. Windows computers can now play the whole game on the website. And the events gain everything Windows version 3.0.0 brought: building blocks for rooms, creatures and goals, and thirty-two new kinds of mission.</p>
@@ -396,57 +429,57 @@
   <script type="importmap">
   {
     "imports": {
-      "./js/accessibility.js": "./js/accessibility.js?v=5.0.0",
-      "./js/audio.js": "./js/audio.js?v=5.0.0",
-      "./js/backup.js": "./js/backup.js?v=5.0.0",
-      "./js/backups-page.js": "./js/backups-page.js?v=5.0.0",
-      "./js/braille.js": "./js/braille.js?v=5.0.0",
-      "./js/calendar.js": "./js/calendar.js?v=5.0.0",
-      "./js/device.js": "./js/device.js?v=5.0.0",
-      "./js/display.js": "./js/display.js?v=5.0.0",
-      "./js/game.js": "./js/game.js?v=5.0.0",
-      "./js/gestures.js": "./js/gestures.js?v=5.0.0",
-      "./js/help-data.js": "./js/help-data.js?v=5.0.0",
-      "./js/help-page.js": "./js/help-page.js?v=5.0.0",
-      "./js/keywords.js": "./js/keywords.js?v=5.0.0",
-      "./js/main.js": "./js/main.js?v=5.0.0",
-      "./js/modes/chaos.js": "./js/modes/chaos.js?v=5.0.0",
-      "./js/modes/driving.js": "./js/modes/driving.js?v=5.0.0",
-      "./js/modes/events/blocks.js": "./js/modes/events/blocks.js?v=5.0.0",
-      "./js/modes/events/engine.js": "./js/modes/events/engine.js?v=5.0.0",
-      "./js/modes/events/feed.js": "./js/modes/events/feed.js?v=5.0.0",
-      "./js/modes/events/help.js": "./js/modes/events/help.js?v=5.0.0",
-      "./js/modes/events/missions.js": "./js/modes/events/missions.js?v=5.0.0",
-      "./js/modes/events/more-spec.js": "./js/modes/events/more-spec.js?v=5.0.0",
-      "./js/modes/events/more.js": "./js/modes/events/more.js?v=5.0.0",
-      "./js/modes/events/py.js": "./js/modes/events/py.js?v=5.0.0",
-      "./js/modes/events/schema.js": "./js/modes/events/schema.js?v=5.0.0",
-      "./js/modes/events/sign.js": "./js/modes/events/sign.js?v=5.0.0",
-      "./js/modes/events/sounds.js": "./js/modes/events/sounds.js?v=5.0.0",
-      "./js/modes/events/tunes.js": "./js/modes/events/tunes.js?v=5.0.0",
-      "./js/modes/events/wording.js": "./js/modes/events/wording.js?v=5.0.0",
-      "./js/modes/events.js": "./js/modes/events.js?v=5.0.0",
-      "./js/modes/index.js": "./js/modes/index.js?v=5.0.0",
-      "./js/modes/island.js": "./js/modes/island.js?v=5.0.0",
-      "./js/modes/tower.js": "./js/modes/tower.js?v=5.0.0",
-      "./js/modes/ultimate/help.js": "./js/modes/ultimate/help.js?v=5.0.0",
-      "./js/modes/ultimate/world.js": "./js/modes/ultimate/world.js?v=5.0.0",
-      "./js/modes/ultimate.js": "./js/modes/ultimate.js?v=5.0.0",
-      "./js/packs.js": "./js/packs.js?v=5.0.0",
-      "./js/site.js": "./js/site.js?v=5.0.0",
-      "./js/sound-rules.js": "./js/sound-rules.js?v=5.0.0",
-      "./js/speech.js": "./js/speech.js?v=5.0.0",
-      "./js/stats.js": "./js/stats.js?v=5.0.0",
-      "./js/storage.js": "./js/storage.js?v=5.0.0",
-      "./js/turning.js": "./js/turning.js?v=5.0.0",
-      "./js/update-alert.js": "./js/update-alert.js?v=5.0.0",
-      "./js/version.js": "./js/version.js?v=5.0.0",
-      "./js/wetworker.js": "./js/wetworker.js?v=5.0.0"
+      "./js/accessibility.js": "./js/accessibility.js?v=5.1.0",
+      "./js/audio.js": "./js/audio.js?v=5.1.0",
+      "./js/backup.js": "./js/backup.js?v=5.1.0",
+      "./js/backups-page.js": "./js/backups-page.js?v=5.1.0",
+      "./js/braille.js": "./js/braille.js?v=5.1.0",
+      "./js/calendar.js": "./js/calendar.js?v=5.1.0",
+      "./js/device.js": "./js/device.js?v=5.1.0",
+      "./js/display.js": "./js/display.js?v=5.1.0",
+      "./js/game.js": "./js/game.js?v=5.1.0",
+      "./js/gestures.js": "./js/gestures.js?v=5.1.0",
+      "./js/help-data.js": "./js/help-data.js?v=5.1.0",
+      "./js/help-page.js": "./js/help-page.js?v=5.1.0",
+      "./js/keywords.js": "./js/keywords.js?v=5.1.0",
+      "./js/main.js": "./js/main.js?v=5.1.0",
+      "./js/modes/chaos.js": "./js/modes/chaos.js?v=5.1.0",
+      "./js/modes/driving.js": "./js/modes/driving.js?v=5.1.0",
+      "./js/modes/events/blocks.js": "./js/modes/events/blocks.js?v=5.1.0",
+      "./js/modes/events/engine.js": "./js/modes/events/engine.js?v=5.1.0",
+      "./js/modes/events/feed.js": "./js/modes/events/feed.js?v=5.1.0",
+      "./js/modes/events/help.js": "./js/modes/events/help.js?v=5.1.0",
+      "./js/modes/events/missions.js": "./js/modes/events/missions.js?v=5.1.0",
+      "./js/modes/events/more-spec.js": "./js/modes/events/more-spec.js?v=5.1.0",
+      "./js/modes/events/more.js": "./js/modes/events/more.js?v=5.1.0",
+      "./js/modes/events/py.js": "./js/modes/events/py.js?v=5.1.0",
+      "./js/modes/events/schema.js": "./js/modes/events/schema.js?v=5.1.0",
+      "./js/modes/events/sign.js": "./js/modes/events/sign.js?v=5.1.0",
+      "./js/modes/events/sounds.js": "./js/modes/events/sounds.js?v=5.1.0",
+      "./js/modes/events/tunes.js": "./js/modes/events/tunes.js?v=5.1.0",
+      "./js/modes/events/wording.js": "./js/modes/events/wording.js?v=5.1.0",
+      "./js/modes/events.js": "./js/modes/events.js?v=5.1.0",
+      "./js/modes/index.js": "./js/modes/index.js?v=5.1.0",
+      "./js/modes/island.js": "./js/modes/island.js?v=5.1.0",
+      "./js/modes/tower.js": "./js/modes/tower.js?v=5.1.0",
+      "./js/modes/ultimate/help.js": "./js/modes/ultimate/help.js?v=5.1.0",
+      "./js/modes/ultimate/world.js": "./js/modes/ultimate/world.js?v=5.1.0",
+      "./js/modes/ultimate.js": "./js/modes/ultimate.js?v=5.1.0",
+      "./js/packs.js": "./js/packs.js?v=5.1.0",
+      "./js/site.js": "./js/site.js?v=5.1.0",
+      "./js/sound-rules.js": "./js/sound-rules.js?v=5.1.0",
+      "./js/speech.js": "./js/speech.js?v=5.1.0",
+      "./js/stats.js": "./js/stats.js?v=5.1.0",
+      "./js/storage.js": "./js/storage.js?v=5.1.0",
+      "./js/turning.js": "./js/turning.js?v=5.1.0",
+      "./js/update-alert.js": "./js/update-alert.js?v=5.1.0",
+      "./js/version.js": "./js/version.js?v=5.1.0",
+      "./js/wetworker.js": "./js/wetworker.js?v=5.1.0"
     }
   }
   </script>
   <!-- end of versions -->
-  <script type="module" src="js/site.js?v=5.0.0"></script>
-  <script type="module" src="js/update-alert.js?v=5.0.0"></script>
+  <script type="module" src="js/site.js?v=5.1.0"></script>
+  <script type="module" src="js/update-alert.js?v=5.1.0"></script>
 </body>
 </html>

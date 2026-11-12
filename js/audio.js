@@ -44,6 +44,26 @@ const WIDE_GAIN = 1.2;
 const BIG_KEEP = 3;
 // A looping sound's own echoes (see _loopWet) are kept up to this many bytes.
 const LOOP_WET_KEEP = 32e6;
+// The end of the chain (web 5.1.0, Russell, 12 November 2026: distortion and
+// stutter, most of all on a crowded seabed). Everything the game plays passes
+// through one gain and then a gentle limiter, so however many sounds come in at
+// once the total never goes over the top and clips:
+// - MASTER_LEVEL: the whole game a little quieter, so the limiter seldom has
+//   anything to do. Ultimate Mode keeps its own level (MASTER_LEVEL_3D, as it
+//   was), since it is not part of this update.
+// - LIMITER: a compressor set as a soft limiter, only peaks near the top are
+//   held down; below its threshold it does nothing at all.
+const MASTER_LEVEL = 0.85;
+const MASTER_LEVEL_3D = 1.0;
+const LIMITER = { threshold: -3, knee: 3, ratio: 20, attack: 0.002, release: 0.15 };
+// Outside Ultimate Mode, a one-shot stopped to make room for a newer one is faded
+// out over this many milliseconds instead of being cut, which clicked.
+const CULL_FADE_MS = 40;
+// How far a placed sound's direction must move before its panner is moved again
+// (the cosine of about half a degree). Telling a panner again and again where it
+// already is kept the browser's audio thread busy for nothing, frame after
+// frame, for every sound at once.
+const PLACE_SAME = Math.cos(0.5 * Math.PI / 180);
 
 function clamp(v, lo, hi) { return Math.min(hi, Math.max(lo, v)); }
 
@@ -68,17 +88,44 @@ export function isPauseBeep(name) {
 function newContext() {
   const AC = window.AudioContext || window.webkitAudioContext;
   try {
-    return new AC({ sampleRate: RATE, latencyHint: 'interactive' });
+    // 'balanced' (web 5.1.0; was 'interactive'): a little more time for each
+    // slice of sound, so a phone's audio thread does not fall behind and stutter
+    // when many binaural sounds play at once. The difference is a few
+    // milliseconds, too little to hear in a gesture.
+    return new AC({ sampleRate: RATE, latencyHint: 'balanced' });
   } catch (e) {
     return new AC();
   }
 }
 
+// The end of the chain: the master gain, then the limiter, then the speakers.
+function outChain(ctx, level) {
+  const out = ctx.createGain();
+  out.gain.value = level;
+  let lim = null;
+  try {
+    lim = ctx.createDynamicsCompressor();
+    lim.threshold.value = LIMITER.threshold;
+    lim.knee.value = LIMITER.knee;
+    lim.ratio.value = LIMITER.ratio;
+    lim.attack.value = LIMITER.attack;
+    lim.release.value = LIMITER.release;
+    out.connect(lim);
+    lim.connect(ctx.destination);
+  } catch (e) {
+    out.connect(ctx.destination);   // (a browser without one: as before)
+  }
+  return { out, lim };
+}
+
+// Remembered targets of the gains and panners outside Ultimate Mode, so an
+// unchanged value is not sent to the audio thread again (see Voice._set, _place).
+const SENT = new WeakMap();
+
 export class AudioEngine {
   constructor() {
     this.ctx = newContext();
-    this.out = this.ctx.createGain();
-    this.out.connect(this.ctx.destination);
+    ({ out: this.out, lim: this.limiter } = outChain(this.ctx, MASTER_LEVEL));
     this.recoveries = 0;
     this.entries = new Map();     // name -> {dry, dull} pack entries
     this.irEntries = new Map();   // room key -> [entry per take]
@@ -106,6 +153,9 @@ export class AudioEngine {
     // hear: see holdAll).
     this.maxShots = 56;
     this.maxShots3d = 16;
+    // Binaural 3D outside Ultimate Mode (web 5.1.0; was the plain 56): every mode
+    // but Ultimate, on a phone. Loops are never counted, as above.
+    this.maxShotsBin = 32;
     this.culled = 0;              // how many a full house has stopped early (for the tests)
     this.sourceEffect = null;     // set by the game: position -> [gain, lean]
     this.behindOf = null;         // set by the game: position -> 0..1
@@ -116,7 +166,7 @@ export class AudioEngine {
     this.turns = false;           // set by the game, frame by frame: the mode being played turns with you
     this.turnsNow = null;         // set by the game: the same, asked at the moment a sound starts (a run's first background starts before its first frame)
     this.relOf = null;            // set by the game: a place in the world -> the way it lies from the player, [east, south], or null
-    this.maxPlaced = 16;          // placed one-shots at once (each has its panners): past it the oldest placed one gives way
+    this.maxPlaced = 12;          // placed one-shots at once (each has its panners): past it the oldest placed one gives way (16 until web 5.1.0)
     this.spatial = false;
     this.facing = 0;              // the way the listener faces in the 3D world, radians clockwise from north (setFacing)
     this.worldIn = null;          // GainNode: the world's sounds, before the filter and fade
@@ -209,8 +259,7 @@ export class AudioEngine {
     this.recoveries += 1;
     this.recoveredAt = performance.now();
     this.ctx = newContext();
-    this.out = this.ctx.createGain();
-    this.out.connect(this.ctx.destination);
+    ({ out: this.out, lim: this.limiter } = outChain(this.ctx, this.spatial ? MASTER_LEVEL_3D : MASTER_LEVEL));
     this.convolvers = new Map();
     // The world chain and the area echoes belong to the old engine; made again
     // in the new one, for the same areas, by the mode's next call.
@@ -577,6 +626,7 @@ export class AudioEngine {
   // recover(), which keeps the facing.
   spatialOn() {
     this.spatial = true;
+    this._master(MASTER_LEVEL_3D);
     if (this.worldIn) return;
     const ctx = this.ctx;
     this.worldIn = ctx.createGain();
@@ -595,6 +645,15 @@ export class AudioEngine {
       if (l.upX) { l.upX.value = 0; l.upY.value = 1; l.upZ.value = 0; }
     } catch (e) { /* the defaults are the same */ }
     this.setFacing(this.facing || 0, true);
+  }
+
+  // The master level, glided to so it never clicks.
+  _master(level) {
+    if (!this.out) return;
+    const g = this.out.gain;
+    const now = this.ctx.currentTime;
+    g.cancelScheduledValues(now);
+    g.setTargetAtTime(level, now, 0.05);
   }
 
   // The way the listener faces, in radians clockwise from north (web 4.0.0:
@@ -621,6 +680,7 @@ export class AudioEngine {
   // The 3D world is over: the area echoes go, and sounds play as everywhere else.
   spatialOff({ now = false } = {}) {
     this.spatial = false;
+    this._master(MASTER_LEVEL);
     this.listenerMix = null;
     this.setFacing(0, true);     // north again, for whatever comes next
     this.setAreaRooms([], { now });
@@ -781,14 +841,17 @@ export class AudioEngine {
       // the crowd's roar; and with loops alone at the ceiling, a one-shot was not
       // started at all. A loop no longer costs a one-shot its place, and a cue
       // marked `keep` is never the one to go.
+      // (Outside Ultimate Mode one already fading out of the way no longer counts.)
+      const soft = !this.spatial;
       let shots = 0; let oldest = null;
       for (const o of this.live) {
-        if (o.loop) continue;
+        if (o.loop || (soft && o.culling)) continue;
         shots += 1;
         if (!oldest && !o.direct && !o.keep) oldest = o;
       }
-      if (shots >= (this.spatial ? this.maxShots3d : this.maxShots)) {
-        if (oldest) { oldest.stop(); this.culled += 1; }
+      const ceiling = this.spatial ? this.maxShots3d : this.binaural ? this.maxShotsBin : this.maxShots;
+      if (shots >= ceiling) {
+        if (oldest) { this._cull(oldest); this.culled += 1; }
         else if (!keep) { this.culled += 1; return null; }   // (every one of them a cue: the newcomer gives way)
       }
     }
@@ -808,13 +871,22 @@ export class AudioEngine {
       v.wide = loops === -1 && !v.atRel && !!(this.turnsNow ? this.turnsNow() : this.turns);
       if (v.atRel && loops !== -1) {
         let placed = 0; let first = null;
-        for (const o of this.live) if (!o.loop && o.atRel && !o.keep) { placed += 1; if (!first) first = o; }
-        if (placed >= this.maxPlaced && first) { first.stop(); this.culled += 1; }
+        for (const o of this.live) if (!o.loop && o.atRel && !o.keep && !o.culling) { placed += 1; if (!first) first = o; }
+        if (placed >= this.maxPlaced && first) { this._cull(first); this.culled += 1; }
       }
     }
     this.live.add(v);
     v.begin();
     return v;
+  }
+
+  // A one-shot making room for a newer one: in Ultimate Mode stopped as it always
+  // was; everywhere else faded out quickly, since a sound cut off in the middle
+  // clicks (web 5.1.0).
+  _cull(v) {
+    if (this.spatial) { v.stop(); return; }
+    v.culling = true;
+    v.fadeout(CULL_FADE_MS);
   }
 
   stopAllLoops(keep = []) {
@@ -958,10 +1030,20 @@ export class Voice {
     return { buffer, fade, split, gl, gr, merge, panner, wide };
   }
 
-  static _place(panner, x, y, z, now, instant) {
+  static _place(panner, x, y, z, now, instant, same = false) {
     // Never exactly at the listener's own point: the panner's direction would be
     // undefined there. A thing underfoot is a step ahead, centred.
     if (Math.hypot(x, y, z) < 0.05) { x = 0; z = -0.05; }
+    if (same) {
+      // Outside Ultimate Mode (web 5.1.0): a direction no different from the
+      // last one sent is not sent again.
+      const was = SENT.get(panner);
+      if (!instant && was) {
+        const m = Math.hypot(x, y, z) * Math.hypot(was[0], was[1], was[2]);
+        if (m > 0 && (x * was[0] + y * was[1] + z * was[2]) / m >= PLACE_SAME) return;
+      }
+      SENT.set(panner, [x, y, z]);
+    }
     if (panner.positionX) {
       for (const [p, v] of [[panner.positionX, x], [panner.positionY, y], [panner.positionZ, z]]) {
         if (instant) { p.cancelScheduledValues(now); p.setValueAtTime(v, now); } else p.setTargetAtTime(v, now, 0.02);
@@ -1173,6 +1255,13 @@ export class Voice {
 
   _set(param, v, instant) {
     const now = this.ctx.currentTime;
+    if (!this.audio.spatial) {
+      // Outside Ultimate Mode (web 5.1.0): a level no different from the last one
+      // sent is not sent again (every sound's levels are set every frame).
+      const was = SENT.get(param);
+      if (!instant && now > this.begunAt && was !== undefined && Math.abs(was - v) < 1e-4) return;
+      SENT.set(param, v);
+    }
     if (instant || now <= this.begunAt) { param.cancelScheduledValues(now); param.setValueAtTime(v, now); }
     else param.setTargetAtTime(v, now, 0.008);
   }
@@ -1236,7 +1325,7 @@ export class Voice {
       for (const br of [this.dry, this.dull]) {
         if (!br) continue;
         const had = !!br.panner;
-        Voice._place(this._binPanner(br), this.dir[0], 0, this.dir[1], now, instant || !had);
+        Voice._place(this._binPanner(br), this.dir[0], 0, this.dir[1], now, instant || !had, true);
       }
       if (first) instant = true;
       // How far behind you it is heard: by the way you face now.

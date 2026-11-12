@@ -1095,7 +1095,7 @@ const crowdRoom = await page.evaluate(async () => {
   out.closeSend = CROWD_SEND;
   return out;
 });
-check(crowdRoom.skipped || (crowdRoom.each.length === 13 && crowdRoom.each.every((e) => e.taps >= 1 && e.ratio !== null && e.ratio > 0.2 && e.ratio < 0.8)), 'all thirteen crowd recordings send into the arena\'s room, each between a fifth and four fifths of its dry level: ' + JSON.stringify(crowdRoom.each.map((e) => [e.name.replace('ut_crowd_', ''), e.ratio])));
+check(crowdRoom.skipped || (crowdRoom.each.length === 13 && crowdRoom.each.every((e) => e.taps >= 1 && e.ratio !== null && e.ratio > 0.35 && e.ratio < 1.3)), 'all thirteen crowd recordings send well into the arena\'s room (web 5.1.0: more than before): ' + JSON.stringify(crowdRoom.each.map((e) => [e.name.replace('ut_crowd_', ''), e.ratio])));
 check(crowdRoom.skipped || crowdRoom.each.filter((e) => e.send === crowdRoom.closeSend).every((e) => e.ratio > (crowdRoom.footstep || 0) * 0.8), `the close-up recordings carry at least as much room as a footstep does (footstep ${crowdRoom.footstep})`);
 check(crowdRoom.skipped || (crowdRoom.crowdLoop && Math.abs(crowdRoom.crowdLoop.send - 0.15) < 0.001), 'the background stadium crowd keeps its light send: ' + JSON.stringify(crowdRoom.crowdLoop));
 

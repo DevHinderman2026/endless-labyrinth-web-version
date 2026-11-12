@@ -126,8 +126,12 @@ check(wet.made === 0, `80 loop echoes in a row, with no OfflineAudioContext made
 const house = await page.evaluate(async () => {
   const a = window.__el.audio;
   a.stopAll();
-  const out = { max: a.maxShots, max3d: a.maxShots3d, spatial: a.spatial };
-  const shots = () => [...a.live].filter((v) => !v.loop).length;
+  // (The ceiling that applies here: every mode is binaural since web 5.0.0.)
+  const cap = a.spatial ? a.maxShots3d : a.binaural ? a.maxShotsBin : a.maxShots;
+  const out = { plain: a.maxShots, max: cap, max3d: a.maxShots3d, maxBin: a.maxShotsBin, placed: a.maxPlaced, spatial: a.spatial, binaural: a.binaural };
+  // (Web 5.1.0: outside Ultimate Mode a one-shot giving way fades out over a few
+  // milliseconds instead of being cut, and no longer counts while it does.)
+  const shots = () => [...a.live].filter((v) => !v.loop && !v.culling).length;
   // More loops than the old ceiling of 56 voices: a one-shot still starts.
   const loops = [];
   for (let i = 0; i < 70; i++) loops.push(a.play('ammo_beacon', { loops: -1, volume: 0 }));
@@ -139,19 +143,21 @@ const house = await page.evaluate(async () => {
   const cue = a.play('countdown_high', { volume: 0, keep: true });
   const first = a.play('laser', { volume: 0 });
   const rest = [];
-  for (let i = 0; i < a.maxShots - 2; i++) rest.push(a.play('laser', { volume: 0 }));
+  for (let i = 0; i < cap - 2; i++) rest.push(a.play('laser', { volume: 0 }));
   out.full = shots();
   const c1 = a.culled;
   const newcomer = a.play('laser', { volume: 0 });
-  out.overflow = { shots: shots(), culled: a.culled - c1, firstGone: !!first && first.stopped, cueStays: !!cue && cue.busy, newcomer: !!newcomer && newcomer.busy,
+  out.overflow = { shots: shots(), culled: a.culled - c1, firstGone: !!first && first.culling && first.fadingOut, cueStays: !!cue && cue.busy, newcomer: !!newcomer && newcomer.busy,
     restStay: rest.every((v) => v && v.busy), loopsStay: loops.every((v) => v && v.busy) };
   // Sixty more: never above the ceiling, the cue still there, every loop still there.
   for (let i = 0; i < 60; i++) a.play('laser', { volume: 0 });
   out.pile = { shots: shots(), cueStays: !!cue && cue.busy, loopsStay: loops.every((v) => v && v.busy) };
+  await new Promise((res) => setTimeout(res, 150));
+  out.overflow.firstStopped = !!first && first.stopped;
   a.stopAll();
   // A house full of cues: a plain newcomer gives way, and a cue still sounds.
   const cues = [];
-  for (let i = 0; i < a.maxShots; i++) cues.push(a.play('countdown_high', { volume: 0, keep: true }));
+  for (let i = 0; i < cap; i++) cues.push(a.play('countdown_high', { volume: 0, keep: true }));
   const c2 = a.culled;
   const refused = a.play('laser', { volume: 0 });
   const oneMore = a.play('countdown_high', { volume: 0, keep: true });
@@ -159,9 +165,9 @@ const house = await page.evaluate(async () => {
   a.stopAll();
   return out;
 });
-check(house.max === 56 && house.max3d === 16 && !house.spatial, `the ceiling on one-shots at once is ${house.max}, and ${house.max3d} in the 3D world`);
+check(house.plain === 56 && house.max3d === 16 && house.maxBin === 32 && house.placed === 12 && !house.spatial, `the ceiling on one-shots at once is ${house.plain}, ${house.maxBin} in binaural modes (${house.placed} of them placed), and ${house.max3d} in the 3D world (here ${house.max}, binaural ${house.binaural})`);
 check(house.amongLoops.loops === 70 && house.amongLoops.started && house.amongLoops.culled === 0, `a loop never costs a one-shot its place: with ${house.amongLoops.loops} loops playing a shot still starts, and nothing gives way for it`);
-check(house.full === house.max && house.overflow.shots === house.max && house.overflow.culled === 1 && house.overflow.firstGone && house.overflow.newcomer && house.overflow.restStay, 'a full house: the oldest plain sound gives way to the new one, and only that one: ' + JSON.stringify(house.overflow));
+check(house.full === house.max && house.overflow.shots === house.max && house.overflow.culled === 1 && house.overflow.firstGone && house.overflow.firstStopped && house.overflow.newcomer && house.overflow.restStay, 'a full house: the oldest plain sound gives way to the new one, and only that one: ' + JSON.stringify(house.overflow));
 check(house.overflow.cueStays && house.overflow.loopsStay && house.pile.shots === house.max && house.pile.cueStays && house.pile.loopsStay, 'a cue older than all of them is never the one to go, nor is any loop, through sixty more: ' + JSON.stringify(house.pile));
 check(house.cues.refused && house.cues.counted === 1 && house.cues.allStay && house.cues.oneMore, 'a house full of cues: a plain newcomer gives way, no cue is cut for it, and one more cue still sounds: ' + JSON.stringify(house.cues));
 

@@ -116,6 +116,12 @@ const ISLAND_SHORES = ['island_01_maldives_beach', 'island_02_sandy_beach_calm',
   'island_08_gentle_shore', 'island_09_waves_breaking', 'island_10_beach_ambiance'];
 // Sand for an island.
 const STEP_SAND = ['step_sand_1', 'step_sand_2', 'step_sand_3', 'step_sand_4'];
+// A step along the seabed is a swimming stroke (web 5.1.0): Ultimate Mode's four
+// recordings (in the ultimate pack, which every device downloads), at Ultimate's
+// level and with its shortest gap between strokes.
+const SEABED_STROKES = ['ut_dive_stroke_1', 'ut_dive_stroke_2', 'ut_dive_stroke_3', 'ut_dive_stroke_4'];
+const SEABED_STROKE_LEVEL = 0.6;
+const SEABED_STROKE_EVERY = 0.35;
 // Battle's, used by the enemies and cartridges here (the desktop's own values).
 const BATTLE_SPAWN_PAN = 0.55;      // (the desktop's: enemies ahead or behind only; since web 5.0.0 they come from any side)
 const BATTLE_AMMO_CLEARANCE = 14.0;
@@ -1205,11 +1211,29 @@ const mixin = {
     if (g !== 'up' && g !== 'down') return;
     const f = this.playerFacing = this._forward();
     // Where the step began, so an enemy it passed straight through counts as
-    // reaching you. Moving on the seabed makes no sound at all; on an island, sand.
+    // reaching you. On an island, sand; on the seabed, a swimming stroke.
     const w = this._walkArena(g === 'up' ? f : [-f[0], -f[1]], 3.0, this.arenaLimit, { sound: false });
     if (!w) return;
     this.battleSteps = [...(this.battleSteps || []), w];
     if (this.islandPhase !== 'seabed') this.audio.play(choice(STEP_SAND));
+    else this._islandStroke();
+  },
+
+  // A swimming stroke under water, for a step along the seabed: Ultimate Mode's own
+  // four recordings, at its level and pace, so the seabed sounds the same in every
+  // mode (web 5.1.0, Russell, 12 November 2026; until then a step there was silent).
+  // Never the stroke heard last, and never two closer together than
+  // SEABED_STROKE_EVERY, so a fast swim is a string of strokes, not a blur.
+  _islandStroke() {
+    const strokes = SEABED_STROKES.filter((n) => this.audio.has(n));
+    if (!strokes.length) return;
+    const now = this.audio.ctx.currentTime;
+    if (now - (this.islandStrokeAt ?? -9) < SEABED_STROKE_EVERY) return;
+    this.islandStrokeAt = now;
+    const pool = strokes.length > 1 ? strokes.filter((n) => n !== this.islandLastStroke) : strokes;
+    const name = choice(pool);
+    this.islandLastStroke = name;
+    this.audio.play(name, { volume: SEABED_STROKE_LEVEL });
   },
 };
 
@@ -1253,7 +1277,8 @@ const HELP_DEMOS = [
     { title: 'Guardian Down', sound: 'guardian_down', desc: 'The deep boom of a guardian falling. Now the elevator will open.' },
     { title: 'Island Clear', sound: 'wave_start', desc: 'Every enemy on the island is down. The same war horn battle mode blows when a wave begins.' },
     { title: 'Guardian Hit', sound: 'guardian_hit', desc: 'A hit that landed but did not bring it down.' },
-    { title: 'Footstep on Sand', sound: 'step_sand_1', desc: 'A step on an island. The seabed makes no sound at all.' },
+    { title: 'Footstep on Sand', sound: 'step_sand_1', desc: 'A step on an island.' },
+    { title: 'Swimming Stroke', sound: 'ut_dive_stroke_1', desc: 'A step along the seabed is a swimming stroke under water, the same as on Ultimate Mode\'s seabed.' },
     { title: 'Bubbles', sound: 'bubbles', desc: 'Heard now and then while you are underwater.' },
     { title: 'Drowning', sound: 'drown', desc: 'Your air ran out. The run is over.' },
   ]],

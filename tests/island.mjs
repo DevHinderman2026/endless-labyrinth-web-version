@@ -141,7 +141,7 @@ check(st.targets === 4, 'island one has four enemies');
 const run = await page.evaluate(async () => {
   const g = window.__el.game;
   const t = window.__t;
-  const out = { attempts: 0, crossed: 0, dives: 0, ups: 0, kills: 0, keys: 0, rideChecks: [], seabedSteps: 0,
+  const out = { attempts: 0, crossed: 0, dives: 0, ups: 0, kills: 0, keys: 0, rideChecks: [], seabedSteps: 0, strokes: 0, seabedSand: 0,
     sandSteps: 0, maxIsland: 1, deaths: [], chimes: [], fadeChecks: [] };
   for (let attempt = 0; attempt < 8 && out.crossed < 1; attempt++) {
     out.attempts += 1;
@@ -180,7 +180,8 @@ const run = await page.evaluate(async () => {
       const before = t.played.length;
       t.bot();
       const steps = t.played.slice(before).filter((n) => n.startsWith('step_'));
-      if (g.islandPhase === 'seabed') out.seabedSteps += steps.length; else out.sandSteps += steps.filter((n) => n.startsWith('step_sand_')).length;
+      const strokes = t.played.slice(before).filter((n) => n.startsWith('ut_dive_stroke_'));
+      if (g.islandPhase === 'seabed') { out.seabedSteps += steps.length; out.strokes += strokes.length; } else out.sandSteps += steps.filter((n) => n.startsWith('step_sand_')).length;
     }
     out.kills += g.kills;
     if (g.state !== 'island') out.deaths.push(g.islandDeath || 'game over');
@@ -199,6 +200,7 @@ check(run.rideChecks.length > 0 && run.rideChecks.every((c) => !c.moved && !c.pa
 const chimeOk = run.chimes.length > 0 && run.chimes.every(([dir, name, frac]) => name === (dir === 'up' ? 'elevator_arrive_2' : 'elevator_arrive_1') && frac > 0.6 && frac < 0.68);
 check(chimeOk, 'the arrival chime rings just before the doors open, two notes arriving up, one down: ' + JSON.stringify(run.chimes.slice(0, 3)));
 check(run.seabedSteps === 0 && run.sandSteps > 0, `sand footsteps on the island (${run.sandSteps}), none on the seabed`);
+check(run.strokes > 0, `web 5.1.0: swimming strokes on the seabed, Ultimate Mode's own recordings (${run.strokes})`);
 
 // --------------------------------------------------------------- report and fire
 const rep = await page.evaluate(async () => {

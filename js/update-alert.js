@@ -21,7 +21,8 @@
 //
 // The region is added by script, after the checks, at the very top of the page, so
 // it is the first thing a screen reader reaches; being a plain region, not a live
-// one, it never interrupts.
+// one, it never interrupts. (A release can have its own alert that does interrupt:
+// RELEASE_ALERT, below, for Windows 3.0.1.)
 
 import { el } from './site.js';
 
@@ -81,9 +82,82 @@ export function buildAlert(release) {
   ]);
 }
 
+// ------------------------------------------------------------------ a release's own alert (12 November 2026)
+// For a release that every Windows player should install, the home page says so
+// in Russell's own words and, unlike the ordinary alert, INTERRUPTS the screen
+// reader as the page loads, so it is heard straight away (Russell, 12 November
+// 2026, for Windows 3.0.1). It is still a region named Alert at the top of the
+// page, so a player can find it again among the landmarks.
+//
+// Screen readers often stay silent about text that is already on a page when it
+// loads, so the words are spoken through a separate, empty live region
+// (#site-announcer, aria-live="assertive", written into the home page itself)
+// that the text is put into a moment after the page has finished loading; it is
+// emptied again a few seconds later, so a player moving through the page meets
+// the message once, in the region, and not a second time.
+//
+// It shows for its own number of days from its own date, judged by internet time,
+// and then goes away by itself. While it shows it takes the place of the ordinary
+// alert for that release, and the ordinary alert is not shown for that release
+// afterwards either. A newer release brings the ordinary alert back.
+export const RELEASE_ALERT = {
+  version: '3.0.1',
+  from: Date.UTC(2026, 10, 12) / 1000,        // 12 November 2026, the day 3.0.1 came out
+  days: 15,
+  heading: 'Windows players, please update: ',
+  text: 'Endless Labyrinth 3.0.1 is the latest version for Windows, and we strongly urge every Windows player to '
+    + 'install it. It brings many fixes, and the event system has been rebalanced. ',
+};
+export const ANNOUNCE_DELAY = 700;             // milliseconds after the page has loaded
+export const ANNOUNCE_CLEAR = 8000;            // milliseconds later, the live region is emptied
+
+export function releaseAlertText(a = RELEASE_ALERT) {
+  return `${a.heading}${a.text}Download Endless Labyrinth ${a.version} for Windows.`;
+}
+
+export function buildReleaseAlert(a = RELEASE_ALERT, url = RELEASE_PAGE) {
+  return el('section', { role: 'region', 'aria-label': 'Alert', class: 'site-alert', id: 'windows-update-alert' }, [
+    el('p', {}, [
+      el('strong', { text: a.heading }),
+      a.text,
+      el('a', { href: url, text: `Download Endless Labyrinth ${a.version} for Windows` }),
+      '.',
+    ]),
+  ]);
+}
+
+// Speaks `text` through the page's assertive live region, once the page has
+// loaded and a moment has passed, then empties the region again.
+export function announce(text) {
+  const box = document.getElementById('site-announcer');
+  if (!box) return false;
+  const speak = () => {
+    setTimeout(() => {
+      box.textContent = text;
+      setTimeout(() => { box.textContent = ''; }, ANNOUNCE_CLEAR);
+    }, ANNOUNCE_DELAY);
+  };
+  if (document.readyState === 'complete') speak();
+  else window.addEventListener('load', speak, { once: true });
+  return true;
+}
+
 export async function showUpdateAlert() {
   const [now, release] = await Promise.all([siteTime(), latestRelease()]);
+  const special = RELEASE_ALERT;
+  // The release's own alert: by its date alone, so it shows even if GitHub cannot
+  // be reached, unless GitHub says a newer release is out.
+  const newer = release && release.version !== special.version;
+  if (!newer && alertDue(special.from, now, special.days)) {
+    const url = release && release.version === special.version ? release.url : RELEASE_PAGE;
+    const alert = buildReleaseAlert(special, url);
+    const header = document.querySelector('header.site');
+    if (header) header.before(alert); else document.body.prepend(alert);
+    announce(releaseAlertText(special));
+    return true;
+  }
   if (!release || !alertDue(release.published, now)) return false;
+  if (release.version === special.version) return false;   // its own alert has had its days
   const alert = buildAlert(release);
   const header = document.querySelector('header.site');
   if (header) header.before(alert); else document.body.prepend(alert);
