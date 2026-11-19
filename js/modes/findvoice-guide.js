@@ -44,6 +44,19 @@ export function guideVoiceReady() {
   } catch (e) { return false; }
 }
 
+// (6.0.1) Whether Heart can speak but her next call is not made yet and is being
+// made: the mode waits a moment for it instead of going straight to the device's
+// voice. (A source that cannot say how many it has ready is never waited for.)
+export function guideStock() {
+  try {
+    if (!guideVoiceReady() || typeof source.stock !== 'function') return Infinity;
+    return source.stock();
+  } catch (e) { return Infinity; }
+}
+export function guideMaking() {
+  try { return guideVoiceReady() && typeof source.stock === 'function' && !!source.busy; } catch (e) { return false; }
+}
+
 // A run begins (Heart's calls made ahead, a dozen at a time) or ends (let go).
 export function guideRunStarts() { try { if (source && source.prepare) source.prepare(12); } catch (e) { /* the device's voice */ } }
 export function guideRunEnds() { try { if (source && source.release) source.release(); } catch (e) { /* nothing held */ } }

@@ -196,12 +196,16 @@ self.onmessage = (e) => {
     loadVoice(msg.name, msg.url).then((ok) => post({ type: 'voice', name: msg.name, ok }));
   }
   else if (msg.type === 'synth') {
-    const item = { id: msg.id, ids: msg.ids, voice: msg.voice, speed: msg.speed || 1.0, now: !!msg.now, at: performance.now(),
+    const item = { id: msg.id, ids: msg.ids, voice: msg.voice, speed: msg.speed || 1.0, now: !!msg.now, lead: !!msg.lead, at: performance.now(),
       // (Waiting behind a line that was being made ahead is not the device being slow.)
       behind: !!(current && !current.now) };
     // Lines wanted now go before every line being prepared ahead.
     if (item.now) {
       const k = queue.findIndex((q) => !q.now);
+      if (k < 0) queue.push(item); else queue.splice(k, 0, item);
+    } else if (item.lead) {
+      // (6.0.1) The guide's calls: made ahead, but before every other line made ahead.
+      const k = queue.findIndex((q) => !q.now && !q.lead);
       if (k < 0) queue.push(item); else queue.splice(k, 0, item);
     } else queue.push(item);
     pump();

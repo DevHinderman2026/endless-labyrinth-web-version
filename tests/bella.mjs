@@ -440,7 +440,35 @@ check(g.got.every((p) => p.ch === 1 && p.rate === 24000), 'each phrase is a one-
 check(g.got.every((p, i) => !g.got.slice(Math.max(0, i - 6), i).some((q) => q.id === p.id)), 'a phrase does not come back within the next six');
 check(g.voice >= 12, 'her phrases are made in Heart\'s voice (af_heart)');
 check(g.playing, 'install puts a phrase in the sound engine, to be played and placed like any sound');
-check(g.most <= 6 && g.after === 0, 'never more than asked for, and release lets them all go');
+check(g.most <= 6 && g.after <= 4, `never more than asked for, and release keeps only a few standing for the next run (${g.after})`);
+
+// 6.0.1: the guide is given time. A few of her calls are made as soon as the voice is
+// ready, before the lines prepared for Bella, and kept between runs.
+const early = await page.evaluate(async () => {
+  await window.make({ delay: 30 });
+  const B = window.T;
+  await new Promise((r) => setTimeout(r, 1500));
+  const w = window.lastWorker;
+  const firstHeart = w.synths.findIndex((s) => s.voice === 'af_heart');
+  const leads = w.synths.filter((s) => s.voice === 'af_heart').every((s) => s.lead === true && !s.now);
+  const others = w.synths.filter((s) => s.voice !== 'af_heart').some((s) => s.lead);
+  const guide = window.bella.guide;
+  return { firstHeart, leads, others, stock: guide.stock(), want: guide.want, standing: 4 };
+});
+check(early.stock === early.standing && early.want === early.standing, `as soon as the voice is ready, ${early.standing} of the guide's calls are made and kept (${early.stock})`);
+check(early.leads && !early.others, 'her calls are marked to go before the other lines made ahead, and only hers');
+// The worker's own order: wanted now, then the guide's, then the rest.
+const order = await page.evaluate(async () => {
+  const src = await (await fetch('./js/bella-worker.js')).text();
+  const posted = [];
+  const self = { postMessage: (m) => posted.push(m), crossOriginIsolated: false };
+  // eslint-disable-next-line no-new-func
+  const run = new Function('self', 'performance', 'setTimeout', src + '; return { get queue() { return queue; }, onmessage: self.onmessage };');
+  const w = run(self, performance, () => {});
+  for (const m of [{ id: 1 }, { id: 2 }, { id: 3, lead: true }, { id: 4, now: true }, { id: 5, lead: true }, { id: 6 }]) self.onmessage({ data: { type: 'synth', ids: [1], voice: 'af_heart', ...m } });
+  return w.queue.map((q) => q.id);
+});
+check(JSON.stringify(order) === '[4,3,5,1,2,6]', 'in the worker: a line wanted now, then the guide\'s calls in their order, then the other lines made ahead ' + JSON.stringify(order));
 const gNot = await page.evaluate(async () => {
   await window.make({ fail: true });
   const guide = window.bella.guide;

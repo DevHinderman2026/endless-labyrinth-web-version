@@ -54,6 +54,8 @@ export const SPEED = 1.0;              // one fixed, normal speed
 export const SPEECH_RMS = 0.11;
 export const BELLA_LOUDER = 1.05;
 export const GUIDE_RMS = 0.11;
+// The guide's calls kept made and waiting while no Find the Voice run is played.
+export const GUIDE_STANDING = 4;
 // A line wanted now and not made within this long is said by the device voice this
 // time (it is still kept for next time). Later sentences of a long line get longer.
 export const DEADLINE_MS = 1200;
@@ -244,13 +246,13 @@ export class KokoroEngine {
   // Make one line (phonemes) in a voice. Resolves with { samples, ms, waited } or
   // null (failed, dropped, or the engine not ready). `now`: before anything being
   // prepared ahead.
-  synth(phonemes, voice, { now = false } = {}) {
+  synth(phonemes, voice, { now = false, lead = false } = {}) {
     if (this.state !== 'ready' || !this.worker) return { id: 0, promise: Promise.resolve(null) };
     const ids = toTokens(phonemes);
     if (!ids.length || ids.length >= MAX_TOKENS) return { id: 0, promise: Promise.resolve(null) };
     const id = this.nextId++;
     const promise = new Promise((resolve) => this.jobs.set(id, { resolve, voice, now }));
-    this.worker.postMessage({ type: 'synth', id, ids, voice, speed: SPEED, now });
+    this.worker.postMessage({ type: 'synth', id, ids, voice, speed: SPEED, now, lead });
     return { id, promise };
   }
 
@@ -288,8 +290,11 @@ export class Bella {
     this.prepQueue = [];
     this.prepping = false;
     this.missingWords = new Set();  // words of lines said by the device voice instead (for the tests)
-    this.engine.onReady.push(() => this.prepare(COMMON_LINES));
+    // (6.0.1) The guide first: a few of her calls are made as soon as the voice is
+    // ready and kept from then on, so Find the Voice has them the moment it starts.
     this.guide = new GuideVoice({ engine: this.engine, audio });
+    this.engine.onReady.push(() => this.guide.standBy());
+    this.engine.onReady.push(() => this.prepare(COMMON_LINES));
   }
 
   // Start the download (alongside the sound packs).
@@ -668,9 +673,9 @@ export class GuideVoice {
       const p = this._pick(new Set([...this.ready.keys(), ...this.making, ...this.recent]));
       if (!p) break;
       this.making.add(p.id);
-      this.engine.synth(p.phonemes, this.voice).promise.then((r) => {
+      this.engine.synth(p.phonemes, this.voice, { lead: true }).promise.then((r) => {
         this.making.delete(p.id);
-        if (!r || !r.samples || this.want === 0) return;
+        if (!r || !r.samples || this.want === 0) { this.failed = (this.failed || 0) + 1; return; }
         const shaped = shape(r.samples, GUIDE_RMS);
         if (shaped) this.ready.set(p.id, makeBuffer(this.audio && this.audio.ctx, shaped));
       });
@@ -719,8 +724,17 @@ export class GuideVoice {
   }
 
   // The run is over: every phrase let go, nothing more made.
+  // (6.0.1: a few are kept standing even then, for the next run.)
   release() {
-    this.want = 0;
-    this.ready.clear();
+    this.want = GUIDE_STANDING;
+    let n = 0;
+    for (const k of [...this.ready.keys()]) { n += 1; if (n > GUIDE_STANDING) this.ready.delete(k); }
   }
+
+  // A few calls made as soon as the voice is ready and kept while no run is played.
+  standBy() { if (this.want < GUIDE_STANDING) this.prepare(GUIDE_STANDING); }
+
+  // How many calls are made and waiting, and whether more are being made now.
+  stock() { return this.ready.size; }
+  get busy() { return this.making.size > 0; }
 }
