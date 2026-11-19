@@ -124,7 +124,7 @@ check(guide.phrases.every((p) => toTokens(p.phonemes).length < 80), 'every phras
 // No GPL: nothing imports kokoro-js, a phonemizer or eSpeak.
 const mine = ['bella.js', 'bella-words.js', 'bella-worker.js', 'bella-lexicon.js', 'speech.js'].map((n) => readFileSync(join(root, 'js', n), 'utf8')).join('\n');
 check(!/import[^;]*(kokoro-js|phonemize|espeak)|importScripts\([^)]*(kokoro|espeak|phonemiz)/i.test(mine), 'no kokoro-js, no phonemizer, no eSpeak');
-check(/onnxruntime-web@\$\{ORT_VERSION\}\/dist\//.test(mine) && /ORT_VERSION = '1\.20\.1'/.test(mine) && /ort\.wasm\.min\.js/.test(mine) && /numThreads = 1/.test(mine), 'ONNX Runtime Web 1.20.1 from jsDelivr, wasm, one thread');
+check(/onnxruntime-web@\$\{ORT_VERSION\}\/dist\//.test(mine) && /ORT_VERSION = '1\.20\.1'/.test(mine) && /ort\.wasm\.min\.js/.test(mine) && /numThreads = threads/.test(mine) && /self\.crossOriginIsolated && typeof SharedArrayBuffer !== 'undefined'/.test(mine), 'ONNX Runtime Web 1.20.1 from jsDelivr, wasm; several threads only on an isolated page, else one');
 check(/onnx-community\/Kokoro-82M-v1\.0-ONNX\/resolve\/main\//.test(mine) && /onnx\/model_quantized\.onnx/.test(mine) && /voices\/af_bella\.bin/.test(mine) && /voices\/af_heart\.bin/.test(mine), 'the model and the two voices from onnx-community');
 
 // ------------------------------------------------------------------ in the browser
@@ -186,7 +186,7 @@ const f1 = worker.fed.find((f) => f.ids.length === 6);
 check(f1 && f1.type === 'int64' && f1.dims.join() === '1,6' && f1.ids.join() === '0,50,156,86,54,0', 'the model gets input_ids as int64 [1, n + 2], a pad at each end ' + JSON.stringify(f1));
 check(f1 && f1.style0 === 4 && f1.styleLen === 256 && f1.speed === 1, 'the style is the voice\'s row for that many phonemes (4), 256 numbers; speed 1');
 check(worker.audio.filter((a) => a.id === 7 || a.id === 8).length === 2 && worker.audio.every((a) => a.n > 0), 'the sound comes back for each line wanted');
-check(JSON.stringify(worker.voiceAnswers) === '[["bf_emma",true],["bm_nope",false]]', 'a character\'s voice loads on request ({ type: voice }) and a broken one says so ' + JSON.stringify(worker.voiceAnswers));
+check(JSON.stringify(worker.voiceAnswers.slice().sort()) === '[["bf_emma",true],["bm_nope",false]]', 'a character\'s voice loads on request ({ type: voice }) and a broken one says so ' + JSON.stringify(worker.voiceAnswers));
 check(worker.line11 === 'audio' && worker.line12 === 'error', 'a line from phonemes in a loaded voice is made; in a voice not loaded it is refused');
 check(worker.dropped.includes(9) && worker.fed.length === 4, 'a line no longer wanted is dropped before it starts; lines are made one at a time');
 
@@ -340,9 +340,19 @@ await page.evaluate(() => { window.speech.speak('Floor 3 of 9.'); });
 await waitFor(() => window.said.includes('Floor 3 of 9.'), 4000);
 await page.evaluate(() => { window.speech.speak('Floor 4 of 9.'); });
 await waitFor(() => window.said.includes('Floor 4 of 9.'), 4000);
-check(await page.evaluate(() => window.bella.struggling && !window.bella.ready), 'three lines in a row too late: Bella gives way to the device voice for the visit (' + await page.evaluate(() => window.bella.why) + ')');
+check(await page.evaluate(() => !window.bella.struggling && window.bella.misses === 3), 'three lines in a row too late: not given up yet (6.0.1: it was too quick to)');
+for (const n of [5, 6, 7]) {
+  await page.evaluate((k) => { window.speech.speak(`Floor ${k} of 9.`); }, n);
+  await page.waitForFunction((k) => window.said.includes(`Floor ${k} of 9.`), n, { timeout: 4000 }).catch(() => {});
+}
+check(await page.evaluate(() => window.bella.struggling && !window.bella.ready), 'six lines in a row too late: Bella gives way to the device voice for a while (' + await page.evaluate(() => window.bella.why) + ')');
 await page.evaluate(() => { window.said = []; window.speech.speak('Level 3.'); });
-check(await waitFor(() => window.said.includes('Level 3.'), 1000), 'from then on the device voice speaks at once');
+check(await waitFor(() => window.said.includes('Level 3.'), 1000), 'meanwhile the device voice speaks at once');
+// After a rest she tries again, with the count started afresh.
+await page.evaluate(() => window.make({ delay: 2500 }));
+await page.evaluate(() => { window.bella.restMs = 300; window.bella.prepQueue = []; window.bella._giveUp('a test'); });
+check(await page.evaluate(() => window.bella.struggling), 'given up (for the rest test)');
+check(await waitFor(() => !window.bella.struggling && window.bella.misses === 0 && window.bella.rests === 1, 3000), 'after the rest Bella tries her own voice again');
 
 // A line late behind one being made ahead: said by the device voice, never counted.
 await page.evaluate(() => window.make({ delay: 2500 }));
@@ -351,6 +361,15 @@ await waitFor(() => window.said.includes('Floor 2 of 7.'), 4000);
 check(await page.evaluate(() => window.bella.misses === 0 && !window.bella.struggling), 'a line that waited behind lines being made ahead is said by the device voice and not held against the device');
 
 await page.evaluate(() => window.make({ rtf: 1.6 }));
+await page.evaluate(async () => {
+  window.bella.prepQueue = [];
+  for (const t of ['Floor 5 of 11.', 'Floor 6 of 11.', 'Floor 7 of 11.', 'Floor 8 of 11.']) {
+    window.speech.speak(t);
+    await new Promise((r) => setTimeout(r, 400));
+  }
+});
+check(await page.evaluate(() => !window.bella.struggling), 'a device somewhat slower than speech is not given up on (lines are made ahead)');
+await page.evaluate(() => window.make({ rtf: 3.2 }));
 await page.evaluate(async () => {
   window.bella.prepQueue = [];
   for (const t of ['Floor 5 of 12.', 'Floor 6 of 12.', 'Floor 7 of 12.', 'Floor 8 of 12.']) {

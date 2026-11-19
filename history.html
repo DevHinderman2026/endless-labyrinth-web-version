@@ -8,7 +8,7 @@
   <link rel="icon" href="icons/icon-192.png">
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
   <meta name="theme-color" content="#0c0f14">
-  <link rel="stylesheet" href="css/site.css?v=6.0.0">
+  <link rel="stylesheet" href="css/site.css?v=6.0.1">
 </head>
 <body data-update-alert="history">
   <header class="site">
@@ -19,6 +19,15 @@
   <main class="page">
     <p>This page lists the web version. For the Windows version, see its <a href="https://github.com/DevHinderman2026/Endless-Labyrinth/blob/main/Credits%20and%20Version%20History/CHANGELOG.md">changelog</a> on GitHub.</p>
     <p>The game updates by itself: the next time you open it, you have the latest version. Only a sound pack that has changed is downloaded again, and your high scores are kept. Events are not listed here: they appear in the Events menu as they open.</p>
+
+    <h2>6.0.1 (19 November 2026), web only</h2>
+    <p>The game's own voices, Bella, the Find the Voice guide and the safe zone characters, are made faster and are heard far more often.</p>
+    <ul>
+      <li>The voices are now made with several of your device's processor threads where the browser allows it, which is several times faster than before. The first time you open the game's page after this update, the page loads itself once more, straight away, to switch this on.</li>
+      <li>The game was too quick to hand over to your device's voice when a line was late, and then kept to it for the rest of the visit. It now waits longer before doing so, and after a minute it tries its own voice again.</li>
+      <li>If a device cannot start several threads, the voices are made with one, as before.</li>
+      <li>On the main menu, and in the game's help, every mode now comes before Events: Standard, Battle, Driving, Tower, Island, Find the Voice, Ultimate Mode, Chaos Mode, and then Events and Event High Scores.</li>
+    </ul>
 
     <h2>6.0.0 (19 November 2026)</h2>
     <p>A new mode, Find the Voice; a voice of the game's own, Bella, during a run; characters who live in Ultimate Mode's safe zones; two new kinds of level in Chaos; an arena crowd in every battle; sounds placed more precisely; new things for events; less air on the seabed; and many fixes. Windows version 4.0.0 follows later; it brings Find the Voice, 3D sound and turning to the Windows game, and this version's mode rules too, so the two play alike and events stay the same in both. Version 5.2.0 was never released: everything it was to bring is part of 6.0.0, and is listed here.</p>
@@ -549,64 +558,65 @@
   <script type="importmap">
   {
     "imports": {
-      "./js/accessibility.js": "./js/accessibility.js?v=6.0.0",
-      "./js/audio.js": "./js/audio.js?v=6.0.0",
-      "./js/backup.js": "./js/backup.js?v=6.0.0",
-      "./js/backups-page.js": "./js/backups-page.js?v=6.0.0",
-      "./js/bella-lexicon.js": "./js/bella-lexicon.js?v=6.0.0",
-      "./js/bella-words.js": "./js/bella-words.js?v=6.0.0",
-      "./js/bella-worker.js": "./js/bella-worker.js?v=6.0.0",
-      "./js/bella.js": "./js/bella.js?v=6.0.0",
-      "./js/braille.js": "./js/braille.js?v=6.0.0",
-      "./js/calendar.js": "./js/calendar.js?v=6.0.0",
-      "./js/device.js": "./js/device.js?v=6.0.0",
-      "./js/display.js": "./js/display.js?v=6.0.0",
-      "./js/game.js": "./js/game.js?v=6.0.0",
-      "./js/gestures.js": "./js/gestures.js?v=6.0.0",
-      "./js/help-data.js": "./js/help-data.js?v=6.0.0",
-      "./js/help-page.js": "./js/help-page.js?v=6.0.0",
-      "./js/keywords.js": "./js/keywords.js?v=6.0.0",
-      "./js/main.js": "./js/main.js?v=6.0.0",
-      "./js/modes/chaos.js": "./js/modes/chaos.js?v=6.0.0",
-      "./js/modes/driving.js": "./js/modes/driving.js?v=6.0.0",
-      "./js/modes/events/blocks.js": "./js/modes/events/blocks.js?v=6.0.0",
-      "./js/modes/events/engine.js": "./js/modes/events/engine.js?v=6.0.0",
-      "./js/modes/events/feed.js": "./js/modes/events/feed.js?v=6.0.0",
-      "./js/modes/events/help.js": "./js/modes/events/help.js?v=6.0.0",
-      "./js/modes/events/missions.js": "./js/modes/events/missions.js?v=6.0.0",
-      "./js/modes/events/more-spec.js": "./js/modes/events/more-spec.js?v=6.0.0",
-      "./js/modes/events/more.js": "./js/modes/events/more.js?v=6.0.0",
-      "./js/modes/events/py.js": "./js/modes/events/py.js?v=6.0.0",
-      "./js/modes/events/schema.js": "./js/modes/events/schema.js?v=6.0.0",
-      "./js/modes/events/sign.js": "./js/modes/events/sign.js?v=6.0.0",
-      "./js/modes/events/sounds.js": "./js/modes/events/sounds.js?v=6.0.0",
-      "./js/modes/events/tunes.js": "./js/modes/events/tunes.js?v=6.0.0",
-      "./js/modes/events/wording.js": "./js/modes/events/wording.js?v=6.0.0",
-      "./js/modes/events.js": "./js/modes/events.js?v=6.0.0",
-      "./js/modes/findvoice-guide.js": "./js/modes/findvoice-guide.js?v=6.0.0",
-      "./js/modes/findvoice.js": "./js/modes/findvoice.js?v=6.0.0",
-      "./js/modes/index.js": "./js/modes/index.js?v=6.0.0",
-      "./js/modes/island.js": "./js/modes/island.js?v=6.0.0",
-      "./js/modes/tower.js": "./js/modes/tower.js?v=6.0.0",
-      "./js/modes/ultimate/cast.js": "./js/modes/ultimate/cast.js?v=6.0.0",
-      "./js/modes/ultimate/help.js": "./js/modes/ultimate/help.js?v=6.0.0",
-      "./js/modes/ultimate/world.js": "./js/modes/ultimate/world.js?v=6.0.0",
-      "./js/modes/ultimate.js": "./js/modes/ultimate.js?v=6.0.0",
-      "./js/packs.js": "./js/packs.js?v=6.0.0",
-      "./js/site.js": "./js/site.js?v=6.0.0",
-      "./js/sound-rules.js": "./js/sound-rules.js?v=6.0.0",
-      "./js/speech.js": "./js/speech.js?v=6.0.0",
-      "./js/stats.js": "./js/stats.js?v=6.0.0",
-      "./js/storage.js": "./js/storage.js?v=6.0.0",
-      "./js/turning.js": "./js/turning.js?v=6.0.0",
-      "./js/update-alert.js": "./js/update-alert.js?v=6.0.0",
-      "./js/version.js": "./js/version.js?v=6.0.0",
-      "./js/wetworker.js": "./js/wetworker.js?v=6.0.0"
+      "./js/accessibility.js": "./js/accessibility.js?v=6.0.1",
+      "./js/audio.js": "./js/audio.js?v=6.0.1",
+      "./js/backup.js": "./js/backup.js?v=6.0.1",
+      "./js/backups-page.js": "./js/backups-page.js?v=6.0.1",
+      "./js/bella-lexicon.js": "./js/bella-lexicon.js?v=6.0.1",
+      "./js/bella-words.js": "./js/bella-words.js?v=6.0.1",
+      "./js/bella-worker.js": "./js/bella-worker.js?v=6.0.1",
+      "./js/bella.js": "./js/bella.js?v=6.0.1",
+      "./js/braille.js": "./js/braille.js?v=6.0.1",
+      "./js/calendar.js": "./js/calendar.js?v=6.0.1",
+      "./js/device.js": "./js/device.js?v=6.0.1",
+      "./js/display.js": "./js/display.js?v=6.0.1",
+      "./js/game.js": "./js/game.js?v=6.0.1",
+      "./js/gestures.js": "./js/gestures.js?v=6.0.1",
+      "./js/help-data.js": "./js/help-data.js?v=6.0.1",
+      "./js/help-page.js": "./js/help-page.js?v=6.0.1",
+      "./js/isolate.js": "./js/isolate.js?v=6.0.1",
+      "./js/keywords.js": "./js/keywords.js?v=6.0.1",
+      "./js/main.js": "./js/main.js?v=6.0.1",
+      "./js/modes/chaos.js": "./js/modes/chaos.js?v=6.0.1",
+      "./js/modes/driving.js": "./js/modes/driving.js?v=6.0.1",
+      "./js/modes/events/blocks.js": "./js/modes/events/blocks.js?v=6.0.1",
+      "./js/modes/events/engine.js": "./js/modes/events/engine.js?v=6.0.1",
+      "./js/modes/events/feed.js": "./js/modes/events/feed.js?v=6.0.1",
+      "./js/modes/events/help.js": "./js/modes/events/help.js?v=6.0.1",
+      "./js/modes/events/missions.js": "./js/modes/events/missions.js?v=6.0.1",
+      "./js/modes/events/more-spec.js": "./js/modes/events/more-spec.js?v=6.0.1",
+      "./js/modes/events/more.js": "./js/modes/events/more.js?v=6.0.1",
+      "./js/modes/events/py.js": "./js/modes/events/py.js?v=6.0.1",
+      "./js/modes/events/schema.js": "./js/modes/events/schema.js?v=6.0.1",
+      "./js/modes/events/sign.js": "./js/modes/events/sign.js?v=6.0.1",
+      "./js/modes/events/sounds.js": "./js/modes/events/sounds.js?v=6.0.1",
+      "./js/modes/events/tunes.js": "./js/modes/events/tunes.js?v=6.0.1",
+      "./js/modes/events/wording.js": "./js/modes/events/wording.js?v=6.0.1",
+      "./js/modes/events.js": "./js/modes/events.js?v=6.0.1",
+      "./js/modes/findvoice-guide.js": "./js/modes/findvoice-guide.js?v=6.0.1",
+      "./js/modes/findvoice.js": "./js/modes/findvoice.js?v=6.0.1",
+      "./js/modes/index.js": "./js/modes/index.js?v=6.0.1",
+      "./js/modes/island.js": "./js/modes/island.js?v=6.0.1",
+      "./js/modes/tower.js": "./js/modes/tower.js?v=6.0.1",
+      "./js/modes/ultimate/cast.js": "./js/modes/ultimate/cast.js?v=6.0.1",
+      "./js/modes/ultimate/help.js": "./js/modes/ultimate/help.js?v=6.0.1",
+      "./js/modes/ultimate/world.js": "./js/modes/ultimate/world.js?v=6.0.1",
+      "./js/modes/ultimate.js": "./js/modes/ultimate.js?v=6.0.1",
+      "./js/packs.js": "./js/packs.js?v=6.0.1",
+      "./js/site.js": "./js/site.js?v=6.0.1",
+      "./js/sound-rules.js": "./js/sound-rules.js?v=6.0.1",
+      "./js/speech.js": "./js/speech.js?v=6.0.1",
+      "./js/stats.js": "./js/stats.js?v=6.0.1",
+      "./js/storage.js": "./js/storage.js?v=6.0.1",
+      "./js/turning.js": "./js/turning.js?v=6.0.1",
+      "./js/update-alert.js": "./js/update-alert.js?v=6.0.1",
+      "./js/version.js": "./js/version.js?v=6.0.1",
+      "./js/wetworker.js": "./js/wetworker.js?v=6.0.1"
     }
   }
   </script>
   <!-- end of versions -->
-  <script type="module" src="js/site.js?v=6.0.0"></script>
-  <script type="module" src="js/update-alert.js?v=6.0.0"></script>
+  <script type="module" src="js/site.js?v=6.0.1"></script>
+  <script type="module" src="js/update-alert.js?v=6.0.1"></script>
 </body>
 </html>

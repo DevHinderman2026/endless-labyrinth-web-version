@@ -50,7 +50,7 @@ const setup = await page.evaluate(async () => {
     demos: (HELP.find(([n]) => n === 'Demos, Find the Voice') || [0, []])[1].map((i) => i.sound) };
 });
 const mi = (k) => setup.keys.indexOf(k);
-check(mi('findvoice') > mi('event_score') && mi('ultimate') === mi('findvoice') + 1 && mi('chaos') === mi('ultimate') + 1 && mi('scores') === mi('chaos') + 1,
+check(mi('findvoice') === mi('island') + 1 && mi('ultimate') === mi('findvoice') + 1 && mi('chaos') === mi('ultimate') + 1 && mi('events') === mi('chaos') + 1 && mi('event_score') === mi('chaos') + 2 && mi('scores') === mi('chaos') + 3,
   'the main menu ends its modes with Find the Voice, Ultimate Mode, then Chaos Mode: ' + setup.menu.join(', '));
 check(setup.lines.some((l) => /^Find the Voice: No score yet$/.test(l)), 'Find the Voice has its own high score board');
 check(setup.names.includes('Find the Voice') && setup.names.includes('Demos, Find the Voice'), 'help has a Find the Voice section and its demos');

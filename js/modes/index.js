@@ -14,4 +14,7 @@ import ultimate from './ultimate.js';
 import events from './events.js';
 import findvoice from './findvoice.js';
 
-export const MODES = [driving, tower, island, events, findvoice, ultimate, chaos];
+// Web 6.0.1 (Russell, 19 Nov): every mode comes before Events on the main menu:
+// Standard, Battle, Driving, Tower, Island, Find the Voice, Ultimate Mode, Chaos
+// Mode, then Events and Event High Scores.
+export const MODES = [driving, tower, island, findvoice, ultimate, chaos, events];

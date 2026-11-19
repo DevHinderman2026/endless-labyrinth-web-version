@@ -84,13 +84,35 @@ function loadVoice(name, url) {
   return voiceLoads.get(name);
 }
 
+// ONNX Runtime Web's script. On an isolated page a script from another site is only
+// let in if that site marks it so; fetched as text (which jsDelivr allows any site
+// to do) and run from here, it always is. If that cannot be done, the plain way.
+let threads = 1;
+async function loadEngine(url) {
+  try {
+    const res = await fetch(url, { mode: 'cors', credentials: 'omit' });
+    if (!res.ok) throw new Error(String(res.status));
+    const blob = URL.createObjectURL(new Blob([await res.text()], { type: 'text/javascript' }));
+    try { importScripts(blob); } finally { URL.revokeObjectURL(blob); }
+    if (typeof ort === 'undefined') throw new Error('not loaded');
+  } catch (e) {
+    importScripts(url);
+  }
+}
+
 async function init(msg) {
   let stage = 'engine';
   try {
     if (msg.cacheName) cacheName = msg.cacheName;
-    if (typeof ort === 'undefined') importScripts(msg.ortUrl);
+    if (typeof ort === 'undefined') await loadEngine(msg.ortUrl);
     ort.env.wasm.wasmPaths = msg.wasmPaths;
-    ort.env.wasm.numThreads = 1;          // GitHub Pages has no cross-origin isolation
+    // Several processor threads make the voice several times faster, but a browser
+    // only allows them on a cross-origin isolated page. GitHub Pages does not send
+    // the headers for that, so the site's service worker (sw.js) adds them; without
+    // it (or in a browser without threads) the model runs on one thread as before.
+    threads = (self.crossOriginIsolated && typeof SharedArrayBuffer !== 'undefined')
+      ? Math.max(1, Math.min(8, Math.floor(Number(msg.threads) || 1))) : 1;
+    ort.env.wasm.numThreads = threads;
     ort.env.wasm.proxy = false;
     stage = 'voices';
     for (const [name, url] of Object.entries(msg.voices || {})) {
@@ -113,9 +135,9 @@ async function init(msg) {
     const first = voices.keys().next().value;
     const test = await run(msg.testIds || [123, 86, 46, 156, 51], first, 1.0);
     if (!test || test.length < 2400) throw new Error('the model made no sound');
-    post({ type: 'ready', inputs: inputNames, warmMs: performance.now() - t0 });
+    post({ type: 'ready', inputs: inputNames, warmMs: performance.now() - t0, threads, isolated: !!self.crossOriginIsolated });
   } catch (e) {
-    post({ type: 'failed', stage, error: String(e && e.message || e) });
+    post({ type: 'failed', stage, error: String(e && e.message || e), threads });
   }
 }
 

@@ -59,7 +59,7 @@ async function context(opts, { ranges = true } = {}) {
   });
   const names = h.map(([n]) => n);
   // (Web 6.0.0: Chaos Mode is the last mode, so its demos end the help; until then Events' did.)
-  check(names[names.length - 1] === 'Demos, Chaos Mode', `the game's help ends with Demos, Chaos Mode: ${names.join(', ')}`);
+  check(names[names.length - 2] === 'Demos, Chaos Mode' && names[names.length - 1] === 'Demos, Events', `the game's help ends with Demos, Chaos Mode and then Demos, Events (6.0.1: every mode before Events): ${names.join(', ')}`);
   const ev = h.find(([n]) => n === 'Events')[1];
   const demos = h.find(([n]) => n === 'Demos, Events')[1];
   check(!ev.some(([t]) => / (Item|Collected)$/.test(t)) && demos.length >= 10 && demos.every(([t, s]) => / (Item|Collected)$/.test(t) && s), `the item and collected sounds moved from Events to Demos, Events: ${demos.length}`);

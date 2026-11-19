@@ -62,10 +62,21 @@ export const SENTENCE_GAP_MS = 120;
 // Noticing a device that cannot keep up (see _note): the voice made slower than it
 // is spoken over the last few lines, a few lines in a row missing their moment, or
 // a line waiting this long behind others.
-export const STRUGGLE_RTF = 1.0;
+// (6.0.1: these gave up too soon, and for the whole visit. Lines are made ahead, so
+// a device somewhat slower than speech still has most of them ready; and a slow
+// patch, such as the first minute while a run's lines are all being made, passes.
+// So the limits are wider, and giving up is a rest of STRUGGLE_REST_MS, after which
+// Bella tries again.)
+export const STRUGGLE_RTF = 2.5;
 export const STRUGGLE_SAMPLES = 5;
-export const STRUGGLE_MISSES = 3;
-export const STRUGGLE_WAIT_MS = 3000;
+export const STRUGGLE_MISSES = 6;
+export const STRUGGLE_WAIT_MS = 8000;
+export const STRUGGLE_REST_MS = 60000;
+// How many processor threads the voice model may use where the browser allows more
+// than one (see bella-worker.js and sw.js): one is always left for the game.
+export function voiceThreads(cores = (typeof navigator !== 'undefined' && navigator.hardwareConcurrency) || 2) {
+  return Math.max(1, Math.min(4, Math.floor(cores) - 1));
+}
 // Lines kept for the visit (a phone's memory): about three minutes of speech.
 export const KEEP_BYTES = 18e6;
 
@@ -128,6 +139,8 @@ const later = (ms) => new Promise((r) => setTimeout(() => r(null), ms));
 // The worker and its state, shared by Bella and the guide (one model in memory).
 export class KokoroEngine {
   constructor({ makeWorker = null } = {}) {
+    this.threads = voiceThreads();  // asked for; threadsUsed is what the browser allowed
+    this.threadsUsed = 1;
     this.makeWorker = makeWorker || (() => new Worker(new URL('./bella-worker.js' + new URL(import.meta.url).search, import.meta.url)));
     this.worker = null;
     this.state = 'idle';            // idle, loading, ready, failed
@@ -172,6 +185,7 @@ export class KokoroEngine {
     this.worker.onerror = (e) => { if (this.state !== 'ready') this._fail('worker', e && e.message); };
     this.worker.postMessage({
       type: 'init', ortUrl: ORT_SCRIPT, wasmPaths: ORT_BASE, modelUrl: MODEL_URL,
+      threads: this.threads,
       voices: { ...VOICE_URLS }, cacheName: CACHE_NAME,
       testIds: toTokens(toPhonemes('Ready.').phonemes || 'ɹˈɛdi.'),
     });
@@ -180,6 +194,19 @@ export class KokoroEngine {
   get ready() { return this.state === 'ready'; }
 
   _fail(stage, err) {
+    // Several threads could not be started on this device (a phone short of memory,
+    // say): once more with one thread, as the game always did, before giving up.
+    if (this.threads > 1 && this.state === 'loading' && !this.retried
+        && (stage === 'loading' || stage === 'speaking' || stage === 'worker' || stage === 'engine')) {
+      this.retried = true;
+      this.threads = 1;
+      try { if (this.worker) this.worker.terminate(); } catch (e) { /* gone */ }
+      this.worker = null;
+      this.state = 'idle';
+      try { console.info(`Bella: several threads did not start (${stage}: ${err && err.message ? err.message : err}); trying one.`); } catch (e) { /* no console */ }
+      this.start();
+      return;
+    }
     this.state = 'failed';
     this.error = `${stage}: ${err && err.message ? err.message : String(err || '')}`;
     for (const [, j] of this.jobs) j.resolve(null);
@@ -196,6 +223,9 @@ export class KokoroEngine {
       this.state = 'ready';
       this.progress = 1;
       this.inputs = m.inputs;
+      this.threadsUsed = m.threads || 1;
+      this.isolated = !!m.isolated;
+      try { console.info(`Bella: voice ready, ${this.threadsUsed} thread${this.threadsUsed === 1 ? '' : 's'}${this.isolated ? '' : ' (page not isolated)'}, first word in ${Math.round(m.warmMs || 0)} ms.`); } catch (e) { /* no console */ }
       for (const f of this.onReady.splice(0)) { try { f(); } catch (e) { /* a listener's own trouble */ } }
     } else if (m.type === 'failed') this._fail(m.stage, m.error);
     else if (m.type === 'voice') {
@@ -245,8 +275,9 @@ export class Bella {
   constructor({ audio = null, engine = null } = {}) {
     this.audio = audio;
     this.engine = engine || new KokoroEngine();
-    this.struggling = false;        // the device cannot keep up: the device voice from now on
+    this.struggling = false;        // the device cannot keep up: the device voice for a while (see _giveUp)
     this.why = '';                  // why it gave up (for the tests and the console)
+    this.restMs = STRUGGLE_REST_MS; // how long it rests before trying again
     this.kept = new Map();          // phonemes -> { buffer, bytes, pinned, pending }
     this.keptBytes = 0;
     this.rtf = [];                  // how long recent lines took to make, against how long they are
@@ -357,7 +388,7 @@ export class Bella {
     });
   }
 
-  // How hard the device found that line: give up for the visit if it cannot keep up.
+  // How hard the device found that line: give way for a while if it cannot keep up.
   _note(ms, audioMs, waited) {
     if (!(audioMs > 0)) return;
     this.rtf.push(ms / audioMs);
@@ -384,7 +415,16 @@ export class Bella {
     for (const [k, e] of this.kept) if (!e.buffer && e.jobId) { ids.push(e.jobId); this.kept.delete(k); }
     this.engine.cancel(ids);
     this.prepQueue = [];
-    try { console.info('Bella: using the device voice from now on (' + why + ').'); } catch (e) { /* no console */ }
+    try { console.info('Bella: using the device voice for a while (' + why + ').'); } catch (e) { /* no console */ }
+    // A rest, then another try: what was made is kept, and the count starts afresh.
+    clearTimeout(this.restTimer);
+    this.restTimer = setTimeout(() => {
+      this.struggling = false;
+      this.rtf = [];
+      this.misses = 0;
+      this.rests = (this.rests || 0) + 1;
+      if (this.engine.ready) this.prepare(COMMON_LINES);
+    }, this.restMs);
   }
 
   // ---------------------------------------------------------------- preparing ahead

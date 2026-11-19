@@ -76,16 +76,18 @@ const setup = await page.evaluate(async () => {
 });
 // Web 6.0.0 (Russell): Chaos Mode is the very last mode on the menu, after Find the
 // Voice and Ultimate Mode, which come after Events and Event High Scores.
-check(setup.menu.indexOf('Find the Voice') === setup.menu.findIndex((m) => /^Event High Scores/.test(m)) + 1
+// (6.0.1: every mode comes before Events and Event High Scores.)
+check(setup.menu.indexOf('Find the Voice') === setup.menu.indexOf('Island Mode') + 1
   && setup.menu.indexOf('Ultimate Mode') === setup.menu.indexOf('Find the Voice') + 1
   && setup.menu.indexOf('Chaos Mode') === setup.menu.indexOf('Ultimate Mode') + 1
-  && setup.menu.indexOf('High Scores') === setup.menu.indexOf('Chaos Mode') + 1
-  && setup.menu.findIndex((m) => /^Events\b(?!.*High)/.test(m)) === setup.menu.indexOf('Island Mode') + 1, 'the main menu ends its modes with Find the Voice, Ultimate Mode and Chaos Mode: ' + setup.menu.join(', '));
+  && setup.menu.findIndex((m) => /^Events\b(?!.*High)/.test(m)) === setup.menu.indexOf('Chaos Mode') + 1
+  && setup.menu.findIndex((m) => /^Event High Scores/.test(m)) === setup.menu.indexOf('Chaos Mode') + 2
+  && setup.menu.indexOf('High Scores') === setup.menu.indexOf('Chaos Mode') + 3, 'the main menu ends its modes with Find the Voice, Ultimate Mode and Chaos Mode, then the events: ' + setup.menu.join(', '));
 const lineAt = (k) => setup.lines.findIndex((l) => l.startsWith(k));
 check(lineAt('Chaos Mode') === 2 && lineAt('Tower Mode') === 3 && lineAt('Driving Mode') === 4 && lineAt('Driving Distance') === 5
   && lineAt('Island Mode') === 6 && setup.lines.includes('Chaos Mode: No score yet'), 'the boards in the desktop\'s order: ' + setup.lines.join(' | '));
-check(setup.names.indexOf('Find the Voice') > setup.names.indexOf('Events') && setup.names.indexOf('Ultimate Mode') > setup.names.indexOf('Find the Voice')
-  && setup.names.indexOf('Chaos Mode') > setup.names.indexOf('Ultimate Mode') && setup.names.indexOf('Demos, Chaos Mode') === setup.names.length - 1, 'help has Chaos Mode and its demos last, in menu order: ' + setup.names.join(' | '));
+check(setup.names.indexOf('Events') === setup.names.indexOf('Chaos Mode') + 1 && setup.names.indexOf('Ultimate Mode') > setup.names.indexOf('Find the Voice')
+  && setup.names.indexOf('Chaos Mode') > setup.names.indexOf('Ultimate Mode') && setup.names.indexOf('Demos, Chaos Mode') === setup.names.length - 2, 'help has Chaos Mode last of the modes, then Events, and the demos in the same order: ' + setup.names.join(' | '));
 check(setup.missing.length === 0, 'every chaos sound, its demos and the elevator\'s muffled drones are in the packs' + (setup.missing.length ? ': missing ' + setup.missing.join(', ') : ''));
 check(setup.keys.length === 0, 'no key names in the chaos help: ' + setup.keys.join(', '));
 check(JSON.stringify(setup.general) === JSON.stringify(['Help Menu', 'General Gestures', 'General Turning', 'General Sound on Your Device', 'General Headphones', 'General The Game\'s Voice', 'General Room Reverb',
