@@ -6,7 +6,7 @@ import { HELP as BASE_HELP } from './help-data.js';
 import { MODES } from './modes/index.js';
 import { RATES } from './speech.js';
 import { keyboardDevice, windowsOnly } from './device.js';
-import { BATTLE_CROWD, CROWD_LEVEL, AMBIENCE_LEVEL, BACKGROUND_SEND, ROARS, ROAR_LEVEL, ROAR_AFTER, HIT_REACTIONS, HIT_REACT_LEVEL,
+import { BATTLE_CROWD, BATTLE_BEACON_BOOST, CROWD_LEVEL, AMBIENCE_LEVEL, BACKGROUND_SEND, ROARS, ROAR_LEVEL, ROAR_AFTER, HIT_REACTIONS, HIT_REACT_LEVEL,
   crowdSend } from './modes/ultimate.js';
 import { aliasRecording } from './modes/events/sounds.js';
 
@@ -40,6 +40,19 @@ const BATTLE_EMERGENCY_DIST = [12.0, 26.0];
 const BATTLE_EMERGENCY_MIN_SHOTS = 3;   // the emergency cartridge finishes the wave, never fewer than this
 const BATTLE_CREDIT_MIN_DIST = 15.0;
 const BATTLE_CREDIT_GAIN = 0.7;
+// (6.0.3, Russell) Battle has the arena crowd now, as Ultimate Mode's battle areas
+// do, so its cartridge and credit beacons are twice as loud, as they are there
+// (BATTLE_BEACON_BOOST), to be heard over it. Held to full loudness up close.
+const BATTLE_AMMO_GAIN = 0.55 * BATTLE_BEACON_BOOST;
+// The crowd goes wild when a wave begins, with the war horn: three of its roars
+// at once, a little apart and louder than a kill's, and its own loop swelling to
+// WAVE_SURGE times its level for a few seconds and easing back.
+const WAVE_ROAR_LEVEL = 0.9;
+const WAVE_ROAR_AT = [0.0, 0.3, 0.7];
+const WAVE_SURGE = 2.0;
+const WAVE_SURGE_RISE = 0.4;
+const WAVE_SURGE_HOLD = 3.0;
+const WAVE_SURGE_END = 5.0;
 const BATTLE_BREAK_COUNTDOWN = 5;
 // The arena crowd (web 6.0.0, Russell, 19 November 2026): Ultimate Mode's arena
 // crowd in every battle, Battle Mode's and Chaos's, exactly as in Ultimate's battle
@@ -415,6 +428,7 @@ export class Game {
     if (this.battleCrowdChannel) this.battleCrowdChannel.stop();
     this.battleCrowdChannel = null;
     this.battleLastRoar = null;
+    this.battleCrowdSurge = null;
     this.battleLastReact = null;
     this.breakLastBeep = null;
     for (const m of MODES) if (m.reset) m.reset(this);
@@ -494,15 +508,45 @@ export class Game {
   // _utKillEnemy), all round you, in the arena's echo. Only in the battle it was for.
   _battleCheer(bang) {
     const name = this._battleCrowdPick(ROARS, 'battleLastRoar');
-    if (!name) return;
+    if (name) this._battleCrowdLater(bang + ROAR_AFTER, name, ROAR_LEVEL);
+  }
+
+  // One of the crowd's recordings a little later, only in the battle it was for,
+  // waiting out a pause.
+  _battleCrowdLater(seconds, name, volume) {
     const run = this.runId; const level = this.battleLevel;
     const fire = () => {
       if (this.runId !== run) return;
       if (this.isPaused || this.state === S.CONFIRM_EXIT || this.state === S.HELP) { setTimeout(fire, 250); return; }
       if (this.state !== S.BATTLE || (this.chaosMode && this.battleLevel !== level)) return;
-      this.audio.play(name, { volume: ROAR_LEVEL, send: crowdSend(name) });
+      this.audio.play(name, { volume, send: crowdSend(name) });
     };
-    setTimeout(fire, Math.max(0, bang + ROAR_AFTER) * 1000);
+    setTimeout(fire, Math.max(0, seconds) * 1000);
+  }
+
+  // (6.0.3, Russell) A wave begins, with the war horn: the crowd goes wild.
+  _battleWaveRoar() {
+    const have = ROARS.filter((n) => this.audio.has(n));
+    if (have.length) {
+      const pool = have.slice();
+      for (let i = pool.length - 1; i > 0; i--) { const j = Math.floor(rand() * (i + 1)); [pool[i], pool[j]] = [pool[j], pool[i]]; }
+      WAVE_ROAR_AT.forEach((t, i) => this._battleCrowdLater(t, pool[i % pool.length], WAVE_ROAR_LEVEL));
+      this.battleLastRoar = pool[(WAVE_ROAR_AT.length - 1) % pool.length];
+    }
+    this.battleCrowdSurge = 0;
+  }
+
+  // The crowd's loop swelling after a wave begins, and easing back.
+  _battleCrowdSurgeTick(dt) {
+    if (this.battleCrowdSurge === null || this.battleCrowdSurge === undefined) return;
+    const t = (this.battleCrowdSurge += dt);
+    let k;
+    if (t < WAVE_SURGE_RISE) k = 1 + (WAVE_SURGE - 1) * (t / WAVE_SURGE_RISE);
+    else if (t < WAVE_SURGE_HOLD) k = WAVE_SURGE;
+    else if (t < WAVE_SURGE_END) k = WAVE_SURGE - (WAVE_SURGE - 1) * ((t - WAVE_SURGE_HOLD) / (WAVE_SURGE_END - WAVE_SURGE_HOLD));
+    else { k = 1; this.battleCrowdSurge = null; }
+    const c = this.battleCrowdChannel;
+    if (c && c.busy && !c.fadingOut) c.setVolume(BATTLE_CROWD_LEVEL * k);
   }
 
   // An enemy reaches you: the crowd reacts. In a battle that is the end, so the
@@ -698,8 +742,13 @@ export class Game {
     // battle or chaos tower floor).
     const c = this.timeCredit;
     if (!c) return;
-    const [l, r, dist] = this.chaosMode ? this._chaosCreditLevels([c.x, c.y])
+    let [l, r, dist] = this.chaosMode ? this._chaosCreditLevels([c.x, c.y])
       : calculate3dPanning(this.playerPos, [c.x, c.y], Math.max(20.0, 2.5 * (this.gridSize || 8)));
+    // (6.0.3) On a chaos battlefield, with the crowd: twice as loud, held to full.
+    if (this.state === S.BATTLE) {
+      const k = Math.min(BATTLE_BEACON_BOOST, 1 / Math.max(1e-6, l, r));
+      l *= k; r *= k;
+    }
     if (c.channel) c.channel.setVolume(l, r, this._behind([c.x, c.y]));
     // In a labyrinth, on the grid, from its own cell: never through a wall.
     const taken = this.state === S.STANDARD
@@ -844,7 +893,7 @@ export class Game {
   _battleUpdateCredit() {
     const c = this.timeCredit;
     if (!c) return;
-    const [l, r, dist] = this._battleLevels([c.x, c.y], BATTLE_CREDIT_GAIN);
+    const [l, r, dist] = this._battleLevels([c.x, c.y], BATTLE_CREDIT_GAIN * BATTLE_BEACON_BOOST);
     if (c.channel) c.channel.setVolume(l, r, this._behind([c.x, c.y]));
     if (dist < 3.0) {
       this.timeLeft += c.value;
@@ -935,6 +984,7 @@ export class Game {
     }
     this.battleBeatTimer -= dt;
     if (this.battleBeatTimer <= 0) { this.battleBeatTimer = uniform(...BATTLE_BEAT_SWAP); this._battleSwapBeat(); }
+    this._battleCrowdSurgeTick(dt);
     this.battleAmbTimer -= dt;
     if (this.battleAmbTimer <= 0) { this.battleAmbTimer = uniform(...BATTLE_AMB_SWAP); this._battleSwapAmb(); }
 
@@ -960,6 +1010,7 @@ export class Game {
           this.battleWaveShots = 0;
           totalNeeded = this._battleTargetsNeeded();
           this.audio.play('wave_start');
+          this._battleWaveRoar();
         }
       } else if (this.spawnedEnemies >= totalNeeded && !this.obstacles.length) {
         this.inWaveBreak = true;
@@ -1035,7 +1086,7 @@ export class Game {
 
     for (const p of [...this.ammoPickups]) {
       const dist = Math.hypot(p.x - this.playerPos[0], p.y - this.playerPos[1]);
-      const [l, r] = this._battleLevels([p.x, p.y], 0.55);
+      const [l, r] = this._battleLevels([p.x, p.y], BATTLE_AMMO_GAIN);
       if (p.channel) p.channel.setVolume(l, r, this._behind([p.x, p.y]));
       if (dist < 3.0) {
         this.ammo += p.shots;

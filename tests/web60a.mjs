@@ -164,6 +164,60 @@ check(bat.atPlace && bat.atPlace.orig === 2 && bat.atPlace.ch === 1 && bat.atPla
 check(!bat.beacon || bat.beacon.ch === 1, 'the cartridge\'s beacon, heard from its place, plays one channel: ' + JSON.stringify(bat.beacon));
 check(bat.react && Math.abs(bat.react.volume - 0.6) < 1e-6 && Math.abs(bat.react.send - 0.8) < 1e-6 && bat.react.wet && bat.over === 'game_over' && !bat.crowdAfter, 'an enemy reaching you: the crowd reacts in the arena\'s echo, the run ends, and the crowd stops with the drums: ' + JSON.stringify([bat.react, bat.over, bat.crowdAfter]));
 
+// ------------------------------------------------------------------ 2b. (6.0.3) Louder beacons, and the crowd going wild as a wave begins
+await page.evaluate(() => { window.__el.game.input('enter'); });
+await page.waitForFunction(() => window.__el.game.state === 'menu');
+await page.evaluate(() => { const g = window.__el.game; g.menuIndex = g.menuKeys.indexOf('battle'); g.input('enter'); });
+await page.waitForFunction(() => window.__el.game.state === 'battle');
+await sleep(1500);
+const wave = await page.evaluate(async () => {
+  const g = window.__el.game; const a = window.__el.audio;
+  const out = {};
+  for (const o of g.obstacles) if (o.channel) o.channel.stop();
+  g.obstacles = [];
+  // A cartridge twenty units away during a break: twice the old loudness.
+  g.inWaveBreak = true; g.waveBreakTimer = 30;
+  g._battleRestock();
+  const p = g.ammoPickups[0];
+  p.x = g.playerPos[0]; p.y = g.playerPos[1] - 20;
+  g.updateBattleMode(1 / 30);
+  const old = Math.max(0.12, 1 - 20 / 40) * 0.55;
+  out.ammo = { l: p.channel.l, r: p.channel.r, want: Math.min(1, old * 2) };
+  // Up close it is held to full, never over.
+  p.x = g.playerPos[0] + 3.5; p.y = g.playerPos[1];
+  g.updateBattleMode(1 / 30);
+  out.close = Math.max(p.channel.l, p.channel.r);
+  // A credit, twenty units away.
+  g._battleSpawnCredit && g._battleSpawnCredit();
+  const c = g.timeCredit;
+  if (c) { c.x = g.playerPos[0] - 20; c.y = g.playerPos[1]; g.updateBattleMode(1 / 30); out.credit = { v: Math.max(c.channel.l, c.channel.r), want: Math.min(1, Math.max(0.12, 1 - 20 / 40) * 0.7 * 2) }; }
+  // The break ends: the war horn, and the crowd goes wild.
+  const L = window.__t.listen();
+  const crowd = g.battleCrowdChannel;
+  out.crowdBefore = crowd && crowd.l;
+  g.waveBreakTimer = 0.01;
+  g.updateBattleMode(1 / 30);
+  out.horn = L.played.some(([n]) => n === 'wave_start');
+  for (let i = 0; i < 18; i++) g.updateBattleMode(1 / 30);   // 0.6 seconds
+  out.swell = crowd && crowd.l;
+  await new Promise((r) => setTimeout(r, 1200));
+  const roars = L.played.filter(([n]) => /^ut_crowd_roar_\d$/.test(n));
+  out.roars = roars.map(([n, o]) => [n, o.volume]);
+  for (let i = 0; i < 150; i++) { g.obstacles = []; g.updateBattleMode(1 / 30); }   // five seconds more
+  out.after = crowd && crowd.l;
+  out.surge = g.battleCrowdSurge;
+  L.stop();
+  g.triggerGameOver();   // (as section 2 left it)
+  return out;
+});
+await page.waitForFunction(() => window.__el.game.state === 'game_over');
+check(Math.abs(wave.ammo.l - wave.ammo.want) < 1e-6 && Math.abs(wave.ammo.r - wave.ammo.want) < 1e-6, 'Battle Mode (6.0.3): a cartridge beacon is twice as loud as before, to be heard over the crowd: ' + JSON.stringify(wave.ammo));
+check(wave.close <= 1 + 1e-9 && wave.close > 0.9, 'and up close it is held to full loudness, never over: ' + wave.close);
+check(wave.credit && Math.abs(wave.credit.v - wave.credit.want) < 1e-6, 'a credit beacon is twice as loud too: ' + JSON.stringify(wave.credit));
+check(wave.horn, 'the break ends with the war horn');
+check(wave.roars.length === 3 && new Set(wave.roars.map(([n]) => n)).size === 3 && wave.roars.every(([, v]) => Math.abs(v - 0.9) < 1e-6), 'and the crowd goes wild: three different roars together, louder than a kill\'s: ' + JSON.stringify(wave.roars));
+check(Math.abs(wave.crowdBefore - 0.44) < 1e-6 && wave.swell > 0.85 && Math.abs(wave.after - 0.44) < 1e-6 && wave.surge === null, `the crowd's murmur swells to twice its level and settles back after a few seconds: ${wave.crowdBefore} -> ${wave.swell} -> ${wave.after}`);
+
 // ------------------------------------------------------------------ 3. Chaos: a battle has the crowd, which fades out with its drums
 await page.evaluate(() => { const g = window.__el.game; g.input('enter'); });
 await page.waitForFunction(() => window.__el.game.state === 'menu');
