@@ -1,0 +1,35 @@
+# The safe zone cast (Russell's eight groups; every background has exactly one character).
+GROUPS = [
+    ("spooky", "Spooky"), ("towns", "Towns and travel"), ("kitchens", "Kitchens and food"),
+    ("fire", "Fire and hearth"), ("holy", "Holy and quiet places"), ("water", "Water"),
+    ("wild", "Wild nature"), ("cold", "Cold and storms, machines and space"),
+]
+# id, name, voice, group, backgrounds (evt_amb_ + name), personality
+CAST = [
+    ("witch", "Mother Hazel", "af_nicole", "spooky", ["witch"], "A kindly, mischievous old witch who speaks in riddles, brews the potions and changes her mind about everything."),
+    ("gravekeeper", "Mortimer", "am_echo", "spooky", ["graveyard", "ghost_choir"], "A gentle, patient gravekeeper who rakes leaves, talks to headstones and thinks the world is a garden."),
+    ("ghost", "Pell", "af_sky", "spooky", ["haunted_house", "haunted_space"], "A cheerful little ghost girl who claims she remembers every world and is looking for her own front door."),
+    ("fiddler", "Jangles", "am_puck", "spooky", ["halloween_strings", "spooky"], "A joking skeleton fiddler who is sure the world is a song that keeps going back to the top."),
+    ("merchant", "Marigold", "bf_emma", "towns", ["medieval_village", "market"], "A chatty village market trader who sells apples, candles and, above all, rumours."),
+    ("watchman", "Tobias", "bm_george", "towns", ["tavern", "city_night"], "A steady old night watchman who keeps the lamps lit, pours cocoa and writes everything odd in his logbook."),
+    ("clockmaker", "Mister Pendle", "bm_fable", "towns", ["train_station", "clock"], "A fussy, precise clockmaker and station master who times every rebuild and hates surprises."),
+    ("chef", "Chef Rosalind", "af_sarah", "kitchens", ["kitchen", "restaurant_kitchen", "sizzling_oil"], "A warm, bossy chef who thinks the world is a recipe somebody keeps tasting and starting again."),
+    ("barista", "Juniper", "af_jessica", "kitchens", ["cafe", "fast_food"], "A bubbly young counter worker who collects her regulars' theories on napkins."),
+    ("storyteller", "Grandpa Hollis", "am_santa", "fire", ["campfire", "fireplace"], "A jolly old storyteller by the fire whose every legend has several versions."),
+    ("cinder", "Cinder", "am_fenrir", "fire", ["lava", "fireworks"], "A gruff, loud fireworks maker who takes his fire from the lava and believes the world is forged."),
+    ("organist", "Ambrose", "bm_daniel", "holy", ["cathedral_organ", "organ", "dark_choir"], "A calm, gentle organist who hears the world as unfinished music."),
+    ("librarian", "Prudence Quill", "bf_alice", "holy", ["library", "cathedral"], "A prim, quiet librarian and keeper of records who thinks the world is a book being read again."),
+    ("captain", "Captain Brine", "am_onyx", "water", ["ocean_night", "ship_creak", "underwater"], "A deep voiced old sea captain full of sea stories, sure something under the sea keeps count."),
+    ("ferry", "Willa", "af_river", "water", ["river", "waterfall"], "A friendly river ferry keeper who collects things that float down from old worlds."),
+    ("marsh", "Fennick", "am_liam", "water", ["rain", "marsh_frogs"], "An eager young marsh warden who loves rain and frogs, especially a frog called Admiral."),
+    ("caver", "Petra", "af_kore", "water", ["water_drip", "cave_drips"], "A careful, quiet cave explorer who counts drips and believes the world is built from the bottom up."),
+    ("ranger", "Rowan", "am_adam", "wild", ["forest_night", "crickets"], "A calm forest ranger who reads the trees and the crickets."),
+    ("explorer", "Ivy", "af_aoede", "wild", ["jungle", "cicadas"], "An excitable jungle explorer who has searched a hundred worlds for the edge of the map."),
+    ("birdwatcher", "Wren", "bf_lily", "wild", ["morning_birds", "spring_birds"], "A bright young bird watcher who is sure the birds know the answer and sing it too fast."),
+    ("beekeeper", "Clover", "af_alloy", "wild", ["bees", "summer"], "A sunny beekeeper who calls everyone sugar and trusts her bees to find their way home."),
+    ("wanderer", "Sol", "am_michael", "wild", ["wind_trees", "desert"], "A slow, thoughtful wanderer who has walked to the edge of the world and found more road."),
+    ("icelady", "Lady Rime", "bf_isabella", "cold", ["blizzard", "ice_cave"], "A cool, elegant lady of the ice who keeps frozen pieces of old worlds."),
+    ("mountain", "Corbin", "bm_lewis", "cold", ["winter_wind", "howling_wind"], "A gruff, kind mountain shepherd who thinks the wind is the world breathing."),
+    ("engineer", "Mister Sprocket", "am_eric", "cold", ["storm", "industrial"], "An enthusiastic inventor who collects lightning and is certain the world is a machine."),
+    ("astronaut", "Commander Vega", "af_nova", "cold", ["space", "spaceship"], "A cheerful space commander who watches the world from orbit and calls you cadet."),
+]

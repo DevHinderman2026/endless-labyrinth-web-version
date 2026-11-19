@@ -77,7 +77,9 @@ async function inGame(src) {
       run: (seconds) => { for (let i = 0; i < Math.round(seconds * 30) && G.state === 'event'; i++) G.frame(1 / 30); },
       cell: (t) => [Math.round(t.x / 3), Math.round(t.y / 3)],
       // Walk onto a thing the way a player does: from the square south of it, one step north.
-      stepOnto: (t) => { const c = H.cell(t); G.playerPos = [c[0] * 3, c[1] * 3 + 3]; G.input('up'); G.frame(1 / 30); },
+      // 5.2.0 (now 6.0.0): a new level, room or stage waits for its climb; let it end first, as a player would.
+      settle: () => { for (let i = 0; i < 100 && G.state === 'event' && G.evClimbHold > 0; i++) G.frame(0.1); },
+      stepOnto: (t) => { H.settle(); const c = H.cell(t); G.playerPos = [c[0] * 3, c[1] * 3 + 3]; G.input('up'); G.frame(1 / 30); },
       said: () => { const el = document.getElementById('said'); const t = el.textContent; return t; },
     };
     return new Function('G', 'H', src)(G, H);
@@ -366,7 +368,7 @@ check(r.chimes && r.done === 1 && r.back && r.lives === 2 && r.said, 'count the 
 await start(await X('tide'));
 r = await inGame(put + `const out = { row: G.x.row === n + 2, treasures: G.x.treasures.length }; G.x.nextRise = G.evElapsed; H.run(0.05); out.rose = G.x.row === n + 1;
   G.x.row = n + 9; G.x.nextRise = G.evElapsed + 99; H.stepOnto(G.x.treasures[0]); out.points = G.evPoints; H.stepOnto(G.x.goal); out.done = G.xDone;
-  G.x.row = n; H.run(0.05); out.state = G.state; out.said = H.said(); return out;`);
+  H.settle(); G.x.row = n; H.run(0.05); out.state = G.state; out.said = H.said(); return out;`);
 check(r.row && r.treasures === 4 && r.rose && r.points === 5 && r.done === 1 && r.state === 'game_over' && /The tide caught you\. You outran 1 tide for 25 points\./.test(r.said), 'rising tide: the water rises behind you; high ground scores; the water ends the run');
 await start(await X('snake'));
 r = await inGame(put + `put(0, 0); G.evItems[0].x = 27; G.evItems[0].y = 27; Object.assign(G.x, { prev: '0,0', tail: [] }); for (let k = 0; k < 3; k++) press('up');
@@ -392,7 +394,7 @@ r = await inGame(put + `const said = G.x.said; const out = { said: H.said().incl
 check(r.said && r.done === 1 && r.points === 15 && r.fresh && r.repeat, 'treasure map: spoken directions lead to the square to dig; the report repeats them');
 await start(await baseEvent('collect', {}, [{ mission: 'cover', cover: { squares_to_cover: 2 } }, { mission: 'map', ending: { kind: 'fixed', levels: 1 } }]));
 r = await inGame(put + `const log = []; const speak = G.tts.speak; G.tts.speak = function (t, o) { if (t) log.push(t); return speak.call(this, t, o); };
-  press('up'); press('up'); const out = { second: G.ev.mission, said: log.join(' | ') }; const [i, j] = G.x.target.split(',').map(Number); put(i, j); press('space');
+  press('up'); press('up'); const out = { second: G.ev.mission, said: log.join(' | ') }; const [i, j] = G.x.target.split(',').map(Number); H.settle(); put(i, j); press('space');
   G.tts.speak = speak; out.state = G.state; out.end = H.said(); return out;`);
 check(r.second === 'map' && /Stage 2\. \| \d+ steps? /.test(r.said) && r.state === 'game_over' && /You finished every stage!/.test(r.end), 'the further missions work as stages, and directions follow the stage number: ' + r.said.slice(0, 80));
 r = await page.evaluate(async () => {
@@ -406,9 +408,9 @@ check(r.n === 25 && !r.keys.length && r.before, 'the help has the 25 missions, i
 
 // ------------------------------------------------------------ an event from a newer version still
 r = await page.evaluate(async () => {
-  const { DEFAULTS, newerStub, checkEvent } = await import('./js/modes/events/schema.js');
+  const { DEFAULTS, newerStub, checkEvent, FORMAT } = await import('./js/modes/events/schema.js');
   const ev = structuredClone(DEFAULTS);
-  Object.assign(ev, { id: 'from-the-future', name: 'Later', format: 3, start: '2026-01-01T00:00:00Z', end: '2027-01-01T00:00:00Z' });
+  Object.assign(ev, { id: 'from-the-future', name: 'Later', format: FORMAT + 1, start: '2026-01-01T00:00:00Z', end: '2027-01-01T00:00:00Z' });
   const stub = newerStub(ev);
   const G = window.__el.game;
   return { errs: checkEvent(ev)[1].length, stub: Boolean(stub && stub._website_only), line: stub ? G._eventLine(['event', stub]) : '' };
@@ -496,6 +498,123 @@ r = await page.evaluate(async () => {
 });
 check(r.def === false && r.old.length === 0 && r.ok.length === 0, 'unlimited shots is off unless an event turns it on, and an older file without it is still valid');
 check(r.off.some((e) => /Unlimited shots needs the weapon/.test(e)) && r.bad.some((e) => /Unlimited shots on or off must be true or false/.test(e)), 'unlimited shots with the weapon off, or not true or false, is refused in words');
+
+// ------------------------------------------------------------ web 6.0.0 (Windows 4.0.0)
+// Every format 3 template (the undersea ones swim now) starts and plays at random too.
+const newest = files.filter((f) => JSON.parse(fs.readFileSync(path.join(TEMPLATES, f), 'utf8')).format === 3);
+check(newest.length >= 4, `${newest.length} format 3 templates found`);
+for (const f of newest) {
+  const data = JSON.parse(fs.readFileSync(path.join(TEMPLATES, f), 'utf8'));
+  delete data.signature;
+  const before = errors.length;
+  const st = await start(data);
+  if (st.errs.length) { check(false, `${f} is valid: ${st.errs.join(' | ').slice(0, 300)}`); continue; }
+  const r6 = await inGame(`
+    const keys = ['up', 'down', 'left', 'right', 'space', 'enter', 'clock']; let frames = 0; let bad = null;
+    try { for (; frames < 30 * 30 && G.state === 'event'; frames++) { G.frame(1 / 30); if (frames % 4 === 0 && G.state === 'event') G.input(keys[Math.floor(Math.random() * keys.length)]); } }
+    catch (e) { bad = String(e && e.stack || e).slice(0, 600); }
+    if (G.state === 'event') G.triggerGameOver();
+    return { frames, bad };`);
+  check(st.state === 'event' && !r6.bad && errors.length === before, `${f} starts and plays ${r6.frames} frames at random` + (r6.bad ? ': ' + r6.bad : ''));
+}
+// The swim floor: every step a swimming stroke, as quiet as wading.
+await start(await baseEvent('collect', { 'floor.main': 'swim', 'item.at_once': 1 }));
+r = await inGame(`
+  const names = new Set(); for (let i = 0; i < 60; i++) names.add(G.bStepSound());
+  return { names: [...names], quiet: G._bFloorAt() };`);
+check(r.names.length > 0 && r.names.every((n) => /ut_dive_stroke_/.test(n)), 'a step on the swim floor is a swimming stroke: ' + r.names.slice(0, 4).join(', '));
+r = await page.evaluate(async () => {
+  const { checkEvent, DEFAULTS, soundFiles, QUIET_FLOORS } = await import('./js/modes/events/schema.js');
+  const ev = Object.assign(structuredClone(DEFAULTS), { id: 'test-event', name: 'Test', mission: 'collect', start: '2026-01-01T00:00:00Z', end: '2027-01-01T00:00:00Z' });
+  ev.floor.main = 'swim';
+  const [c, errs] = checkEvent(ev);
+  return { errs, files: soundFiles(c).filter((f) => /stroke/.test(f)), quiet: QUIET_FLOORS.includes('swim') };
+});
+check(r.errs.length === 0 && r.files.length === 4 && r.quiet, 'the swim floor is valid, needs the four strokes, and is quiet');
+// Key and door: the event's own pickup recording when it names one (CON-07).
+for (const [own, want] of [['evt_door_unlock.ogg', /evt_door_unlock/], ['', /^key_pickup$/]]) {
+  await start(await baseEvent('keys', { 'item.pickup_file': own, 'item.at_once': 1 }));
+  r = await inGame(`
+    const played = []; const real = G.audio.play.bind(G.audio);
+    G.audio.play = (n, ...a) => { played.push(n); return real(n, ...a); };
+    G.evLastStep = [0, -1]; G.playerPos = [G.mKey.x, G.mKey.y];
+    G._mKeysUpdate(0.02);
+    G.audio.play = real;
+    return { has: G.mHasKey, played };`);
+  check(r.has && r.played.some((n) => want.test(n)), `taking the key plays ${own ? 'the event\'s own recording' : 'the Island key pickup'}: ${r.played.slice(0, 4).join(', ')}`);
+}
+// Pumpkin Hunt, Second Addition, as Russell set it for 4.0.0 / 6.0.0.
+const pumpkinPath = path.join(desk, 'events', 'pumpkin-hunt-second-addition-2026-2.json');
+if (fs.existsSync(pumpkinPath)) {
+  const pk = JSON.parse(fs.readFileSync(pumpkinPath, 'utf8'));
+  delete pk.signature;
+  const st = await start(pk);
+  check(st.state === 'event', 'Pumpkin Hunt, Second Addition starts');
+  r = await inGame(`
+    let cased = 0;
+    for (let i = 0; i < 400; i++) { const th = { x: 0, y: 0, channel: null }; G._bItemSpawned(th); if (th.cased) cased += 1; if (th.channel) G._mStop(th); }
+    G.evShots = 0;
+    const th = G.evItems[0]; th.cased = true;
+    const before = G.evHazards.length; G._bSmash(th);
+    const out = { cased, came: G.evHazards.length - before, shots: G.evShots };
+    G._evDowned(G.ev.hazards); out.one = G._evDownsWords(); G._evDowned(G.ev.hazards); out.two = G._evDownsWords();
+    return out;`);
+  check(r.cased >= 150 && r.cased <= 250, `about half its pumpkins are cased: ${r.cased} of 400`);
+  check(r.came === 3 && r.shots === 6, `a smashed case brings 3 ghosts and 6 shots: ${r.came}, ${r.shots}`);
+  check(r.one === '1 ghost' && r.two === '2 ghosts', `they are called 1 ghost, 2 ghosts: ${r.one}, ${r.two}`);
+}
+
+// ------------------------------------------------------------ the review of 19 November (6.0.0 review fixes)
+{
+  // An escape room's second kind comes once, not twice in room 1.
+  await start(await baseEvent('escape', { 'hazards2.count': 2, 'hazards2.name': 'wolf', 'escape.first_room': 1 }));
+  let r = await inGame(`return G.evHazards.filter((t) => t.kind).length;`);
+  check(r === 2, `escape: room 1 has as many of the second kind as the event says: ${r}`);
+  // No clock, and only a second kind's touch ends the run: all down for good, it ends.
+  await start(await baseEvent('collect', { 'clock.on': false, 'hazards2.count': 2, 'hazards2.on_touch': 'end_run',
+    'weapon.enabled': true, 'weapon.unlimited_shots': true }));
+  r = await inGame(`H.run(0.5); const up = G.state; for (const t of G.evHazards) t.downFor = 0.0; H.run(0.5); return [up, G.state];`);
+  check(r[0] === 'event' && r[1] !== 'event', `no clock and a second kind as the only ending: all down for good, the run ends: ${r}`);
+  await start(await baseEvent('collect', { 'clock.on': false, 'hazards.count': 1, 'hazards2.count': 1,
+    'hazards2.on_touch': 'end_run', 'hazards2.respawn_seconds': 30, 'weapon.enabled': true }));
+  r = await inGame(`for (const t of G.evHazards) t.downFor = 0.0; H.run(0.5); return G.state;`);
+  check(r === 'event', `one that comes back keeps such a run going: ${r}`);
+  // A new sonar maze leaves nothing under its walls.
+  await start(await baseEvent('sonar', { 'walls.on': true, 'walls.density': 0.25, room_size: 30,
+    'supplies.points_every_seconds': 600 }));
+  r = await page.evaluate(async () => {
+    const { sqKey } = await import('./js/modes/events/blocks.js');
+    const G = window.__el.game;
+    for (let i = 0; i < 100 && G.evClimbHold > 0; i++) G.frame(0.1);
+    const ex = G.x.exit;
+    for (let i = -8; i <= 8; i++) for (let j = -8; j <= 8; j++) {
+      if (G.bWalls.has(sqKey(i * 3, j * 3)) || sqKey(i * 3, j * 3) === sqKey(ex.x, ex.y) || (i + j) % 2) continue;
+      G.bSupplies.push({ x: i * 3, y: j * 3, channel: null, extra: null, role: 'points', age: 0 });
+    }
+    G.evLastStep = [0, -1];
+    G.playerPos = [Math.round(ex.x / 3) * 3, Math.round(ex.y / 3) * 3];
+    G.updateEventMode(0.02);
+    return { done: G.xDone, n: G.bSupplies.length, under: G.bSupplies.filter((t) => G.bWalls.has(sqKey(t.x, t.y))).length };
+  });
+  check(r.done === 1 && r.n > 0 && r.under === 0, `sonar maze: the next maze's walls stand on no supply: ${JSON.stringify(r)}`);
+  // Smash and grab with half its items in cases, and an exit.
+  await start(await baseEvent('smash', { 'cases.exit': true, 'cases.share': 0.5, 'levels.items_fewest': 6, 'levels.items_most': 6 }));
+  r = await inGame(`
+    H.settle();
+    G.evItems.forEach((t, i) => { t.cased = i < 3; });
+    for (const t of G.evItems.filter((t) => t.cased)) G._bSmash(t);
+    const open = G.bExitOpen;
+    const extra = G._bStatusExtra();
+    H.stepOnto(G.evItems[0]);
+    const end = G._bResult();
+    return { open, extra, end };`);
+  check(!r.open && r.extra.includes('3 pumpkins before the exit opens') && !r.extra.includes('0 case'),
+    `smash and grab: Enter names the items on the floor that keep the exit locked: ${r.extra}`);
+  check(r.end.includes('smashed 3 cases and picked up 1 pumpkin '), `and the end says 3 smashed and 1 picked up: ${r.end}`);
+  await start(await baseEvent('smash', { 'item.total': 3, 'item.at_once': 3 }));
+  r = await inGame(`H.settle(); for (const t of G.evItems.slice(0, 2)) G._bSmash(t); return G._bResult();`);
+  check(r.startsWith('You smashed 2 cases for'), `an ordinary Smash and grab keeps its old words: ${r}`);
+}
 
 check(errors.length === 0, 'no errors in the page: ' + errors.slice(0, 3).join(' | ').slice(0, 500));
 await browser.close();

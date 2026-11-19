@@ -290,7 +290,9 @@ const dr = await page.evaluate(async () => {
   return out;
 });
 check(dr.state === 'game_over' && dr.death === 'drown' && dr.lastPlayed.includes('drown'), 'the air runs out: you drown and the run ends');
-check(dr.lowAir && (dr.beeps === 15 || dr.beeps === 16), `Low air is said, and the high countdown beeps ${dr.beeps} times`);
+// web 5.2.0: the warning starts at ten seconds left and its beeps come faster and
+// faster, from one a second to 0.15 s apart: about two dozen in all.
+check(dr.lowAir && dr.beeps >= 20 && dr.beeps <= 32, `Low air is said, and the high countdown beeps ${dr.beeps} times, faster and faster`);
 check(/^You drowned\. You crossed \d+ islands?, worth \d+, and gained \d+ points, for a score of \d+\. /.test(dr.said), 'the island message: ' + dr.said);
 check(dr.loops.length === 0, 'no loops left after game over: ' + dr.loops.join(', '));
 await page.waitForTimeout(3000);

@@ -23,6 +23,8 @@
 
 import { TOWER_DRONES } from './tower.js';
 import { RoadThing } from './driving.js';
+import { FV_LIVES, FV_FIRST_BACKGROUND } from './findvoice.js';
+import { aliasRecording } from './events/sounds.js';
 
 // ------------------------------------------------------------------ constants
 // Driving: the quota of cars to shoot is BASE plus one per driving level so far, and
@@ -46,6 +48,17 @@ const CHAOS_CREDIT_FLOOR = 0.15;
 // Roads: one chaos credit roughly every this many metres, give or take 40 percent.
 const CHAOS_CREDIT_ROAD_GAP = 2000.0;
 const CHAOS_TIME_LIMIT = 300.0;
+// Web 6.0.0 (Russell, 19 Nov): two more kinds of stage. Find the Voice: find the
+// guide a quota of times, then take the exit. The quota is 3 or 4 the first time
+// in a run, one more each time the stage comes up again, never over 8; the stage
+// has its own three lives for the whole run, and losing the third ends the run.
+// The world stage (website only): a random world of Ultimate Mode. How often each
+// kind comes up, against the others: Find the Voice as often as an island, the
+// world the rarest of all.
+export const CHAOS_FV_QUOTA_FIRST = [3, 4];
+export const CHAOS_FV_QUOTA_GROW = 1;
+export const CHAOS_FV_QUOTA_MAX = 8;
+export const CHAOS_STAGE_WEIGHTS = { standard: 1, battle: 1, tower: 1, drive: 1, island: 1, findvoice: 1, ultimate: 0.5 };
 // The old level's air going as the new one comes.
 const CHAOS_AMBIENCE_FADE = 0.4;
 // The other modes' numbers chaos uses (the desktop's own values).
@@ -72,6 +85,8 @@ const BATTLE = 'battle';
 const TOWER = 'tower';
 const DRIVE = 'drive';
 const ISLAND = 'island';
+const FINDVOICE = 'findvoice';
+const WORLD = 'ultimate';
 const STATE_CHAOS_GAP = 'chaos_gap';
 
 // ------------------------------------------------------------------ helpers
@@ -127,7 +142,16 @@ const mixin = {
     this.chaosNext = null;
     this.chaosPreview = null;
     this.chaosAdopt = null;
+    this.chaosClimbAir = null;
     this.ambPending = {};
+    // Find the Voice stages: their count, their quota so far, and their own lives.
+    this.chaosFvCount = 0;
+    this.chaosFvQuota = null;
+    this.chaosFvLives = FV_LIVES;
+    this.chaosFvPreviewStem = null;
+    // World stages: their count, and what carries from one to the next.
+    this.chaosWorldCount = 0;
+    this.chaosWorld = null;
 
     this.tts.speak('Chaos Mode. Five minutes.', { interrupt: true });
     this._setupChaosLevel();
@@ -182,6 +206,9 @@ const mixin = {
     this.driveBand = -1;
     // island
     this._islandStopAll();
+    // Find the Voice, and a world of Ultimate Mode
+    if (this.fv) { this._fvStopAll(); this.fv = null; }
+    if (this.ut && this.ut.chaos) this._utChaosLeave();
     this.battleExitActive = false;
     this.inWaveBreak = false;
     // And whatever any of that missed: every loop still running.
@@ -190,7 +217,13 @@ const mixin = {
 
   // The level is over. Silence it and wait a moment before the next.
   _chaosBeginGap() {
-    this._chaosClearEverything();
+    // 5.2.0 fix: after a tower floor's stairs the floor's air is spared, and given
+    // back as the level's air, so it plays on through the climb and is faded out
+    // under the next level's air when that one begins (_setupChaosLevel).
+    const air = this.chaosClimbAir || null;
+    this.chaosClimbAir = null;
+    this._chaosClearEverything(air);
+    if (air) this.ambienceChannel = air;
     this.state = STATE_CHAOS_GAP;
     this.chaosGap = CHAOS_GAP_TIME;
   },
@@ -207,14 +240,25 @@ const mixin = {
     }
   },
 
-  _chaosPickNext() {
-    return choice([STANDARD, BATTLE, TOWER, DRIVE, ISLAND]);
+  // Totally random, by CHAOS_STAGE_WEIGHTS. (`without`: a kind that may not come
+  // next, as a world straight after an island's ride up.)
+  _chaosPickNext(without = null) {
+    const kinds = Object.keys(CHAOS_STAGE_WEIGHTS).filter((k) => k !== without && CHAOS_STAGE_WEIGHTS[k] > 0);
+    const total = kinds.reduce((s, k) => s + CHAOS_STAGE_WEIGHTS[k], 0);
+    let r = rand() * total;
+    for (const k of kinds) { r -= CHAOS_STAGE_WEIGHTS[k]; if (r < 0) return k; }
+    return kinds[kinds.length - 1];
   },
 
   // The one looping sound that says what the next level is - its drone, its drums'
   // drone, its stairwell air, its idling engine or its shore - so an elevator ride
   // can bring it in before the level begins.
   _chaosPreviewName(st) {
+    if (st === WORLD) {
+      // A world has no one sound to bring in ahead (it drops you anywhere in it):
+      // after an island's ride up, something else comes instead.
+      st = this.chaosNext = this._chaosPickNext(WORLD);
+    }
     if (st === STANDARD || st === TOWER) {
       const kind = st === STANDARD ? 'lab' : 'tower';
       const idx = kind === 'lab' ? this._pickAmb('lab') : this._towerPickAmb();
@@ -232,6 +276,15 @@ const mixin = {
       return BATTLE_DRONES[this.battleAmbIdx];
     }
     if (st === DRIVE) return 'engine_0';
+    if (st === FINDVOICE) {
+      // The background the stage will have rises through the doors.
+      // The run's first Find the Voice stage always has the witch's air, the mode's
+      // signature sound (Russell, 19 Nov, as the Windows game); later ones, the others.
+      const stem = this.chaosFvCount === 0 && this.audio.has(FV_FIRST_BACKGROUND)
+        ? FV_FIRST_BACKGROUND : this._fvNextBackground();
+      this.chaosFvPreviewStem = stem;
+      return stem ? aliasRecording(this.audio, stem, `event_amb_file_${stem}`) : null;
+    }
     this.islandShore = this._islandNextShore();
     this.islandShoreDealt = true;
     return this.islandShore;
@@ -278,6 +331,8 @@ const mixin = {
     if (this.state === TOWER) { this._chaosSetupTower(); return; }
     if (this.state === DRIVE) { this._chaosSetupDrive(); return; }
     if (this.state === ISLAND) { this._chaosSetupIsland(); return; }
+    if (this.state === FINDVOICE) { this._chaosSetupFindVoice(); return; }
+    if (this.state === WORLD) { this._chaosSetupWorld(); return; }
     if (this.state === BATTLE) {
       this.battleLevel += 1;
       this.arenaLimit = 40.0;
@@ -421,11 +476,35 @@ const mixin = {
     this._islandNewIsland();
   },
 
+  // A Find the Voice stage (findvoice.js): its quota, its lives (the run's own
+  // three), its creature as fast as this many stages make it.
+  _chaosSetupFindVoice() {
+    this.chaosFvCount += 1;
+    this.chaosFvQuota = this.chaosFvQuota === null || this.chaosFvQuota === undefined
+      ? randint(CHAOS_FV_QUOTA_FIRST[0], CHAOS_FV_QUOTA_FIRST[1])
+      : Math.min(CHAOS_FV_QUOTA_MAX, this.chaosFvQuota + CHAOS_FV_QUOTA_GROW);
+    const adopt = this.chaosAdopt;
+    this.chaosAdopt = null;
+    const stem = this.chaosFvPreviewStem
+      || (this.chaosFvCount === 1 && this.audio.has(FV_FIRST_BACKGROUND) ? FV_FIRST_BACKGROUND : null);
+    this.chaosFvPreviewStem = null;
+    this._fvBegin({ chaos: true, level: this.chaosFvCount, quota: this.chaosFvQuota, lives: this.chaosFvLives,
+      background: stem, adopt: adopt && adopt[1] ? adopt[1] : null });
+  },
+
+  // A world stage (ultimate.js _utChaosStart): a random world, for its own length.
+  _chaosSetupWorld() {
+    this.chaosWorldCount += 1;
+    this.chaosAdopt = null;
+    this._utChaosStart();
+  },
+
   // next_level's chaos part (game.js's nextLevel has already counted the level).
   _chaosNextLevel() {
     // Ten points for any finished level that is not an island; islands pay their
     // own points as they are played.
-    if (this.state !== ISLAND) this.chaosPoints += CHAOS_POINTS_LEVEL;
+    // (A world stage pays as Ultimate Mode does, as it is played: nothing for its end.)
+    if (this.state !== ISLAND && this.state !== WORLD) this.chaosPoints += CHAOS_POINTS_LEVEL;
     // Timer is NOT reset - it keeps counting down across the whole run.
     if (this.chaosPreview) {
       // The elevator ride up out of an island has already faded the next level's
@@ -454,6 +533,7 @@ const mixin = {
     if (st === BATTLE) return !!this.battleExitActive;
     if (st === TOWER) return !!this.towerStairsActive;
     if (st === DRIVE) return !!this.chaosDriveExitSeen;
+    if (st === FINDVOICE) return !!(this.fv && this.fv.exit);
     return false;
   },
 
@@ -491,16 +571,17 @@ const mixin = {
 // gestures (T, a keyboard key, is kept as a keyboard's).
 const HELP_SECTIONS = [
   ["Chaos Mode", [
-    { title: "Chaos Mode", sound: null, desc: "Chaos mode is every mode at once, and the hardest one in the game. Each level is chosen at random from all five kinds: a labyrinth, a battle, one floor of a tower, a stretch of road, or an island. Nothing ever tells you which one you are in. You work it out from what you hear, the labyrinth's drone, the battle drums, the tower's thin stairwell air, your engine, or the shore, and then you play it by that mode's rules. Finish a level and the next one begins at once, its air fading in over the old one. That silence is the mark of a change of place: the stairs, an exit, a road's exit, and then quiet, and then somewhere new. The one exception is leaving an island: the elevator ride itself carries you across, and the next level's sound rises through its doors. Your score is points. Every level you finish that is not an island is worth ten. Islands are worth the most: everything island mode pays for enemies, guardians, treasure and rescued divers, plus one hundred for finishing the island. There are no level numbers anywhere in chaos, only points, and when the run ends you hear your points. The clock is the only thing that speaks, apart from the Low air warning on a seabed, which is kept because your air runs out there just as it does in island mode. Since version 5.0.0 the walking levels of chaos, its labyrinths, battles, tower floors and islands, turn with you exactly as those modes do on their own: flick left or right to turn, swipe up to walk the way you face, and your facing carries from one walking level to the next. A road does not turn: there north is always ahead, as in driving mode, and the level after a road begins facing north." },
-    { title: "Chaos Time Limit", sound: null, desc: "You get exactly five minutes for the whole run. Not a range, the same five minutes every time, so one run is worth comparing to another. The clock never resets between levels, so survive as many as you can before it runs out. Remaining time is announced every two minutes, and every double tap tells you it, just before your points, or on a keyboard you can press T at any point to check it. The clock stops for the moment of silence between levels and for every elevator ride on an island level. It also stops once a level is won and only its exit is left: from the moment a battle's Morse exit sounds, a road's exit comes into hearing, or a tower floor's stairs appear, until you reach it. Any credit still lying in that level goes at the same moment, its beacon falling silent, so take a credit while the clock is still running. A labyrinth's clock never stops, because there the exit is the whole level." },
-    { title: "Chaos Ammo", sound: null, desc: "In chaos mode, each kind of level that shoots keeps its own ammo: battles, islands and roads each have their own inventory, starting at eight shots. Shots you have left at the end of a battle wait for you in the next battle, and the same for islands and for roads. Ammo you collect in one kind of level is never added to another, and you never spend one kind's shots in another. A double tap, in each kind of level, tells you that level's own count. Tower floors use items, not ammo, and keep their own stock as well." },
-    { title: "Chaos Battles", sound: null, desc: "A battle inside chaos mode is a level, and that makes it a different game from standard battle mode. It has a fixed number of enemies to eliminate, ammo keeps appearing on the floor while you fight, and once the last enemy is down a Morse code exit appears which you walk to in order to advance the run. There are no waves and no breaks here. Standard battle mode has none of that: no levels, no exit, and ammo only between waves. What the two share is the aiming, the sounds and the endless scaling, and the way enemies come: in turns, never all at once, with the clock waiting whenever none is after you. How many may be after you at once grows with the battles you have played in that run: one at a time in your first three battles, two in the next three, then three, and from the tenth battle four, the most there will ever be. Battles keep their own ammo for the whole chaos run, separate from islands and roads: shots you save in one battle are waiting for you in the next, and they are never used up or added to by any other kind of level. Save them." },
+    { title: "Chaos Mode", sound: null, desc: "Chaos mode is every mode at once, and the hardest one in the game. Each level is chosen at random from seven kinds: a labyrinth, a battle, one floor of a tower, a stretch of road, an island, a Find the Voice room, or, rarest of all, a world of Ultimate Mode. Nothing ever tells you which one you are in. You work it out from what you hear, the labyrinth's drone, the battle drums, the tower's thin stairwell air, your engine, the shore, the guide calling, or a world's many places, and then you play it by that mode's rules. Finish a level and the next one begins at once, its air fading in over the old one; after a tower floor's stairs it waits until the climb is over and half a second more, with the floor's air still playing. That silence is the mark of a change of place: the stairs, an exit, a road's exit, and then quiet, and then somewhere new. The one exception is leaving an island: the elevator ride itself carries you across, and the next level's sound rises through its doors. Your score is points. Every level you finish that is not an island or a world is worth ten. Islands are worth the most: everything island mode pays for enemies, guardians, treasure and rescued divers, plus one hundred for finishing the island. A world pays as Ultimate Mode does, while you play it. There are no level numbers anywhere in chaos, only points, and when the run ends you hear your points. In the first five kinds of level the clock is the only thing that speaks, apart from the Low air warning on a seabed, which is kept because your air runs out there just as it does in island mode; a Find the Voice room and a world speak as those modes do. The walking levels of chaos, its labyrinths, battles, tower floors, islands, Find the Voice rooms and worlds, turn with you exactly as those modes do on their own: flick left or right to turn, swipe up to walk the way you face, and your facing carries from one walking level to the next. A road does not turn: there north is always ahead, as in driving mode, and the level after a road begins facing north." },
+    { title: "Chaos Time Limit", sound: null, desc: "You get exactly five minutes for the whole run. Not a range, the same five minutes every time, so one run is worth comparing to another. The clock never resets between levels, so survive as many as you can before it runs out. Remaining time is announced every two minutes, and every double tap tells you it, just before your points, or on a keyboard you can press T at any point to check it. The clock stops for the moment of silence between levels and for every elevator ride on an island level. It also stops once a level is won and only its exit is left: from the moment a battle's Morse exit sounds, a road's exit comes into hearing, a tower floor's stairs appear, or a Find the Voice room's exit sounds, until you reach it. In a world of Ultimate Mode the clock runs all the time. Any credit still lying in that level goes at the same moment, its beacon falling silent, so take a credit while the clock is still running. A labyrinth's clock never stops, because there the exit is the whole level." },
+    { title: "Chaos Ammo", sound: null, desc: "In chaos mode, each kind of level that shoots keeps its own ammo: battles, islands and roads each have their own inventory, starting at eight shots, and the worlds of Ultimate Mode have theirs (see Chaos Worlds). Shots you have left at the end of a battle wait for you in the next battle, and the same for islands and for roads. Ammo you collect in one kind of level is never added to another, and you never spend one kind's shots in another. A double tap, in each kind of level, tells you that level's own count. Tower floors use items, not ammo, and keep their own stock as well. A Find the Voice room has nothing to shoot." },
+    { title: "Chaos Battles", sound: null, desc: "A battle inside chaos mode is a level, and that makes it a different game from standard battle mode. It has a fixed number of enemies to eliminate, ammo keeps appearing on the floor while you fight, and once the last enemy is down a Morse code exit appears which you walk to in order to advance the run. There are no waves and no breaks here. Standard battle mode has none of that: no levels, no exit, and ammo only between waves. What the two share is the aiming, the sounds and the endless scaling, and the way enemies come: in turns, never all at once, with the clock waiting whenever none is after you. How many may be after you at once grows with the battles you have played in that run: one at a time in your first three battles, two in the next three, then three, and from the tenth battle four, the most there will ever be. Battles keep their own ammo for the whole chaos run, separate from islands and roads: shots you save in one battle are waiting for you in the next, and they are never used up or added to by any other kind of level. Save them. The arena crowd is there too, as in battle mode: it roars when you shoot an enemy down and groans or gasps when one reaches you." },
     { title: "Chaos Battle Exit", sound: null, desc: "After eliminating every enemy in a chaos battle, find the exit to advance. Once it appears the round is over and your laser is disabled, so just head for it. A Morse code signal is the only thing marking it, and it carries everything you need: it pans left and right for the bearing and grows steadily louder as you close. There is no locating beep on top of it, because the room already has drums, ambience and everything the level made, and a second voice describing the same doorway would be one more thing to listen past." },
     { title: "Chaos Tower Floors", sound: null, desc: "A tower level in chaos is a single floor. Bring the rival down, climb the stairs, and you are sent to another level. The tower is one climb that runs through the whole chaos run: the next time a tower comes up you are on the next floor, and your health and items are exactly what you left with, however many other levels came between. Reaching the top of a tower still hands you its bonus items. If your health runs out, the run is over." },
     { title: "Chaos Driving", sound: null, desc: "A driving level in chaos is a stretch of road with a job to do: shoot a certain number of the cars running your way. The game decides how many, three on your first road and one more on every road after, and it never tells you. When you have shot enough, no more cars come onto the road, and once every car still on it has been passed or shot, the battle exit's Morse signal appears in an empty road, so nothing can crash into you on the way to it. Drive through it and you are on to the next level. Miss it and another one comes along further on. Crashing costs thirty seconds off the chaos clock, exactly as it does in driving mode, each road starts harder than the last." },
-    { title: "Chaos Islands", sound: null, desc: "An island level in chaos is one full island by island mode's rules: clear it, find its key on the seabed, and ride the elevator up from the seabed to leave it. The ride up is the transition: whatever comes next, its own sound rises through the elevator doors as you climb, a labyrinth's drone, a battle's drone, a tower's stairwell air, an idling engine or another island's shore, muffled first and then opening up with the doors. There is no pause after an island; when the doors open, you are already in the next level. Reinforcements, air, vents, treasure, trapped divers and guardians all work exactly as they do in island mode, and every island in a chaos run is harder than the last one. Drowning, or an enemy or guardian reaching you, ends the run. The chaos clock stops while you are riding an elevator, down or up, so a ride never costs you time. On the seabed two countdowns can run at once, and they never sound alike: your air beeps high, once a second over its last fifteen seconds, and the chaos clock beeps low over its last fifteen." },
-    { title: "Chaos Credits", sound: null, desc: "Time credits are worth exactly forty, fifty or sixty seconds, and the spinning beacon tells you which before you chase it: the higher the pitch and the faster the spin, the bigger the bonus. Collecting any of them plays the same shower of coins. They can turn up in every kind of level, about half of them: a labyrinth or a tower floor has one about one time in two, a battle a little more often, about six times in ten, and a road one about every two thousand metres, in a lane with nothing coming at you, so drive into its lane as you reach it. An island has one lying on it about one time in two, and each island's seabed has about a one in three chance of one, decided at your first dive there. A credit can always be heard, getting louder as you close in, so when you hear one, it is there to be found and worth going for. Once a level is won and its exit is all that is left, no new credit appears: a battle once its exit sounds, a road once its quota is shot, a tower floor once its stairs appear." },
-    { title: "Chaos Scaling", sound: null, desc: "Every kind of level gets harder on its own count, never on how far into the run you are. Your third battle is as hard as a third battle however many other levels came between, a labyrinth is sized by how many labyrinths you have solved, and so on for towers, roads and islands. Each kind of level that shoots keeps its own ammo: battles, roads and islands each have a supply that waits for you and all add to it." },
+    { title: "Chaos Islands", sound: null, desc: "An island level in chaos is one full island by island mode's rules: clear it, find its key on the seabed, and ride the elevator up from the seabed to leave it. The ride up is the transition: whatever comes next, its own sound rises through the elevator doors as you climb, a labyrinth's drone, a battle's drone, a tower's stairwell air, an idling engine or another island's shore, muffled first and then opening up with the doors. There is no pause after an island; when the doors open, you are already in the next level. Reinforcements, air, vents, treasure, trapped divers and guardians all work exactly as they do in island mode, and every island in a chaos run is harder than the last one. Drowning, or an enemy or guardian reaching you, ends the run. The chaos clock stops while you are riding an elevator, down or up, so a ride never costs you time. On the seabed two countdowns can run at once, and they never sound alike: your air beeps high over its last ten seconds, once a second at first and then faster and faster, and the chaos clock beeps low over its last fifteen." },
+    { title: "Chaos Worlds", sound: null, desc: "The rarest kind of chaos level is a whole world of Ultimate Mode, chosen at random. You are dropped into it with nothing said, as in that mode, and it lasts as long as that world would, two to five minutes, until its countdown ends; then the next level begins at once. Everything in it works as it does in Ultimate Mode, its enemies, buses, water parks, safe zones and their characters included, and it pays points as Ultimate Mode does, toward your chaos points, with the multiplier rising by a half for every world you have come through in the run. Your health starts at 100 in every world. Your shots and tower items there are the worlds' own, apart from the ammo of battles, islands and roads: what you have left at the end of one world waits for you in the next. Its time credits are all in glass cases, two or three of them, each holding forty, fifty or sixty seconds for the chaos clock; smashing one brings chasers, as in Ultimate Mode. Every ride down a water slide adds thirty seconds to the chaos clock the moment you splash into the pool, and a character's rare gift of two more minutes in the world adds three and a half minutes to the chaos clock as well. The chaos clock runs all through a world, and if it runs out, or your health does, the run is over. Double tap for your health, your shots, your tower items, the seconds left on the clock, your points and the way you are facing." },
+    { title: "Chaos Credits", sound: null, desc: "Time credits are worth exactly forty, fifty or sixty seconds, and the spinning beacon tells you which before you chase it: the higher the pitch and the faster the spin, the bigger the bonus. Collecting any of them plays the same shower of coins. They can turn up in the first five kinds of level, about half of them: a labyrinth or a tower floor has one about one time in two, a battle a little more often, about six times in ten, and a road one about every two thousand metres, in a lane with nothing coming at you, so drive into its lane as you reach it. An island has one lying on it about one time in two, and each island's seabed has about a one in three chance of one, decided at your first dive there. A credit can always be heard, getting louder as you close in, so when you hear one, it is there to be found and worth going for. Once a level is won and its exit is all that is left, no new credit appears: a battle once its exit sounds, a road once its quota is shot, a tower floor once its stairs appear. A Find the Voice room has no credits, and in a world every credit is in a glass case (see Chaos Worlds)." },
+    { title: "Chaos Scaling", sound: null, desc: "Every kind of level gets harder on its own count, never on how far into the run you are. Your third battle is as hard as a third battle however many other levels came between, a labyrinth is sized by how many labyrinths you have solved, and so on for towers, roads, islands and Find the Voice rooms; a world's enemies grow with the minutes you have played in worlds. Each kind of level that shoots keeps its own ammo: battles, roads and islands each have a supply that waits for you and all add to it." },
   ]],
 ];
 
@@ -578,6 +659,7 @@ export default {
     let opener;
     if (game.timeLeft <= 0) opener = 'Time up.';
     else if (state === ISLAND && game.islandDeath === 'drown') opener = 'You drowned.';
+    else if (state === FINDVOICE && game.fv && game.fv.lives <= 0) opener = 'Caught.';
     else opener = 'Game Over.';
     return { key: 'chaos', score, message: `${opener} You scored ${score} points. ` };
   },

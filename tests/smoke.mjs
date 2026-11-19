@@ -123,11 +123,11 @@ await page.waitForURL(/help\.html#faq$/);
 await page.waitForFunction(() => document.querySelector('#faq button.topic-toggle') && document.querySelector('#faq button.topic-toggle').getAttribute('aria-expanded') === 'true');
 {
   const qs = await page.locator('#faq-panel h3').allTextContents();
-  check(qs.length === 14 && /difference between the website version and the Windows version/.test(qs[0]), `the old questions page opens Help at the fourteen questions (5.0.0: six about turning), the versions question first: ${qs.length}`);
+  check(qs.length === 15 && /difference between the website version and the Windows version/.test(qs[0]), `the old questions page opens Help at the fifteen questions (5.0.0: six about turning; 6.0.0: the game's voice), the versions question first: ${qs.length}`);
   check(await page.locator('footer.site nav a[href="faq.html"]').count() === 0, 'the footer no longer links to the old questions page');
 }
 await page.goto(base + '/history.html');
-check((await page.locator('main h2').allTextContents()).join(' | ').startsWith('5.1.2 (12 November 2026), web only | 5.1.1 (12 November 2026), web only | 5.1.0 (12 November 2026), web only | 5.0.0 (12 November 2026) | 4.1.2 (11 November 2026), web only | 4.1.1 (11 November 2026), web only | 4.1.0 (11 November 2026), web only | 4.0.0 (11 November 2026), web only | 3.3.0 (10 November 2026), web only | 3.2.0 (9 November 2026), web only | 3.1.0 (9 November 2026), web only | 3.0.0 (8 November 2026), web only | 2.0.0 (8 November 2026), web only'), 'the Update History lists the newest version first, 2.1.0 then 2.0.0, marked web only');
+check((await page.locator('main h2').allTextContents()).join(' | ').startsWith('6.0.0 (19 November 2026) | 5.1.2 (12 November 2026), web only | 5.1.1 (12 November 2026), web only | 5.1.0 (12 November 2026), web only | 5.0.0 (12 November 2026) | 4.1.2 (11 November 2026), web only | 4.1.1 (11 November 2026), web only | 4.1.0 (11 November 2026), web only | 4.0.0 (11 November 2026), web only | 3.3.0 (10 November 2026), web only | 3.2.0 (9 November 2026), web only | 3.1.0 (9 November 2026), web only | 3.0.0 (8 November 2026), web only | 2.0.0 (8 November 2026), web only'), 'the Update History lists the newest version first, 2.1.0 then 2.0.0, marked web only');
 await page.goto(base + '/credits.html');
 check((await page.locator('ul.credits li').count()) === 347, 'credits list the recordings');
 

@@ -263,7 +263,9 @@ await game(() => { const g = window.__el.game; g._stopRunSounds(); g.state = 'me
   // Web 5.0.0: in a mode that turns (a labyrinth here), a held up arrow runs, as
   // the slide up does on a touch screen and as it has in Ultimate Mode since
   // 4.0.0. (Until then a held arrow was one step in every mode but that one.)
-  await openLabyrinth(); await clear();
+  // (A frame first: the game tells the keys that this mode turns at its next frame,
+  // and a loaded machine could press before it came.)
+  await openLabyrinth(); await clear(); await wait(100);
   await page.keyboard.down('ArrowUp'); await wait(900); await page.keyboard.up('ArrowUp');
   l = await log();
   check(steps(l, 'up').length >= 3, `a held up arrow runs in a labyrinth: ${steps(l, 'up').length} steps`);

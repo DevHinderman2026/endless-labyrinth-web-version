@@ -11,6 +11,7 @@ import { keyWords } from './keywords.js';
 import { applyDisplay, followDisplay } from './display.js';
 import { freshen } from './version.js';
 import { Braille } from './braille.js';
+import { Bella } from './bella.js';
 
 const $ = (id) => document.getElementById(id);
 const kind = deviceKind();
@@ -25,7 +26,9 @@ const keyboard = keyboardDevice();
 // Windows (web 3.0.0): the Braille keyboard translator and the Braille display's
 // view of the game (js/braille.js); on every other device it does nothing.
 const braille = new Braille({ field: $('console'), store, enabled: windowsOnly(), emit: (g) => onGesture(g), speak: (t) => speech.speak(t) });
-const speech = new Speech({ show: (t) => { shown.textContent = t; braille.show(t); }, rateLevel: store.settings.speechRate, words: keyboard ? keyWords : null, muted: () => braille.speechMuted });
+const speech = new Speech({ show: (t) => { shown.textContent = t; braille.show(t); }, rateLevel: store.settings.speechRate, words: keyboard ? keyWords : null, muted: () => braille.speechMuted,
+  // Web 6.0.0: during a run the game speaks with Bella (js/bella.js), set up once the sound starts.
+  inRun: () => !!(game && game.playing && !game.isPaused) });
 let audio = null;
 let game = null;
 let ready = false;      // sounds loaded, waiting for the swipe up
@@ -89,6 +92,9 @@ async function start() {
   speech.speak('Endless Labyrinth. Loading sounds.', { now: true });
   audio = new AudioEngine();
   await audio.unlock();
+  // Bella's voice downloads alongside the sound packs (once; then kept on the device).
+  // If anything fails, the device's voice simply goes on speaking (web 6.0.0).
+  try { speech.bella = new Bella({ audio }); speech.bella.start(); } catch (e) { speech.bella = null; }
   setText('lead', 'Loading sounds. The first time takes a moment; after that they are kept on your ' + deviceWord(kind) + '.');
   let lastSaid = 0;
   try {
@@ -109,6 +115,7 @@ async function start() {
         : 'Your browser cannot play the game\'s sounds. On an iPhone or iPad, update to iOS 18.4 or newer. On Android, update Chrome.')
       : 'The sounds could not be loaded. Check your internet connection and try again.';
     setText('lead', msg);
+    setText('progress', '');   // (6.0.0 review fix: it went on saying "Loading sounds: 91 percent.")
     speech.speak(msg);
     $('start').disabled = false;
     audio = null;

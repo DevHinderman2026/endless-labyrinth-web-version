@@ -1,0 +1,101 @@
+# Mister Pendle, the clockmaker and station master (train station, clock). British.
+^Over here, over here! You're right on time!
+^This way, please! Platform one, by the big clock!
+^Hello! Follow the ticking!
+^Ah, there you are! Over here, quick as you like!
+^This way, walker! Mind the gap!
+^Over here! Tick tock, don't be late!
+^Hello hello! By the ticket office!
+^Follow the ticking, and you'll find me!
+^Over here, please! I've a moment to spare. Just one.
+^This way! The next train is a gift, and it's leaving now!
+^Hello! Over here, under the clock!
+^Come along, come along! Punctuality, please!
+<Walker! Come back, you've missed your gift!
+<Over here again! It's not departed yet!
+<This way, back to the big clock!
+<Come back, please! The gift is still on the platform!
+<Tick tock! Back this way!
+<You'll want this before the countdown! Over here!
+<Over here, please! Follow the ticking!
+<Come back! I've held it for you, right on schedule!
++Here you are. Exactly on time.
++Take this, please. Delivered to the minute.
++A gift from the station. Mind the gap on your way out.
++For you, with my compliments, and my timetable.
+~I'm Mister Pendle. Clockmaker, station master, and keeper of very precise opinions.
+~Every clock in this station is right. They just don't agree with each other.
+~The trains here run perfectly to time. Where they go is another matter entirely.
+~I've repaired every clock in every world. Twice. Some of them three times.
+~A gentleman should always carry a pocket watch. I carry five. One for each second of the countdown.
+~Tick, tock. Do you hear that? That's the sound of everything being exactly where it should be.
+~The station tea room sells excellent tea. The tea is late, but excellent.
+~I do not like surprises. Which is unfortunate, given where we live.
+~The departures board says, next train, soon. It has said that for a very long time.
+~Mind the platform edge, please. I polished it this morning. Or this world, at least.
+The world runs on a clock, I'm certain of it. A great clock, somewhere deep. Every few minutes, it chimes, and everything resets.
+I've timed every rebuild I've ever seen. Two minutes, four minutes, three and a half. Never the same. And yet I'm convinced there's a pattern.
+The countdown always takes exactly five seconds. Not four point nine. Not five point one. Exactly five. Somebody very careful is counting.
+The trains leave on time, every time. But no one has ever seen one arrive anywhere. The passengers never come back to tell me.
+I once rode a train to the end of the line. When the doors opened, I was back at this platform. One minute earlier than I'd left.
+All my clocks stop for one second just before the countdown begins. One second, every clock, all at once. Then they start again as if nothing happened.
+They say the great clock that runs the world is under the ice. Lady Rime says it's under the sea. Captain Brine says it's under the city. I say it's late.
+I've noticed the world rebuilds a little sooner each time it shows mercy. As if it has to borrow the time from somewhere.
+Hazel thinks the world is a spell. Spells don't keep time, madam! I've told her. Spells are notoriously unpunctual.
+There's a clock in the station with no hands. It ticks louder than all the others. I believe it's counting something other than time.
+I wound|verb every clock in the station backward once, to see what would happen. The next world started at five, then six, then seven. I didn't do that again.
+There's a platform here I've never been able to reach. Platform zero. You can hear the trains there, but there's no stair down to it.
+Every world, the timetable has one train I don't recognise. It always says the same destination. Elsewhere. Departing, now.
+The ticking in this station is the world's heartbeat. I'm sure of it. When it skips, a rebuild is coming. I've never been wrong. Well, rarely.
+I took apart a pocket watch I found under a bench. Inside was a tiny labyrinth instead of gears. It was still ticking.
+The trains are full of passengers I never see board. Their footsteps get on. Their voices chat. And then, off they go. To where, I wonder.
+I believe the world rebuilds because something in it is running fast. Like a clock that gains a minute every hour. Every so often, someone has to set it back. But who's setting it? And whose clock are they going by?
+The bus drivers out there keep remarkable time. Never a second late. I've always wanted to ask where they learned it. They never stop long enough.
+There's a rumour among the porters that the first train ever to leave this station is still travelling. Round and round the world. Waiting for its stop.
+I keep a log of every chime. Every world, the station clock chimes once more than the world before. One day it'll chime and not stop. What then, I wonder?
+Mortimer at the graveyard says the dates on his headstones are always tomorrow. I'd like to see those dates. I'd like to know whose tomorrow.
+The world's time and my clocks' time don't quite match. The world is always slightly ahead. As if it already knows what happens next.
+Every station has a lost property office. Mine is full of things from worlds that are gone. Umbrellas, gloves, a single shoe. And one very old map.
+The map in lost property shows a world with no labyrinths in it. Just one long railway, circling a single building. No one has ever claimed it.
+They say the rebuild happens when the world's clock strikes thirteen. I've listened very carefully. I've only ever counted twelve. Then five more.
+I once asked a passenger where she was travelling. She said, back. Back where, I asked. Back to the start, she said. Then the doors closed.
+Precision is the key to everything. If I could time the rebuilds perfectly, I could tell you exactly when the next one comes. I can't. It's terribly annoying.
+The pigeons in the station always settle on the clock just before a rebuild. All of them, at once. They know. Pigeons always know.
+If time keeps starting over, then are we getting any older? I've checked. I have not found a single new grey hair. Make of that what you will.
+The trains run under the labyrinths, you know. Deep down. If you put your ear to a wall out there, you can sometimes hear them pass.
+The station has a waiting room nobody ever leaves. I've looked in. Everyone's sitting very patiently, with their tickets, listening for something.
+Sprocket and I once argued for a whole world about whether the world is a clock or an engine. Then it rebuilt, and we had to start the argument again.
+The clock tower in the city chimes with my clocks, but always half a second late. Half a second, every world. Something's dragging it behind.
+I have a theory that every world lasts exactly as long as it needs to. Not a second more. The trouble is, I don't know what it needs to do.
+The departure board flickered once, just before a rebuild. For a moment it read|past, thank you for travelling. Then it went back to saying soon.
+I found a ticket on the platform with no destination printed on it. Just a date. A date so far ahead, there's no calendar for it yet.
+The walkers who come through here are always in a hurry. Quite right. The world won't wait. Except, sometimes, it does. That's the mercy, I suppose.
+Somewhere, I believe, there's a clockmaker who makes the world's clock. And somewhere, I suspect, there's a clockmaker who makes that clockmaker's clock.
+The tunnels at the end of the platforms go on into darkness. I've walked one. It ended at a wall with a clock on it. Showing the time, five seconds from now.
+Every train whistle in the station is in the same key as the ghost choir's song. I checked. It's a very strange key. It doesn't sound finished.
+I've had the same cup of tea on my desk for a thousand worlds. It's never gone cold. I find that more troubling than the rebuilding, frankly.
+There's a rumour the world will stop rebuilding when someone arrives exactly on time. On time for what, nobody knows. I'm trying anyway.
+A porter told me the world isn't rebuilding. It's arriving. Again and again, at a station somewhere, and we're the passengers.
+I measured the silence between worlds once. It lasted no time at all. And yet it felt like a long afternoon.
+Each clock in my station shows a different time, and each one is correct. For a different world. I'm only sure which one is ours about half the time.
+The great clock under the world must be wound|verb. That's what I believe. And somebody has been winding it, faithfully, for a very long time.
+Pell the ghost says the countdown is like a game of hide and seek. Well, if it is, I'd like the seeker to keep to a timetable.
+The trains always slow down when they pass the safe places. As if the drivers know someone's listening.
+~One should always wind|verb one's watch before breakfast. And after breakfast. And whenever one is nervous.
+~The station cat sleeps on the timetable. She is never late for anything. I respect her enormously.
+The great clock under the world, I believe, has only one hand. And it points to now. Always now. That's the trouble.
+Every world, I set my watch by the first train whistle. Every world, the whistle comes exactly five seconds after the rebuild. Never four. Never six.
+I have found that the world's mercy always arrives at a quarter past something. Never on the hour. The world has a sense of style.
+The station has a clock face on the floor, under the dust. I swept it once. The hands pointed to a time that doesn't exist. Thirteen minutes to nothing.
+A passenger left a pocket watch on the bench. Inside the lid was engraved, for when the time comes. It doesn't say when that is.
+The trains whistle a chord as they leave. Every world, the chord is one note closer to finished. Ambrose agrees. He's been listening too.
+I am quite certain that time here runs in circles. Not straight lines. Circles. Which means we'll meet again, and again, and again.
+Hazel once asked me to fix her clock. Inside, there were no gears at all. Just a tiny voice, counting very patiently.
+Every clock I repair, I find the same mark scratched inside. A little door. Someone else has repaired these clocks before me. Many times.
+The rails hum before a train arrives. Before a rebuild, the rails hum too. But no train ever comes. Just the world.
+They say there's a clock in the middle of the world that's never been wound. It runs anyway. On what, nobody knows.
+I asked the station cat what time it was. She yawned and went back to sleep. Possibly the wisest answer I've ever received.
+I've noticed the countdown never interrupts a train mid departure. The world waits for the doors to close. Very considerate.
+The timetable has a train at the very bottom, in tiny print. The last train. It has no time listed. Just a note. When you're ready.
+Every tick is a little piece of the world going by. I like to think the world collects them all somewhere. A great jar of ticks.
+I believe each world is exactly as long as a good train journey. Long enough to look out of the window. Not long enough to get bored.

@@ -1,0 +1,101 @@
+# Commander Vega, the space traveler (space, spaceship).
+^Over here, cadet! Follow my signal!
+^Hello! This way, to the airlock!
+^Over here! Welcome aboard!
+^This way, walker. Mind the floating stuff.
+^Commander Vega, over here! Come in, walker!
+^Over here! Follow the beeping!
+^This way, cadet! Docking bay is open!
+^Hello! I'm by the control panel!
+^Over here! Gravity is optional, but walking helps!
+^This way, walker! Mission control has a gift for you!
+^Over here, cadet! Signal is strong!
+^Hello, hello! Come aboard!
+<Cadet! Come back! Your gift is still on board!
+<Over here again! Follow my signal!
+<This way, walker! Back to the airlock!
+<Come in, walker! You've left something behind!
+<Over here! Don't drift off!
+<Back this way, cadet! Mission not complete!
+<Walker, come back! Your supplies are ready!
+<This way again! By the control panel!
++Here you go, cadet! Mission supplies!
++Take this! Packed it myself, zero gravity tested!
++For you, walker! Over and out!
++A gift from the stars! Safe travels, cadet!
+~I'm Commander Vega. I fly through space, and sometimes, space flies through me. Not literally.
+~Welcome aboard my ship! Don't press the big red button. Or any button, really.
+~Space is very quiet. That's why I talk so much. Somebody has to fill the silence.
+~I've been orbiting this world for longer than I can count. And I can count very high.
+~The engines hum all the time. I find it soothing. Like a giant cat purring.
+~My ship's computer tells jokes. Bad ones. I laugh anyway. It's polite.
+~Floating is fun, once you get used|hab to it. Just don't spill your juice.
+~I eat my meals out of little pouches. I miss forks. I really miss forks.
+~The stars are beautiful from up here. Even if all I can do is hear them hum.
+~Every cadet needs a good helmet, a steady hand, and a sense of wonder. I can lend you the helmet.
+I've seen the world from above, walker. All of it, at once. It's round, and it's small, and it changes. Every few minutes, the whole thing ripples, and it's new.
+From orbit, the rebuild looks like a wave of light rolling across the world. Starting at the edges, sweeping to the middle. Then it's done.
+I call the rebuild the Fold. Like folding a map. The world folds up, unfolds, and the roads are all in different places.
+There's no edge to the world. I've flown all the way around it. It just curves, and curves, and you end up back where you started.
+I've picked up a signal from deep space. Very faint. It repeats every few minutes. It's the same rhythm as the countdown. Five beeps.
+Somebody out there is counting along with the countdown. Somebody far away. Or somebody very close|adj, and the signal is just bouncing back.
+There's another world out there, I'm sure of it. I've seen a light, far off, that changes every few minutes, just like ours. Another world, rebuilding.
+Pell the ghost has a house that floats in space sometimes. I've seen it go by. She waves. I wave back. We've never actually spoken.
+The world is surrounded by quiet. Total quiet. When I fly out into it, my radio goes silent. Except for one thing. A low hum. The world's hum.
+The ship's computer has a file called, answer. It's locked. I don't have the password. I've tried everything. Even, please.
+I tried flying away from the world, as far as I could go. The fuel ran out right at the countdown. When the new world arrived, I was back in orbit. The world doesn't want me to leave, I think. Or it wants me to keep watching.
+The stars move a little every world. Not much. But I've charted them. They're spelling something out, very slowly. It's too early to read.
+Sprocket thinks the world is a machine. From up here, it looks more like a living thing. It breathes. It changes. It almost seems to think.
+The world's mercy shows up on my instruments as a little flicker. A spike of energy, out of nowhere, from somewhere in the middle of the world.
+My ship's sensors pick up something under the world. Something big and warm. Not moving. Just there. Waiting, maybe. Or sleeping.
+Hazel asked me if the stars know why the world changes. I said I'd ask them. I've been sending them the question every world. No reply yet.
+The enemies don't come up to space. Too far, I suppose. Or they don't have spaceships. That's probably it. 
+There's a satellite in orbit I didn't launch. Very old, very small. It beeps once every world, exactly as the rebuild happens. Someone is keeping track.
+Captain Brine navigates by the stars. I told him the stars move every world. He said, so does the sea. Fair point, captain.
+The ship's log has entries I didn't write. In my handwriting. About worlds I don't remember. One of them says, almost figured it out. Don't stop.
+I've seen something strange from orbit. A tiny spot in the middle of the world that never changes. Every world, all around it changes, but that spot stays still.
+There's a spot in the middle of the world I've tried to land on. Every time I start the descent, the world rebuilds, and the spot moves. Like it doesn't want visitors.
+Space is cold and dark and very big. But it's not empty. It's full of hum. The whole universe is humming, and our world is humming along.
+From up here, the safe places glow a little. Warm spots, scattered across the world. They make a pattern. I'm still working out what pattern.
+Some astronauts say there's a ship like mine for every world, and each one has a commander, watching. I've never met the others. But I've heard their signals.
+The engines need fuel, and every world, the tanks are full again. I never refuel. Somebody's topping me up, between worlds.
+I asked mission control why the world rebuilds. Mission control is a speaker that only plays static. But the static got louder. That might be a yes.
+The world is a puzzle, from up here. Pieces moving, sliding, clicking into new places. I keep waiting for the picture to be finished.
+I think the world rebuilds because it's looking for the right shape. Trying different ones. Like a key trying different locks.
+The countdown voice is broadcasting from somewhere, cadet. I've tracked the signal. It comes from everywhere at once. That shouldn't be possible.
+Lady Rime says the world is getting colder. Cinder says it's getting hotter. From up here, it's exactly the same temperature, every world. To the degree.
+Every time I fly past the moon, it's a little closer. Very slowly. One day it'll be close|adj enough to touch. Then we'll see.
+I found a message scratched into my ship's hull. On the outside. In space. It said, keep watching. How did someone write that out there?
+The view from orbit is the loneliest view there is. But then I hear a walker down there, finding their way, and I don't feel so lonely.
+Some say the world is a seed, floating through space, and one day it'll land somewhere and grow into something huge. I like that idea.
+My instruments say the world is getting very slightly bigger, every world. Not much. But growing. Like it's making room for something new.
+There's a dark patch in space near the world where no stars shine. My radar says it's empty. My ears say something's there. Humming very softly.
+I once heard someone singing over the radio. The same song the ghost choir sings, but faster. Like they were in a hurry to get to the end.
+I don't need to know why the world rebuilds, cadet. I just need to know it'll be there when I look down. And it always is.
+The ship's clock and Mister Pendle's clocks never agree. His are always a little behind. I think time moves faster up here. Or slower down there.
+I sent a probe down to the middle of the world once. It sent back one message before it went quiet. It said, door.
+Every mission needs a goal. Mine was to find out why the world rebuilds. I've been on that mission for a thousand worlds. Still the best job I've ever had.
+~Rule one of space travel, cadet. Always know where your snacks are.
+~I named the ship Wanderlust. She doesn't always go where I point her. She has her own ideas.
+The world has a gentle wobble, like a spinning top. Every rebuild, the wobble starts again from the beginning.
+I keep a jar of stardust on the dashboard. Every world, there's a little more in it. I never collect any. It just collects.
+The world's shadow on the moon has a shape. Not round. More like a door, standing open.
+The radio once picked up a voice saying, can anyone hear me? I answered. It said, oh good. Then the world rebuilt.
+I've counted the safe places from orbit, every world. Somewhere between six and twelve. Never the same. Never more than twelve.
+Some cadets think the Builder lives in space, looking down. I've looked everywhere up here. Nobody. Just me, and the hum.
+There's a comet that passes the world once every rebuild. Same comet. Same path. It's either very punctual or very lost.
+My helmet radio sometimes picks up the walkers' footsteps. Yours too. You walk like someone who's not giving up.
+The airlock opens by itself sometimes, just before the countdown. A little puff of air. As if something is letting itself in. Or out.
+I've measured the hum of the world in every world. It's always the same note. But the note before it changes. Like the world is building up to something.
+If you could see the world from up here, you'd see it's a labyrinth too. One big labyrinth, made of little ones. And it's never finished.
+Some days I think the world is a ship, like mine. Traveling somewhere. And the rebuild is just the scenery outside changing as we fly.
+Mission log, entry one million. The world rebuilt again. Nobody knows why. Morale is good. Snacks are running low.
+The stars spell out a letter every few worlds. So far, I've got three letters. They don't make a word yet. I'm patient.
+Mister Sprocket built me a better antenna. Now I can hear the world more clearly. It sounds like someone humming while they work.
+The space between the stars isn't empty, cadet. It's full of old echoes. Every world that ever rebuilt is still out there, faintly ringing.
+A cadet asked me if the world is real. I said, it's real enough to walk on, real enough to get lost in. That's pretty real.
+There's a frequency on my radio that only plays one word, over and over. Soon. I've been listening for a thousand worlds. Still soon.
+I think the world is a message. Sent from somewhere, to someone. Every rebuild, it says it again, a little differently, hoping someone understands.
+My compass doesn't work in space. But yours works down there. It always points to safety. Someone made sure of that, for you.
+I once saw the whole world go dark for a moment, from orbit. Every light, every sound. Then it lit up again, brand new. It was the most beautiful thing I've ever seen.
+The world rebuilds, but it always keeps its safe places warm. I can see the warmth from up here. Like little campfires, keeping watch.

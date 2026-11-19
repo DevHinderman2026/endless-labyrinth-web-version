@@ -10,7 +10,7 @@ const INSTRUMENT_NAMES = Object.keys(INSTRUMENTS);
 
 // 2 since web 5.0.0 and Windows 3.0.0: the building blocks and the seven new missions
 // (see the desktop's event_schema.py). Anything added later must raise it again.
-export const FORMAT = 2;
+export const FORMAT = 3;     // web 6.0.0 / Windows 4.0.0
 
 // The missions the game knows how to run.
 export const MISSIONS = ['collect', 'survive', 'decoys', 'deliver', 'catch', 'relay', 'follow', 'hunt', 'seek',
@@ -119,14 +119,22 @@ export const DEFAULTS = {
   walls: { on: false, density: 0.15 },
   levels: { on: false, items_fewest: 3, items_most: 3, more_creatures_each: 0, creatures_most: 0, points_per_level: 0 },
   ending: { kind: "open", levels: 5, levels_most: 10, finish_bonus: 0 },
-  cases: { share: 0.0, extra: "none", random_kinds: ["seconds", "shots", "points"], seconds: 20, shots: 5, points: 10, noise: "none", chasers_fewest: 2, chasers_most: 3, chaser_speed: 3.0 },
+  cases: { share: 0.0, extra: "none", random_kinds: ["seconds", "shots", "points"], seconds: 20, shots: 5, points: 10, noise: "none", chasers_fewest: 2, chasers_most: 3, chaser_speed: 3.0,
+    // 6.0.0 (Windows 4.0.0): rewards with weights and ranges, and Smash and grab's exit.
+    seconds_weight: 1, shots_weight: 1, points_weight: 1, life_weight: 1, seconds_most: 0, shots_most: 0, points_most: 0,
+    exit: false, exit_sound: 'exit_morse' },
   noise: { glass: true, smash: true, shots: false, stones: true },
   fragments: { tune: "random", instrument: "music_box", notes_fewest: 1, notes_most: 4 },
   meter: { on: false, name: "air", seconds: 60, refill: "pickups", refill_seconds: 0, pickup_every_seconds: 20, pickup_sound: "", warn_at_seconds: 15, warn_sound: "" },
   traps: { count: 0, cost: "time", penalty: 10, hearing: 9, sound: "" },
   safe_spots: { count: 0, radius: 4.5, sound: "" },
   teleports: { pairs: 0, sound: "" },
-  chests: { count: 0, chance: 1.0, sound: "", random_kinds: ["seconds", "shots", "points"], seconds: 45, shots: 10, points: 50 },
+  chests: { count: 0, chance: 1.0, sound: "", random_kinds: ["seconds", "shots", "points"], seconds: 45, shots: 10, points: 50,
+    seconds_weight: 1, shots_weight: 1, points_weight: 1, life_weight: 1, seconds_most: 0, shots_most: 0, points_most: 0 },
+  // 6.0.0: the chasers a smashed case brings, with settings of their own. Off, they follow
+  // the first kind of creature and sound like battle enemies, as before.
+  chasers: { own: false, name: 'ghost', sound: 'enemy', on_touch: 'lose_time', penalty: 10, can_be_shot: true,
+    hits_to_down: 1, points_for_down: 10, volume: 1.0 },
   supplies: { ammo_every_seconds: 0, ammo_amount: 5, ammo_sound: "", life_every_seconds: 0, life_sound: "", points_every_seconds: 0, points_amount: 10, points_sound: "", lasts_seconds: 0, min_distance: 12 },
   story: { levels: [], found: [], wake: "" },
   silent: { first_room: 2, more_each_room: 1, most: 8, points_per_room: 10, exit_sound: "exit_morse", exit_distance: 30 },
@@ -151,14 +159,17 @@ export const HAZARD_KEYS = ['hazards', 'hazards2', 'hazards3'];
   for (const k of Object.keys(DEFAULTS)) delete DEFAULTS[k];
   Object.assign(DEFAULTS, filled);
 }
-const FLOORS = ["stone", "sand", "snow", "water", "glass", "ice", "mud"];
+// 6.0.0 (Windows 4.0.0): swim, deep water, where every step is a swimming stroke.
+const FLOORS = ["stone", "sand", "snow", "water", "glass", "ice", "mud", "swim"];
+// Floors where a step is quiet: a listener notices you only half as far off.
+export const QUIET_FLOORS = ["water", "swim"];
 const ENDING_KINDS = ["open", "fixed", "random"];
 const CASE_EXTRAS = ["none", "seconds", "shots", "points", "life", "random"];
 export const REWARD_KINDS = ["seconds", "shots", "points", "life"];
 const CASE_NOISE = ["none", "wake", "chasers"];
 const METER_REFILLS = ["items", "pickups", "safe_spot"];
 const TRAP_COSTS = ["time", "points", "life"];
-export const LEVEL_MISSIONS = ["collect", "steps", "sneak", "seek", "catch", "memories", "echo", "lure", "song"];
+export const LEVEL_MISSIONS = ["collect", "steps", "sneak", "seek", "catch", "memories", "echo", "lure", "song", "smash"];
 export const ALWAYS_LEVELS = ["memories", "song"];
 export const LEVELLED = ["decoys", "escape", "keys", "order", "memory", "pairs", "chairs", "silent", "storm", "memories", "song"];
 export const CASE_MISSIONS = ["collect", "survive", "steps", "sneak", "hunt", "escape", "defend", "memories", "lure", "smash"];
@@ -166,8 +177,14 @@ export const FRAGMENT_MISSIONS = ["memories", "echo", "song"];
 const WALL_MISSIONS = ["collect", "survive", "steps", "seek", "detector", "keys", "escape", "sneak", "hunt", "relay", "memories", "smash", "silent", "echo", "lure", "song", "storm"];
 export const STAGES_MOST = 5;
 const STAGE_FIXED = ["format", "id", "enabled", "protected", "name", "description", "start", "end", "mode", "mode_settings", "medals", "messages", "signature", "stages"];
-export const FLOOR_FILES = ["snow", "water", "glass", "ice", "mud"];
-export const DEFAULT_SOUNDS = { rest: "evt_beast_breathing.ogg", growl: "evt_angry_growl.ogg", case_hum: "evt_crystal_hum.ogg", case_bell: "evt_chime_clear.ogg", case_smash: "evt_glass_smash.ogg", trap: "evt_rattlesnake.ogg", safe_spot: "evt_energy_hum.ogg", teleport: "evt_exit_warp.ogg", chest: "evt_coins.ogg", chest_open: "evt_chest_open.ogg", thunder: "evt_thunder_clap.ogg" };
+export const FLOOR_FILES = ["snow", "water", "glass", "ice", "mud", "swim"];
+// The four footstep recordings of a floor that has its own (6.0.0: the swim floor's are
+// the swimming strokes).
+export function floorStepFiles(floor) {
+  const pattern = floor === 'swim' ? 'ut_dive_stroke_#.ogg' : `step_${floor}_#.ogg`;
+  return [1, 2, 3, 4].map((i) => pattern.replace('#', String(i)));
+}
+export const DEFAULT_SOUNDS = { rest: "evt_beast_breathing.ogg", growl: "evt_angry_growl.ogg", case_hum: "evt_crystal_hum.ogg", case_bell: "evt_chime_clear.ogg", case_smash: "evt_glass_smash.ogg", trap: "evt_rattlesnake.ogg", safe_spot: "evt_energy_hum.ogg", teleport: "evt_exit_warp.ogg", chest: "evt_coins.ogg", chest_open: "evt_chest_open.ogg", thunder: "evt_thunder_clap.ogg", exit_unlock: "evt_door_unlock.ogg" };
 const OWN_THINGS = ["relay", "follow", "order", "memory", "pairs", "detector", "dodge", "hold", "bomb", "reflex", "chairs", "keys", "rhythm", "lamps", "whack", "silent", "storm"];
 
 
@@ -184,7 +201,7 @@ const T = (v) => !(v === null || v === undefined || v === false || v === 0 || v 
 export const NOTE_SPREAD = 12;
 
 // Missions whose whole point is their ordinary items: the game lays out at least one.
-export const ITEMS_NEEDED = ['fishing', 'rescue', 'sort', 'sneak', 'steps'];
+export const ITEMS_NEEDED = ['fishing', 'rescue', 'sort', 'sneak', 'steps', 'smash', 'echo', 'lure'];
 export const TOTAL_UNUSED = ['order', 'pairs', 'memory', 'chairs', 'hold', 'lamps', 'dodge', 'reflex', 'rhythm',
   'follow', 'decoys', 'keys', 'silent', 'storm', 'memories', 'song'];
 for (const [m, sp] of Object.entries(MORE)) {
@@ -513,7 +530,22 @@ export function kinds(ev) {
 // Whether a run of this event is played in levels through the levels block.
 export function levelsOn(ev) {
   const m = ev.mission;
-  return ALWAYS_LEVELS.includes(m) || (LEVEL_MISSIONS.includes(m) && Boolean((ev.levels || {}).on));
+  return ALWAYS_LEVELS.includes(m) || (LEVEL_MISSIONS.includes(m) && Boolean((ev.levels || {}).on)) || smashExit(ev);
+}
+
+// 6.0.0: whether a Smash and grab has its exit, locked until every case in the room is
+// smashed (it is then always played in rooms, one level each).
+export function smashExit(ev) {
+  return ev.mission === 'smash' && (ev.cases || {}).exit === true;
+}
+
+// 6.0.0: how common each kind of reward is, and the most of each it can give.
+function checkReward31(errors, block, who) {
+  for (const k of ['seconds', 'shots', 'points', 'life']) block[`${k}_weight`] = num(errors, `${who} weight for ${k}`, block[`${k}_weight`], 1, 100);
+  for (const [k, hi] of [['seconds', 600], ['shots', 99], ['points', 100000]]) {
+    block[`${k}_most`] = num(errors, `${who} most ${k}`, block[`${k}_most`], 0, hi);
+    if (block[`${k}_most`] && block[`${k}_most`] < block[k]) errors.push(`${who} most ${k} must be at least its ${k}, or 0 for always the same amount.`);
+  }
 }
 
 // Whether the ending block can end a run of this event.
@@ -600,8 +632,37 @@ export function hasCreatures(ev) {
     || (ca.noise === 'chasers' && (m === 'smash' || (ca.share || 0) > 0));
 }
 
-const endsByCreature = (ev) => ['hazards2', 'hazards3'].some((k) => ((ev[k] || {}).count || 0) > 0 && ev[k].on_touch === 'end_run')
-  || (hasCreatures(ev) && ev.hazards.on_touch === 'end_run');
+// 6.0.0: whether Enter's report says the lives left: more than one life, and a run
+// that can bring creatures whose touch costs one, from the creatures setting, a second
+// or third kind, or the chasers a smashed case brings (with their own settings or the
+// first kind's).
+export function saysLives(ev) {
+  const hz = ev.hazards;
+  if ((hz.lives ?? 1) <= 1) return false;
+  if (['hazards2', 'hazards3'].some((k) => ((ev[k] || {}).count || 0) > 0 && ev[k].on_touch === 'end_run')) return true;
+  const m = ev.mission;
+  const ca = ev.cases || {};
+  const cs = ev.chasers || {};
+  const first = (hz.count || 0) > 0 || m === 'escape' || m === 'silent'
+    || (m === 'keys' && ((ev.keys || {}).more_creatures_each_room || 0) > 0);
+  if (first && hz.on_touch === 'end_run') return true;
+  if (ca.noise === 'chasers' && (m === 'smash' || (ca.share || 0) > 0)) {
+    return (cs.own ? cs.on_touch : hz.on_touch) === 'end_run';
+  }
+  return false;
+}
+
+// Whether a creature that really comes can end the run (6.0.0 fix: this used to read the
+// first kind's touch even when the first kind never comes).
+const endsByCreature = (ev) => {
+  const hz = ev.hazards; const m = ev.mission; const ca = ev.cases || {}; const cs = ev.chasers || {};
+  if (['hazards2', 'hazards3'].some((k) => ((ev[k] || {}).count || 0) > 0 && ev[k].on_touch === 'end_run')) return true;
+  const first = (hz.count || 0) > 0 || m === 'escape' || m === 'silent'
+    || (m === 'keys' && ((ev.keys || {}).more_creatures_each_room || 0) > 0);
+  if (first && hz.on_touch === 'end_run') return true;
+  if (ca.noise === 'chasers' && (m === 'smash' || (ca.share || 0) > 0)) return (cs.own ? cs.on_touch : hz.on_touch) === 'end_run';
+  return false;
+};
 
 // With no clock, something else must be able to end a run, or it would never end.
 // Returns null if it can, or the reason it cannot.
@@ -674,7 +735,15 @@ function checkMissions(ev, errors) {
     if (why) errors.push(why);
     if (it.time_bonus || (m === 'hunt' && ev.hunt.time_bonus)) errors.push('A time bonus counts the seconds left on the clock, so it needs a clock.');
     if (T(ev.time_credits.enabled)) errors.push('Time credits add seconds to the clock, so they need a clock.');
-    if (hz.on_touch === 'lose_time' && hz.count) errors.push('Creatures that take seconds off the clock need a clock.');
+    const ca_ = ev.cases || {};
+    const copiedChasers = ca_.noise === 'chasers' && (m === 'smash' || (ca_.share || 0) > 0) && !(ev.chasers || {}).own;
+    const firstComes = hz.count || m === 'escape' || m === 'silent'
+      || (m === 'keys' && ((ev.keys || {}).more_creatures_each_room || 0) > 0);
+    if (hz.on_touch === 'lose_time' && (firstComes || copiedChasers)) errors.push('Creatures that take seconds off the clock need a clock.');
+    for (const [k, who] of [['hazards2', 'second'], ['hazards3', 'third']]) {
+      const k2 = ev[k] || {};
+      if (k2.count && k2.on_touch === 'lose_time') errors.push(`The ${who} kind of creature takes seconds off the clock, which needs a clock.`);
+    }
     if (m === 'order' && ev.order.wrong === 'lose_time') errors.push('Losing seconds for the wrong one needs a clock.');
   }
   const snd = (label, v) => { if (T(v) && !isFile(v)) errors.push(`${label} must be a sound file name, or empty.`); };
@@ -973,6 +1042,24 @@ function checkBlocks(ev, errors) {
   ca.chasers_most = num(errors, 'The most chasers a smash brings', ca.chasers_most, 1, 5);
   if (ca.chasers_most < ca.chasers_fewest) errors.push('The most chasers must be at least the fewest.');
   ca.chaser_speed = num(errors, 'How fast chasers are', ca.chaser_speed, 0.5, 8.0, false);
+  checkReward31(errors, ca, "A case's");
+  flag(errors, 'Whether Smash and grab has an exit', ca.exit);
+  if (ca.exit_sound !== 'exit_morse') sound(errors, "The exit's sound", ca.exit_sound);
+  if (ca.exit === true && m !== 'smash') errors.push('The exit that opens once every case is smashed is for Smash and grab only. Untick it.');
+  if (smashExit(ev) && lv.items_most > 10) errors.push("Smash and grab with an exit lays out a room's cases all at once: at most 10 cases a room.");
+  const cs = ev.chasers;
+  flag(errors, 'Whether chasers have their own settings', cs.own);
+  if (typeof cs.name !== 'string' || !cs.name.trim()) errors.push('The chasers need a name.');
+  if (!HAZARD_SOUNDS.includes(cs.sound) && !isFile(cs.sound)) errors.push("The chasers' sound must be guardian, enemy, or a sound file name like ghost.ogg.");
+  if (!HAZARD_TOUCH.includes(cs.on_touch)) errors.push("What a chaser's touch does must be one of: " + HAZARD_TOUCH.join(', ') + '.');
+  cs.penalty = num(errors, "The chasers' penalty", cs.penalty, 0, 10000);
+  flag(errors, 'Whether chasers can be shot', cs.can_be_shot);
+  cs.hits_to_down = num(errors, 'Hits to bring a chaser down', cs.hits_to_down, 1, 100);
+  cs.points_for_down = num(errors, 'Points for bringing a chaser down', cs.points_for_down, 0, 10000);
+  cs.volume = num(errors, "The chasers' volume", cs.volume, 0.1, 2.5, false);
+  const chasersCome = ca.noise === 'chasers' && (m === 'smash' || ca.share > 0);
+  if (chasersCome && cs.own && cs.can_be_shot && !wp.enabled) errors.push('The chasers can be shot, but the weapon is off. Turn the weapon on, or make them unshootable.');
+  if (chasersCome && cs.own && cs.on_touch === 'lose_time' && !clock) errors.push("A chaser's touch costs time, but there is no clock. Turn the clock on, or choose another cost.");
   const cased = m === 'smash' || ca.share > 0;
   if (ca.share > 0 && !CASE_MISSIONS.includes(m)) errors.push('Display cases hold the ordinary items you walk onto; this mission has none of those. Set the share of items in cases to 0.');
   let used = new Set();
@@ -985,6 +1072,7 @@ function checkBlocks(ev, errors) {
   ch.seconds = num(errors, 'The seconds a chest gives', ch.seconds, 1, 600);
   ch.shots = num(errors, 'The shots a chest gives', ch.shots, 1, 99);
   ch.points = num(errors, 'The points a chest gives', ch.points, 1, 100000);
+  checkReward31(errors, ch, "A chest's");
   if (ch.count) for (const k of ch.random_kinds) used.add(k);
   if (used.has('seconds') && !clock) errors.push('A reward of seconds needs a clock: turn the clock on, or choose another reward.');
   if (used.has('shots') && !wp.enabled) errors.push('A reward of shots needs the weapon: turn the weapon on, or choose another reward.');
@@ -1171,13 +1259,21 @@ export function soundFiles3(event) {
     if (hz.behavior === 'throw') out.push(hz.windup_sound);
   }
   const ca = event.cases || {};
-  if (m === 'smash' || (ca.share || 0) > 0) out.push(d.case_hum, d.case_bell, d.case_smash);
+  if (m === 'smash' || (ca.share || 0) > 0) {
+    out.push(d.case_hum, d.case_bell, d.case_smash);
+    const cs = event.chasers || {};
+    if (ca.noise === 'chasers' && cs.own && !HAZARD_SOUNDS.includes(cs.sound)) out.push(cs.sound);   // 6.0.0: the chasers' own sound
+    if (m === 'smash' && ca.exit) {
+      if ((ca.exit_sound || 'exit_morse') !== 'exit_morse') out.push(ca.exit_sound);                // 6.0.0: the exit's sound...
+      out.push(d.exit_unlock);                                                                       // ...and its lock opening
+    }
+  }
   const me = event.meter || {};
   if (me.on) out.push(me.pickup_sound, me.warn_sound);
   const fl = event.floor || {};
   const floors = new Set([fl.main, fl.patch]);
   if (m === 'smash' || (ca.share || 0) > 0) floors.add('glass');
-  for (const floor of FLOOR_FILES) if (floors.has(floor)) for (let i = 1; i <= 4; i++) out.push(`step_${floor}_${i}.ogg`);
+  for (const floor of FLOOR_FILES) if (floors.has(floor)) out.push(...floorStepFiles(floor));
   for (const [sec, key] of [['traps', 'trap'], ['safe_spots', 'safe_spot'], ['chests', 'chest']]) {
     const block = event[sec] || {};
     if ((block.count || 0) > 0) {

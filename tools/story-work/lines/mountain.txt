@@ -1,0 +1,98 @@
+# Corbin, the mountain shepherd (winter wind, howling wind). British.
+^Over here, lad! Or lass! Follow my shout!
+^Oi! This way, out of the wind!
+^Over here! By the stone hut!
+^This way, walker! Keep your head down!
+^Hello there! Can you hear me over the wind? Over here!
+^Over here! Mind the drop on your left!
+^This way! The sheep are tucked in, and so am I!
+^Over here, friend! It's warmer by the wall!
+^Hello! Follow my voice up the hill!
+^This way! Steady on, the wind's fierce today!
+^Over here! I've a gift, and a blanket!
+^Oi! Walker! Over here!
+<Oi! Come back! You've left your gift!
+<Over here again! Out of the wind!
+<This way, walker! Back to the hut!
+<Come back, friend! It's still here!
+<Over here! Don't let the wind blow you off!
+<Back this way! Follow my shout!
+<Walker! You forgot something! Up here!
+<This way again! Keep your head down!
++Here you are. Kept it out of the wind.
++Take this, friend. You'll need it more than the sheep.
++For you. Wrap up warm.
++A gift from the mountain. Mind your footing.
+~I'm Corbin. I keep sheep up on the mountain. Well, they keep themselves. I just count them.
+~That howling? Just the wind. It's always howling. It's got a lot to say.
+~Wrap up warm, friend. The wind goes right through you up here.
+~I've got forty sheep. Forty one, some worlds. The extra one always looks very innocent.
+~The hut's small, but the walls are thick. Built them myself. Every world, they're still standing.
+~Fancy a cup of tea? It's mostly hot water. The wind steals the tea leaves.
+~The mountain's lonely, but I like it. Me, the sheep, and the sky.
+~My dog ran off three worlds ago. Fine dog. I'm sure she's chasing something important.
+~The wind blew my hat off in the first world. I've never found it. I've never stopped looking.
+~Up here, you can hear the whole world. Every sound drifts up the mountain eventually.
+The wind is the world breathing, friend. In, and out. When it howls, the world is breathing hard. When it stops, the world is holding its breath.
+I call the rebuild the Great Breath. The world breathes out, everything blows away, and then it breathes in, and there's a new world.
+The wind always howls loudest just before the countdown. Like the world is taking one enormous breath before it starts again.
+I count my sheep every world. Forty. Always forty. But they're never the same forty. Different faces, different bleats. Somebody swaps them.
+The wind carries names up the mountain. I've heard them. Old names, strange names. Names of people and places that aren't here anymore.
+Once, I heard your name on the wind. Or I think it was yours. It was a name I didn't know, said by a voice I didn't know, very kindly.
+From up here, you can hear the whole world rebuild. It starts at the edges and rolls toward the middle. Like a wave coming in.
+There's a cairn at the top of the mountain. A pile of stones. Every walker who reaches it adds one. It's taller every world. Nobody knows who put the first stone.
+The sheep all face the same way before a rebuild. Into the wind. Toward the middle of the world. Then they lie down. Every one of them.
+Lady Rime thinks the ice is the world holding its breath. I think she's right. And the wind is what happens when it lets go.
+Some say there's a giant asleep under the mountain, and the wind is its snoring. If so, it's been asleep a very long time. And it's a very loud snorer.
+I don't believe in giants under mountains. But I've felt the mountain move. Just a little. Just before a rebuild. Like something rolling over in bed.
+The world's mercy comes up the mountain like a sudden calm. The wind just stops. The sheep look up. And for a moment, everything's warm and still.
+The enemies never climb the mountain. Too steep, too windy. Or maybe the mountain just doesn't let them up.
+There's a shepherd's song about the wind. The wind blows here, the wind blows there, the wind blows round the world and back. And then nobody knows the next verse.
+I've stood at the top of the mountain and shouted my question to the world. Why do you keep changing? The wind took the question away. Never brought an answer back.
+Hazel says the world is a spell. Mortimer says a garden. Sprocket says a machine. I say it's weather. Nobody controls the weather. It just happens. Then again, someone must decide when it rains. Mustn't they?
+The winter never ends up here. The snow never melts, the wind never stops. Like the world forgot to change the season. Or chose not to.
+I found a shepherd's crook up on the high ridge once. Old and worn, not mine. Carved into the handle were five little notches. And a word. Wait.
+Some nights, the wind howls a tune. Five notes, rising and falling. I've heard the same tune from Jangles's fiddle. And from the drips in Petra's cave.
+The clouds move fast up here. Every world, they race toward the middle of the world, faster and faster. Then the rebuild. Then they start again, slow.
+I've seen a light on the next mountain over. Just one, steady, like a lamp in a window. I've never been able to cross to it. The valley's always too deep. Someone like me lives there, maybe, wondering who lives over here.
+The old shepherds used|hab to say the wind is looking for something. That's why it never stops. It's searching every corner of the world. What for, I've asked. The wind just howls. I've never been good at understanding howling.
+My sheep never get lost, no matter how the world changes. They always find the hut. Maybe there's a map in their heads. Or in their hearts.
+Every world, there's a new path up the mountain. I've walked each one. They all end at the same place. The cairn, at the very top.
+Commander Vega says the world looks small from space. Well, it looks big enough from up here. Big enough to get lost in, anyway.
+Wind wears down the mountain, grain by grain. Every world, the mountain is a tiny bit smaller. One day, it'll be flat. What then?
+The howling wind isn't scary, once you know it. It's just loud. Like a big dog that wants attention.
+I think the wind remembers every world. It's been everywhere. Blown through every street, every forest, every cave. If anyone knows, it's the wind.
+There's an old saying up here. When the wind goes still, listen hard. That's when the world tells the truth. I've listened hard. I'm still waiting.
+I left a bell on the cairn, so the wind would ring it. Every world, it rings five times before the countdown. Then it's still.
+Sol the wanderer passed by once. We sat by the hut and listened to the wind for a whole world. Didn't say a word. Best conversation I ever had.
+The sky up here is very big. Bigger than it should be. Like the world's ceiling is very high, and very far away.
+I've got a theory. The world rebuilds every time the wind changes direction. I've been watching. I'm nearly sure. Nearly.
+My grandfather was a shepherd. He said the world used|hab to stay the same for a whole year. Then it was a month. Then a day. Now, a few minutes. It's speeding up, he said. Or maybe we're slowing down. I've never worked out which.
+~Mind the edge, friend. It's a long way down, and the wind's not kind to tumblers.
+~My boots are older than my sheep. And my sheep are very old.
+~Have a bit of cheese. Sheep's cheese. It's strong. It'll put hair on your ears.
+The snow on the peak never melts, but every world, there's a new footprint at the very top. One footprint. Like someone stood there on one foot, looking out.
+The wind brings snow from the north, every world. Always the north. Mortimer's moss grows north too. Something up north is calling everything.
+Some nights, the wind goes quiet, and I hear singing from below the mountain. Deep, slow, gentle. Like someone humming to a baby.
+The sheep never panic at the countdown. They just lie down and wait. I've learned a lot from my sheep. Mostly patience.
+I've seen the world rebuild from the mountaintop. It's like watching a great cloth being shaken out and laid down again, smooth and new.
+The stone hut has a door that rattles in the wind. Rattle, rattle, rattle, rattle, rattle. Five times. Then the countdown. Every world.
+There's a rumour among shepherds that the mountain is the world's shoulder, and the world is a giant lying on its side. Every rebuild, it shifts in its sleep.
+The world's mercy, up here, is a sudden warm breeze in the middle of winter. The sheep all look up. Then the cold comes back, and they look at me, like it was my doing.
+I keep a list of every sheep's name, every world. Different sheep, different names. But the last sheep in the flock is always called the same. Wanderer.
+There's a carved stone at the top of the pass. One word on it, worn almost smooth. I think it says, beyond. Or perhaps, behind. Hard to say.
+The wind steals things. Hats, scarves, tea leaves. I've often wondered where it puts them all. Somewhere, there's a great pile of stolen hats.
+Hazel came up the mountain once to collect snow for a potion. She said mountain snow remembers the sky. I don't know what that means. I gave her a bucket anyway.
+The mountain echo takes five seconds to come back. Shout, and wait. One, two, three, four, five. Then your own voice, a little older.
+The howling wind goes silent for a moment when a walker arrives. Like it's stopped to listen. Then it starts howling again, a bit louder. Showing off.
+I think the world rebuilds the way weather changes. No reason, no plan. It just turns. Clouds come in, clouds go out. And the world is new.
+There's a little flower that grows in the snow by the hut. Only one. Every world, it's there. White, with a blue middle. I've never seen it anywhere else.
+The sheep's bells ring together sometimes, all at once, all the same note. Then the rebuild. I don't know how they know. Sheep are deeper than they look.
+Commander Vega says she can see my mountain from space. She says it's the tallest point in the world. I told her, of course it is. I've climbed it.
+The wind up here has been blowing since before the first world, they say. It's never stopped once. That's a lot of breath to hold.
+When the wind dies down, you can hear the whole world below. Every safe place, every labyrinth, every footstep. Including yours, walker. Including yours.
+Somebody leaves a bundle of firewood by the hut every world. Dry, neatly tied. Mountain air doesn't let anyone stay long enough to be seen.
+I asked an old ram why the world keeps changing. He looked at me for a whole minute, then ate my hat. The wind had nothing to do with it that time.
+The mountain stays, the world changes. That's what I believe. Every world, the mountain's still here, and so am I. That's good enough for a shepherd.
+The howling wind isn't angry, friend. It's calling. Calling for something it lost, a long time ago. I've never found out what.
+The cairn at the top has a little hollow on one side, just the right size for a hand. Put yours in, and you'll feel it. A heartbeat. Slow and steady.

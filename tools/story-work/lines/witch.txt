@@ -1,0 +1,146 @@
+# Mother Hazel, the witch. Prefixes: ^ greeting, < callback, + gift, ~ story (not a hint), none = story hint.
+^Over here, dearie. Follow the bubbling.
+^Come closer, the cauldron doesn't bite.
+^Yoo hoo! This way, little walker.
+^Mind the broom, and come and see me.
+^I'm by the pot. Follow your ears.
+^Hello there. Over here, by the steam.
+^Come along, come along. I won't keep you long.
+^This way, dearie. I've been expecting you.
+^Over here! Soot the cat is waiting too.
+^Follow my voice. That's it. A little closer.
+^Psst. Here. By the bubbling pot.
+^Come and sit with an old witch a while.
+<Dearie, come back! You forgot your gift.
+<Don't wander off, I've something for you.
+<Back this way, by the cauldron.
+<Yoo hoo! I'm still here, and so is your present.
+<Come back, dearie. The pot is still bubbling.
+<Over here! A witch never forgets a gift.
+<This way again. Follow the steam.
+<You'll want this before you go. Come back to me.
++Here you are, dearie. Fresh from the pot.
++Take this. Don't ask what's in it.
++A little something from Mother Hazel.
++For you. Use it well, and come and see me in the next world.
++There. Now off you go, and mind the countdown.
+~Ah, a visitor. Sit a while. The world won't wait, but I will.
+~Welcome back. Or is it welcome for the first time? In this world, it's hard to tell.
+~Mind the broom. It sweeps by itself when it's nervous.
+~My cat, Soot, sends his greetings. He's asleep in the cauldron again. Don't worry, it's not lit.
+~I am Mother Hazel. I brew, I listen, and now and then I know things.
+~Don't mind the bubbling. That's just supper, or a secret. Sometimes both.
+~Shh. Listen to the pot. It always hums before it tells me something.
+~I'll tell you what I know for certain. Nothing. And I'll tell you what I suspect. Everything.
+~I've seen the world rebuild from the inside of a teacup. Don't ask how. It's a long story, and the tea went cold.
+~Don't drink anything that hums. Unless I gave it to you. Then drink it quickly.
+Some say I cast the spell that makes the world rebuild itself. I say a witch never tells her recipes.
+The world is a spell, dearie. A very old one. And spells that old forget how to stop.
+I tried to break the spell once. The world simply rebuilt itself, with me still standing in it.
+Every time the world rebuilds, my cauldron is still here. Why do you suppose that is?
+Soot the cat always hides just before the world changes. Cats know things. They just won't say.
+The five second countdown? That's not my voice. I've never found out whose it is.
+I once brewed a potion to remember the last world. When I drank it, I remembered a world I'd never seen.
+There's a word that stops the rebuilding. I've had it on the tip of my tongue for a hundred years.
+Mortimer in the graveyard thinks the world is a garden. I think it's a pot, and something keeps stirring it.
+The potions you find lying around? Some are mine. Some are not. I'd love to know who makes the others.
+The world doesn't break, dearie. It shuffles, like a deck of cards. The question is, who is playing?
+I read|past the steam from my cauldron today. It said, the answer is closer than you think. It said that yesterday too.
+There was a first world, they say. Plain and quiet, with one door. Nobody remembers what was behind it.
+A walker came through here long ago, asking the same questions you ask. I gave her a gift too. I never heard her footsteps again.
+The enemies out there aren't wicked, I think. They're lost, like everyone else. They just throw things about it.
+If the world is a spell, then someone must have spoken it. And if someone spoke it, where did they go?
+My grandmother said the world rebuilds because it's looking for something it lost. She never said what.
+Every world smells a little different. This one smells of rain and cinnamon. The last one smelled of questions.
+I keep a jar of the quiet from between worlds. Want to hear it? No? Wise. It's very, very quiet.
+Once, the world rebuilt itself while I was in the middle of a sentence. I finished the sentence in the next world. Nobody noticed.
+Some nights I hear knocking from under the floor. Polite knocking. As if someone wants to be let in.
+The world shows mercy sometimes. A little extra time, out of nowhere. I think it does that when it likes who's listening.
+You've heard of the Builder? The one who builds each world? I've never met them. But I've found their footprints.
+The footprints of the Builder go round in circles. Either they're lost, or they're dancing.
+I asked the stars why the world rebuilds. The stars asked me the same thing back. Rude, really.
+There are other safe places like mine. The people in them all have their own ideas. Most of them are wrong. So am I, now and then.
+Have you noticed nothing attacks you in the safe places? The world is gentle in here. As if it's sorry about out there.
+A spell needs three things. A word, a wish, and someone to listen. I think you might be the third one.
+The world doesn't rebuild at random, I'm sure of it. There's a pattern. I just can't hear it yet.
+I bottled a moment once, just before the countdown. When I opened it, it counted from six. That's never happened again.
+Some say the world will stop rebuilding when someone finds the center of it. I've walked to the center a hundred times. It moves.
+Long ago this was all one great garden, they say. Then someone planted a labyrinth, and it grew wild.
+Come close|adj. I'll tell you a secret. Nobody knows why the world rebuilds. Not even the world.
+I once asked the world to stop changing. The next world had a slightly nicer kitchen. I'm not sure that was an answer.
+The countdown always starts at five. Why five? Why not ten, or three? Somebody chose five. I'd like a word with them.
+Some days I think I made this world. Other days I think it made me. Today I'm undecided.
+There's an old riddle. What is built every day, but never finished? I used|hab to think the answer was my list of chores.
+Every world has exactly one witch in it, and it's always me. Have you ever wondered why? I have.
+My cauldron was here before the first rebuild. I'm sure of it. It has a dent from something older than the world.
+If you ever find the edge of the world, knock twice. Something on the other side might knock back.
+The ghost girl Pell says she remembers every world. I'm not so sure. Ghosts love a good story.
+I heard the ocean whispering to the sky once. It said, not yet. I've been wondering, not yet what, ever since.
+The world's mercy is a strange kind of magic. It isn't mine, and it isn't anyone's I know.
+Treasure chests turn up in the oddest places. Someone is leaving them. Someone who wants you to keep going.
+The bus drivers never speak. I've tried. I brought them soup. Nothing. Not even a thank you.
+I can brew almost anything. Except a potion that tells me what's beyond the world. The recipe always comes out blank.
+Every rebuild leaves a little dust behind. I sweep it up and keep it. One day I'll find out what it's made of.
+The labyrinths out there have walls that remember. Touch one and listen. Sometimes they hum the last world's tune.
+Some walkers find the rebuilding frightening. I find it rather cozy. A fresh start, every few minutes.
+Do you hear the world creaking just before it changes? Like an old house settling. Or a very large creature yawning.
+The islands out there sink and rise with every world. And deep beneath the seabed, they say, something is keeping count.
+They say if you hear every story in every safe place, you'll know the truth. But the stories keep changing. Funny, that.
+I've been a witch here for a very long time. Or perhaps for five minutes, again and again. It's hard to be sure.
+Mortimer swears he buried the first world. I asked him where. He said that's the trouble, the graveyard moves.
+You ask good questions, dearie. That's dangerous here. Good questions make the world curious about you.
+There's a door somewhere in every world that doesn't open. I've never found it. But I've heard it creak.
+Some nights I hear a voice counting backwards from a number too big to say. Then it stops, and the world rebuilds.
+A spell can't keep going forever without someone feeding it. So who's feeding this one? And with what?
+I tried following the world as it rebuilt. I got as far as the in between. It's very dark there, and smells of new paint.
+The towers out there aren't built. They grow, like mushrooms after rain. I've watched one sprout.
+My mother told me the world rebuilds because someone is practicing. Practicing what, I asked. Getting it right, she said.
+If the world ever stops rebuilding, I'll be terribly bored. And a little nervous. Mostly bored.
+I made a map once, of every world I'd seen. Every page came out blank. I'd remembered them wrong, or they'd forgotten me.
+The enemies leave nothing behind when they fall. Haven't you noticed? It's as if they were never quite there.
+Sometimes I find letters in my cauldron, written in a hand I don't know. They all say the same thing. Keep listening.
+There's a rumor that the world is a dream, and someone is about to wake up. I don't like that rumor. I keep it under the sink.
+The great clock that runs the world is said to be under the ice. Lady Rime won't say if that's true. She just smiles, coldly.
+Credits are odd coins, aren't they? No face on them. No name. I wonder who made them, and why they bother.
+Every answer I find has another question tucked inside it, like a pea in a pod. I've a whole pantry of them now.
+The witch before me told me the world rebuilds out of kindness, so no one gets stuck. I've never decided if she was right.
+I'm not the first witch here, you know. There was one before me. She left her hat. It still remembers her head.
+The wind brought me a whisper today. It said the Builder is tired. I made the wind a cup of tea. It left without drinking it.
+Some say the safe places were made first, and the rest of the world was built around them like a shell.
+Why do I give gifts? Because someone once gave one to me, in a world long gone. I'm only passing it on.
+I've noticed something. The world never rebuilds while someone is in the middle of a kindness. Or perhaps I just hope so.
+Count the safe places you find in a world. The number is never quite the same. The world is counting too, I think.
+There's an old song that ends with the words, and then it began again. Everybody knows it. Nobody knows who wrote it.
+Don't listen to the frogs in the marsh. They claim they know everything. They only know frog things.
+Your footsteps sound different from the other walkers. Lighter. As if the world isn't sure you're staying.
+Brew enough potions and you start to hear the world's ingredients. Stone, water, sound, and a pinch of something nobody can name.
+Underneath every world is the same floor. Smooth and cold and very old. I dropped a spoon through once and heard it land.
+I asked the world's mercy where it comes from. It gave me thirty five seconds and no answer.
+Some walkers stop visiting. I like to think they found the way out. Or a better witch.
+What if the world rebuilds because you're in it? Hmm. Don't look at me like that. It was only a thought.
+My spell book has a page I can't read. The letters swim away whenever I try. I think it's the page about all this.
+The ghosts all sing the same song before a rebuild. Low and slow. It might be a lullaby. For whom, I wonder.
+Listen. Under the bubbling. Do you hear the tick? Every world has a heartbeat. This one's a little fast tonight.
+The Builder isn't a person, Sprocket says. It's a machine. Well, machines don't knock politely at night, do they?
+Everyone here knows a piece of the answer. Put all the pieces together, and you get, I suspect, a bigger question.
+The first walker carved something into a stone near here. The stone moves every world. I've only ever found the back of it.
+Is it a curse? Is it a blessing? I've changed my mind so many times, my mind has started changing itself.
+Some say each world is a page in a book. If that's true, I'd love to know how the book ends. Or if it has an end at all.
+Every witch keeps one secret ingredient. Mine is the sound of the world just before it changes. I've only caught it once.
+The safe places are older than the rest, I think. Listen to my walls. They creak like they've been here a thousand worlds.
+I followed a firefly once, right to the edge of a world. It blinked three times and went out. Then everything rebuilt.
+Captain Brine says the sea is the only thing that stays the same. But I've tasted it. Every world, it's a little less salty.
+They say the Builder left a note in the very first world. One word long. Everyone argues about what the word was.
+I've stirred this pot clockwise for a hundred worlds. Last week I stirred it the other way. The world rebuilt early. Coincidence, surely.
+Ask the clockmaker about time and he'll talk for hours. Ask him why time keeps starting over, and he goes very quiet.
+The countdown voice sounds a bit like someone I used|hab to know. I can't think who. It's on the tip of my tongue, with the other thing.
+Some walkers find a world they love and wish it would stay. It never does. Perhaps that's the point. Perhaps it isn't.
+There's a sound you only hear between worlds. Like a breath being held. I've heard it twice. Both times, someone breathed out.
+My potions taste better in some worlds than others. I think the water changes. Or the world is seasoning itself.
+The world rebuilds, but you stay. Your ammo, your health, your stubborn little heart. Why do you think you're the one thing it keeps?
+If you find the answer, come and tell me. I'll pretend I knew all along. Witches are good at that.
+Night after night I hear a bell, far away, ring once before each rebuild. The organist says it isn't his. Then whose?
+I tried bottling the world's mercy. The bottle filled with warm light, then floated away. Very rude of it.
+Long ago, they say, the safe places had no one in them. Then we arrived. None of us remember arriving.
+The world is like a cat, dearie. It goes where it likes, it changes its mind, and it never explains itself.
+I once heard two worlds talking, just as one became the other. One said, your turn. The other said, already?

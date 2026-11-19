@@ -96,18 +96,31 @@ export function buildAlert(release) {
 // emptied again a few seconds later, so a player moving through the page meets
 // the message once, in the region, and not a second time.
 //
-// It shows for its own number of days from its own date, judged by internet time,
-// and then goes away by itself. While it shows it takes the place of the ordinary
+// It shows for its own number of days from the day that very release was published
+// on GitHub, judged by internet time, and then goes away by itself. (Web 5.2.0, Russell,
+// 18 November 2026: until then it went by a date written here, so it could announce a
+// version before it was out, and could end before it had had its days.) While it shows it takes the place of the ordinary
 // alert for that release, and the ordinary alert is not shown for that release
 // afterwards either. A newer release brings the ordinary alert back.
+// (Web 6.0.0: now for Windows 4.0.0. Windows 3.1.0 was never released; its fixes went
+// into 4.0.0. Version 2.0.0 and newer update themselves from the game's main menu.)
 export const RELEASE_ALERT = {
-  version: '3.0.1',
-  from: Date.UTC(2026, 10, 12) / 1000,        // 12 November 2026, the day 3.0.1 came out
-  days: 15,
+  version: '4.0.0',
+  days: 15,                                   // from the day GitHub says 4.0.0 was published
   heading: 'Windows players, please update: ',
-  text: 'Endless Labyrinth 3.0.1 is the latest version for Windows, and we strongly urge every Windows player to '
-    + 'install it. It brings many fixes, and the event system has been rebalanced. ',
+  text: 'Endless Labyrinth 4.0.0 is the latest version for Windows, and we strongly urge every Windows player to '
+    + 'install it. It brings true 3D sound for headphones, turning in the walking modes, the new Find the Voice '
+    + 'mode, and many fixes. If you have version 2.0.0 or '
+    + 'newer, the game updates itself when you ask it to: choose Check for Updates on the main menu, then press Y. ',
 };
+
+// [major, minor, patch] of a version such as '4.0.0', for comparing.
+function versionParts(v) { return String(v).split('.').map((x) => parseInt(x, 10) || 0).concat([0, 0, 0]).slice(0, 3); }
+export function isNewerVersion(a, b) {
+  const x = versionParts(a); const y = versionParts(b);
+  for (let i = 0; i < 3; i++) if (x[i] !== y[i]) return x[i] > y[i];
+  return false;
+}
 export const ANNOUNCE_DELAY = 700;             // milliseconds after the page has loaded
 export const ANNOUNCE_CLEAR = 8000;            // milliseconds later, the live region is emptied
 
@@ -142,22 +155,53 @@ export function announce(text) {
   return true;
 }
 
+// Until that Windows release is out (web 6.0.0, Russell, 19 November 2026: the website
+// is released first, Windows later): Windows players are told that the latest version
+// can be played here meanwhile. Shown, and spoken once as the page loads, only while
+// GitHub says the latest Windows release is an older one; it goes by itself the moment
+// GitHub shows the new release, when that release's own alert takes over. If GitHub
+// cannot be reached it is not shown.
+export const COMING_ALERT = {
+  heading: 'Windows players: ',
+  text: 'version 6.0.0 of the game is here on the website now, with the new Find the Voice mode. The Windows '
+    + 'version, 4.0.0, is coming later. Until then, you can play the latest version right here in your browser. ',
+  link: ['play.html', 'Play Endless Labyrinth on the website'],
+};
+
+export function comingAlertText(a = COMING_ALERT) { return `${a.heading}${a.text}${a.link[1]}.`; }
+
+export function buildComingAlert(a = COMING_ALERT) {
+  return el('section', { role: 'region', 'aria-label': 'Alert', class: 'site-alert', id: 'windows-coming-alert' }, [
+    el('p', {}, [el('strong', { text: a.heading }), a.text, el('a', { href: a.link[0], text: a.link[1] }), '.']),
+  ]);
+}
+
 export async function showUpdateAlert() {
   const [now, release] = await Promise.all([siteTime(), latestRelease()]);
   const special = RELEASE_ALERT;
-  // The release's own alert: by its date alone, so it shows even if GitHub cannot
-  // be reached, unless GitHub says a newer release is out.
-  const newer = release && release.version !== special.version;
-  if (!newer && alertDue(special.from, now, special.days)) {
-    const url = release && release.version === special.version ? release.url : RELEASE_PAGE;
-    const alert = buildReleaseAlert(special, url);
+  // The release's own alert: only once GitHub says that very release is out, for its
+  // days from the day it was published there (web 5.2.0). So it never announces a
+  // version players cannot download yet, and it lasts its full days whatever day the
+  // release comes out. If GitHub cannot be reached it is not shown.
+  if (release && release.version === special.version) {
+    if (!alertDue(release.published, now, special.days)) return false;   // its days are over
+    const alert = buildReleaseAlert(special, release.url);
     const header = document.querySelector('header.site');
     if (header) header.before(alert); else document.body.prepend(alert);
     announce(releaseAlertText(special));
     return true;
   }
+  // An older release than the alert's own is still the latest: the new one is not out
+  // yet, and the latest version can be played here meanwhile.
+  if (release && isNewerVersion(special.version, release.version)) {
+    const alert = buildComingAlert();
+    const header = document.querySelector('header.site');
+    if (header) header.before(alert); else document.body.prepend(alert);
+    announce(comingAlertText());
+    return true;
+  }
   if (!release || !alertDue(release.published, now)) return false;
-  if (release.version === special.version) return false;   // its own alert has had its days
+  if (!isNewerVersion(release.version, special.version)) return false;
   const alert = buildAlert(release);
   const header = document.querySelector('header.site');
   if (header) header.before(alert); else document.body.prepend(alert);

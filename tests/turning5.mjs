@@ -235,7 +235,7 @@ check(rest.tower.step[0] === 3 && rest.tower.step[1] === 0 && rest.tower.turned 
 check(rest.tower.hitBehind === 1 && rest.tower.hitSide === 1, 'a throw takes the rival centred ahead or directly behind, by the way you face, and misses one to the side');
 check(/Facing [a-z-]+\.$/.test(rest.tower.report), 'the tower report ends with the way you face: ' + rest.tower.report);
 check(rest.island.turns && rest.island.step[1] === 3 && !rest.island.rideTurns, 'an island turns with you (facing south, a step goes south), and the elevator does not');
-check(rest.island.vent.every && rest.island.vent.air === 30 && rest.island.vent.gone === 0 && rest.island.vent.before === 0 && rest.island.vent.after === 1 && rest.island.vent.moved && rest.island.vent.seabedTurns,
+check(rest.island.vent.every && rest.island.vent.air === 20 && rest.island.vent.gone === 0 && rest.island.vent.before === 0 && rest.island.vent.after === 1 && rest.island.vent.moved && rest.island.vent.seabedTurns,
   'every dive has an air vent; ten seconds after you take one, the next appears somewhere else; the seabed turns with you: ' + JSON.stringify(rest.island.vent));
 check(rest.chest.sounds.length === 0 && rest.chest.loop && rest.chest.beacon === 'ut_chest' && rest.chest.opens === 'evt_chest_open',
   'the chest calls with its own looping recording and opens with the chest opening; the four underwater strokes are in the packs ' + rest.chest.sounds.join(', '));
@@ -270,7 +270,7 @@ check(!rest.drive.turns && rest.drive.facing === 0 && !rest.drive.hold, 'Driving
     && !/fr[eo]z/i.test(during.r.text),
     'for thirty days the Update History opens with a region named Alert: turning, and compatibility between Windows and the web');
   check(before.r === null && after.r === null, 'it is not there before 5.0.0 came out, and it is gone after thirty days');
-  check(/^5\.1\.2 \(12 November 2026\), web only/.test(during.top), 'the Update History begins with 5.1.2 (web 5.1.2 came after 5.1.1): ' + during.top);
+  check(/^6\.0\.0 \(19 November 2026\)/.test(during.top), 'the Update History begins with 6.0.0 (it came after 5.1.2; 5.2.0 was never released): ' + during.top);
   await page.goto(base + '/help.html');
   const faq = await page.evaluate(() => ['faq-turning', 'faq-turning-lost', 'faq-turning-aim', 'faq-turning-walls', 'faq-turning-which', 'faq-turning-slide'].map((id) => { const h = document.getElementById(id); return h ? h.textContent : null; }));
   check(faq.every(Boolean), 'the frequently asked questions have six questions about turning: ' + faq.join(' | '));

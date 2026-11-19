@@ -1,0 +1,101 @@
+# Miss Prudence Quill, the librarian and keeper of records (library, cathedral). British.
+^Over here, please. Quietly, if you can.
+^Hello. This way, past the tall shelves.
+^Psst. Over here, by the reading desk.
+^Ah, a visitor. This way, please.
+^Over here. Mind the book cart.
+^Hello, walker. Follow my voice, softly.
+^This way, please. I've marked your place.
+^Over here. I've something set aside for you.
+^Good evening. By the window, if you please.
+^This way. The quiet will lead you.
+^Hello. Come in, and do keep your voice down.
+^Over here, please. I've been expecting you. It's in the records.
+<Walker, please come back. You haven't collected your gift.
+<Over here again. It's at the reading desk.
+<This way, please. Quietly.
+<You've left something behind. Back this way.
+<Please come back. I've kept it on the shelf for you.
+<Over here, walker. It's overdue, but it's yours.
+<This way again, past the tall shelves.
+<Come back, please. A gift should never go unclaimed.
++Here you are. Please handle it with care.
++For you. No need to return it.
++Take this, with the library's compliments.
++Here. Consider it on permanent loan.
+~I'm Prudence Quill. I keep the books, and the records, and the silence.
+~Shh. Thank you. Now, how can I help?
+~Every book in this library is in order. Every world. I make sure of it.
+~I read by candlelight. I've never needed to see the pages. The words come to me.
+~Please don't fold the corners of the pages. The books remember.
+~I've catalogued every book here. Twice. Some of them rearranged themselves, so I did it again.
+~The cathedral next door is very grand. I prefer it here. Grandness is noisy.
+~A library is a safe place. That's not just my opinion. It's true in every world.
+~If you're looking for a book on why the world keeps changing, it's on the top shelf. All of them. The whole top shelf.
+~I do love a good mystery. Which is just as well, given where we live.
+The world is a book, walker. Every rebuild, someone turns the page. And every page is a new world.
+I keep a record of every world I've seen. The record is very long, and every entry ends in the middle of a sentence.
+There's a book here whose pages rewrite themselves after every rebuild. I've read|past it a thousand times. It never says the same thing.
+This library holds a book about the first world. I've found it once. It was very short. Only one line. I've never found it again.
+I'm sure the world rebuilds for a reason. Everything happens for a reason, in a well written story. I just haven't reached that chapter.
+Every world, there's one new book on the shelves that I didn't put there. Always the same author. No name, just a little drawing of a door.
+The books in the top shelf whisper before a rebuild. Pages rustling, all at once. Like a great breath.
+The cathedral's records go back further than the world itself. There are entries for worlds before the first one. I can't explain that.
+Ambrose believes the world is music. Music is lovely, of course, but you can't look things up in it.
+There's a card catalogue drawer marked, answers. I've opened it a hundred times. It's always empty. But someone keeps relabelling it.
+I found a book that was all footnotes. No story, just footnotes. Each one explained a different reason why the world rebuilds. None agreed.
+Some say each safe place is a chapter heading. The labyrinths in between are the text. And you, walker, are the reader.
+I once tried to read the last page of the book of worlds. It was blank. Not torn out, just blank. Waiting to be written.
+The world rebuilds when the story stalls, they say. When nothing new can happen, it starts over. So perhaps it's waiting for something new.
+Every world, the library has one more shelf. I can never find where it was added. It's simply there, full of books.
+There's a reading room here that is always locked. I have the key. The key doesn't fit. Every world, I try anyway.
+The records say the first walker kept a diary. One page has been found, in a dozen worlds. It always says the same thing. Still listening.
+I have a theory. The world isn't being rebuilt. It's being read|past again. Each time, by a slightly different reader. You, perhaps.
+The candles in the cathedral flicker in the pattern of a sentence, I'm convinced. I've been taking it down for many worlds. So far, it reads, and then.
+Mister Pendle wanted to borrow the book on time. I lent it. Next world, it was back on the shelf, unread, with a train ticket inside.
+The enemies out there are like misprints, I think. Errors in the text. The world keeps trying to correct them.
+There's a map in the cathedral archive that shows every world at once, layered on top of each other. It's mostly ink. Very dark, very old ink.
+I'm told there's a library in every world, and it's always mine. But the books in it change. As though the world can't decide what I should read.
+The world's mercy is like finding an extra page in a book you thought you'd finished. A little more story. Unexpected, and very welcome.
+In the oldest book in the cathedral, there's a word that appears on every page. I can read every word in the book except that one.
+Some scholars believe the countdown is a reader closing the book. Five, four, three, two, one, and the cover shuts. Then it opens again. A different book.
+I file every rumour I hear under R. The R drawer won't close any more.
+The books here are bound in a leather that's warm to the touch. Every world, they're a little warmer. As if they're being read|past somewhere else, at the same time.
+There's a rule in this library. Never read the book on the bottom shelf, in the corner. I wrote that rule. I don't remember writing it, or why.
+I've noticed something in the records. The worlds are getting longer. Only by a moment or two. But longer. As if the world is learning to be patient.
+The cathedral has a register of everyone who has ever walked in. Your name is in it, many times. Some of the entries are dated in the future.
+A walker once asked me for a book on how it all ends. I looked for a whole world. When the countdown came, I found it. It was a book on how it all begins.
+They say the Builder wrote a guide to the world, and left it here. It's the one book I've never found. Perhaps they're still writing it.
+The ink in my pen runs dry precisely at each countdown. Every world, it's full again. Someone thinks my notes are important.
+Every library has a quiet. Mine has two. One is ordinary. The other is the quiet between worlds, which seeps in through the walls, very slightly.
+I keep a book of contradictions. Hazel says this, Mortimer says that. It's my thickest volume. Every rumour has its opposite, filed beside it.
+Prudence is a family name. The librarians before me were all called Prudence. I've seen the records. There have been a great many of us.
+Some believe the world rebuilds because it was written in pencil. Easy to rub out, easy to write again.
+The pages of the book of worlds are not numbered. I tried to number them once. When I came back, the numbers were all five.
+I've found letters tucked inside books, written to no one, signed by no one. They all ask the same question. Have you found it yet?
+The cathedral archive has a room with nothing in it but a reading stand and a single book, closed. No one is allowed to open it. No one remembers who said so. I opened it once, just a crack. The book was reading me, very politely. I closed it again.
+There's an index at the back of the oldest book. Under W, for world, it says, see also, again. Under A|letter, for again, it says, see also, world.
+I believe every story told in every safe place is true, in its own world. The trouble is, we only ever get to live in one of them at a time.
+When the world rebuilds, I always lose my place in whatever I'm reading. I've started using a bookmark. The bookmark always stays. The book changes.
+In the cathedral, there's an inscription above the door, too worn to read. I've traced it with my fingers a thousand times. I think the first word is welcome.
+I've noticed that walkers who ask more questions get more gifts. That may be a coincidence. It may also be in a book somewhere. I'll look it up.
+~Do mind the step by the reference section. It's been there since the first world. Still catches people out.
+~I recommend the poetry shelf. The poems rearrange themselves. You'll never read the same one twice.
+The library clock stopped in the first world and has never restarted. Pendle has offered to fix it. I've declined. It's the only still thing I have.
+There's a book here called, the reasons. It's very thick. Every reason in it is crossed out except the last one. The last page is missing.
+The library ladder rolls by itself sometimes, along the shelves. It always stops at the same book. A book with no title, only a little drawing of an ear.
+I believe the world's mercy is written in the margins of the book of worlds. A little note. Be kind to this one. Give them more time.
+The pages of old books rustle just before the countdown. All at once, like a flock of birds taking off. Then silence. Then a new library.
+Some readers think the world is the Builder's diary. Every world is a new entry. I'd love to read the first one. And the last.
+There's a reading lamp in the corner that's always lit. Nobody turns it on. Every world, there's an open book beneath it. Always on a different page.
+I catalogue rumours the way other people collect stamps. My favourite? That the world is a story being told to someone who keeps falling asleep.
+The cathedral's oldest record is a list of names. Every walker who ever came. The last line is blank, except for one word. Next.
+I've noticed every book in the library has the same last word, no matter the story. Again. Every single one.
+The silence in the cathedral and the silence in the library are different silences. One is waiting. The other is listening. I've never decided which is which.
+I found a library card in a book, with a borrowing date of the first world. The book was never returned. It was a book about how to stop the world.
+Mother Hazel borrowed a book once and returned it with a note. The note said, chapter seven is wrong. There is no chapter seven.
+The words in the cathedral's stained glass rearrange themselves every world. Last world they said, all things change. This world, all things remain.
+Every librarian before me left one line in the record book. The first one wrote, it began. The latest wrote, still going. I haven't written mine yet.
+I believe the world is not a single book, but a library. Every world is a different book. And you, walker, have been reading them all.
+The cathedral has a whispering gallery. Whisper on one side, and you're heard on the other. Once, I whispered, why? From the other side came, why not?
+The most important thing in any library, my dear, is not the books. It's the questions people bring to them. Bring yours. They're always welcome here.

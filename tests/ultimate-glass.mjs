@@ -415,7 +415,7 @@ const many = await page.evaluate(async () => {
     if (k === 'points' && !(only('points') && !compass && d.points === Math.round(CASE_POINTS * g._utMultiplier()) && u.worldPoints - b.wp === CASE_POINTS && said === `${d.points} points.`)) out.bad.push('points ' + JSON.stringify(d) + said);
     if (k === 'time' && !(only('time') && Math.abs(d.time - CASE_TIME) < 1e-6 && said === `${CASE_TIME} more seconds in this world.`)) out.bad.push('time ' + JSON.stringify(d) + said);
     if (k === 'items' && !(only('items') && d.items >= CASE_ITEMS[0] && d.items <= CASE_ITEMS[1] && said === `${d.items} tower items.`)) out.bad.push('items ' + JSON.stringify(d) + said);
-    if (k === 'health' && !(only('hp') && !full && d.hp === Math.min(CASE_HEALTH, START_HP - b.hp) && u.hp <= START_HP && said === `${d.hp} health.`)) out.bad.push('health ' + JSON.stringify(d) + said);
+    if (k === 'health' && !(only('hp') && d.hp === CASE_HEALTH && said === `${d.hp} health.`)) out.bad.push('health ' + JSON.stringify(d) + said);
     if (/\b(enem|chaser|hunter)/i.test(said)) out.bad.push('said who comes');
   }
   u.compass.on = false;

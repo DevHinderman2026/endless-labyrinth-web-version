@@ -74,19 +74,21 @@ const setup = await page.evaluate(async () => {
     generalKeys: general.filter((t) => /\b(Space|Enter|Escape|Braille|Windows|folder|GitHub)\b|Press /.test(t.desc.replace(/the spacebar|like Enter|the arrows, with the up arrow held down to accelerate, Enter, Space, Escape, P to pause, H for help, T for the clock and C for the compass in Ultimate Mode/g, ''))).map((t) => t.title),
   };
 });
-check(setup.menu.indexOf('Chaos Mode') === setup.menu.indexOf('Island Mode') + 1
-  // Ultimate Mode (web 2.0.0) follows Chaos; then Events, which reads "Events"
-  // or, while GitHub is still being asked, "Events: checking".
-  && setup.menu.indexOf('Ultimate Mode') === setup.menu.indexOf('Chaos Mode') + 1
-  && setup.menu.findIndex((m) => /^Events\b(?!.*High)/.test(m)) === setup.menu.indexOf('Chaos Mode') + 2, 'the main menu has Chaos Mode between Island and Ultimate Mode, then Events: ' + setup.menu.join(', '));
+// Web 6.0.0 (Russell): Chaos Mode is the very last mode on the menu, after Find the
+// Voice and Ultimate Mode, which come after Events and Event High Scores.
+check(setup.menu.indexOf('Find the Voice') === setup.menu.findIndex((m) => /^Event High Scores/.test(m)) + 1
+  && setup.menu.indexOf('Ultimate Mode') === setup.menu.indexOf('Find the Voice') + 1
+  && setup.menu.indexOf('Chaos Mode') === setup.menu.indexOf('Ultimate Mode') + 1
+  && setup.menu.indexOf('High Scores') === setup.menu.indexOf('Chaos Mode') + 1
+  && setup.menu.findIndex((m) => /^Events\b(?!.*High)/.test(m)) === setup.menu.indexOf('Island Mode') + 1, 'the main menu ends its modes with Find the Voice, Ultimate Mode and Chaos Mode: ' + setup.menu.join(', '));
 const lineAt = (k) => setup.lines.findIndex((l) => l.startsWith(k));
 check(lineAt('Chaos Mode') === 2 && lineAt('Tower Mode') === 3 && lineAt('Driving Mode') === 4 && lineAt('Driving Distance') === 5
   && lineAt('Island Mode') === 6 && setup.lines.includes('Chaos Mode: No score yet'), 'the boards in the desktop\'s order: ' + setup.lines.join(' | '));
-check(setup.names.indexOf('Chaos Mode') === setup.names.indexOf('Island Mode') + 1 && setup.names.indexOf('Events') === setup.names.indexOf('Chaos Mode') + 2
-  && setup.names.indexOf('Demos, Chaos Mode') === setup.names.indexOf('Demos, Island Mode') + 1, 'help has Chaos Mode and its demos in menu order');
+check(setup.names.indexOf('Find the Voice') > setup.names.indexOf('Events') && setup.names.indexOf('Ultimate Mode') > setup.names.indexOf('Find the Voice')
+  && setup.names.indexOf('Chaos Mode') > setup.names.indexOf('Ultimate Mode') && setup.names.indexOf('Demos, Chaos Mode') === setup.names.length - 1, 'help has Chaos Mode and its demos last, in menu order: ' + setup.names.join(' | '));
 check(setup.missing.length === 0, 'every chaos sound, its demos and the elevator\'s muffled drones are in the packs' + (setup.missing.length ? ': missing ' + setup.missing.join(', ') : ''));
 check(setup.keys.length === 0, 'no key names in the chaos help: ' + setup.keys.join(', '));
-check(JSON.stringify(setup.general) === JSON.stringify(['Help Menu', 'General Gestures', 'General Turning', 'General Sound on Your Device', 'General Room Reverb',
+check(JSON.stringify(setup.general) === JSON.stringify(['Help Menu', 'General Gestures', 'General Turning', 'General Sound on Your Device', 'General Headphones', 'General The Game\'s Voice', 'General Room Reverb',
   'General Behind You', 'General Pause and Resume', 'General Quitting a Run', 'General High Scores', 'General Checking Where You Stand', 'General The Soundtrack'])
   && setup.generalKeys.length === 0, 'General help: the desktop topics without Braille, with gestures: ' + setup.generalKeys.join(', '));
 

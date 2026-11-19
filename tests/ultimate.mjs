@@ -60,9 +60,11 @@ const setup = await page.evaluate(async () => {
     stats: Object.keys(g.scores.stats.time),
   };
 });
-check(setup.menu.indexOf('Ultimate Mode') === setup.menu.indexOf('Chaos Mode') + 1, 'main menu: Ultimate Mode right after Chaos: ' + setup.menu.join(', '));
-check(setup.names.indexOf('Ultimate Mode') === setup.names.indexOf('Chaos Mode') + 1 && setup.names.indexOf('Demos, Ultimate Mode') > setup.names.indexOf('Demos, Chaos Mode'), 'help sections in order: ' + setup.names.join(' | '));
-check(setup.topics === 19 && setup.demos === 25, `help: ${setup.topics} topics, ${setup.demos} demos`);
+// Web 6.0.0: Find the Voice, then Ultimate Mode, then Chaos Mode, the last mode.
+check(setup.menu.indexOf('Ultimate Mode') === setup.menu.indexOf('Find the Voice') + 1 && setup.menu.indexOf('Chaos Mode') === setup.menu.indexOf('Ultimate Mode') + 1, 'main menu: Ultimate Mode between Find the Voice and Chaos: ' + setup.menu.join(', '));
+check(setup.names.indexOf('Ultimate Mode') === setup.names.indexOf('Find the Voice') + 1 && setup.names.indexOf('Chaos Mode') === setup.names.indexOf('Ultimate Mode') + 1
+  && setup.names.indexOf('Demos, Ultimate Mode') === setup.names.indexOf('Demos, Find the Voice') + 1 && setup.names.indexOf('Demos, Chaos Mode') === setup.names.indexOf('Demos, Ultimate Mode') + 1, 'help sections in order: ' + setup.names.join(' | '));
+check(setup.topics === 20 && setup.demos === 25, `help: ${setup.topics} topics, ${setup.demos} demos`);
 check(setup.silentBeforeRun.length === 0, 'every demo plays before any run' + (setup.silentBeforeRun.length ? ': silent ' + setup.silentBeforeRun.join(', ') : ''));
 check(setup.missingBeforeRun.length === 0, 'every demo sound exists before any run, for Help from the main menu' + (setup.missingBeforeRun.length ? ': missing ' + setup.missingBeforeRun.join(', ') : ''));
 check(setup.missing.length === 0, 'every demo sound exists' + (setup.missing.length ? ': missing ' + setup.missing.join(', ') : ''));
@@ -139,7 +141,7 @@ check(w0.worldNo === 1 && w0.areas.length >= 5 && w0.areas.length <= 10, `world 
 check(w0.eventAreas >= 1, 'at least one event area (the safe zone)');
 check(w0.hp === 100 && w0.points === 0, 'starts with 100 health and no points');
 check(Number.isInteger(w0.ammo) && w0.ammo >= 8 && w0.ammo <= 12 && Number.isInteger(w0.items) && w0.items >= 2 && w0.items <= 4, `and with a few shots and a few tower items in hand, eight to twelve and two to four (web 3.3.0): ${w0.ammo} shots, ${w0.items} items`);
-check(w0.worldTime > 58 && w0.worldTime <= 240, `the first world lasts somewhere between one and four minutes (${w0.worldTime.toFixed(1)} left)`);
+check(w0.worldTime > 118 && w0.worldTime <= 300, `the first world lasts somewhere between two and five minutes (${w0.worldTime.toFixed(1)} left)`);
 check(w0.labsQuiet && w0.kindsRight, 'enemies only in battle, island and tower areas; throwers in tower areas only');
 check(w0.easyOk, `easy stretch: ${w0.enemies} enemies in ${w0.enemyAreas} enemy areas (one or two chasers in each battle or island area, one rival in each tower area): ` + JSON.stringify(w0.perArea));
 check(w0.farFromEnemies, 'no enemy within 10 units of the player at the start');
@@ -487,7 +489,7 @@ check(!regen.spoken.some((t) => /regenerat/i.test(t)), 'nothing is said about th
 check(regen.counts === 5, `Battle's countdown over the last five seconds (${regen.counts} beeps)`);
 check(regen.phases.includes('fading') && !regen.phases.includes('silence') && regen.phases.includes('fadein'), 'fade out, then the new world at once, no silence: ' + regen.phases.join(', '));
 check(regen.levels.some(([l, s]) => l === 0 && s === 2) && regen.levels.some(([l, s]) => l === 1 && s === 0.5), 'the world fades out over two seconds and the new one rises in half a second: ' + JSON.stringify(regen.levels));
-check(regen.worldTime > 59 && regen.worldTime <= 240 && Math.abs(regen.worldTime - regen.worldLen) < 1.5, `the next world's length is drawn afresh between one and four minutes (${regen.worldTime && regen.worldTime.toFixed(1)} of ${regen.worldLen && regen.worldLen.toFixed(1)})`);
+check(regen.worldTime > 119 && regen.worldTime <= 300 && Math.abs(regen.worldTime - regen.worldLen) < 1.5, `the next world's length is drawn afresh between two and five minutes (${regen.worldTime && regen.worldTime.toFixed(1)} of ${regen.worldLen && regen.worldLen.toFixed(1)})`);
 // Many worlds: the lengths vary, all within the range, and the status report never tells the time left.
 const lengths = await page.evaluate(async () => {
   const g = window.__el.game; const u = g.ut;
@@ -502,7 +504,7 @@ const lengths = await page.evaluate(async () => {
   }
   return out;
 });
-check(lengths.lens.every((l) => l >= 60 && l <= 240) && new Set(lengths.lens).size >= 5 && Math.max(...lengths.lens) - Math.min(...lengths.lens) > 30, 'world lengths are random within one to four minutes: ' + lengths.lens.join(', '));
+check(lengths.lens.every((l) => l >= 120 && l <= 300) && new Set(lengths.lens).size >= 5 && Math.max(...lengths.lens) - Math.min(...lengths.lens) > 30, 'world lengths are random within two to five minutes: ' + lengths.lens.join(', '));
 check(lengths.statusLeaks === 0, 'the status report does not tell how long the world has left');
 check(regen.atEnd && regen.atStart && regen.atEnd.hp === regen.atStart.hp && regen.atEnd.ammo === regen.atStart.ammo && regen.atStart.ammo === 7, 'health and ammo carry over: ' + JSON.stringify([regen.atEnd, regen.atStart]));
 check(Math.abs(regen.mult - (1 + 0.5 * regen.worlds)) < 1e-9, `the multiplier is now ${regen.mult} (${regen.worlds} worlds survived)`);

@@ -18,7 +18,7 @@ const EVENTS = path.join(desk, 'events');
 const TEMPLATES = path.join(desk, 'Developer Tools', 'templates');
 const API = 'https://api.github.com/repos/DevHinderman2026/Endless-Labyrinth/contents/events?ref=main';
 const RAW = 'https://raw.githubusercontent.com/DevHinderman2026/Endless-Labyrinth/main/events/';
-const NOW = new Date('2026-11-26T12:00:00Z');   // Call of Fate, Turkey Hunt and The Angry Papa are live
+const NOW = new Date('2026-11-26T12:00:00Z');   // seven are live: Call of Fate, Count the Chimes, Dungeon Keys, Pumpkin Hunt Second Addition, The Angry Papa, The Jewel Heist, Turkey Hunt
 
 let failures = 0;
 const check = (ok, what) => { console.log((ok ? 'PASS ' : 'FAIL ') + what); if (!ok) failures += 1; };
@@ -84,13 +84,17 @@ const feed = await page.evaluate(() => {
     from: f.clockFrom, now: f.internetNow(), label: window.__el.game._menuLabel('events') };
 });
 check(feed.online && feed.from === 'site' && Math.abs(feed.now - NOW / 1000) < 60, `the time comes from the site's Date header (${feed.from}, ${new Date(feed.now * 1000).toISOString()})`);
-check(JSON.stringify(feed.ids) === JSON.stringify(['call-of-fate-2026', 'pumpkin-hunt-2026', 'the-angry-papa-2026', 'the-music-box-2026', 'trapped-in-darkness-2026', 'turkey-hunt-2026-2']),
+// (6.0.0: the events published by 19 November 2026; the five changed for this release
+// are read once Russell has signed them.)
+check(JSON.stringify(feed.ids) === JSON.stringify(['call-of-fate-2026', 'christmas-presents-2026', 'count-the-chimes-2026', 'dungeon-keys-2026',
+  'pumpkin-hunt-2026', 'pumpkin-hunt-second-addition-2026-2', 'the-angry-papa-2026', 'the-jewel-heist-2026', 'the-music-box-2026',
+  'trapped-in-darkness-2026', 'turkey-hunt-2026-2']),
   'every published event is read: ' + feed.ids.join(', '));
 const refused = Object.fromEntries(feed.problems);
 check(/does not match/.test(refused['zz-altered.json'] || ''), 'an altered event is refused: ' + refused['zz-altered.json']);
 check(/not signed/.test(refused['zz-unsigned.json'] || ''), 'an unsigned event is refused');
 check(/does not match/.test(refused['zz-foreign.json'] || ''), "an event signed with another key is refused");
-check(feed.label === 'Events: 3 live', 'the main menu says ' + feed.label);
+check(feed.label === 'Events: 7 live', 'the main menu says ' + feed.label);
 
 const checks = await page.evaluate(async ({ texts }) => {
   const { trusted } = await import('./js/modes/events/feed.js');
@@ -189,7 +193,7 @@ async function chooseEvent(id) {
 
 // ------------------------------------------------------------ The Angry Papa: collect all 25, from the menu
 let r = await chooseEvent('the-angry-papa-2026');
-check(/^Events\. 3 live\. /.test(r.opened), 'the Events menu opens: ' + r.opened.slice(0, 120));
+check(/^Events\. 7 live\. /.test(r.opened), 'the Events menu opens: ' + r.opened.slice(0, 120));
 check(r.state === 'event' && r.ev === 'the-angry-papa-2026' && r.room === 'lab', `a double tap starts The Angry Papa in its room (${r.room})`);
 r = await play(`
   const t = G.evItems.slice().sort((a, b) => Math.hypot(a.x - G.playerPos[0], a.y - G.playerPos[1]) - Math.hypot(b.x - G.playerPos[0], b.y - G.playerPos[1]))[0];

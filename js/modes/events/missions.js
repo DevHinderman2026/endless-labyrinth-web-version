@@ -8,7 +8,7 @@
 import { Thing } from './engine.js';
 import { addLazy, fromBuffer, pitch } from './sounds.js';
 import { uniform, randint, randrange, choice, sample, shuffle, random, range } from './py.js';
-import { pyRound } from './schema.js';
+import { pyRound, saysLives } from './schema.js';
 
 const STEP = 3.0;                 // one step, in the game's units
 const REACH = 3.0;                // how close counts as reaching something
@@ -678,7 +678,7 @@ export const MissionsMixin = {
           this.mRoundsDone += 1;
           if (this._bEndingReached(this.mRoundsDone)) return true;      // web 5.0.0: the run's last one, by its ending (blocks.js)
           this.mRound += 1;
-          this.audio.play('stairs_climb');
+          this._evClimb();
           this._mOrderRound();
         }
         return false;
@@ -724,7 +724,7 @@ export const MissionsMixin = {
       this.mRoomsDone += 1;
       if (this._bEndingReached(this.mRoomsDone)) return true;      // web 5.0.0: the run's last one, by its ending (blocks.js)
       this.mRoom += 1;
-      this.audio.play('stairs_climb');
+      this._evClimb();
       this._mEscapeRoom();
     }
     return false;
@@ -829,7 +829,7 @@ export const MissionsMixin = {
           this.evPoints += me.points_per_round;
           this.mRoundsDone += 1;
           if (this._bEndingReached(this.mRoundsDone)) return true;      // web 5.0.0: the run's last one, by its ending (blocks.js)
-          this.audio.play('stairs_climb');
+          this._evClimb();
           if (this.mTune.length < me.longest) this.mTune.push(randrange(this.mPads.length));
           this._mMemoryPlay();
         }
@@ -895,7 +895,7 @@ export const MissionsMixin = {
           this.mRoundsDone += 1;
           if (this._bEndingReached(this.mRoundsDone)) return true;      // web 5.0.0: the run's last one, by its ending (blocks.js)
           this.mRound += 1;
-          this.audio.play('stairs_climb');
+          this._evClimb();
           this._mPairsRound();
         }
       } else {
@@ -994,6 +994,7 @@ export const MissionsMixin = {
     const df = this.ev.defend;
     this._mLevel(this.mTreasure, 1.0);
     for (const th of this.evHazards) {
+      if (th.kind || th.role) continue;     // (6.0.0 fix) only the treasure's own raiders take its lives
       if (th.downFor >= 0) {
         if (th.downFor >= df.respawn_seconds) this._mDefendRespawn(th);
         continue;
@@ -1114,6 +1115,9 @@ export const MissionsMixin = {
   // A creature has reached you. True if the mission deals with it itself.
   mTouchHandled(th) {
     const m = this.ev ? this.ev.mission : null;
+    // (6.0.0 fix) Only the mission's own creatures (the first kind): a second or third
+    // kind, or a chaser, touches by the event's own rule.
+    if (th.kind || th.role) return false;
     if (m === 'defend') return true;
     if (m === 'sneak' && this.mGuardAsleep()) { this._mSneakWake(); return true; }
     return false;
@@ -1467,7 +1471,9 @@ export const MissionsMixin = {
       if (this._mReached(this.mKey, it.volume)) {
         this._mStop(this.mKey);
         this.mHasKey = true;
-        this.audio.play(this.audio.has('key_pickup') ? 'key_pickup' : this.evPickup);
+        // (6.0.0 fix) the event's own recording for a pickup, when it names one (a door
+        // unlocking, say); else the Island key pickup, as before.
+        this.audio.play(it.pickup_file ? this.evPickup : (this.audio.has('key_pickup') ? 'key_pickup' : this.evPickup));
         this.mExit.channel = this.audio.play(this.mDoorSound, { loops: -1, volume: 0.0 });
       }
       return false;
@@ -1477,7 +1483,7 @@ export const MissionsMixin = {
       this.mRoomsDone += 1;
       if (this._bEndingReached(this.mRoomsDone)) return true;      // web 5.0.0: the run's last one, by its ending (blocks.js)
       this.mRoom += 1;
-      this.audio.play('stairs_climb');
+      this._evClimb();
       this._mKeysRoom();
     }
     return false;
@@ -1886,7 +1892,7 @@ export const MissionsMixin = {
       return null;
     }
     if (ev.weapon.enabled && m !== 'hunt') msg += ' ' + this.evShotsWords();
-    if (ev.hazards.on_touch === 'end_run' && ev.hazards.lives > 1 && this.evHazards.length) {
+    if (this._evSaysLives()) {
       const lv = this.evLives === undefined ? 1 : this.evLives;
       msg += ` ${lv} ${li(lv)} left`;
       // The mission has lives of its own, said above: tell the two apart.
@@ -1933,14 +1939,14 @@ export const MissionsMixin = {
       case 'catch': return `You caught ${this.evCollected} ${word(this.evCollected)} for ${P(total)}. `;
       case 'relay': return `You reached ${this.mCheckpoints} checkpoint${ss(this.mCheckpoints)} for ${P(total)}. `;
       case 'follow': return `You stayed with the guide for ${Math.trunc(this.mWith)} seconds, for ${P(total)}. `;
-      case 'hunt': { const n = this.evDowns || 0; return `You brought down ${n} ${ev.hazards.name}${ss(n)} for ${P(total)}. `; }
+      case 'hunt': return `You brought down ${this._evDownsWords()} for ${P(total)}. `;
       case 'seek': return `You found ${this.evCollected} ${word(this.evCollected)} with ${this.mPingsUsed} ping${ss(this.mPingsUsed)}, for ${P(total)}. `;
       case 'order': return `You finished ${this.mRoundsDone} round${ss(this.mRoundsDone)} for ${P(total)}. `;
       case 'memory': return `You played back ${this.mRoundsDone} tune${ss(this.mRoundsDone)} for ${P(total)}. `;
       case 'pairs': return `You found ${this.evCollected} pair${ss(this.evCollected)} for ${P(total)}. `;
       case 'detector': return `You dug up ${this.evCollected} ${word(this.evCollected)} for ${P(total)}. `;
       case 'dodge': return `You dodged ${this.mDodged} for ${P(total)}. `;
-      case 'defend': { const n = this.evDowns || 0; return `You brought down ${n} ${ev.hazards.name}${ss(n)} for ${P(total)}. `; }
+      case 'defend': return `You brought down ${this._evDownsWords()} for ${P(total)}. `;
       case 'sneak': return `You took ${this.evCollected} ${word(this.evCollected)} for ${P(total)}. `;
       case 'bomb': return `You defused ${this.mDefused} bomb${ss(this.mDefused)} for ${P(total)}. `;
       case 'rescue': return `You rescued ${this.evCollected} ${word(this.evCollected)} for ${P(total)}. `;

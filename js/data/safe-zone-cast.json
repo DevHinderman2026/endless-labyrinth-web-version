@@ -1,0 +1,507 @@
+{
+ "format": 1,
+ "built": "web 6.0.0",
+ "about": "Ultimate Mode safe zone characters. Every safe zone background (evt_amb_ name) has exactly one character; each character has its own Kokoro voice. accent gb means the line phonemes are in Misaki British notation (Kokoro lang code b); us means American (lang code a).",
+ "groups": [
+  {
+   "id": "spooky",
+   "name": "Spooky",
+   "backgrounds": [
+    "evt_amb_witch",
+    "evt_amb_graveyard",
+    "evt_amb_ghost_choir",
+    "evt_amb_haunted_house",
+    "evt_amb_haunted_space",
+    "evt_amb_halloween_strings",
+    "evt_amb_spooky"
+   ]
+  },
+  {
+   "id": "towns",
+   "name": "Towns and travel",
+   "backgrounds": [
+    "evt_amb_medieval_village",
+    "evt_amb_market",
+    "evt_amb_tavern",
+    "evt_amb_city_night",
+    "evt_amb_train_station",
+    "evt_amb_clock"
+   ]
+  },
+  {
+   "id": "kitchens",
+   "name": "Kitchens and food",
+   "backgrounds": [
+    "evt_amb_kitchen",
+    "evt_amb_restaurant_kitchen",
+    "evt_amb_sizzling_oil",
+    "evt_amb_cafe",
+    "evt_amb_fast_food"
+   ]
+  },
+  {
+   "id": "fire",
+   "name": "Fire and hearth",
+   "backgrounds": [
+    "evt_amb_campfire",
+    "evt_amb_fireplace",
+    "evt_amb_lava",
+    "evt_amb_fireworks"
+   ]
+  },
+  {
+   "id": "holy",
+   "name": "Holy and quiet places",
+   "backgrounds": [
+    "evt_amb_cathedral_organ",
+    "evt_amb_organ",
+    "evt_amb_dark_choir",
+    "evt_amb_library",
+    "evt_amb_cathedral"
+   ]
+  },
+  {
+   "id": "water",
+   "name": "Water",
+   "backgrounds": [
+    "evt_amb_ocean_night",
+    "evt_amb_ship_creak",
+    "evt_amb_underwater",
+    "evt_amb_river",
+    "evt_amb_waterfall",
+    "evt_amb_rain",
+    "evt_amb_marsh_frogs",
+    "evt_amb_water_drip",
+    "evt_amb_cave_drips"
+   ]
+  },
+  {
+   "id": "wild",
+   "name": "Wild nature",
+   "backgrounds": [
+    "evt_amb_forest_night",
+    "evt_amb_crickets",
+    "evt_amb_jungle",
+    "evt_amb_cicadas",
+    "evt_amb_morning_birds",
+    "evt_amb_spring_birds",
+    "evt_amb_bees",
+    "evt_amb_summer",
+    "evt_amb_wind_trees",
+    "evt_amb_desert"
+   ]
+  },
+  {
+   "id": "cold",
+   "name": "Cold and storms, machines and space",
+   "backgrounds": [
+    "evt_amb_blizzard",
+    "evt_amb_ice_cave",
+    "evt_amb_winter_wind",
+    "evt_amb_howling_wind",
+    "evt_amb_storm",
+    "evt_amb_industrial",
+    "evt_amb_space",
+    "evt_amb_spaceship"
+   ]
+  }
+ ],
+ "characters": [
+  {
+   "id": "witch",
+   "name": "Mother Hazel",
+   "voice": "af_nicole",
+   "accent": "us",
+   "lang": "en-us",
+   "group": "spooky",
+   "backgrounds": [
+    "evt_amb_witch"
+   ],
+   "personality": "A kindly, mischievous old witch who speaks in riddles, brews the potions and changes her mind about everything."
+  },
+  {
+   "id": "gravekeeper",
+   "name": "Mortimer",
+   "voice": "am_echo",
+   "accent": "us",
+   "lang": "en-us",
+   "group": "spooky",
+   "backgrounds": [
+    "evt_amb_graveyard",
+    "evt_amb_ghost_choir"
+   ],
+   "personality": "A gentle, patient gravekeeper who rakes leaves, talks to headstones and thinks the world is a garden."
+  },
+  {
+   "id": "ghost",
+   "name": "Pell",
+   "voice": "af_sky",
+   "accent": "us",
+   "lang": "en-us",
+   "group": "spooky",
+   "backgrounds": [
+    "evt_amb_haunted_house",
+    "evt_amb_haunted_space"
+   ],
+   "personality": "A cheerful little ghost girl who claims she remembers every world and is looking for her own front door."
+  },
+  {
+   "id": "fiddler",
+   "name": "Jangles",
+   "voice": "am_puck",
+   "accent": "us",
+   "lang": "en-us",
+   "group": "spooky",
+   "backgrounds": [
+    "evt_amb_halloween_strings",
+    "evt_amb_spooky"
+   ],
+   "personality": "A joking skeleton fiddler who is sure the world is a song that keeps going back to the top."
+  },
+  {
+   "id": "merchant",
+   "name": "Marigold",
+   "voice": "bf_emma",
+   "accent": "gb",
+   "lang": "en-gb",
+   "group": "towns",
+   "backgrounds": [
+    "evt_amb_medieval_village",
+    "evt_amb_market"
+   ],
+   "personality": "A chatty village market trader who sells apples, candles and, above all, rumours."
+  },
+  {
+   "id": "watchman",
+   "name": "Tobias",
+   "voice": "bm_george",
+   "accent": "gb",
+   "lang": "en-gb",
+   "group": "towns",
+   "backgrounds": [
+    "evt_amb_tavern",
+    "evt_amb_city_night"
+   ],
+   "personality": "A steady old night watchman who keeps the lamps lit, pours cocoa and writes everything odd in his logbook."
+  },
+  {
+   "id": "clockmaker",
+   "name": "Mister Pendle",
+   "voice": "bm_fable",
+   "accent": "gb",
+   "lang": "en-gb",
+   "group": "towns",
+   "backgrounds": [
+    "evt_amb_train_station",
+    "evt_amb_clock"
+   ],
+   "personality": "A fussy, precise clockmaker and station master who times every rebuild and hates surprises."
+  },
+  {
+   "id": "chef",
+   "name": "Chef Rosalind",
+   "voice": "af_sarah",
+   "accent": "us",
+   "lang": "en-us",
+   "group": "kitchens",
+   "backgrounds": [
+    "evt_amb_kitchen",
+    "evt_amb_restaurant_kitchen",
+    "evt_amb_sizzling_oil"
+   ],
+   "personality": "A warm, bossy chef who thinks the world is a recipe somebody keeps tasting and starting again."
+  },
+  {
+   "id": "barista",
+   "name": "Juniper",
+   "voice": "af_jessica",
+   "accent": "us",
+   "lang": "en-us",
+   "group": "kitchens",
+   "backgrounds": [
+    "evt_amb_cafe",
+    "evt_amb_fast_food"
+   ],
+   "personality": "A bubbly young counter worker who collects her regulars' theories on napkins."
+  },
+  {
+   "id": "storyteller",
+   "name": "Grandpa Hollis",
+   "voice": "am_santa",
+   "accent": "us",
+   "lang": "en-us",
+   "group": "fire",
+   "backgrounds": [
+    "evt_amb_campfire",
+    "evt_amb_fireplace"
+   ],
+   "personality": "A jolly old storyteller by the fire whose every legend has several versions."
+  },
+  {
+   "id": "cinder",
+   "name": "Cinder",
+   "voice": "am_fenrir",
+   "accent": "us",
+   "lang": "en-us",
+   "group": "fire",
+   "backgrounds": [
+    "evt_amb_lava",
+    "evt_amb_fireworks"
+   ],
+   "personality": "A gruff, loud fireworks maker who takes his fire from the lava and believes the world is forged."
+  },
+  {
+   "id": "organist",
+   "name": "Ambrose",
+   "voice": "bm_daniel",
+   "accent": "gb",
+   "lang": "en-gb",
+   "group": "holy",
+   "backgrounds": [
+    "evt_amb_cathedral_organ",
+    "evt_amb_organ",
+    "evt_amb_dark_choir"
+   ],
+   "personality": "A calm, gentle organist who hears the world as unfinished music."
+  },
+  {
+   "id": "librarian",
+   "name": "Prudence Quill",
+   "voice": "bf_alice",
+   "accent": "gb",
+   "lang": "en-gb",
+   "group": "holy",
+   "backgrounds": [
+    "evt_amb_library",
+    "evt_amb_cathedral"
+   ],
+   "personality": "A prim, quiet librarian and keeper of records who thinks the world is a book being read again."
+  },
+  {
+   "id": "captain",
+   "name": "Captain Brine",
+   "voice": "am_onyx",
+   "accent": "us",
+   "lang": "en-us",
+   "group": "water",
+   "backgrounds": [
+    "evt_amb_ocean_night",
+    "evt_amb_ship_creak",
+    "evt_amb_underwater"
+   ],
+   "personality": "A deep voiced old sea captain full of sea stories, sure something under the sea keeps count."
+  },
+  {
+   "id": "ferry",
+   "name": "Willa",
+   "voice": "af_river",
+   "accent": "us",
+   "lang": "en-us",
+   "group": "water",
+   "backgrounds": [
+    "evt_amb_river",
+    "evt_amb_waterfall"
+   ],
+   "personality": "A friendly river ferry keeper who collects things that float down from old worlds."
+  },
+  {
+   "id": "marsh",
+   "name": "Fennick",
+   "voice": "am_liam",
+   "accent": "us",
+   "lang": "en-us",
+   "group": "water",
+   "backgrounds": [
+    "evt_amb_rain",
+    "evt_amb_marsh_frogs"
+   ],
+   "personality": "An eager young marsh warden who loves rain and frogs, especially a frog called Admiral."
+  },
+  {
+   "id": "caver",
+   "name": "Petra",
+   "voice": "af_kore",
+   "accent": "us",
+   "lang": "en-us",
+   "group": "water",
+   "backgrounds": [
+    "evt_amb_water_drip",
+    "evt_amb_cave_drips"
+   ],
+   "personality": "A careful, quiet cave explorer who counts drips and believes the world is built from the bottom up."
+  },
+  {
+   "id": "ranger",
+   "name": "Rowan",
+   "voice": "am_adam",
+   "accent": "us",
+   "lang": "en-us",
+   "group": "wild",
+   "backgrounds": [
+    "evt_amb_forest_night",
+    "evt_amb_crickets"
+   ],
+   "personality": "A calm forest ranger who reads the trees and the crickets."
+  },
+  {
+   "id": "explorer",
+   "name": "Ivy",
+   "voice": "af_aoede",
+   "accent": "us",
+   "lang": "en-us",
+   "group": "wild",
+   "backgrounds": [
+    "evt_amb_jungle",
+    "evt_amb_cicadas"
+   ],
+   "personality": "An excitable jungle explorer who has searched a hundred worlds for the edge of the map."
+  },
+  {
+   "id": "birdwatcher",
+   "name": "Wren",
+   "voice": "bf_lily",
+   "accent": "gb",
+   "lang": "en-gb",
+   "group": "wild",
+   "backgrounds": [
+    "evt_amb_morning_birds",
+    "evt_amb_spring_birds"
+   ],
+   "personality": "A bright young bird watcher who is sure the birds know the answer and sing it too fast."
+  },
+  {
+   "id": "beekeeper",
+   "name": "Clover",
+   "voice": "af_alloy",
+   "accent": "us",
+   "lang": "en-us",
+   "group": "wild",
+   "backgrounds": [
+    "evt_amb_bees",
+    "evt_amb_summer"
+   ],
+   "personality": "A sunny beekeeper who calls everyone sugar and trusts her bees to find their way home."
+  },
+  {
+   "id": "wanderer",
+   "name": "Sol",
+   "voice": "am_michael",
+   "accent": "us",
+   "lang": "en-us",
+   "group": "wild",
+   "backgrounds": [
+    "evt_amb_wind_trees",
+    "evt_amb_desert"
+   ],
+   "personality": "A slow, thoughtful wanderer who has walked to the edge of the world and found more road."
+  },
+  {
+   "id": "icelady",
+   "name": "Lady Rime",
+   "voice": "bf_isabella",
+   "accent": "gb",
+   "lang": "en-gb",
+   "group": "cold",
+   "backgrounds": [
+    "evt_amb_blizzard",
+    "evt_amb_ice_cave"
+   ],
+   "personality": "A cool, elegant lady of the ice who keeps frozen pieces of old worlds."
+  },
+  {
+   "id": "mountain",
+   "name": "Corbin",
+   "voice": "bm_lewis",
+   "accent": "gb",
+   "lang": "en-gb",
+   "group": "cold",
+   "backgrounds": [
+    "evt_amb_winter_wind",
+    "evt_amb_howling_wind"
+   ],
+   "personality": "A gruff, kind mountain shepherd who thinks the wind is the world breathing."
+  },
+  {
+   "id": "engineer",
+   "name": "Mister Sprocket",
+   "voice": "am_eric",
+   "accent": "us",
+   "lang": "en-us",
+   "group": "cold",
+   "backgrounds": [
+    "evt_amb_storm",
+    "evt_amb_industrial"
+   ],
+   "personality": "An enthusiastic inventor who collects lightning and is certain the world is a machine."
+  },
+  {
+   "id": "astronaut",
+   "name": "Commander Vega",
+   "voice": "af_nova",
+   "accent": "us",
+   "lang": "en-us",
+   "group": "cold",
+   "backgrounds": [
+    "evt_amb_space",
+    "evt_amb_spaceship"
+   ],
+   "personality": "A cheerful space commander who watches the world from orbit and calls you cadet."
+  }
+ ],
+ "backgroundToCharacter": {
+  "evt_amb_bees": "beekeeper",
+  "evt_amb_blizzard": "icelady",
+  "evt_amb_cafe": "barista",
+  "evt_amb_campfire": "storyteller",
+  "evt_amb_cathedral": "librarian",
+  "evt_amb_cathedral_organ": "organist",
+  "evt_amb_cave_drips": "caver",
+  "evt_amb_cicadas": "explorer",
+  "evt_amb_city_night": "watchman",
+  "evt_amb_clock": "clockmaker",
+  "evt_amb_crickets": "ranger",
+  "evt_amb_dark_choir": "organist",
+  "evt_amb_desert": "wanderer",
+  "evt_amb_fast_food": "barista",
+  "evt_amb_fireplace": "storyteller",
+  "evt_amb_fireworks": "cinder",
+  "evt_amb_forest_night": "ranger",
+  "evt_amb_ghost_choir": "gravekeeper",
+  "evt_amb_graveyard": "gravekeeper",
+  "evt_amb_halloween_strings": "fiddler",
+  "evt_amb_haunted_house": "ghost",
+  "evt_amb_haunted_space": "ghost",
+  "evt_amb_howling_wind": "mountain",
+  "evt_amb_ice_cave": "icelady",
+  "evt_amb_industrial": "engineer",
+  "evt_amb_jungle": "explorer",
+  "evt_amb_kitchen": "chef",
+  "evt_amb_lava": "cinder",
+  "evt_amb_library": "librarian",
+  "evt_amb_market": "merchant",
+  "evt_amb_marsh_frogs": "marsh",
+  "evt_amb_medieval_village": "merchant",
+  "evt_amb_morning_birds": "birdwatcher",
+  "evt_amb_ocean_night": "captain",
+  "evt_amb_organ": "organist",
+  "evt_amb_rain": "marsh",
+  "evt_amb_restaurant_kitchen": "chef",
+  "evt_amb_river": "ferry",
+  "evt_amb_ship_creak": "captain",
+  "evt_amb_sizzling_oil": "chef",
+  "evt_amb_space": "astronaut",
+  "evt_amb_spaceship": "astronaut",
+  "evt_amb_spooky": "fiddler",
+  "evt_amb_spring_birds": "birdwatcher",
+  "evt_amb_storm": "engineer",
+  "evt_amb_summer": "beekeeper",
+  "evt_amb_tavern": "watchman",
+  "evt_amb_train_station": "clockmaker",
+  "evt_amb_underwater": "captain",
+  "evt_amb_water_drip": "caver",
+  "evt_amb_waterfall": "ferry",
+  "evt_amb_wind_trees": "wanderer",
+  "evt_amb_winter_wind": "mountain",
+  "evt_amb_witch": "witch"
+ }
+}

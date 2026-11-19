@@ -14,9 +14,9 @@
 // methods `this` is the game. A square is kept as the text 'i,j'.
 
 import { kinds, levelsOn, endingApplies, DEFAULT_SOUNDS, CASE_MISSIONS, FRAGMENT_MISSIONS, ALWAYS_LEVELS,
-  FLOOR_FILES, pyRound } from './schema.js';
+  FLOOR_FILES, pyRound, smashExit, floorStepFiles, QUIET_FLOORS } from './schema.js';
 import { addMade } from './sounds.js';
-import { uniform, randint, randrange, choice, random, shuffle } from './py.js';
+import { uniform, randint, randrange, choice, choices, random, shuffle } from './py.js';
 import * as tunes from './tunes.js';
 import { MORE } from './more-spec.js';
 
@@ -45,7 +45,7 @@ const SUCCESS = ['all', 'finished', 'all_down', 'survived', 'covered', 'rival_en
 // The game's own footsteps, and the web's own recordings for glass and water (the
 // ultimate pack's), used where the events pack has none under the desktop's names.
 const STONE = ['step_stone_1', 'step_stone_2', 'step_stone_3', 'step_stone_4'];
-const WEB_STEPS = { sand: 'step_sand_', glass: 'ut_glass_step_', water: 'ut_water_step_' };
+const WEB_STEPS = { sand: 'step_sand_', glass: 'ut_glass_step_', water: 'ut_water_step_', swim: 'ut_dive_stroke_' };
 
 export const cellOf = (x, y) => [pyRound(x / STEP), pyRound(y / STEP)];
 const K = (i, j) => i + ',' + j;
@@ -98,6 +98,9 @@ export const BlocksMixin = {
     this.bRoomsDone = 0;
     this.bShelter = null; this.bStormLeft = 0.0; this.bStormFull = 1.0; this.bStormFrom = [0, -1]; this.bThunder = 0.0;
     this.bShelters = 0;
+    this.bExit = null; this.bExitOpen = false; this.bExitBumped = false;    // 6.0.0: Smash and grab's exit
+    this.bChaserSounds = null;
+    this.bSmashed = 0;          // (6.0.0 review fix) cases smashed, apart from items picked up off the floor
   },
 
   // The event a run plays. An event in stages plays the stage it has reached; an
@@ -108,6 +111,7 @@ export const BlocksMixin = {
       this.bStageBase = stages.length ? ev : null;
       this.bStage = 0;
       this.bElapsedBefore = 0.0;
+      this.bCollectedBefore = 0;
     }
     if (stages.length) {
       const base = this.bStageBase;
@@ -151,7 +155,7 @@ export const BlocksMixin = {
     for (const floor of new Set([fl.main, fl.patch, 'glass', 'sand'])) {
       if (floor === 'stone' || floor === 'none') continue;
       let bank = [];
-      if (FLOOR_FILES.includes(floor)) bank = [1, 2, 3, 4].map((i) => this._bRec(`step_${floor}_${i}.ogg`, 'step')).filter((n) => n);
+      if (FLOOR_FILES.includes(floor)) bank = floorStepFiles(floor).map((f) => this._bRec(f, 'step')).filter((n) => n);
       if (!bank.length && WEB_STEPS[floor]) bank = [1, 2, 3, 4].map((i) => WEB_STEPS[floor] + i).filter(has);
       this.bBanks[floor] = bank.length ? bank : STONE;
     }
@@ -171,7 +175,15 @@ export const BlocksMixin = {
       stone: this._bRec(ev.lure.stone_sound, 'beacon') || 'event_pad',
       shelter: this._bRec(ev.storm.shelter_sound, 'beacon') || 'event_beacon_shimmer',
       thunder: pick(ev.storm.thunder_sound, d.thunder, 'explosion'),
+      // 6.0.0: a Smash and grab exit, and the sound of its lock opening.
+      exit: ev.cases.exit_sound === 'exit_morse' ? 'exit_morse' : (this._bRec(ev.cases.exit_sound, 'beacon') || 'exit_morse'),
+      unlock: this._bRec(d.exit_unlock, 'pickup') || 'event_checkpoint',
     };
+    const cs = ev.chasers;
+    // 6.0.0: chasers with their own sound (a ghost, say), not a battle enemy's.
+    if (cs.own && cs.sound !== 'enemy') {
+      this.bChaserSounds = cs.sound === 'guardian' ? ['guardian'] : [this._bRec(cs.sound, 'beacon_hazard') || 'guardian'];
+    }
     if (!has('event_case_knock')) {
       try { addMade(this.audio, 'event_case_knock', knockSound()); } catch (e) { /* the hum and the bell still tell */ }
     }
@@ -289,7 +301,8 @@ export const BlocksMixin = {
   // player one more step the same way, unless a wall or the edge of the room is
   // there. One slide a step, never a second.
   _bAfterStep() {
-    if (this.bSliding || !this.ev || this.state !== 'event') return;
+    // (6.0.0 fix) no sliding on into the next level during the climb
+    if (this.bSliding || !this.ev || this.state !== 'event' || this.evClimbHold > 0) return;
     if (this._bFloorAt() !== 'ice') return;
     const [dx, dy] = this.evLastStep || [0, -1];
     const nx = this.playerPos[0] + dx * STEP; const ny = this.playerPos[1] + dy * STEP;
@@ -370,7 +383,7 @@ export const BlocksMixin = {
   // Where the blocks' own things lie, so nothing else is laid out on them.
   _bTaken() {
     return [...this.bTraps, ...this.bSafes, ...this.bPorts, ...this.bChests, ...this.bSupplies, ...this.bRefills,
-      ...this.bStones, ...(this.bShelter ? [this.bShelter] : [])].map((t) => [t.x, t.y]);
+      ...this.bStones, ...(this.bShelter ? [this.bShelter] : []), ...(this.bExit ? [this.bExit] : [])].map((t) => [t.x, t.y]);
   },
 
   // [x, y, radius] where nothing new may be laid out: in front of a creature that
@@ -406,7 +419,9 @@ export const BlocksMixin = {
     const n = randint(lv.items_fewest, Math.max(lv.items_fewest, lv.items_most));
     this.evSpawned = this.evCollected;
     it.total = this.evCollected + n; it.total_max = 0;
-    if (ALWAYS_LEVELS.includes(ev.mission)) it.at_once = Math.min(10, n);   // every one of a level's memories is out at once
+    // Every one of a level's memories is out at once; and (6.0.0) every case of a Smash
+    // and grab room with an exit, since the exit opens once all are smashed.
+    if (ALWAYS_LEVELS.includes(ev.mission) || smashExit(ev)) it.at_once = Math.min(10, n);
   },
 
   // Said without cutting off what is being said: a reward and the level it finished are both heard.
@@ -423,22 +438,44 @@ export const BlocksMixin = {
   // event's own line for that level if it has one.
   _bSayLevel(n, word = 'Level') { this._bSay(`${word} ${n}. ${this._bStoryLine(n - 1)}`); },
 
+  // New walls (6.0.0 fix): whatever still lies about from the last level (lure stones,
+  // meter refills, supplies, time credits) and now has a wall on it is put somewhere
+  // open, or it could never be reached again.
+  _bUnwallThings() {
+    const walls = this.bWalls;
+    if (!walls || !walls.size) return;
+    for (const th of [...(this.bSupplies || []), ...(this.bRefills || []), ...(this.bStones || []),
+      ...(this.evCredits || [])]) {
+      if (walls.has(K(...cellOf(th.x, th.y)))) [th.x, th.y] = this._eventSpot(9.0, 0);
+    }
+  },
+
   _bNextLevel() {
     const ev = this.ev;
     this.bLevel += 1;
     this._bClearThings();
     const glass = new Set(this.bGlassExtra);
     this._bLayRoom();
+    this._bUnwallThings();
     // The glass of the cases already smashed stays where it lies, as long as no wall
     // of the new level stands on it.
     this.bGlassExtra = new Set([...glass].filter((k) => !this.bWalls.has(k)));
     if (ev.mission === 'song') this._bNewTune();
     this._bLevelItems();
     this._bLevelCreatures(ev.levels.more_creatures_each);
+    if (smashExit(ev)) this._bNewExit();      // 6.0.0: first, so nothing is laid out on it
     this._bLayThings();
     for (let i = 0; i < Math.max(1, ev.item.at_once); i++) this._eventSpawnItem();
-    this.audio.play('stairs_climb');
+    this._evClimb();
     this._bSayLevel(this.bLevel);
+  },
+
+  // 6.0.0: a Smash and grab room's exit. Heard from the start, but locked until every
+  // case in the room is smashed; then walking onto it leads to the next room.
+  _bNewExit() {
+    this._mStop(this.bExit);
+    this.bExit = this._bLoop(new this._Thing(...this._eventSpot(30.0, 0)), this.bSnd.exit);
+    this.bExitOpen = false; this.bExitBumped = false;
   },
 
   // A new level: the chasers of the last are gone, every other creature is put
@@ -471,6 +508,13 @@ export const BlocksMixin = {
   // begins, or the next stage.
   _bInterceptFinish(reason) {
     if (!this.ev) return false;
+    if (reason === 'all' && this.bLevels && smashExit(this.ev) && !this.bExitOpen) {
+      // 6.0.0: the room's last case is smashed. The exit opens; the next room begins
+      // only when the player walks out through it.
+      this.bExitOpen = true;
+      if (this.bExit) this._bShotAt(this.bSnd.unlock, [this.bExit.x, this.bExit.y]);
+      return true;
+    }
     if (reason === 'all' && this.bLevels) {
       this.bLevelsDone += 1;
       this.evPoints += this.ev.levels.points_per_level;
@@ -485,8 +529,11 @@ export const BlocksMixin = {
     }
     const base = this.bStageBase;
     if (base && SUCCESS.includes(reason) && this.bStage + 1 < base._stages.length) {
-      const carry = { points: this.evPoints + Math.trunc(this.evAlivePoints), collected: this.evCollected,
-        downs: this.evDowns || 0, bonuses: this.evBonuses || 0, elapsed: this.evElapsed };
+      const carry = { points: this.evPoints + Math.trunc(this.evAlivePoints),
+        collected: this.evCollected + (this.bCollectedBefore || 0),
+        downs: this.evDowns || 0, bonuses: this.evBonuses || 0,
+        downPoints: this.evDownPoints || 0, downNames: Object.assign({}, this.evDownNames || {}),
+        elapsed: this.evElapsed };
       // (Web only: the recordings unpacked for the whole run are kept for its next stage.)
       this._bStageTurn = true;
       try { this._eventStopAll(); } finally { this._bStageTurn = false; }
@@ -501,9 +548,15 @@ export const BlocksMixin = {
   // starts at nothing, so its creatures wait their few seconds as at the start of any
   // run; the run's whole length is kept apart.)
   _bCarryIn(carry) {
-    this.evPoints = carry.points; this.evCollected = carry.collected;
-    this.evSpawned = carry.collected;
+    this.evPoints = carry.points;
+    // A stage counts its own items from nothing (6.0.0 fix): carried on, the four apples
+    // of stage one counted as stage two's four cases, and none were laid out. What the
+    // earlier stages found is kept apart, for the results.
+    this.evCollected = 0; this.evSpawned = 0;
+    this.bCollectedBefore = carry.collected;
     this.evDowns = carry.downs; this.evBonuses = carry.bonuses;
+    this.evDownPoints = carry.downPoints || 0;
+    this.evDownNames = Object.assign({}, carry.downNames || {});
     this.bElapsedBefore = (this.bElapsedBefore || 0.0) + carry.elapsed;
   },
 
@@ -520,28 +573,39 @@ export const BlocksMixin = {
   _bReward(block) {
     let kind = 'extra' in block ? block.extra : 'random';
     if (kind === 'none') return;
-    if (kind === 'random') kind = choice(block.random_kinds);
+    if (kind === 'random') {
+      // 6.0.0: each kind as common as its weight says (all 1: an even pick, as before).
+      const weights = block.random_kinds.map((k) => block[`${k}_weight`] || 1);
+      kind = new Set(weights).size > 1 ? choices(block.random_kinds, weights) : choice(block.random_kinds);
+    }
     if (kind === 'seconds' && !this.evClock) kind = 'points';
     if (kind === 'shots' && (!this.ev.weapon.enabled || this.evUnlimited())) kind = 'points';
     if (kind === 'seconds') {
-      const n = block.seconds;
+      const n = this._bAmount(block, 'seconds');
       this.timeLeft += n;
       this.lastBeepSecond = -1;
       const step = this.ev.clock.announce_every_seconds;
       if (step) this.evNextAnnounce = Math.floor((this.timeLeft - 1) / step) * step;
       this._bSay(`${n} more second${s(n)}.`);
     } else if (kind === 'shots') {
-      const n = block.shots;
+      const n = this._bAmount(block, 'shots');
       this.evShots += n;
       this._bSay(`${n} shot${s(n)}.`);
     } else if (kind === 'life') {
       this.evLives = (this.evLives === undefined ? 1 : this.evLives) + 1;
       this._bSay('An extra life.');
     } else {
-      const n = block.points;
+      const n = this._bAmount(block, 'points');
       this.evPoints += n;
       this._bSay(`${n} point${s(n)}.`);
     }
+  },
+
+  // 6.0.0: how much of a kind a reward gives: its amount, or a random amount from that
+  // to its most, if it has one.
+  _bAmount(block, kind) {
+    const lo = block[kind]; const hi = block[`${kind}_most`] || 0;
+    return hi > lo ? randint(lo, hi) : lo;
   },
 
   // An item has been collected: the meter it refills, the story line it brings.
@@ -675,7 +739,7 @@ export const BlocksMixin = {
       if (th.state === 'rest') {
         if (this.evElapsed > 3.0 && d > 0.01 && th.face) {
           let reach = hz.notice_steps * STEP + STEP / 2;
-          if (this._bFloorAt() === 'water') reach *= 0.5;            // wading is quiet
+          if (QUIET_FLOORS.includes(this._bFloorAt())) reach *= 0.5;   // wading (6.0.0: or swimming) is quiet
           const ahead = ((px - th.x) * th.face[0] + (py - th.y) * th.face[1]) / d;
           if (d <= reach && ahead >= NOTICE_CONE && !this._bSafe()) this._bWake(th, hz);
         }
@@ -774,12 +838,20 @@ export const BlocksMixin = {
     if (hz.behavior === 'run') {
       th.downFor = 0.0;
       this._mStop(th);
-      this.evPoints += hz.points_for_down;
-      this.evDowns = (this.evDowns || 0) + 1;
+      this._evDowned(hz);
       this.audio.play('event_checkpoint');
       return true;
     }
     return false;
+  },
+
+  // Seconds were taken or given: the clock announcements start again from the new
+  // time (6.0.0 fix: a trap or a throw left the mark behind, and the game said
+  // '3 minutes left. 150 seconds left.' with 124 on the clock).
+  _bClockChanged() {
+    this.lastBeepSecond = -1;
+    const step = this.evClock ? this.ev.clock.announce_every_seconds : 0;
+    if (step) this.evNextAnnounce = Math.floor((this.timeLeft - 1) / step) * step;
   },
 
   // What a creature's touch costs, for a hit that is not a touch (a thrower's throw
@@ -789,9 +861,9 @@ export const BlocksMixin = {
     this._mTouched();
     if (hz.on_touch === 'end_run') {
       this.evLives = (this.evLives === undefined ? 1 : this.evLives) - 1;
-      if (this.evLives <= 0) { this._eventFinish('caught'); return true; }
+      if (this.evLives <= 0) { this.evCaughtBy = hz.name; this._eventFinish('caught'); return true; }
     } else if (hz.on_touch === 'lose_time') {
-      if (this.evClock) { this.timeLeft -= hz.penalty; this.lastBeepSecond = -1; }
+      if (this.evClock) { this.timeLeft -= hz.penalty; this._bClockChanged(); }
     } else {
       const take = Math.min(hz.penalty, this.evPoints);
       this.evPoints -= take;
@@ -803,8 +875,16 @@ export const BlocksMixin = {
   // A smash has been heard: a few fast creatures come from far off, silent at first.
   // They follow the first kind's rules for a touch and for being shot.
   _bChasers() {
-    const ca = this.ev.cases;
-    const kind = { ...this.ev.hazards, behavior: 'hunt', speed: ca.chaser_speed, respawn_seconds: 0 };
+    const ca = this.ev.cases; const cs = this.ev.chasers;
+    let kind;
+    if (cs.own) {
+      // 6.0.0: the chasers' own settings, on the Event Maker's Glass cases tab.
+      kind = { ...this.ev.hazards, count: 0, lives: 1 };
+      for (const k of ['name', 'sound', 'on_touch', 'penalty', 'can_be_shot', 'hits_to_down', 'points_for_down', 'volume']) kind[k] = cs[k];
+      Object.assign(kind, { behavior: 'hunt', speed: ca.chaser_speed, respawn_seconds: 0, own_chaser: true });
+    } else {
+      kind = { ...this.ev.hazards, behavior: 'hunt', speed: ca.chaser_speed, respawn_seconds: 0 };
+    }
     const lim = this.arenaLimit - 3.0;
     const [px, py] = this.playerPos;
     const n = randint(ca.chasers_fewest, Math.max(ca.chasers_fewest, ca.chasers_most));
@@ -819,7 +899,8 @@ export const BlocksMixin = {
       [x, y] = this._bOpenNear(x, y);
       const th = new this._Thing(x, y);
       th.kind = kind; th.role = 'chaser'; th.fade = 0.0;
-      th.beacon = this.audio.has('obstacle_0') ? `obstacle_${randrange(10)}` : this.evHazardSounds[0];
+      th.beacon = this.bChaserSounds ? choice(this.bChaserSounds)
+        : (this.audio.has('obstacle_0') ? `obstacle_${randrange(10)}` : this.evHazardSounds[0]);
       this._bLoop(th, th.beacon);
       this.evHazards.push(th);
     }
@@ -837,7 +918,10 @@ export const BlocksMixin = {
         th.knock = uniform(0.3, ev[m].call_every_seconds);
       }
     }
-    const share = m === 'smash' ? 1.0 : (CASE_MISSIONS.includes(m) ? ev.cases.share : 0.0);
+    // Smash and grab (6.0.0, Russell's rule): the share of items in cases is honoured, and the
+    // rest lie on the floor, taken by stepping onto them. A share of 0 still means every item
+    // is in a case, as in every Smash and grab made before.
+    const share = m === 'smash' ? (ev.cases.share || 1.0) : (CASE_MISSIONS.includes(m) ? ev.cases.share : 0.0);
     if (share && random() < share) {
       th.cased = true; th.near = false; th.knock = uniform(0.0, 0.6);
       this._mStop(th);
@@ -898,6 +982,7 @@ export const BlocksMixin = {
     const ca = this.ev.cases;
     const pos = [th.x, th.y];
     th.cased = false;
+    this.bSmashed = (this.bSmashed || 0) + 1;
     this._mStop(th);
     this._bShotAt(this.bSnd.smash, pos);
     const [cx, cy] = cellOf(...pos);
@@ -987,7 +1072,7 @@ export const BlocksMixin = {
         this.audio.play('player_hit');
         [th.x, th.y] = this._eventSpot(9.0, 0);       // sprung: it is set again somewhere else
         if (tr.cost === 'life') this.bPending.push([this.evElapsed, 'life', null]);
-        else if (tr.cost === 'time' && this.evClock) { this.timeLeft -= tr.penalty; this.lastBeepSecond = -1; }
+        else if (tr.cost === 'time' && this.evClock) { this.timeLeft -= tr.penalty; this._bClockChanged(); }
         else this.evPoints = Math.max(0, this.evPoints - tr.penalty);
         return;
       }
@@ -1025,7 +1110,7 @@ export const BlocksMixin = {
   // room. After the first room the walls, floor and things are laid afresh.
   _bSilentRoom(first = false) {
     const si = this.ev.silent;
-    if (!first) { this._bClearThings(); this._bLayRoom(); }
+    if (!first) { this._bClearThings(); this._bLayRoom(); this._bUnwallThings(); }
     this._mStop(this.mExit);
     for (const h of this.evHazards) this._mStop(h);
     this.evHazards = [];
@@ -1052,7 +1137,10 @@ export const BlocksMixin = {
   _bStart(ev, carried = false) {
     const m = ev.mission;
     if (m === 'silent') this._bSilentRoom(true);
-    else this._bSpawnKinds();
+    // (6.0.0 review fix) An escape room has already brought its second and third kinds
+    // (_mEscapeRoom): spawned here again, room 1 had twice as many.
+    else if (m !== 'escape') this._bSpawnKinds();
+    if (smashExit(ev)) this._bNewExit();
     this._bLayThings();
     if (m === 'lure') {
       this.bCarry = ev.lure.start_stones;
@@ -1173,15 +1261,32 @@ export const BlocksMixin = {
           [th.x, th.y] = this._eventSpot(9.0, 0);
         }
       }
+    } else if (smashExit(ev) && this.bExit) {
+      // 6.0.0: the exit is quieter while locked, and stepping onto it then only bumps.
+      const reached = this._mReached(this.bExit, this.bExitOpen ? 0.9 : 0.55);
+      if (reached && this.bExitOpen) {
+        this._mStop(this.bExit);
+        this.bExit = null;
+        this._eventFinish('all');           // the room is done: the next begins, or the run ends
+        return true;                        // (6.0.0 fix) this update is over either way: its room is gone
+      } else if (reached && !this.bExitBumped) {
+        this.bExitBumped = true;
+        this.audio.play('wall');
+      } else if (!reached) {
+        this.bExitBumped = false;
+      }
     } else if (m === 'silent') {
       const ex = this.mExit;
       if (ex && this._mReached(ex, 0.9)) {
         this.evPoints += ev.silent.points_per_room;
         this.bRoomsDone += 1;
-        this.audio.play('stairs_climb');
+        // (6.0.0 fix) the last room asks first: no climb over the end of a run, nor two
+        // at once when it ends a stage.
         if (this._bEndingReached(this.bRoomsDone)) return true;
         this._bSilentRoom();
+        this._evClimb();
         this._bSayLevel(this.bRoomsDone + 1, 'Room');
+        return true;
       }
     } else if (m === 'storm') {
       const sm = ev.storm;
@@ -1216,6 +1321,15 @@ export const BlocksMixin = {
     if (base) bits.push(`Stage ${this.bStage + 1} of ${base._stages.length}.`);
     if (this.bLevels) bits.push(`Level ${this.bLevel}.`);
     if (m === 'silent') bits.push(`Room ${this.bRoomsDone + 1}.`);
+    else if (smashExit(ev)) {
+      const left = this.evItems.filter((t) => t.cased).length;
+      // (6.0.0 review fix) With only a share of the items in cases, the ones lying on the
+      // floor keep the exit locked too: they are said, not "0 cases".
+      const loose = this.evItems.length - left;
+      let what = `${left} case${s(left)}`;
+      if (loose) what = (left ? `${what} and ` : '') + `${loose} ${loose === 1 ? ev.item.name : ev.item.plural}`;
+      bits.push(this.bExitOpen ? 'The exit is open.' : `${what} before the exit opens.`);
+    }
     else if (m === 'storm') bits.push(`Shelter ${this.bShelters + 1}. ${Math.trunc(Math.max(0, this.bStormLeft))} seconds before the storm.`);
     else if (m === 'lure') bits.push(`${this.bCarry} stone${s(this.bCarry)} in hand.`);
     if (this.bMeter !== null && this.bMeter !== undefined) {
@@ -1255,7 +1369,14 @@ export const BlocksMixin = {
     }
     const lv = this.bLevelsDone;
     if (m === 'memories') return `You found ${n} ${word} and finished ${lv} level${s(lv)} for ${p}. `;
-    if (m === 'smash') return `You smashed ${n} case${s(n)} for ${p}. `;
+    if (m === 'smash') {
+      // (6.0.0 review fix) Only the cases really smashed are called smashed; what was
+      // picked up off the floor (a share of the items in cases) is said apart.
+      const k = Math.min(n, this.bSmashed === undefined ? n : this.bSmashed);
+      const took = `smashed ${k} case${s(k)}` + (n > k ? ` and picked up ${n - k} ${n - k === 1 ? it.name : it.plural}` : '');
+      if (smashExit(ev)) return `You escaped ${lv} room${s(lv)}${n > k ? ',' : ' and'} ${took} for ${p}. `;
+      return `You ${took} for ${p}. `;
+    }
     if (m === 'silent') return `You escaped ${this.bRoomsDone} room${s(this.bRoomsDone)} for ${p}. `;
     if (m === 'echo') return `You found ${n} ${word} for ${p}. `;
     if (m === 'lure') return `You collected ${n} ${word} for ${p}. `;
@@ -1266,9 +1387,10 @@ export const BlocksMixin = {
 
   _bStopAll() {
     for (const th of [...(this.bTraps || []), ...(this.bSafes || []), ...(this.bPorts || []), ...(this.bChests || []),
-      ...(this.bSupplies || []), ...(this.bRefills || []), ...(this.bStones || []), ...(this.bShelter ? [this.bShelter] : [])]) this._mStop(th);
+      ...(this.bSupplies || []), ...(this.bRefills || []), ...(this.bStones || []), ...(this.bShelter ? [this.bShelter] : []),
+      ...(this.bExit ? [this.bExit] : [])]) this._mStop(th);
     this.bTraps = []; this.bSafes = []; this.bPorts = []; this.bChests = [];
-    this.bSupplies = []; this.bRefills = []; this.bStones = []; this.bShelter = null;
+    this.bSupplies = []; this.bRefills = []; this.bStones = []; this.bShelter = null; this.bExit = null;
     this.bPending = [];
   },
 };

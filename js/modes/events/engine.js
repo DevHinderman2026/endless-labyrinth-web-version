@@ -5,9 +5,12 @@
 // side by side. Inside these methods `this` is the game.
 
 import { EventFeed, EventScores, EVENT_START_CHECK } from './feed.js';
-import { status as eventStatus, describeDuration, hasClock, ITEMS_NEEDED, canEndWithoutClock, TOTAL_UNUSED,
-  soundFiles, pyRound, BEHAVIORS_3, MISSIONS_3 } from './schema.js';
+import { saysLives, status as eventStatus, describeDuration, hasClock, ITEMS_NEEDED, canEndWithoutClock, TOTAL_UNUSED,
+  soundFiles, pyRound, BEHAVIORS_3, MISSIONS_3, kinds } from './schema.js';
 import { aliasRecording, addMade, fromBuffer, ringPeriodCopy, warpCopy, padded, ensureCopies } from './sounds.js';
+// 6.0.0: the one mono copy every placed sound uses (audio.js); events no longer keep their
+// own averaged copy, so a recording is folded the same way here as everywhere else.
+import { monoCopy } from '../../audio.js';
 import { uniform, randint, randrange, choice, sample, choices, random, shuffle } from './py.js';
 
 import { gestureWords } from './wording.js';
@@ -15,6 +18,7 @@ import { X_OWN } from './more.js';
 export { gestureWords };
 
 export const S_EVENT = 'event';
+
 export const S_EVENTS_MENU = 'events_menu';
 export const S_EVENT_SCORES = 'event_scores';
 const S_MENU = 'menu';
@@ -419,10 +423,22 @@ export const EngineMixin = {
     if (!name) return null;
     const got = this.evRecordings && this.evRecordings[stem];
     if (got && !this.audio.buffers.has('dry:' + name)) {
-      this.audio.buffers.set('dry:' + name, got.dry);
+      // 6.0.0: a looping sound the player finds by ear (an item, an exit, a creature)
+      // plays a mono copy made here, so only the game's own panning says where it is.
+      // Some recordings drift from side to side by themselves (the fairy dust swings
+      // about ten decibels each way) and could never be centred. The file is untouched.
+      const mono = role === 'beacon' || role === 'beacon_hazard';
+      const fold = (b) => (mono ? monoCopy(this.audio.ctx, b) : b);
+      this.audio.buffers.set('dry:' + name, fold(got.dry));
       const pair = this.audio.entries.get(name);
       const dull = pair.dull && (pair.dull === this.audio.entries.get(stem).dull ? got.dull : got.dull1);
-      if (dull) this.audio.buffers.set('dull:' + name, dull);
+      if (dull) this.audio.buffers.set('dull:' + name, fold(dull));
+      // (6.0.0 fix) The mono copy is held for the whole run: let go as a big recording
+      // not playing, it was decoded again from the file, in stereo, from level 2 on.
+      if (mono) {
+        this.audio.pins.set('event:' + name, 'dry:' + name);
+        if (dull) this.audio.pins.set('event-dull:' + name, 'dull:' + name);
+      }
       this.evHeld.push(name);
     }
     return name;
@@ -478,6 +494,10 @@ export const EngineMixin = {
     this.evElapsed = 0.0;
     this.evAlivePoints = 0.0;
     this.evDowns = 0;
+    // (6.0.0 fix) what was brought down, by its own name and points, and what caught
+    // the player, for the end of the run.
+    this.evDownPoints = 0; this.evDownNames = {}; this.evCaughtBy = null;
+    this.evLivesShown = false;          // (6.0.0 fix) lives went above one in this run
     const tc = ev.time_credits;
     this.evCreditTimer = tc.first_after_seconds;
     this.playerPos = [0.0, 0.0];
@@ -523,7 +543,9 @@ export const EngineMixin = {
     this.evBonusPickup = `event_pickup_${it.bonus_theme}`;
     this.evLives = ev.hazards.lives;
     this.evEndSound = this.loadEventRecording(ev.messages.end_sound, 'sting') || 'event_toll_end';
-    this.audio.play(_carry ? 'stairs_climb' : (this.loadEventRecording(ev.messages.start_sound, 'sting') || 'event_toll'));
+    this.evClimbHold = 0;
+    if (_carry) this._evClimb();                 // 6.0.0: a new stage waits for its climb too
+    else this.audio.play(this.loadEventRecording(ev.messages.start_sound, 'sting') || 'event_toll');
     // No spoken intro: the event's description, read in the Events menu, already said
     // what to do. This only cuts off the menu's speech.
     this.tts.speak('', { interrupt: true });
@@ -549,11 +571,18 @@ export const EngineMixin = {
     // With no clock, an event whose only ending is a creature's touch could never end
     // once every creature is shot down for good: then the run ends there.
     try {
-      const quiet = { ...ev, hazards: { ...hz, count: 0 } };
+      // (6.0.0 review fix) Every kind of creature counts, not only the first: with the
+      // laser on, a second or third kind whose touch was the run's only ending could be
+      // shot down for good, and the run then never ended. The run ends once every
+      // creature whose touch ends it is down, if none of those comes back.
+      const enders = kinds(ev).filter((k) => k.count > 0 && k.on_touch === 'end_run');
+      const quiet = { ...ev, hazards: { ...hz, count: 0 }, hazards2: { ...ev.hazards2, count: 0 },
+        hazards3: { ...ev.hazards3, count: 0 } };
       const freshRooms = ev.mission === 'escape' || (ev.mission === 'keys' && (ev.keys || {}).more_creatures_each_room);
       const dc = ev.decoys || {};
       const decoysOnlyCreatures = ev.mission === 'decoys' && !dc.fakes_first_level && !dc.fakes_per_level && !dc.dark_exit_chance;
-      this.evEndsByCreaturesOnly = Boolean(!this.evClock && hz.count > 0 && !hz.respawn_seconds && ev.mission !== 'hunt'
+      this.evEndsByCreaturesOnly = Boolean(!this.evClock && enders.length
+        && !enders.some((k) => k.respawn_seconds) && ev.mission !== 'hunt'
         && !freshRooms && (decoysOnlyCreatures || canEndWithoutClock(quiet) !== null));
     } catch (e) {
       this.evEndsByCreaturesOnly = false;
@@ -792,7 +821,9 @@ export const EngineMixin = {
         if (best === null || dist < best[0]) best = [dist, th];
       }
     }
-    if (best === null || !(best[1].kind || ev.hazards).can_be_shot) return;
+    // 6.0.0 (unified): with the laser on, every creature and every chaser can be shot,
+    // whatever its own "can be shot" box says, because the laser is there to shoot them.
+    if (best === null) return;
     const th = best[1];
     th.hits += 1;
     const hz = th.kind || ev.hazards;
@@ -806,11 +837,60 @@ export const EngineMixin = {
       } else {
         this._later(Math.min(0.4, best[0] / 60.0), 'explosion', [th.x, th.y]);
       }
-      this.evPoints += hz.points_for_down;
-      this.evDowns = (this.evDowns || 0) + 1;
+      this._evDowned(hz);
     } else {
       this._later(Math.min(0.4, best[0] / 60.0), this.audio.has('guardian_hit') ? 'guardian_hit' : 'enemy_hit', [th.x, th.y]);
     }
+  },
+
+  // Whether Enter says the lives left. Russell's rule: whenever the player can lose a
+  // life. 6.0.0 fix: the event's own rule (saysLives) only looked at creatures and at
+  // the lives the run starts with; a trap that costs a life counts too, and so does an
+  // extra life handed out in a one-life event.
+  _evSaysLives() {
+    const ev = this.ev;
+    if (saysLives(ev)) return true;
+    const lv = this.evLives === undefined ? 1 : this.evLives;
+    if (lv > 1) this.evLivesShown = true;
+    if ((ev.hazards.lives ?? 1) <= 1 && !this.evLivesShown) return false;
+    const tr = ev.traps || {};
+    if ((tr.count || 0) > 0 && tr.cost === 'life') return true;
+    // A creature whose touch costs a life: the event's own rule, as if it had lives.
+    return saysLives(Object.assign({}, ev, { hazards: Object.assign({}, ev.hazards, { lives: 2 }) }));
+  },
+
+  // One creature brought down: its points, and its own name for the end of the run
+  // (6.0.0 fix: a ghost was counted and priced as the first kind).
+  // (6.0.0 review fix) Whether every creature whose touch ends the run has been brought
+  // down (the first, second and third kinds; a chaser comes afresh with the next smash,
+  // so it is not counted). False if the run has none.
+  _evEndersAllDown() {
+    const first = this.ev.hazards;
+    const enders = this.evHazards.filter((h) => h.role !== 'chaser' && (h.kind || first).on_touch === 'end_run');
+    return enders.length > 0 && enders.every((h) => h.downFor >= 0);
+  },
+
+  _evDowned(hz) {
+    this.evPoints += hz.points_for_down;
+    this.evDowns = (this.evDowns || 0) + 1;
+    this.evDownPoints = (this.evDownPoints || 0) + hz.points_for_down;
+    const names = Object.assign({}, this.evDownNames || {});
+    names[hz.name] = (names[hz.name] || 0) + 1;
+    this.evDownNames = names;
+  },
+
+  // What the creatures brought down were worth, each at its own points.
+  _evDownWorth() {
+    if (this.evDownNames && Object.keys(this.evDownNames).length) return this.evDownPoints || 0;
+    return (this.evDowns || 0) * this.ev.hazards.points_for_down;
+  },
+
+  // '6 ghosts', or '2 beasts and 6 ghosts'.
+  _evDownsWords() {
+    const names = (this.evDownNames && Object.keys(this.evDownNames).length)
+      ? this.evDownNames : { [this.ev.hazards.name]: this.evDowns || 0 };
+    const bits = Object.entries(names).map(([name, n]) => `${n} ${name}${n === 1 ? '' : 's'}`);
+    return bits.length === 1 ? bits[0] : bits.slice(0, -1).join(', ') + ' and ' + bits[bits.length - 1];
   },
 
   _eventUpdateHazards(dt) {
@@ -835,6 +915,7 @@ export const EngineMixin = {
         if (hz.on_touch === 'end_run') {
           this.evLives = (this.evLives === undefined ? 1 : this.evLives) - 1;
           if (this.evLives <= 0) {
+            this.evCaughtBy = hz.name;
             this._eventFinish('caught');
             return true;
           }
@@ -849,6 +930,12 @@ export const EngineMixin = {
           const take = Math.min(hz.penalty, this.evPoints);
           this.evPoints -= take;
           this.evAlivePoints = Math.max(0.0, this.evAlivePoints - (hz.penalty - take));
+        }
+        if (th.role === 'chaser' && hz.own_chaser) {
+          // 6.0.0: a chaser with its own settings vanishes once it reaches you.
+          if (th.channel) { th.channel.stop(); th.channel = null; }
+          this.evHazards.splice(this.evHazards.indexOf(th), 1);
+          continue;
         }
         // Thrown back, well clear of you, so one touch never becomes two.
         [th.x, th.y] = th.home;
@@ -914,7 +1001,8 @@ export const EngineMixin = {
     const sources = [];
     for (const f of files) {
       const got = this.evRecordings && this.evRecordings[stemOf(f)];
-      if (got) sources.push([stemOf(f), got.dry]);
+      // (6.0.0 fix) a mono copy, like every other looping event sound, so a bell can be centred
+      if (got) sources.push([stemOf(f), monoCopy(this.audio.ctx, got.dry)]);
     }
     if (!sources.length) {
       // No recordings: the item theme's own sound.
@@ -1157,7 +1245,7 @@ export const EngineMixin = {
         this.evLevelsDone += 1;
         if (this._bEndingReached(this.evLevelsDone)) return true;      // web 5.0.0: the run's last one, by its ending (blocks.js)
         this.evLevel += 1;
-        this.audio.play('stairs_climb');
+        this._evClimb();
         this._decoyLevel();
       }
     }
@@ -1234,9 +1322,56 @@ export const EngineMixin = {
     this.evCredits.push(th);
   },
 
+  // 6.0.0: the climb up the stairs to the next level, room or round. The next one is
+  // laid out at once, but heard only when the climb has finished and a moment more:
+  // until then every creature, item and thing in the room is silent (each is levelled
+  // again on the first update after the pause), the clock waits and the player cannot
+  // move. The air keeps playing throughout.
+  _evClimb() {
+    this.audio.play('stairs_climb');
+    const e = this.audio.entries && this.audio.entries.get('stairs_climb');
+    this.evClimbHold = Math.min(1.5, e && e.dry ? e.dry.frames / 44100 : 0.8) + 0.5;
+    this._evHush();
+  },
+
+  // Every creature, item and thing in the room falls silent; the air plays on. (6.0.0
+  // fix: also the time credits and the further missions' things, and it is done on
+  // every update of the pause, so nothing laid out after the climb began, the next
+  // room's cases and creatures, is heard through it.)
+  _evHush() {
+    let things = [...(this.evHazards || []), ...(this.evItems || []), ...(this.evCredits || []),
+      ...(this.xThings || [])];
+    try { things = things.concat(this._mAllThings()); } catch (err) { /* not set up */ }
+    things = things.concat(this.bTraps || [], this.bSafes || [], this.bPorts || [], this.bChests || [],
+      this.bSupplies || [], this.bRefills || [], this.bStones || [],
+      [this.bShelter, this.bExit, this.evExit].filter((t) => t));
+    for (const th of things) {
+      for (const ch of [th.channel, th.extra]) {
+        if (ch && ch.setVolume) { try { ch.setVolume(0, 0); } catch (err) { /* stopped */ } }
+      }
+    }
+  },
+
+  // A climb began in this update: the rest of it waits, and what was laid out for the
+  // next room is silent (6.0.0 fix).
+  _evClimbing() {
+    if (this.ev && this.state === 'event' && this.evClimbHold > 0) {
+      this._evHush();
+      return true;
+    }
+    return false;
+  },
+
   updateEventMode(dt) {
     if (this.isPaused || !this.ev) return;
     const ev = this.ev;
+    if (this.evClimbHold > 0) {
+      // 6.0.0: the pause after a climb. The air keeps playing; everything else waits.
+      this.evClimbHold -= dt;
+      this._eventUpdateZones(dt);
+      this._evHush();
+      return;
+    }
     this.evElapsed += dt;
     if (dt > 0) this.evUpdatedAt = performance.now() / 1000;
     this._eventUpdateZones(dt);
@@ -1266,9 +1401,10 @@ export const EngineMixin = {
       return;
     }
     if (this._bUpdate(dt)) return;          // web 5.0.0: the building blocks' own work (blocks.js) ended the run
+    if (this._evClimbing()) return;         // (6.0.0 fix) a climb began: the next room waits, silent and still
     if (ev.mission === 'survive') this.evAlivePoints += ev.survive.points_per_second * dt;
     if (this.evHazards.length && this._eventUpdateHazards(dt)) return;
-    if (this.evEndsByCreaturesOnly && this.evHazards.length && this.evHazards.every((h) => h.downFor >= 0)) {
+    if (this.evEndsByCreaturesOnly && this._evEndersAllDown()) {
       this._eventFinish('all_down');
       return;
     }
@@ -1277,19 +1413,19 @@ export const EngineMixin = {
       return;
     }
     if (ev.mission === 'decoys') {
-      if (this._decoyUpdate(dt)) return;
+      if (this._decoyUpdate(dt) || this._evClimbing()) return;
       this._eventUpdateCredits(dt, step);
       return;
     }
     if (this.NEW_MISSIONS.includes(ev.mission)) {
-      if (this._mUpdate(dt)) return;
+      if (this._mUpdate(dt) || this._evClimbing()) return;
       if (this._mUsesOwnItems()) {
         this._eventUpdateCredits(dt, step);
         return;
       }
     }
     if (this.MORE.includes(ev.mission)) {
-      if (this._xUpdate(dt)) return;          // web 5.0.0: one of the 25 further missions ended the run
+      if (this._xUpdate(dt) || this._evClimbing()) return;   // web 5.0.0: one of the 25 further missions ended the run
       if (this.X_OWN.includes(ev.mission)) {
         this._eventUpdateCredits(dt, step);
         return;
@@ -1374,6 +1510,11 @@ export const EngineMixin = {
     const it = this.ev.item;
     if (this.MORE.includes(this.ev.mission)) {
       let msg = this._xStatus();
+      if (this._evSaysLives()) {
+        // These missions may have lives of their own: tell the two apart.
+        const lv = this.evLives === undefined ? 1 : this.evLives;
+        msg = msg.trimEnd() + ` ${lv} li${lv === 1 ? 'fe' : 'ves'} left against the ${this.ev.hazards.name}s.`;
+      }
       if (this.evClock) msg += ` ${Math.trunc(Math.max(0, this.timeLeft))} seconds left.`;
       this.tts.speak((msg + this._bStatusExtra()).trim(), { interrupt: true });
       return;
@@ -1405,8 +1546,7 @@ export const EngineMixin = {
       msg += ` ${pts(this.evPoints)}.`;
       if (this.evExit) msg += ' The way out is open.';
       if (this.ev.weapon.enabled) msg += ' ' + this.evShotsWords();
-      const hz = this.ev.hazards;
-      if (hz.count && hz.on_touch === 'end_run' && hz.lives > 1) {
+      if (this._evSaysLives()) {
         const lv = this.evLives === undefined ? 1 : this.evLives;
         msg += ` ${lv} li${lv === 1 ? 'fe' : 'ves'} left.`;
       }
@@ -1424,10 +1564,12 @@ export const EngineMixin = {
     if (this.ev.hazards.count) {
       const name = this.ev.hazards.name;
       msg += ` ${up.length} ${name}${up.length === 1 ? '' : 's'} about.`;
-      if (this.ev.hazards.on_touch === 'end_run' && this.ev.hazards.lives > 1) {
-        const lv = this.evLives === undefined ? 1 : this.evLives;
-        msg += ` ${lv} li${lv === 1 ? 'fe' : 'ves'} left.`;
-      }
+    }
+    if (this._evSaysLives()) {
+      // 6.0.0: said whenever a touch can cost a life, even when every creature
+      // comes from a smashed case (The Jewel Heist), from the start of the run.
+      const lv = this.evLives === undefined ? 1 : this.evLives;
+      msg += ` ${lv} li${lv === 1 ? 'fe' : 'ves'} left.`;
     }
     if (this.evClock) msg += ` ${Math.trunc(Math.max(0, this.timeLeft))} seconds left.`;
     this.tts.speak(msg + this._bStatusExtra());
@@ -1454,6 +1596,8 @@ export const EngineMixin = {
     // kept until it has started; then it goes too.
     const endName = this._evFinishing ? this.evEndSound : null;
     for (const name of this.evHeld || []) {
+      this.audio.pins.delete('event:' + name);
+      this.audio.pins.delete('event-dull:' + name);
       if (name === endName) continue;
       this.audio._releaseWets(name);
       const pair = this.audio.entries.get(name);
@@ -1497,7 +1641,7 @@ export const EngineMixin = {
       }, 0);
     }
     const it = ev.item;
-    const n = this.evCollected;
+    const n = this.evCollected + (this.bCollectedBefore || 0);   // every stage's finds
     const word = n === 1 ? it.name : it.plural;
     const alive = Math.trunc(this.evAlivePoints);
     this.evPoints += alive;
@@ -1525,7 +1669,7 @@ export const EngineMixin = {
     } else if (reason === 'survived') {
       msg += 'Time up. You survived! ';
     } else if (reason === 'caught') {
-      msg += `The ${ev.hazards.name} got you. `;
+      msg += `The ${this.evCaughtBy || ev.hazards.name} got you. `;
     } else if (this._bReason(reason)) {
       msg += this._bReason(reason);
     } else if (this._xReason(reason)) {
@@ -1541,11 +1685,11 @@ export const EngineMixin = {
       const downs = this.evDowns || 0;
       if (downs && !['hunt', 'defend'].includes(ev.mission)) {
         // The total above includes the creatures shot down: say so.
-        const hn = ev.hazards.name;
-        const worth = pts(downs * ev.hazards.points_for_down);
-        msg += this.evPoints >= downs * ev.hazards.points_for_down
-          ? `Bringing down ${downs} ${hn}${downs === 1 ? '' : 's'} was worth ${worth} of that. `
-          : `Bringing down ${downs} ${hn}${downs === 1 ? '' : 's'} was worth ${worth}, before what you lost. `;
+        const worthN = this._evDownWorth();
+        const worth = pts(worthN);
+        msg += this.evPoints >= worthN
+          ? `Bringing down ${this._evDownsWords()} was worth ${worth} of that. `
+          : `Bringing down ${this._evDownsWords()} was worth ${worth}, before what you lost. `;
       }
     } else if (ev.mission === 'decoys') {
       const lv = this.evLevelsDone;
@@ -1557,15 +1701,15 @@ export const EngineMixin = {
       msg += `You reached level ${this.evLevel}, ${found} and walked out of ${lv} level${lv === 1 ? '' : 's'}. ${pts(this.evPoints)} in all. `;
     } else if (ev.mission === 'survive') {
       const downs = this.evDowns || 0;
-      if (downs) msg += `You brought down ${downs} ${ev.hazards.name}${downs === 1 ? '' : 's'}, worth ${pts(downs * ev.hazards.points_for_down)}. `;
+      if (downs) msg += `You brought down ${this._evDownsWords()}, worth ${pts(this._evDownWorth())}. `;
       msg += `${pts(alive)} for staying alive`;
       msg += it.at_once ? `, and ${n} ${word} collected. ` : '. ';
       msg += `${pts(this.evPoints)} in all. `;
     } else {
       const downs = this.evDowns || 0;
       if (downs) {
-        msg += `You collected ${n} ${word} and brought down ${downs} ${ev.hazards.name}${downs === 1 ? '' : 's'}, `
-          + `worth ${pts(downs * ev.hazards.points_for_down)}. ${pts(this.evPoints)} in all. `;
+        msg += `You collected ${n} ${word} and brought down ${this._evDownsWords()}, `
+          + `worth ${pts(this._evDownWorth())}. ${pts(this.evPoints)} in all. `;
       } else {
         msg += `You collected ${n} ${word} for ${pts(this.evPoints)}. `;
       }

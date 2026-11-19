@@ -73,6 +73,10 @@ const AMBIENCE_CROSSFADE = 0.8;     // a new tower floor's air, seconds
 // for the climb up the stairs (its own length, up to CHAOS_CLIMB_TIME_MAX).
 const CHAOS_CLIMB_TIME = 0.8;
 const CHAOS_CLIMB_TIME_MAX = 1.5;
+// 5.2.0: after every climb up the stairs (tower floors, chaos, event levels and rooms),
+// a short pause once the climb has finished before the next level starts. The air
+// keeps playing; the clock waits.
+export const CLIMB_PAUSE = 0.5;
 // The chaos gap state (STATE_CHAOS_GAP), for when Chaos mode is ported.
 const STATE_CHAOS_GAP = 'chaos_gap';
 
@@ -428,6 +432,7 @@ const mixin = {
 
   updateTowerMode(dt) {
     if (this.isPaused) return;
+    if (this._climbHoldUpdate(dt)) return;     // 5.2.0: climbing to the next floor
     // Chaos runs one clock across every kind of level.
     if (this.chaosMode && this._advanceTimer(dt)) return;
     if (this.chaosMode && this.timeCredit) this._updateTimeCredit();
@@ -737,7 +742,9 @@ const mixin = {
         if (pD >= ITEM_NEAR[0] && pD <= ITEM_NEAR[1] + 0.01 && Math.hypot(cand.x - enemy.x, cand.y - enemy.y) >= 12.0) item = cand;
       }
       // A head start on every new item, not only at the start of a floor.
-      enemy.notice = Math.max(enemy.notice, this._towerHeadStart());
+      // (5.2.0 fix, Russell 18 November 2026) exactly the rule's head start, the first
+      // item of a floor included: the rival's own 2.5 s wait used to win for it.
+      enemy.notice = this._towerHeadStart();
     }
     if (item === null) item = new TowerItem(this.playerPos, this.arenaLimit);
     item.channel = this._towerLoop('item', 'item_beacon');
@@ -813,10 +820,11 @@ const mixin = {
     this.towerStairsActive = false;
     let climb = null;
     if (this.chaosMode) {
-      // In chaos, what comes next is chosen here, on the stairs: the climb is only
-      // heard when it leads up to another tower floor.
+      // In chaos, what comes next is chosen here, on the stairs. 5.2.0: the climb is
+      // heard every time you take the stairs, whatever comes next (it used to play
+      // only when it led up to another tower floor); the next level waits for it.
       this.chaosNext = this._chaosPickNext();
-      if (this.chaosNext === STATE) climb = this.audio.play('stairs_climb');
+      climb = this.audio.play('stairs_climb');
     } else {
       this.audio.play('stairs_climb');
     }
@@ -838,17 +846,60 @@ const mixin = {
     }
 
     if (this.chaosMode) {
-      // One floor is one chaos level. The next floor waits for the climb.
+      // One floor is one chaos level. The next level, whatever it is, waits for the climb.
+      // 5.2.0 fix: the floor's air keeps playing through the climb and the wait after
+      // it, as in Tower Mode (_chaosBeginGap spares it), and fades out under the next
+      // level's air when that level begins.
+      this.chaosClimbAir = this.ambienceChannel;
       this.nextLevel();
+      this.chaosClimbAir = null;
       if (this.state === STATE_CHAOS_GAP && climb) {
-        const e = this.audio.entries.get('stairs_climb');
-        const length = e && e.dry ? e.dry.frames / 44100 : CHAOS_CLIMB_TIME;
-        this.chaosGap = Math.max(this.chaosGap, Math.min(CHAOS_CLIMB_TIME_MAX, length));
+        this.chaosGap = Math.max(this.chaosGap, this.climbLength() + CLIMB_PAUSE);
         this.chaosClimb = climb;
       }
       return;
     }
-    this._setupTowerFloor();
+    // 5.2.0: the next floor waits until the climb has finished, and a moment more.
+    // The floor's air keeps playing; everything else on it falls silent.
+    this._towerHushForClimb();
+    this.climbHold = this.climbLength() + CLIMB_PAUSE;
+    this.climbThen = () => this._setupTowerFloor();
+  },
+
+  // How long the climb up the stairs lasts, in seconds.
+  climbLength() {
+    const e = this.audio.entries && this.audio.entries.get('stairs_climb');
+    const length = e && e.dry ? e.dry.frames / 44100 : CHAOS_CLIMB_TIME;
+    return Math.min(CHAOS_CLIMB_TIME_MAX, length);
+  },
+
+  // Climbing to the next floor: every loop of the floor left behind stops, except its
+  // air, which _setupTowerFloor fades out under the next floor's.
+  _towerHushForClimb() {
+    for (const [tag, ch] of Object.entries(this.towerLoops || {})) {
+      if (tag === 'ambience') continue;
+      delete this.towerLoops[tag];
+      if (ch) ch.stop();
+    }
+    for (const holder of ['towerEnemy', 'towerItem', 'towerPotion']) {
+      const obj = this[holder];
+      if (obj && obj.channel) obj.channel.stop();
+    }
+    this._towerClearProjectiles();
+  },
+
+  // The pause after a climb, counted down. True while it lasts: nothing else on the
+  // level moves, and the clock waits.
+  _climbHoldUpdate(dt) {
+    if (!(this.climbHold > 0)) return false;
+    this.climbHold -= dt;
+    if (this.climbHold <= 0) {
+      this.climbHold = 0;
+      const fn = this.climbThen;
+      this.climbThen = null;
+      if (fn) fn();
+    }
+    return true;
   },
 
   _towerDefeat() {
@@ -885,6 +936,7 @@ function reset(game) {
   game.towerMaxHp = 100;
   game.towerHp = 100;
   game.towerHitCooldown = 0.0;
+  game.climbHold = 0; game.climbThen = null;     // 5.2.0: the pause after a climb
   game.towerLowWarned = false;
   game.towerItems = 2;
   game.towerItem = null;
@@ -914,6 +966,8 @@ function stopAll(game) {
 }
 
 function input(game, g) {
+  // 5.2.0: no walking, turning or throwing during the climb to the next floor.
+  if (game.climbHold > 0 && ['up', 'down', 'left', 'right', 'space'].includes(g)) return;
   // Any mode that runs a clock answers T: in the tower only a chaos floor does.
   if (g === 'clock') {
     if (game.chaosMode) {

@@ -47,10 +47,15 @@ const ISLAND_WALL_LEAK = 0.3;
 // Going down, the island you left is held through the walls for this share of the
 // car's move before it gives way to the water.
 const ISLAND_LEAVE_HOLD = 0.5;
-// Air on the seabed: thirty seconds a dive. The last fifteen seconds beep once a
-// second, after a spoken Low air warning. An air vent tops it back up to full.
-const ISLAND_AIR = 30.0;
-const ISLAND_AIR_WARN = 15.0;          // its beeps are the high countdown, never the clock's
+// Air on the seabed (web 5.2.0, Russell: was thirty seconds a dive, beeping once a
+// second over the last fifteen): twenty seconds a dive. From ten seconds left, after
+// a spoken Low air warning, the high countdown beeps, faster and faster as the air
+// runs out: once a second at ten, AIR_BEEP_FASTEST apart at the very end. An air vent
+// tops it back up to full. Ultimate Mode's seabed keeps its own air.
+const ISLAND_AIR = 20.0;
+const ISLAND_AIR_WARN = 10.0;          // its beeps are the high countdown, never the clock's
+const AIR_BEEP_SLOWEST = 1.0;          // seconds between beeps at ISLAND_AIR_WARN left...
+const AIR_BEEP_FASTEST = 0.15;         // ...shrinking with the air left, never closer than this
 const ISLAND_VENT_AGAIN = 10.0;         // web 5.0.0: every dive has an air vent, and this long after you take one the next appears somewhere else (Russell, 12 November 2026; until then about half of all dives had one, once)
 // Treasure, trapped divers and guardians: the extras.
 const ISLAND_TREASURE_CHANCE = 0.35;   // per island; it lies on the island until collected
@@ -810,6 +815,7 @@ const mixin = {
     this.islandAir = ISLAND_AIR;
     this.islandAirWarned = false;
     this.islandLastAirBeep = -1;
+    this.islandAirBeepIn = 0;
     this.islandBubbleTimer = uniform(2.0, 4.0);
     this.islandReinforceTimer = ISLAND_REINFORCE_FIRST;
     this.islandDiveReinforced = 0;
@@ -905,6 +911,7 @@ const mixin = {
       this.islandAir = ISLAND_AIR;
       this.islandAirWarned = false;
       this.islandLastAirBeep = -1;
+      this.islandAirBeepIn = 0;
       this.audio.play('vent_refill');
     }
   },
@@ -1060,9 +1067,10 @@ const mixin = {
         this.islandAirWarned = true;
         this.tts.speak('Low air.');
       }
-      const sec = Math.trunc(this.islandAir);
-      if (sec !== this.islandLastAirBeep) {
-        this.islandLastAirBeep = sec;
+      // Faster and faster as the air runs out (web 5.2.0).
+      this.islandAirBeepIn = (this.islandAirBeepIn || 0) - dt;
+      if (this.islandAirBeepIn <= 0) {
+        this.islandAirBeepIn = Math.max(AIR_BEEP_FASTEST, AIR_BEEP_SLOWEST * this.islandAir / ISLAND_AIR_WARN);
         this.audio.play('countdown_high');
       }
     }
@@ -1227,7 +1235,10 @@ const mixin = {
   _islandStroke() {
     const strokes = SEABED_STROKES.filter((n) => this.audio.has(n));
     if (!strokes.length) return;
-    const now = this.audio.ctx.currentTime;
+    // (6.0.0 review fix: the page's own clock, not the sound engine's, which starts
+    // again from nothing when the engine recovers from an interruption: the strokes
+    // then stayed silent until the new clock had caught up with the old.)
+    const now = performance.now() / 1000;
     if (now - (this.islandStrokeAt ?? -9) < SEABED_STROKE_EVERY) return;
     this.islandStrokeAt = now;
     const pool = strokes.length > 1 ? strokes.filter((n) => n !== this.islandLastStroke) : strokes;
@@ -1245,8 +1256,8 @@ const HELP_SECTIONS = [
     { title: 'Island Enemies and Shooting', sound: null, desc: 'Enemies on an island work exactly like battle mode: whatever sounds centred between your ears, straight ahead of you or directly behind you, is what a two-finger tap hits. An island turns with you, as the seabed does: flick left or right to turn 30 degrees, slide and keep your finger down to keep turning, and swipe up to walk the way you face. Enemies come from any side, so turn until one is centred, then fire; one behind you sounds duller (see Behind You). In the elevator you do not turn. Island one has four enemies and every island after it adds one more, with more of them at once and faster as you go. There is no ammo on an island. You begin with eight shots, and everything after that comes from the seabed.' },
     { title: 'Island Elevators', sound: null, desc: 'An elevator is a steady low hum with a soft chime every second or two: two notes on an island, and a single note on the seabed. On an island it stands in the middle, and it works at any time, even mid-fight. When you come up onto an island you step out somewhere away from it, so finding it again is up to your ears. On the seabed the elevator up is always a long swim from where you arrive. A ride takes about fifteen seconds and you cannot move. As the doors close, where you are goes muffled, because you are inside, and it stays with you a few seconds longer, faint through the walls. While the car moves, that gives way to where you are going, which you hear coming through the walls before the doors open; when they open it opens up to its full sound. In chaos mode, if the next level is not an island, it is that level\'s own sound that rises through the doors.' },
     { title: 'Island Reinforcements', sound: null, desc: 'Diving mid-fight to reload is allowed, but the island does not wait for you. Stay down more than ten seconds and one more enemy lands on the island, then another every eight seconds, up to four per dive. Nothing tells you how many arrived; double tap on the island to hear how many enemies are left. Enemies still on the island when you leave are not lost, they are waiting. A cleared island gets no reinforcements, so once it is clear you can take as long as your air allows.' },
-    { title: 'Island The Seabed and Air', sound: null, desc: 'On the seabed you are holding your breath: thirty seconds every dive. Nothing is announced when you arrive. With fifteen seconds left you hear Low air and then a high beep every second, and if it runs out you drown. That high beep is not the clock\'s: the clock\'s countdown is the lower one. You cannot shoot underwater and there are no enemies below. Cartridges lie there one at a time, marked by the same fast spinning beacon as battle mode, and the moment you take one the next appears somewhere else, nearer or further, but only until the island\'s supply runs out. Every island\'s seabed holds one supply of ammo, fixed when the island is made and shared by every dive to it: between two and six cartridges, drawn at random, of two to six shots each, and, counting what you already carry, never less than the island needs (a deep island that needs more than six full cartridges gets more) for its enemies, its guardian, three reinforcements, and any guardian waiting on the next island. Some islands are rich and some are lean. What you leave on the seabed is still there on your next dive. When it is gone, it is gone, so every shot you waste up top is a shot the island will not give back. Double tap for your air, your ammo and whether you have the key.' },
-    { title: 'Island Air Vents', sound: null, desc: 'Every dive has an air vent somewhere on the seabed: loud, steady bubbling, and quietly underneath it the chime of a tower health potion, the game\'s sound for something that restores you. Swim into it and you hear the rush of your air being refilled, back up to a full thirty seconds. Each vent works once, but ten seconds after you take one, another appears somewhere else on the seabed, so a long dive is a matter of swimming from vent to vent with your errands in between. When you hear one, it is often worth going to it first.' },
+    { title: 'Island The Seabed and Air', sound: null, desc: 'On the seabed you are holding your breath: twenty seconds every dive. Nothing is announced when you arrive. With ten seconds left you hear Low air and then high beeps, once a second at first and faster and faster as your air runs out, and if it runs out you drown. That high beep is not the clock\'s: the clock\'s countdown is the lower one. You cannot shoot underwater and there are no enemies below. Cartridges lie there one at a time, marked by the same fast spinning beacon as battle mode, and the moment you take one the next appears somewhere else, nearer or further, but only until the island\'s supply runs out. Every island\'s seabed holds one supply of ammo, fixed when the island is made and shared by every dive to it: between two and six cartridges, drawn at random, of two to six shots each, and, counting what you already carry, never less than the island needs (a deep island that needs more than six full cartridges gets more) for its enemies, its guardian, three reinforcements, and any guardian waiting on the next island. Some islands are rich and some are lean. What you leave on the seabed is still there on your next dive. When it is gone, it is gone, so every shot you waste up top is a shot the island will not give back. Double tap for your air, your ammo and whether you have the key.' },
+    { title: 'Island Air Vents', sound: null, desc: 'Every dive has an air vent somewhere on the seabed: loud, steady bubbling, and quietly underneath it the chime of a tower health potion, the game\'s sound for something that restores you. Swim into it and you hear the rush of your air being refilled, back up to a full twenty seconds. Each vent works once, but ten seconds after you take one, another appears somewhere else on the seabed, so a long dive is a matter of swimming from vent to vent with your errands in between. When you hear one, it is often worth going to it first.' },
     { title: 'Island The Key', sound: null, desc: 'Every island has a key on the seabed, marked by three small bright metal clinks. You need it to move on: the elevator up takes you to the next island only once the island is clear and you have its key. You can find the key before or after clearing the island, on any dive. Once you have it, it is yours for that island, and a double tap tells you whether you have it.' },
     { title: 'Island Treasure', sound: null, desc: 'Some islands have treasure lying out on the island itself, marked by a soft high shimmer that never stops. It is out in the open where the enemies are, and it waits there until you walk to it. It is worth fifty points.' },
     { title: 'Island Trapped Divers', sound: null, desc: 'From island two on, a diver is sometimes trapped on the seabed, knocking on their tank: three hollow taps, a pause, three more. Swim to them to free them, and they come with you. Get them into the elevator up and they are worth one hundred and fifty points. If you drown with them, the run is over for both of you.' },
@@ -1270,9 +1281,9 @@ const HELP_DEMOS = [
     { title: 'Treasure Collected', sound: 'treasure_pickup', desc: 'Fifty points.' },
     { title: 'Trapped Diver', sound: 'diver_tap', desc: 'Three hollow taps on a tank. Someone needs you.' },
     { title: 'Diver Rescued', sound: 'diver_rescued', desc: 'You freed a trapped diver. They are with you; get them to the elevator up.' },
-    { title: 'Low Air', sound: 'countdown_high', desc: 'The high countdown, once a second over your last fifteen seconds of air. It is far higher than the clock\'s countdown, so in chaos mode you can tell your air from your time.' },
+    { title: 'Low Air', sound: 'countdown_high', desc: 'The high countdown over your last ten seconds of air: once a second at first, then faster and faster as the air runs out. It is far higher than the clock\'s countdown, so in chaos mode you can tell your air from your time.' },
     { title: 'Air Vent', sound: 'vent', desc: 'Loud bubbling, with a potion\'s chime quietly underneath. Swim into it for a full breath.' },
-    { title: 'Air Refilled', sound: 'vent_refill', desc: 'The rush of air: thirty seconds of air again.' },
+    { title: 'Air Refilled', sound: 'vent_refill', desc: 'The rush of air: twenty seconds of air again.' },
     { title: 'Guardian', sound: 'guardian', desc: 'The guardian. Louder and far lower than any other enemy, and heard from anywhere on the island. It blocks the elevator until you bring it down. Run out of shots while it still stands and it leaves its post and comes for you, because there is no ammo on an island and it bars the way down to where the ammo is. It is faster than you can walk at a steady pace, so it catches you.' },
     { title: 'Guardian Down', sound: 'guardian_down', desc: 'The deep boom of a guardian falling. Now the elevator will open.' },
     { title: 'Island Clear', sound: 'wave_start', desc: 'Every enemy on the island is down. The same war horn battle mode blows when a wave begins.' },

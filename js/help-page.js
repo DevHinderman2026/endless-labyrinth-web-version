@@ -16,6 +16,7 @@ import { deviceKind, isComputer } from './device.js';
 import { AudioEngine } from './audio.js';
 import { openPacks } from './packs.js';
 import { makeSounds as makeUltimateSounds } from './modes/ultimate.js';
+import { makeFindVoiceSounds } from './modes/findvoice.js';
 
 const $ = (id) => document.getElementById(id);
 const kind = deviceKind();
@@ -118,6 +119,9 @@ async function playDemo(button, section, item) {
     await ready;
     // Ultimate Mode's own tones are made by the game, not read from a pack.
     makeUltimateSounds(audio);
+    // Find the Voice's guide and charging creature are made from other recordings
+    // (web 6.0.0): made only for their own demos, so no other demo reads their packs.
+    if (/^fv_demo_/.test(item.sound)) await makeFindVoiceSounds(audio);
     const room = helpRoomFor(section);
     if (room) await audio.prepareRoom(room);
     audio.setRoom(room);

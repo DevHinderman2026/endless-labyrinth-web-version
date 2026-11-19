@@ -6,6 +6,9 @@ import { HELP as BASE_HELP } from './help-data.js';
 import { MODES } from './modes/index.js';
 import { RATES } from './speech.js';
 import { keyboardDevice, windowsOnly } from './device.js';
+import { BATTLE_CROWD, CROWD_LEVEL, AMBIENCE_LEVEL, BACKGROUND_SEND, ROARS, ROAR_LEVEL, ROAR_AFTER, HIT_REACTIONS, HIT_REACT_LEVEL,
+  crowdSend } from './modes/ultimate.js';
+import { aliasRecording } from './modes/events/sounds.js';
 
 // ------------------------------------------------------------------ constants
 import {
@@ -38,6 +41,14 @@ const BATTLE_EMERGENCY_MIN_SHOTS = 3;   // the emergency cartridge finishes the 
 const BATTLE_CREDIT_MIN_DIST = 15.0;
 const BATTLE_CREDIT_GAIN = 0.7;
 const BATTLE_BREAK_COUNTDOWN = 5;
+// The arena crowd (web 6.0.0, Russell, 19 November 2026): Ultimate Mode's arena
+// crowd in every battle, Battle Mode's and Chaos's, exactly as in Ultimate's battle
+// areas: the stadium crowd under the drums, a roar when you shoot an enemy down, a
+// groan or a gasp when one reaches you, every one of them ringing in the arena's
+// echo (the cheers and reactions further into it, as Russell asked of Ultimate's).
+// No announcer. Its level against the drone is Ultimate's (there the drone is
+// AMBIENCE_LEVEL and the crowd CROWD_LEVEL of that; here the drone is 0.8).
+const BATTLE_CROWD_LEVEL = CROWD_LEVEL * AMBIENCE_LEVEL;
 const LAB_DENSITY_CAP = 0.25;            // the most of a labyrinth's cells that may be walls (2.0.0; was 0.35)
 const STANDARD_CREDIT_VALUES = [20, 30, 40];   // 5.0.0 (were 15, 20, 30)
 const STANDARD_CREDIT_WEIGHTS = [70, 22, 8];
@@ -401,6 +412,10 @@ export class Game {
     this.battleAmbTimer = uniform(...BATTLE_AMB_SWAP);
     this.battleBeatIdx = -1;
     this.battleAmbIdx = -1;
+    if (this.battleCrowdChannel) this.battleCrowdChannel.stop();
+    this.battleCrowdChannel = null;
+    this.battleLastRoar = null;
+    this.battleLastReact = null;
     this.breakLastBeep = null;
     for (const m of MODES) if (m.reset) m.reset(this);
   }
@@ -438,8 +453,63 @@ export class Game {
     }
     this.battleBeatIdx = idx;
     this._prepareUpcoming('battle_beat', idx);
+    // (The crowd stays when only the drums change.)
+    const crowd = this._battleCrowdLetGo();
     if (this.beatChannel) this.beatChannel.fadeout(fade * 1000);
     this.beatChannel = this.audio.play(BATTLE_DRUMS[idx], { loops: -1, volume: 0.7, fadeMs: fade * 1000 });
+    this._battleCrowdOn(crowd, fade);
+  }
+
+  // The arena crowd's loop goes with the drums (Voice.followers): it fades and
+  // stops with them, so a chaos battle's crowd fades out with its drums when the
+  // level ends, and a game over or a new run stops it with them. When the drums
+  // change partway through a battle the crowd is handed on to the new ones.
+  _battleCrowdLetGo() {
+    const c = this.battleCrowdChannel;
+    if (c && this.beatChannel) this.beatChannel.followers = this.beatChannel.followers.filter((f) => f !== c);
+    return c && c.busy && !c.fadingOut ? c : null;
+  }
+
+  _battleCrowdOn(crowd, fade) {
+    let c = crowd;
+    if (!c && this.audio.has(BATTLE_CROWD)) {
+      const name = aliasRecording(this.audio, BATTLE_CROWD, `event_amb_file_${BATTLE_CROWD}`);
+      if (name) c = this.audio.play(name, { loops: -1, volume: BATTLE_CROWD_LEVEL, fadeMs: fade * 1000, send: BACKGROUND_SEND });
+    }
+    this.battleCrowdChannel = c || null;
+    if (c && this.beatChannel) this.beatChannel.followers.push(c);
+  }
+
+  // One of the crowd's recordings, never the one heard last (Ultimate's _utFresh).
+  _battleCrowdPick(list, memo) {
+    const have = list.filter((n) => this.audio.has(n));
+    if (!have.length) return null;
+    const pool = have.length > 1 ? have.filter((n) => n !== this[memo]) : have;
+    const n = choice(pool);
+    this[memo] = n;
+    return n;
+  }
+
+  // An enemy shot down: the crowd roars the moment the bang is heard (Ultimate's
+  // _utKillEnemy), all round you, in the arena's echo. Only in the battle it was for.
+  _battleCheer(bang) {
+    const name = this._battleCrowdPick(ROARS, 'battleLastRoar');
+    if (!name) return;
+    const run = this.runId; const level = this.battleLevel;
+    const fire = () => {
+      if (this.runId !== run) return;
+      if (this.isPaused || this.state === S.CONFIRM_EXIT || this.state === S.HELP) { setTimeout(fire, 250); return; }
+      if (this.state !== S.BATTLE || (this.chaosMode && this.battleLevel !== level)) return;
+      this.audio.play(name, { volume: ROAR_LEVEL, send: crowdSend(name) });
+    };
+    setTimeout(fire, Math.max(0, bang + ROAR_AFTER) * 1000);
+  }
+
+  // An enemy reaches you: the crowd reacts. In a battle that is the end, so the
+  // reaction comes at once, as Ultimate's does for the blow that ends a run.
+  _battleCrowdReact() {
+    const name = this._battleCrowdPick(HIT_REACTIONS, 'battleLastReact');
+    if (name) this.audio.play(name, { volume: HIT_REACT_LEVEL, send: crowdSend(name) });
   }
 
   _battleSwapAmb(fade = BATTLE_SWAP_FADE) {
@@ -798,7 +868,11 @@ export class Game {
     const dist = Math.hypot(dx, dy);
     const pan = dist > 0 ? dx / dist : 0.0;
     const vol = Math.max(0.12, 1.0 - dist / 40.0) * gain;
-    return [Math.min(1.0, vol * (1.0 - Math.max(0.0, pan))), Math.min(1.0, vol * (1.0 - Math.max(0.0, -pan))), dist];
+    // (6.0.0 review fix) The loudness is held to full, not each side: with a gain above
+    // one (the island guardian) both sides reached full when it was near, and the 3D
+    // sound, which reads the direction from the two, heard it straight ahead.
+    const v = Math.min(1.0, vol);
+    return [v * (1.0 - Math.max(0.0, pan)), v * (1.0 - Math.max(0.0, -pan)), dist];
   }
 
   _battleLocked() {
@@ -834,6 +908,7 @@ export class Game {
       this.obstacles.splice(this.obstacles.indexOf(hit), 1);
       this.kills += 1;
       this._later(minDist * 0.015, 'explosion', [hit.x, hit.y]);
+      this._battleCheer(minDist * 0.015);
       this.waveKills += 1;
       // Chaos battles keep the old two second lull between trickled spawns.
       const totalNeeded = this._battleTargetsNeeded();
@@ -950,6 +1025,7 @@ export class Game {
       if (o.channel) o.channel.setVolume(l, r, this._behind([o.x, o.y]));
       if (dist < 0.8) {
         this.audio.play('player_hit');
+        this._battleCrowdReact();
         this.triggerGameOver();
         return;
       }
@@ -1149,7 +1225,7 @@ export class Game {
       return v <= 0 ? `${label}: No score yet` : `${label}: ${fmt(v)}`;
     };
     // In the desktop's _score_lines order; a board it does not list goes after.
-    const order = ['chaos', 'tower', 'drive', 'drive_distance', 'island', 'ultimate'];
+    const order = ['chaos', 'tower', 'drive', 'drive_distance', 'island', 'findvoice', 'ultimate'];
     const rank = (b) => (order.includes(b.key) ? order.indexOf(b.key) : order.length);
     const boards = MODES.flatMap((md) => md.boards || []).map((b, i) => [b, i])
       .sort((a, b) => rank(a[0]) - rank(b[0]) || a[1] - b[1]).map(([b]) => b);
@@ -1527,7 +1603,7 @@ export class Game {
   }
 
   _turnQuick(dir) {
-    if (!this._turnsNow() || this.isPaused) { this.tn.turnWas = null; return; }
+    if (!this._turnsNow() || this.isPaused || this.climbHold > 0) { this.tn.turnWas = null; return; }
     turnQuick(this.tn, dir);
   }
 
@@ -1535,7 +1611,8 @@ export class Game {
   // on (a finger may lift during a pause); a start only in play.
   _turnInput(g) {
     if (g === 'turn_end') { turnEnd(this.tn); return; }
-    if (!this._turnsNow() || this.isPaused) return;
+    // (5.2.0: no turning during the pause after a tower climb, as no walking.)
+    if (!this._turnsNow() || this.isPaused || this.climbHold > 0) return;
     turnStart(this.tn, g === 'turn_right_start' ? 1 : -1, (a) => this._face(a));
   }
 
@@ -1563,6 +1640,10 @@ export class Game {
       return;
     }
     if (this.isPaused) { if (this.tn.turn) this._turnStop(); return; }
+    // 5.2.0: during the pause after a tower climb nothing moves, turning included:
+    // a turn under way stops where it is (a quick one lands), and a held arrow or
+    // finger has to be pressed again once the next floor has begun, as a run does.
+    if (this.climbHold > 0) { if (this.tn.turn) this._turnStop(); return; }
     if (a.facing !== this.tn.face) a.setFacing(this.tn.face, true);
     updateTurn(this.tn, dt, {
       face: (ang, instant) => this._face(ang, instant),

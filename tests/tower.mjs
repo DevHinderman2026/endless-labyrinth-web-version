@@ -153,7 +153,10 @@ const run = await page.evaluate(() => {
   g._towerNextFloor = () => {
     const b = snap();
     origNext();
-    out.transitions.push({ b, a: snap(), said: document.getElementById('said').textContent, liveDrones: [...a.live].filter((v) => v.name.startsWith('tow_') && !v.stopped).length });
+    // 5.2.0: the next floor is laid out once the climb and its half-second pause end.
+    const held = g.climbHold > 0;
+    if (held) g._climbHoldUpdate(g.climbHold + 0.01);
+    out.transitions.push({ b, a: snap(), held, said: document.getElementById('said').textContent, liveDrones: [...a.live].filter((v) => v.name.startsWith('tow_') && !v.stopped).length });
   };
   const origPlay = a.play.bind(a);
   a.play = (name, opts) => {
@@ -248,6 +251,7 @@ for (const [n, t] of run.transitions.entries()) {
   check(af.enemy && af.enemyFresh && af.item && af.drone && af.drone !== b.drone,
     `floor ${n + 1}: a fresh rival, a new item and new air (${b.drone} -> ${af.drone})`);
 }
+check(run.transitions.every((t) => t.held), 'web 5.2.0: every floor waits for the climb and its pause before it is laid out');
 check(run.transitions.some((t) => t.b.hp < 100 && t.a.hp === t.b.hp), 'reduced health is carried up the stairs');
 check(run.transitions.some((t) => t.b.items > 0 && t.a.items >= t.b.items), 'unspent items are carried up the stairs');
 check(run.said.some((s) => /^Floor 2 of \d+\.$/.test(s) || /^Floor 1 of \d+\.$/.test(s)), 'each new floor is announced');
@@ -279,6 +283,7 @@ const top = await page.evaluate(() => {
   g.tts.speak = (t, o) => { lines.push(t); return orig(t, o); };
   const level = g.level;
   g._towerNextFloor();
+  if (g.climbHold > 0) g._climbHoldUpdate(g.climbHold + 0.01);     // 5.2.0: the climb, then the floor
   g.tts.speak = orig;
   return { lines, hp: g.towerHp, items: g.towerItems, number: g.towerNumber, floor: g.towerFloor, height: g.towerHeight,
     diff: g._towerDifficulty(), level: g.level - level };

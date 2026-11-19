@@ -43,6 +43,8 @@ import { TowerEnemy, TowerItem, TowerProjectile, volleySpread, TOWER_DRONES } fr
 import { addMade, aliasRecording, ensureCopies } from './events/sounds.js';
 import { knockSound } from './events/blocks.js';
 import { HELP_SECTIONS, HELP_DEMOS } from './ultimate/help.js';
+import { loadCast, castFor, CastVoices, pickStory, noteHeard } from './ultimate/cast.js';
+import { sayLocatable } from './findvoice-guide.js';
 import { RULES } from '../sound-rules.js';
 import {
   makeWorld, makeSeabed, CELL, AREA_CELLS, key, cellOf, posOf, isFloor, areaAt, nearestPointOf, leakPoint, echoMix,
@@ -67,7 +69,8 @@ export const BOARD = 'ultimate';
 // How long a world lasts: drawn at random for every world, between these (Russell,
 // 8 Nov, web 3.1.0: no fixed length, and nothing says how long is left; the only
 // warning is the five-second countdown. Two, three and five minutes were tried).
-export const WORLD_SECONDS = [60, 240];
+// Web 6.0.0 (Russell, 19 November 2026): two to five minutes (was one to four).
+export const WORLD_SECONDS = [120, 300];
 export const COUNT_FROM = 5;                    // Battle's countdown over the last seconds
 export const NO_SPAWN_FROM = 3;                 // nothing new appears in the last seconds
 export const FADE_OUT = 2.0;                    // the old world fades over its last two seconds
@@ -133,6 +136,14 @@ export const THROWER_MAX = 20;                  // its difficulty never goes abo
 export const COMPASS_HOLD_MS = 1000;
 export const COMPASS_BEEP_EVERY = 0.45;
 export const COMPASS_BEEP_TURNING = 0.16;       // while you turn with the compass on, so the pitch follows the turn
+// Web 6.0.0 (Russell, 19 November 2026): the compass stays on for at most
+// COMPASS_MAX_ON seconds, then turns itself off without a word, and cannot be
+// turned on again for COMPASS_REST seconds: with it on nothing can move, and a
+// player could otherwise freeze the enemies and wait out a world. Turning it off
+// and on again does not start the half minute afresh: only COMPASS_REST seconds
+// with it off does.
+export const COMPASS_MAX_ON = 30;
+export const COMPASS_REST = 15;
 // ---- turning (web 4.0.0; shared with every mode that turns since 5.0.0: js/turning.js).
 // The facing is an angle, clockwise from north.
 export const AIM_HALF = 30.5 * DEG;              // the aim: this far either side of straight ahead (web 4.1.0: 30 degrees, and the half over so that one exactly on the line is in; it was 45.5, the front quarter. A quick turn's steps are 30 degrees, so some step always has an enemy within 15)
@@ -356,6 +367,60 @@ export const CASE_SHOTS_OVER = [1, 3];          // shots: this many more than th
 export const CASE_TIME = 60;                    // seconds put back on the world's clock (web 5.0.0; was 30)
 export const CASE_HEALTH = 30;
 export const CASE_ITEMS = [2, 3];
+// Chaos Mode's world stage (web 6.0.0, website only; Russell, 19 Nov): a random
+// world of this mode, for the world's own random length, inside a chaos run.
+// Its credits are chaos TIME credits, every one of them in a glass case, as many
+// as this mode's credits (CREDITS_AT_ONCE); everything else pays points as here,
+// toward the chaos score. Every water slide adds CHAOS_SLIDE_TIME to the chaos
+// clock the moment you splash in. Its ammo and items are its own, carried from
+// one world stage to the next. Enemies and buses come along unchanged (Russell's
+// decision); the two switches are here in case that is ever revisited.
+export const CHAOS_WORLD_ENEMIES = true;
+export const CHAOS_WORLD_BUSES = true;
+export const CHAOS_CREDIT_VALUES = [40, 50, 60];   // seconds, as every chaos credit
+export const CHAOS_SLIDE_TIME = 30;
+// The safe zones' characters (web 6.0.0, Russell, 19 Nov; the cast and their lines
+// in js/data, see ultimate/cast.js). Each safe zone has its character standing
+// somewhere in it. While you are in the zone they greet you now and then, from
+// where they stand, in their own Kokoro voice with the world's echo. Walk to them
+// (within two steps) and they tell you one story line, then give you a gift. Walk
+// away while they talk and they talk on; the gift waits for you, and they call you
+// back now and then. One gift a character, each world. Their lines are always
+// heard, whatever the Speech setting: they are found by ear.
+export const CAST_REACH = 6.0;                  // two steps
+export const CAST_GREET_EVERY = [4.0, 7.0];     // seconds between greetings
+export const CAST_CALLBACK_EVERY = [5.0, 8.0];  // between call-backs, while the gift waits
+export const CAST_LEVEL = 1.0;                  // beside them: the in-run voice's level
+export const CAST_RANGE = 45.0;                 // they fade over this many units
+export const CAST_FLOOR = 0.15;                 // and are never quieter than this inside their zone
+export const CAST_WAIT_VOICE = 2.5;             // seconds a story or gift line waits to be made before the device's voice says it
+export const CAST_BEACON = 'event_beacon_shimmer';   // where they stand, while the device's voice speaks for them
+// The gifts, by Russell's eight groups: supplies only. Health is added on top, even
+// over 100 (only potions never give more than 100).
+export const GIFT_SPOOKY_AMMO = [8, 12];
+export const GIFT_SPOOKY_HEALTH = [20, 30];
+export const GIFT_SPOOKY_LUCKY = 0.15;          // the lucky one: health over 100, a random amount
+export const GIFT_SPOOKY_SURPLUS = [15, 40];
+export const GIFT_FULL_CARTRIDGE = AMMO_SHOTS[1];
+export const GIFT_MEAL = [25, 35];
+export const GIFT_BIG_CARTRIDGE = [12, 15];
+export const GIFT_HOLY_HEALTH = [20, 30];
+export const GIFT_HOLY_SURPLUS = 0.3;           // sometimes a little over 100
+export const GIFT_HOLY_OVER = [5, 15];
+export const GIFT_WATER = { shots: [2, 4], health: [10, 15] };
+export const GIFT_ITEMS = [3, 5];
+export const GIFT_BUNDLE = { shots: [3, 5], health: [10, 15], items: [1, 2] };
+export const GIFT_RARE_CHANCE = 0.1;            // in every group: two more minutes in this world, or a treasure chest (half each)
+export const GIFT_MINUTES = 120;
+export const GIFT_CHAOS_CLOCK = 210;            // a chaos world stage: and three and a half minutes on the chaos clock
+export const GIFT_CHEST_FROM = [12.0, 40.0];    // the chest lies this far from you, within hearing
+// The world's mercy: only after a story line that is a hint, by luck, once the
+// character has finished talking.
+export const MERCY_CHANCE = 0.3;
+export const MERCY_SECONDS = 35;
+export const MERCY_SOUND = 'evt_magic_twinkle';
+// The gifts' chances are rolled here (the tests roll their own).
+export const GIFT_DICE = { roll: () => Math.random() };
 
 // ------------------------------------------------------------------ helpers
 const rand = Math.random;
@@ -512,7 +577,16 @@ const mixin = {
     this.audio.setWorldLevel(1, 0.01);
     this.audio.setMuffle(false, 0.01);
     this.audio.prepare('elevator_ride');
-    const u = this.ut = {
+    this.ut = this._utRunState();
+    // The menu's words stop; the world says the rest. (Nothing is announced: the
+    // one-time notice of 4.0.0 is gone since 5.0.0.)
+    this.tts.speak('', { interrupt: true });
+    this._utNewWorld(true);
+  },
+
+  // A run's state, fresh (`more` is laid over it: a chaos world stage's).
+  _utRunState(more = {}) {
+    return {
       run: this.runId,
       worldNo: 0, worlds: 0, elapsed: 0.0, worldTime: 0.0, worldLen: 0.0, phase: 'play', gap: 0.0, safe: 0.0, lastCount: -1,
       hp: START_HP, ammo: randint(START_AMMO[0], START_AMMO[1]), items: randint(START_ITEMS[0], START_ITEMS[1]),
@@ -520,14 +594,283 @@ const mixin = {
       world: null, area: null, areaSounds: new Map(), enemies: [], projectiles: [], towerItems: new Map(),
       pickups: [], timers: [], respawn: new Map(), potionDue: new Map(), hitCooldown: 0, lowWarned: false,
       place: 'world', ride: null, seabed: null, lift: null, liftArmed: false, dingTimer: 0,
-      compass: { on: false, t: 0 }, prox: 0, steps: [],
+      compass: { on: false, t: 0, used: 0, rest: 0, lock: 0 }, prox: 0, steps: [],
       face: 0, turn: null, turnWas: null,   // the way you face (radians clockwise from north), the turn in progress, if any, and a held turn only just let go (_utTurnEnd)
       voices: new Set(), shots: new Set(),
+      chaos: false,
+      ...more,
     };
-    // The menu's words stop; the world says the rest. (Nothing is announced: the
-    // one-time notice of 4.0.0 is gone since 5.0.0.)
-    this.tts.speak('', { interrupt: true });
+  },
+
+  // ---------------------------------------------------------------- Chaos Mode's world stage (web 6.0.0)
+  // A chaos stage that is one world of this mode (chaos.js picks it, rarest of all).
+  // Nothing says it is a world: you are dropped in, as here, and work it out by ear.
+  // Ammo, items, the enemies' pace (the minutes played in worlds) and the points
+  // multiplier (worlds survived) carry from one world stage to the next in the run;
+  // health starts full in each. You face as you did in the stage before.
+  _utChaosStart() {
+    this.state = STATE;
+    makeSounds(this.audio);
+    this.audio.spatialOn();
+    this.audio.setWorldLevel(1, 0.01);
+    this.audio.setMuffle(false, 0.01);
+    this.audio.prepare('elevator_ride');
+    const c = this.chaosWorld || {};
+    this.ut = this._utRunState({
+      chaos: true, face: this.tn ? this.tn.face : 0,
+      worlds: c.worlds || 0, elapsed: c.elapsed || 0,
+      ...(c.ammo !== undefined ? { ammo: c.ammo } : {}), ...(c.items !== undefined ? { items: c.items } : {}),
+      speedBonus: c.speedBonus || 1.0,
+    });
     this._utNewWorld(true);
+  },
+
+  // The world stage is over (its count reached zero, and you are alive): what it
+  // carries is kept for the next one, and chaos goes straight on to its next stage.
+  _utChaosWorldDone() {
+    const u = this.ut;
+    u.worlds += 1;
+    this.chaosWorld = { worlds: u.worlds, elapsed: u.elapsed, ammo: u.ammo, items: u.items, speedBonus: u.speedBonus };
+    this.nextLevel();
+  },
+
+  // Chaos leaves the world (chaos.js _chaosClearEverything): every sound of it
+  // stops, the 3D world closes, and the way you faced carries into the next stage.
+  _utChaosLeave() {
+    const u = this.ut;
+    if (!u || !u.chaos) return;
+    if (this.tn) { this.tn.face = u.face; this.tn.turn = null; }
+    for (const v of [...u.voices]) v.stop();
+    u.voices.clear();
+    for (const v of [...u.shots]) v.stop();
+    u.shots.clear();
+    if (u.ride && u.ride.voice) u.ride.voice.stop();
+    if (u.bus && u.bus.pullVoice) u.bus.pullVoice.stop();
+    if (u.compass.on) { u.compass.on = false; this.audio.setMuffle(false, 0.01); }
+    this.audio.listenerMix = null;
+    if (this.audio.spatial) this.audio.spatialOff({ now: true });
+    if (this.audio.trimBig) this.audio.trimBig();
+    this.ut = null;
+  },
+
+  // A chaos time credit (from a glass case in a world stage): onto the chaos clock,
+  // its announcements put right as every chaos credit does.
+  _utChaosTime(seconds) {
+    this.timeLeft += seconds;
+    this.thirtySecAnnounced = this.timeLeft <= 30.0;
+    const step = this._announceStep();
+    this.nextAnnounceTime = Math.floor((this.timeLeft - 1) / step) * step;
+    this.lastBeepSecond = -1;
+  },
+
+  // ---------------------------------------------------------------- the safe zones' characters (web 6.0.0)
+  _utCastVoices() {
+    if (!this.castVoices) this.castVoices = new CastVoices(() => (this.tts && this.tts.bella ? this.tts.bella.engine : null));
+    return this.castVoices;
+  },
+
+  // How loud a character is from where you are: by distance, never under the floor
+  // in their own zone; from outside it, as the world outside a safe zone is heard.
+  _utCastLevel(a, d) {
+    const u = this.ut;
+    const near = Math.max(0, 1 - d / CAST_RANGE);
+    if (u.area === a && u.place === 'world') return CAST_LEVEL * Math.max(CAST_FLOOR, near);
+    return CAST_LEVEL * near * SAFE_OUTSIDE;
+  },
+
+  // One of a character's lines, never the one they said last of that kind.
+  _utCastLine(w, kind) {
+    const list = w.ch.lines[kind] || [];
+    if (!list.length) return null;
+    const pool = list.length > 1 ? list.filter((l) => l !== w['last_' + kind]) : list;
+    const ln = pool[Math.floor(rand() * pool.length)];
+    w['last_' + kind] = ln;
+    return ln;
+  },
+
+  // Their lines made ahead while you are near: the next greeting, the story, a
+  // call-back and a gift line.
+  _utCastPrepare(w) {
+    const cv = this._utCastVoices();
+    if (!cv.usable(w.ch.voice)) return;
+    if (!w.story) w.story = pickStory(w.ch, this.scores && this.scores.settings);
+    w.nextGreet = w.nextGreet || this._utCastLine(w, 'greeting');
+    w.nextCallback = w.nextCallback || this._utCastLine(w, 'callback');
+    w.nextGift = w.nextGift || this._utCastLine(w, 'gift');
+    for (const ln of [w.nextGreet, w.story, w.nextCallback, w.nextGift]) if (ln) cv.peek(w.ch.voice, ln, this.audio.ctx);
+  },
+
+  // Say a line from where they stand. Their own voice when it is made; the device's
+  // voice (and their beacon) when it cannot be. Returns false when the line is not
+  // ready yet (it is being made: asked again next frame).
+  _utCastSay(a, ln, { mayWait = false } = {}) {
+    const w = a.who;
+    if (!ln) return true;
+    const cv = this._utCastVoices();
+    if (cv.usable(w.ch.voice)) {
+      const buf = cv.peek(w.ch.voice, ln, this.audio.ctx);
+      if (buf) {
+        const name = `ut_cast_${ln.id}`;
+        // Each character's last line is all the sound engine keeps of theirs: the one
+        // before is let go now (it has been heard out). Kept for good, an evening's
+        // lines would fill a phone's memory.
+        if (!this.castLast) this.castLast = new Map();
+        const prev = this.castLast.get(w.ch.id);
+        if (prev && prev !== name) { this.audio.buffers.delete('dry:' + prev); this.audio.entries.delete(prev); }
+        this.castLast.set(w.ch.id, name);
+        if (!this.audio.buffers.has('dry:' + name)) {
+          this.audio.entries.set(name, { dry: { frames: 0, made: true } });
+          RULES.FAMILY[name] = 'speech';
+          RULES.ROOMS[name] = ['lab', 'tower', 'battle', 'cathedral', 'hall'];
+        }
+        this.audio.buffers.set('dry:' + name, buf);
+        w.voice = this._utPlay(name, w.pos, { volume: 0.0 });
+        w.until = 0; w.waited = 0;
+        if (w.beacon) { w.beacon.stop(); this.ut.voices.delete(w.beacon); w.beacon = null; }
+        return true;
+      }
+      if (mayWait && w.waited < CAST_WAIT_VOICE) return false;
+    }
+    // The device's voice (heard whatever the Speech setting), not placed; the
+    // shimmering beacon marks where they stand.
+    sayLocatable(this.tts, ln.text);
+    w.until = 0.6 + ln.text.length * 0.065;
+    w.waited = 0;
+    if (!w.beacon && this.audio.has(CAST_BEACON)) w.beacon = this._utPlay(CAST_BEACON, w.pos, { loops: -1, volume: 0.0 });
+    return true;
+  },
+
+  _utUpdateCast(dt) {
+    const u = this.ut;
+    if (!u.world) return;
+    for (const a of u.world.areas) {
+      const w = a.who;
+      if (!w) continue;
+      const here = u.place === 'world' && u.area === a;
+      const d = dist2(w.pos, this.playerPos);
+      const level = this._utCastLevel(a, d);
+      if (w.voice && !w.voice.busy) w.voice = null;
+      if (w.voice) this._utFollow(w.voice, w.pos, level);
+      if (w.beacon) {
+        if (w.state === 'done' && !(w.until > 0)) { w.beacon.stop(); u.voices.delete(w.beacon); w.beacon = null; }
+        else this._utFollow(w.beacon, w.pos, level * 0.7);
+      }
+      if (w.until > 0) w.until -= dt;
+      const talking = !!w.voice || w.until > 0;
+      if (here || d < CAST_RANGE) this._utCastPrepare(w);
+      if (w.state === 'greet') {
+        if (!here) continue;
+        if (d <= CAST_REACH && !talking) {
+          if (!w.story) w.story = pickStory(w.ch, this.scores && this.scores.settings);
+          w.waited += dt;
+          if (this._utCastSay(a, w.story, { mayWait: true })) { w.state = 'telling'; w.told = w.story; }
+          continue;
+        }
+        w.timer -= dt;
+        if (w.timer <= 0 && !talking) {
+          const ln = w.nextGreet || this._utCastLine(w, 'greeting');
+          if (this._utCastSay(a, ln)) { w.nextGreet = null; w.timer = uniform(CAST_GREET_EVERY[0], CAST_GREET_EVERY[1]); }
+        }
+      } else if (w.state === 'telling') {
+        if (talking) continue;
+        noteHeard(this.scores && this.scores.settings, w.told);
+        try { this.scores.save(); } catch (e) { /* the heard list waits for the next save */ }
+        if (here && d <= CAST_REACH) w.state = 'gift';
+        else { w.state = 'waiting'; w.timer = 1.5; }
+      } else if (w.state === 'waiting') {
+        if (here && d <= CAST_REACH && !talking) { w.state = 'gift'; continue; }
+        w.timer -= dt;
+        if (w.timer <= 0 && !talking && d < HEAR_RANGE) {
+          const ln = w.nextCallback || this._utCastLine(w, 'callback');
+          if (this._utCastSay(a, ln)) { w.nextCallback = null; w.timer = uniform(CAST_CALLBACK_EVERY[0], CAST_CALLBACK_EVERY[1]); }
+        }
+      } else if (w.state === 'gift') {
+        // Their gift line, then the gift.
+        w.waited += dt;
+        const ln = w.nextGift || this._utCastLine(w, 'gift');
+        if (this._utCastSay(a, ln, { mayWait: true })) { w.nextGift = null; w.state = 'giving'; }
+      } else if (w.state === 'giving') {
+        if (talking) continue;
+        this._utCastGive(a);
+        w.state = 'done';
+      }
+    }
+  },
+
+  // The gift: its own sound, and the in-run voice says what it is. Then, after a
+  // hint and by luck, the world's mercy.
+  _utCastGive(a) {
+    const u = this.ut; const w = a.who;
+    const rint = (r) => randint(r[0], r[1]);
+    const health = (n) => { u.hp += n; if (u.hp > 35) u.lowWarned = false; };
+    let words = null; let sound = 'ammo';
+    const roll = () => GIFT_DICE.roll();
+    if (roll() < GIFT_RARE_CHANCE) {
+      if (roll() < 0.5) {
+        u.worldTime += GIFT_MINUTES;
+        u.lastCount = -1;
+        sound = 'credit_chaos';
+        if (u.chaos) { this._utChaosTime(GIFT_CHAOS_CLOCK); words = 'You\'ve just received 2 more minutes in this world, and 3 and a half minutes on the clock.'; }
+        else words = 'You\'ve just received 2 more minutes in this world.';
+      } else if (this._utCastChest(a)) {
+        sound = null;
+        words = 'You\'ve just received a treasure chest. Listen for it nearby.';
+      }
+    }
+    if (!words) {
+      const g = w.ch.group;
+      if (g === 1) {
+        const r = roll();
+        if (r < GIFT_SPOOKY_LUCKY) { const before = u.hp; u.hp = Math.max(u.hp, START_HP) + rint(GIFT_SPOOKY_SURPLUS); u.lowWarned = false; sound = 'potion_drink'; words = `You've just received ${u.hp - before} health.`; }
+        else if (r < 0.5 + GIFT_SPOOKY_LUCKY / 2) { const n = rint(GIFT_SPOOKY_AMMO); u.ammo += n; words = `You've just received ${n} shots of ammo.`; }
+        else { const n = rint(GIFT_SPOOKY_HEALTH); health(n); sound = 'potion_drink'; words = `You've just received ${n} health.`; }
+      } else if (g === 2) { const n = GIFT_FULL_CARTRIDGE; u.ammo += n; words = `You've just received ${n} shots of ammo.`; }
+      else if (g === 3) { const n = rint(GIFT_MEAL); health(n); sound = 'potion_drink'; words = `You've just received ${n} health.`; }
+      else if (g === 4) { const n = rint(GIFT_BIG_CARTRIDGE); u.ammo += n; words = `You've just received ${n} shots of ammo.`; }
+      else if (g === 5) {
+        const before = u.hp; health(rint(GIFT_HOLY_HEALTH));
+        if (roll() < GIFT_HOLY_SURPLUS) u.hp = Math.max(u.hp, START_HP + rint(GIFT_HOLY_OVER));
+        sound = 'potion_drink'; words = `You've just received ${u.hp - before} health.`;
+      } else if (g === 6) {
+        const s = rint(GIFT_WATER.shots); const h = rint(GIFT_WATER.health);
+        u.ammo += s; health(h);
+        words = `You've just received ${s} shots of ammo and ${h} health.`;
+      } else if (g === 7) { const n = rint(GIFT_ITEMS); u.items += n; sound = 'item_throw'; words = `You've just received ${n} tower items.`; }
+      else {
+        const s = rint(GIFT_BUNDLE.shots); const h = rint(GIFT_BUNDLE.health); const i = rint(GIFT_BUNDLE.items);
+        u.ammo += s; health(h); u.items += i;
+        words = `You've just received ${s} shots of ammo, ${h} health and ${i} tower ${plural(i, 'item')}.`;
+      }
+    }
+    if (sound && this.audio.has(sound)) this.audio.play(sound, { keep: true });
+    u.lastGift = { group: w.ch.group, words };
+    this.tts.speak(words, { interrupt: true });
+    // The world's mercy.
+    if (w.told && w.told.hint && roll() < MERCY_CHANCE) {
+      u.worldTime += MERCY_SECONDS;
+      u.lastCount = -1;
+      u.mercies = (u.mercies || 0) + 1;
+      const s = aliasRecording(this.audio, MERCY_SOUND, `event_sting_file_${MERCY_SOUND}`);
+      if (s) this._utLater(1.2, s, null, { keep: true });
+      this.tts.speak(`The world shows you mercy. ${MERCY_SECONDS} more seconds.`, { interrupt: false });
+    }
+  },
+
+  // A treasure chest, placed within hearing: in their zone, or the area next door.
+  _utCastChest(a) {
+    const u = this.ut;
+    const near = [a, ...this._utNearAreas().filter((x) => x !== a)];
+    for (const area of near) {
+      const pos = randomFloor(u.world, area, rand, { from: this.playerPos, minDist: GIFT_CHEST_FROM[0], maxDist: GIFT_CHEST_FROM[1], avoid: u.pickups.map((p) => p.pos), clearance: 6.0 });
+      if (!pos) continue;
+      if (area.elevator && cellOf(pos)[0] === area.elevator[0] && cellOf(pos)[1] === area.elevator[1]) continue;
+      const beacon = CHEST_SOUNDS.find((n) => this.audio.has(n));
+      if (!beacon) return false;
+      u.pickups.push({ kind: 'chest', area, safe: false, pos, beacon, gain: CHEST_GAIN });
+      CHEST_OPEN_SOUNDS.forEach((n) => this.audio.has(n) && this.audio.prepare(n));
+      return true;
+    }
+    return false;
   },
 
   // ---------------------------------------------------------------- difficulty (tune)
@@ -577,6 +920,7 @@ const mixin = {
     const got = Math.round(base * this._utMultiplier());
     u.points += got;
     u.worldPoints += base;
+    if (u.chaos) this.chaosPoints = (this.chaosPoints || 0) + got;
   },
 
   _utInSafeZone() {
@@ -627,6 +971,7 @@ const mixin = {
         [a.room, a.stretch] = backgroundRoom(stem);
         a.stretch *= uniform(0.95, 1.08);
         if (WATER_PARK.test(stem)) a.waterPark = true;
+        a.stem = stem;
       }
     }
     // Dropped in silently, somewhere at random.
@@ -643,6 +988,7 @@ const mixin = {
     let total = 0;
     for (const a of w.areas) {
       if (!['battle', 'island', 'tower'].includes(a.kind)) continue;
+      if (u.chaos && !CHAOS_WORLD_ENEMIES) { a.enemyCount = 0; continue; }
       // A tower area has one rival, as a tower floor does; chasers go by the ramp.
       a.enemyCount = a.kind === 'tower' ? 1 : this._utEnemyCount();
       total += a.enemyCount;
@@ -657,7 +1003,8 @@ const mixin = {
     for (let i = 0; i < cartridges; i++) this._utSpawnPickup('ammo', order[i]);
     for (const a of w.areas.filter((x) => x.kind === 'event')) this._utSpawnPickup('ammo', a, { safe: true });
     const credits = randint(CREDITS_AT_ONCE[0], CREDITS_AT_ONCE[1]);
-    for (let i = 0; i < credits; i++) this._utSpawnPickup('credit', choice(w.areas));
+    // (A chaos world stage's credits are all in glass cases: below.)
+    if (!u.chaos) for (let i = 0; i < credits; i++) this._utSpawnPickup('credit', choice(w.areas));
     // The water parks: one slide in each safe zone with a water background.
     u.slides = [];
     for (const a of w.areas.filter((x) => x.waterPark)) {
@@ -679,18 +1026,37 @@ const mixin = {
     // The glass cases: one in some of the battle areas, islands and labyrinths.
     u.cases = []; u.glass = [];
     if (this.audio.has(CASE_SOUND)) {
-      for (const a of shuffle(w.areas.filter((x) => CASE_KINDS.includes(x.kind)))) {
-        if (u.cases.length >= CASE_MAX || rand() >= CASE_CHANCE) continue;
-        const avoid = [...u.pickups.map((p) => p.pos), ...u.enemies.filter((e) => e.area === a).map((e) => [e.x, e.y]), ...(a.elevator ? [posOf(a.elevator[0], a.elevator[1])] : [])];
+      // A chaos world stage: one case for each of the world's credits, each holding
+      // a chaos time credit (more than one in an area when the world has few).
+      const chaosCases = u.chaos ? credits : 0;
+      let kinds = w.areas.filter((x) => CASE_KINDS.includes(x.kind));
+      if (u.chaos && !kinds.length) kinds = w.areas.filter((x) => x.kind !== 'event');
+      const order = u.chaos ? (() => { const o = []; while (kinds.length && o.length < chaosCases) o.push(...shuffle(kinds.slice())); return o.slice(0, chaosCases); })() : shuffle(kinds);
+      for (const a of order) {
+        if (!u.chaos && (u.cases.length >= CASE_MAX || rand() >= CASE_CHANCE)) continue;
+        const avoid = [...u.pickups.map((p) => p.pos), ...u.cases.map((x) => x.pos), ...u.enemies.filter((e) => e.area === a).map((e) => [e.x, e.y]), ...(a.elevator ? [posOf(a.elevator[0], a.elevator[1])] : [])];
         const pos = randomFloor(u.world, a, rand, { from: this.playerPos, minDist: 15.0, avoid, clearance: 6.0 });
-        if (pos) u.cases.push({ area: a, pos, voice: null, near: false, smashed: false });
+        if (pos) u.cases.push({ area: a, pos, voice: null, near: false, smashed: false, credit: u.chaos ? choice(CHAOS_CREDIT_VALUES) : 0 });
       }
     }
     // The bus, if this world has one: due at a random moment of the world's
     // middle; it comes the first time, from then, that a safe zone is far from you.
     u.bus = null;
     u.busAt = (rand() < BUS_CHANCE && u.worldTime > BUS_APPEARS[0] + BUS_APPEARS[1] + 10) ? uniform(BUS_APPEARS[0], u.worldTime - BUS_APPEARS[1]) : null;
+    if (u.chaos && !CHAOS_WORLD_BUSES) u.busAt = null;
     u.busElapsed = 0;
+    // The safe zones' characters (each character in one zone a world).
+    u.castHere = new Set();
+    for (const a of w.areas.filter((x) => x.kind === 'event' && x.stem)) {
+      const ch = castFor(a.stem);
+      a.who = null;
+      if (!ch || u.castHere.has(ch.id)) continue;
+      const avoid = [...u.pickups.map((p) => p.pos), ...u.slides.filter((s) => s.area === a).flatMap((s) => [s.pos, s.pool].filter((q) => q))];
+      const pos = randomFloor(u.world, a, rand, { from: this.playerPos, minDist: 8.0, avoid, clearance: 6.0 }) || randomFloor(u.world, a, rand, {});
+      if (!pos) continue;
+      u.castHere.add(ch.id);
+      a.who = { ch, pos, state: 'greet', timer: uniform(1.0, 3.0), voice: null, beacon: null, until: 0, waited: 0, line: null, story: null };
+    }
     this._utRefreshRooms();
     this._utPotions(0);        // already low: the new world's safe zones have their potions from the start
     if (!first) this.audio.setWorldLevel(1, FADE_IN);
@@ -1039,13 +1405,17 @@ const mixin = {
       if (!safe) this._utScore(POINTS.ammo);
       if (p.safe) u.timers.push({ at: SAFE_AMMO_EVERY, kind: 'ammo', area: p.area, safe: true });
       else u.timers.push({ at: uniform(RESPAWN_PICKUP[0], RESPAWN_PICKUP[1]), kind: 'ammo' });
+    } else if (p.kind === 'chest') {
+      this._utOpenChest();
     } else if (p.kind === 'credit') {
       this.audio.play('credit_chaos');
       this._utScore(p.value);
       // A credit taken in a safe zone comes back out in a dangerous area.
       u.timers.push({ at: uniform(RESPAWN_PICKUP[0], RESPAWN_PICKUP[1]), kind: 'credit', danger: true });
     } else {
-      u.hp = START_HP;
+      // A potion fills you to 100 and never takes away what you have over it
+      // (web 6.0.0; potions only appear under POTION_BELOW in any case).
+      u.hp = Math.max(u.hp, START_HP);
       u.lowWarned = false;
       this.audio.play('potion_drink');
       if (!safe) this._utScore(POINTS.potion);
@@ -1107,9 +1477,15 @@ const mixin = {
       if (u.phase === 'fadein' && u.gap <= 0) u.phase = 'play';
     }
     if (u.phase === 'silence') return;
+    // A chaos world stage runs on the chaos clock too (its end is the run's end).
+    if (u.chaos) {
+      if (this._advanceTimer(dt)) return;
+      if (this.state !== STATE || this.ut !== u) return;
+    }
     u.elapsed += dt;
     if (u.safe > 0) u.safe -= dt;
     if (u.hitCooldown > 0) u.hitCooldown -= dt;
+    this._utCompassClock(dt);
     // The regeneration countdown runs whatever else is happening (the compass too).
     u.worldTime -= dt;
     // Nothing says how long is left: the five-second count is the only warning.
@@ -1117,6 +1493,14 @@ const mixin = {
     if (left >= 1 && left <= COUNT_FROM && left !== u.lastCount) {
       u.lastCount = left;
       this.audio.play('countdown_high', { keep: true });   // the only warning there is: never crowded out
+    }
+    // (6.0.0 review fix) Time won during the fade (a case smashed, a chest, a gift, the
+    // world's mercy, in the world's last two seconds) brings the world back: it had
+    // stayed faded out, silent, for all the time just won.
+    if (u.phase === 'fading' && u.worldTime > FADE_OUT) {
+      u.phase = 'play';
+      u.lastCount = -1;
+      this.audio.setWorldLevel(1, 0.3);
     }
     if (u.phase === 'play' && u.worldTime <= FADE_OUT) {
       u.phase = 'fading';
@@ -1148,6 +1532,7 @@ const mixin = {
     this._utUpdateCases(dt);
     this._utUpdateTower(dt);
     this._utUpdateLift(dt);
+    this._utUpdateCast(dt);
     this._utUpdateSounds(dt);
   },
 
@@ -1156,6 +1541,8 @@ const mixin = {
     const base = u.worldPoints;
     const well = base >= WELL_POINTS && u.worldDamage <= WELL_DAMAGE;
     if (well) u.speedBonus = Math.min(SPEED_CAP, u.speedBonus * SPEED_WELL);
+    // A chaos world stage ends here: no new world, straight on to chaos's next stage.
+    if (u.chaos) { this._utChaosWorldDone(); return; }
     u.worlds += 1;
     this._utStopWorld();
     this.audio.setWorldLevel(0, 0.01);
@@ -1562,6 +1949,7 @@ const mixin = {
       u.place = 'world';
       u.slide = null;
       this._utScore(SLIDE_POINTS, { safeOk: true });
+      if (u.chaos) this._utChaosTime(CHAOS_SLIDE_TIME);
       this._utRefreshRooms();
       this._utListenerMix();
     }
@@ -1593,6 +1981,10 @@ const mixin = {
     const e = this.audio.entries.get('elevator_ride');
     const own = e && e.dry ? e.dry.frames / RATE : RIDE_TIME;
     const len = Math.max(RIDE_MIN, Math.min(RIDE_MAX, own));
+    // (6.0.0 review fix) Going down, the hunters a smashed case let out give up, as
+    // the help says (they were only dropped while the enemies were being moved, which
+    // they are not during a ride or on the seabed, so they were waiting at the top).
+    if (dir === 'down') for (const en of [...u.enemies]) if (en.hunter) this._utDropHunter(en);
     u.place = 'ride';
     u.liftArmed = false;
     this._utTurnStop();
@@ -1779,7 +2171,8 @@ const mixin = {
     const u = this.ut;
     const open = CHEST_OPEN_SOUNDS.find((n) => this.audio.has(n));
     if (open) this.audio.play(open, { keep: true });
-    const kinds = shuffle(['shots', 'points', 'items', ...(u.hp < START_HP ? ['health'] : [])]);
+    // (Web 6.0.0: health whatever you have, added on top, even over 100.)
+    const kinds = shuffle(['shots', 'points', 'items', 'health']);
     const take = kinds.slice(0, randint(CHEST_REWARDS[0], CHEST_REWARDS[1]));
     if (rand() < CHEST_TIME_CHANCE) take.push('time');
     const words = [];
@@ -1788,11 +2181,15 @@ const mixin = {
       else if (kind === 'points') {
         const got = Math.round(CHEST_POINTS * this._utMultiplier());
         u.points += got; u.worldPoints += CHEST_POINTS;
+        if (u.chaos) this.chaosPoints = (this.chaosPoints || 0) + got;
         words.push(`${got} points`);
       } else if (kind === 'items') { const got = randint(CHEST_ITEMS[0], CHEST_ITEMS[1]); u.items += got; words.push(`${got} tower items`); }
       else if (kind === 'health') {
-        const full = rand() < CHEST_FULL_HEAL;
-        const got = full ? START_HP - u.hp : Math.min(CHEST_HEALTH, START_HP - u.hp);
+        // CHEST_HEALTH on top of what you have, with no ceiling (web 6.0.0: health
+        // over 100 is yours until hits take it down). A full heal, now and then,
+        // only where it is worth more than that: from under 60, up to 100.
+        const full = rand() < CHEST_FULL_HEAL && u.hp < START_HP - CHEST_HEALTH;
+        const got = full ? START_HP - u.hp : CHEST_HEALTH;
         u.hp += got;
         if (u.hp > 35) u.lowWarned = false;
         words.push(full ? 'full health' : `${got} health`);
@@ -2112,12 +2509,21 @@ const mixin = {
       u.enemies.push(e);
       came += 1;
     }
-    // The reward, one of five (health only if you have any to gain).
+    // A chaos world stage's case holds a chaos time credit, and nothing else.
+    if (u.chaos) {
+      const v = c.credit || choice(CHAOS_CREDIT_VALUES);
+      this._utChaosTime(v);
+      this.audio.play('credit_chaos', { keep: true });
+      u.lastCase = { kind: 'chaos_time', came, seconds: v };
+      this.tts.speak(`${v} more seconds.`, { interrupt: true });
+      return;
+    }
+    // The reward, one of five (web 6.0.0: health whatever you have, on top, even over 100).
     // (No points while the compass is on, as everywhere; so then it is not points.
     // As things stand the compass takes the attack away altogether, so this is only a guard.)
     const kinds = ['shots', 'time', 'items'];
     if (!u.compass.on) kinds.push('points');
-    if (u.hp < START_HP) kinds.push('health');
+    kinds.push('health');
     const kind = choice(kinds);
     let words;
     if (kind === 'points') {
@@ -2136,7 +2542,7 @@ const mixin = {
       u.items += got;
       words = `${got} tower ${plural(got, 'item')}`;
     } else {
-      const got = Math.min(CASE_HEALTH, START_HP - u.hp);
+      const got = CASE_HEALTH;
       u.hp += got;
       if (u.hp > 35) u.lowWarned = false;
       words = `${got} health`;
@@ -2275,6 +2681,12 @@ const mixin = {
 
   _utReport() {
     const u = this.ut;
+    if (u.chaos) {
+      // In chaos: no points of the world's own, the chaos clock and the run's points instead.
+      const pts = (this.chaosPoints || 0) + (this.islandPoints || 0);
+      this.tts.speak(`${u.hp} health. ${u.ammo} ${plural(u.ammo, 'shot')}. ${u.items} ${plural(u.items, 'item')}.${this._clockTail()} ${pts} points total. Facing ${this._utFacingWord()}.`, { interrupt: true });
+      return;
+    }
     // (Shots, then items: what the attack has to work with, wherever you are.)
     // Last, the way you face, as one of eight words (web 4.0.0: you can stop at any angle).
     this.tts.speak(`${u.hp} health. ${u.points} ${plural(u.points, 'point')}. ${u.ammo} ${plural(u.ammo, 'shot')}. ${u.items} ${plural(u.items, 'item')}. Facing ${this._utFacingWord()}.`, { interrupt: true });
@@ -2299,6 +2711,10 @@ const mixin = {
     if (u.place === 'ride') { this.tts.speak('Compass not available in the elevator.', { interrupt: true }); return; }
     if (u.place === 'slide') { this.tts.speak('Compass not available on the slide.', { interrupt: true }); return; }
     if (u.place === 'bus') { this.tts.speak('Compass not available on the bus.', { interrupt: true }); return; }
+    // (Resting: how long until it can come on again, in whole seconds rounded up. Russell, 19 Nov.)
+    if ((u.compass.lock || 0) > 0) { const n = Math.max(1, Math.ceil(u.compass.lock - 1e-6)); this.tts.speak(`Compass ready in ${n} ${plural(n, 'second')}.`, { interrupt: true }); return; }
+    // (Off for COMPASS_REST seconds or more: a fresh half minute.)
+    if ((u.compass.rest || 0) >= COMPASS_REST) u.compass.used = 0;
     u.compass.on = true;
     u.compass.t = 0;
     this.stride = null;
@@ -2311,8 +2727,29 @@ const mixin = {
     const u = this.ut;
     if (!u.compass.on) return;
     u.compass.on = false;
+    u.compass.rest = 0;
     this.audio.setMuffle(false, 0.4);
     if (!quiet) this.tts.speak('Compass off.', { interrupt: true });
+  },
+
+  // The compass's time limit (web 6.0.0), every frame of play: on for
+  // COMPASS_MAX_ON seconds in all, it goes off silently (only the world opening up
+  // again says so) and rests for COMPASS_REST seconds, when it cannot come on.
+  _utCompassClock(dt) {
+    const c = this.ut.compass;
+    if (c.lock > 0) c.lock = Math.max(0, c.lock - dt);
+    if (c.on) {
+      c.used = (c.used || 0) + dt;
+      if (c.used >= COMPASS_MAX_ON) {
+        this._utCompassOff(true);
+        c.used = 0;
+        c.lock = COMPASS_REST;
+        c.timeouts = (c.timeouts || 0) + 1;
+      }
+    } else {
+      c.rest = (c.rest || 0) + dt;
+      if (c.rest >= COMPASS_REST) c.used = 0;
+    }
   },
 
   // Where the compass leads: a waiting bus; from inside a safe zone, the way out
@@ -2522,7 +2959,8 @@ const mixin = {
   },
 };
 
-function crowdSend(name) { return CROWD_LIVE_RECORDED.includes(name) ? CROWD_SEND_LIVE : CROWD_SEND; }
+// (Exported for Battle Mode's crowd, web 6.0.0: game.js.)
+export function crowdSend(name) { return CROWD_LIVE_RECORDED.includes(name) ? CROWD_SEND_LIVE : CROWD_SEND; }
 
 // The first leg of a route: how far it runs straight, and which way it turns.
 function legOf(path, fromCell) {
@@ -2580,7 +3018,10 @@ function stopAll(game) {
 function input(game, g) {
   const u = game.ut;
   if (!u) return;
-  if (g === 'clock') return;   // no clock in this mode
+  if (g === 'clock') {   // no clock in this mode; a chaos world stage answers with the chaos clock
+    if (u.chaos) { const secs = Math.trunc(game.timeLeft); game.tts.speak(`${secs} second${secs === 1 ? '' : 's'} remaining.`, { interrupt: true }); }
+    return;
+  }
   if (u.phase === 'silence') return;   // between worlds nothing answers
   if (g === 'hold' || g === 'compass') { game._utCompassToggle(); return; }
   // A swipe left or right, or one press of an arrow: a quick turn (the compass
@@ -2604,6 +3045,7 @@ export default {
   mixin,
   init(game) {
     game.ut = null;
+    loadCast();
     // The mode's own tones (the compass, the low-ammo tones, the slide, the bus
     // chime) are made now, with the game, so Help's demos have them before any run
     // (they were made only when a run began, and the demos were silent until then).

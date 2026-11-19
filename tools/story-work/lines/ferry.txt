@@ -1,0 +1,97 @@
+# Willa, the river ferry keeper (river, waterfall).
+^Over here! Just follow the water.
+^Hey there! This way, by the riverbank.
+^Hi! Over here, by the boat.
+^This way! Careful, the stones are slippery.
+^Over here, walker! Can you hear the river? I'm right beside it.
+^Hello! Come on down to the water!
+^This way, friend! Follow the splashing!
+^Over here! The ferry's ready when you are.
+^Hi there! I'm by the falls!
+^This way! Just follow the rushing water.
+^Over here! I've got something for you!
+^Come on down, the water's lovely!
+<Hey! Come back! Your gift's still in the boat!
+<Over here again, by the river!
+<This way! Follow the water!
+<Come back, friend! I kept it dry for you!
+<Over here! Don't let it float away!
+<Back down to the riverbank!
+<Hey, walker! You forgot something! Over here!
+<Come back! The river's waiting, and so am I!
++Here you go. Fished it out just for you.
++Take this! The river brought it.
++For you, friend. Dry as a bone.
++A gift from the river. Safe travels.
+~I'm Willa. I run the ferry. Not that anyone ever needs to cross. I just like the boat.
+~Listen to that river. It never stops talking. Kind of like me.
+~The waterfall's loud, but you get used|hab to it. I can't sleep without it now.
+~I've fished this river a thousand worlds. Caught a lot of boots. A few fish.
+~Want to dip your toes in? It's cold, but it wakes you right up.
+~The river's my oldest friend. It doesn't always listen, but it always answers.
+~There's a little whirlpool by the big rock. Stay clear of it. It's nosy.
+~I named the boat Maybe. As in, maybe it'll float today.
+~If you hear a splash, that's just the fish. Or me falling in. Usually the fish.
+~The mist from the falls feels so nice. Like the world's breathing on you.
+The river always flows away from the middle of the world. Every world. Like everything in the middle is pushing it out.
+I've followed the river all the way down, more than once. It always ends at the waterfall. And the waterfall falls into the next world, I think.
+Things float down the river from worlds that aren't here anymore. A hat, a spoon, a little wooden boat. I keep them all.
+The waterfall roars louder just before a rebuild. Like a crowd cheering. Or like something big clearing its throat.
+I call the rebuild the Washing. The world gets rinsed off, clean and new, and everything starts over.
+There's a cave behind the waterfall. I've been inside. Nothing there but a stone bench and the sound of the water. And on the bench, a cup. Still warm.
+Captain Brine says all rivers flow to the sea. Sure. But where does the water come from? Up at the source there's just a spring, bubbling out of nothing.
+I drank from the spring once. Just one sip. For a second, I remembered a world I've never been to. Then it was gone.
+The fish swim upstream right before the countdown. All of them. Toward the middle of the world. I wish I knew what they're swimming to.
+If you drop a stone in the river, you can count how long it takes to sink. Usually a second. Right before a rebuild, it takes five.
+The river talks, if you sit long enough. Mostly nonsense. Gurgles and splashes. But sometimes I'd swear I hear it say, wait.
+There's a rumor the river is the world's memory. Everything that happens flows down it, and the waterfall is where the world forgets. I prefer to think the waterfall is where the world lets go, so it can make room for something new.
+The ferry has a little bell. Every world, someone rings it from the other side of the river. I row over. Nobody's ever there.
+Fennick in the marsh says the rain comes from the old worlds. That every drop is a little piece of something that used|hab to be. I like that.
+The river's never the same water twice, they say. Well, it's never the same world twice either. Maybe that's the same idea.
+I found a message carved into a rock at the bottom of the river. I could only feel the first word. It was, keep. Keep what, I'd love to know.
+The waterfall mist makes rainbows, people say. I've never seen one. But I can feel when they're there. The air gets a little warmer.
+When the world shows mercy, the river slows down. Just for a moment. Like it's taking a breath and smiling.
+The enemies never cross the river. They come right up to the bank and stop. Like the water is a line they're not allowed past.
+Some people think the river goes in a big circle around the whole world. If that's true, I've been rowing in circles. That would explain a lot.
+I heard a story about the first ferry keeper. She rowed across the river and found the edge of the world on the other side. She never came back to say what it was like. I'm sure she just liked it there.
+The water's colder in some worlds than others. Lady Rime says that's her ice melting, from far away. I think the world just has moods.
+Under the waterfall, the noise is so loud that it turns into a kind of quiet. In that quiet, I've heard voices. Talking about someone. Maybe you.
+I lost my paddle once, right before a rebuild. Next world, it was in the boat, dry, with a ribbon tied to it. Somebody's looking after me.
+The river is full of little whirlpools that spin the wrong way just before the countdown. All of them, all at once. Then they spin back.
+I asked the river why the world keeps rebuilding. It splashed me in the face. I think it thought that was funny.
+The old ferry keepers used|hab to say the world is like a river. You can't hold it still. You can only float along and see where it takes you.
+There's a mill wheel up at the bend that turns even when the river is low. Sprocket says it's connected to something big. Something underneath.
+The waterfall is the loudest place in the world, and the safest. Nothing can sneak up on you when the whole world is roaring.
+Some nights the river runs backward. Just for a minute. Everything floating in it goes upstream, toward the source. Then it turns around, like it remembered something.
+I keep a jar of river water from every world. They all sound different when you shake them. I've got a whole shelf now. It's like a little song.
+There's a whisper among the fishers that something lives at the bottom of the falls. Something big and slow and kind. It eats nothing but old worlds.
+Maybe the river is how the world gets from one world to the next. A long, wet road. And we're all just on the ferry.
+The stones on the riverbank are smooth and round, every one. They've been tumbling a long time. Longer than any world. Where did they tumble from?
+Petra in the caves says water is how the world counts. One drip, one moment. I think it's more like the world's laughing. Splash, splash.
+I once let my boat drift without rowing, just to see where the river wanted me to go. It took me straight to a safe place. Then the countdown started.
+Walkers always ask me where the river goes. Honestly, I don't know. Somewhere downhill. Somewhere new. That's good enough for me.
+~I talk to the fish sometimes. They're great listeners. Terrible at conversation, though.
+~Don't lean over the side of the boat too far. I did once. Lost my favorite hat. The river kept it.
+~The rocks by the waterfall are covered in moss. Soft and green. Perfect for a nap. If you can nap through all that noise.
+The waterfall has a rhythm under all the noise. A slow beat, like a drum. Five beats, then a pause. Then the countdown.
+I've seen lanterns floating down the river at night. Little paper lanterns, lit. Nobody launches them. They just come, from upstream.
+The river is warmest right after a rebuild. Like fresh bath water. Then it cools, slowly, as the world gets older.
+I tied a ribbon to a rock in the river. Next world, the ribbon was tied to a different rock, further downstream. The river moved it. Gently.
+Every world, I find a little wooden boat stuck in the reeds. Each one has a name painted on it. Hope. Wish. Maybe. Again.
+Some people say the waterfall is the world's clock. The water falls, the world falls, and it all starts again at the top.
+There's a deep pool under the waterfall where the water is perfectly still. In all that noise, a perfect stillness. That's where I go to think.
+I fished a key out of the river once. Old, rusty, very heavy. I don't know what it opens. Marigold says she has one too. Same kind.
+The river sings when it rains. A different song from the waterfall. Higher, faster. Like it's excited. Fennick says the frogs sing along.
+I once rowed upstream all the way to the source. A little spring, bubbling up out of a stone. The stone was warm. And it had a little door carved in it.
+The water in the river never runs out. It falls over the waterfall forever, and the river is always full. Where does it all go?
+I think the river is the world's road. It carries everything from one place to the next. Even from one world to the next.
+The fish in the river are always facing upstream. Every one. Swimming hard, staying still. Like they're waiting for something to come down the river.
+~Willa's my real name, but the fish call me Splash. Well, they would, if fish could talk. Which, around here, who knows.
+The mist from the falls carries little whispers. Voices from far away. Laughing, singing, calling out. Every world, different voices.
+The world's mercy, by the river, sounds like the water going calm. Like a deep breath. Then the river carries on, a little happier.
+Someone once dropped a message in the river, upstream, in a bottle. It floated to me. It said, the river knows. Knows what?
+I keep the ferry clean for whoever might need to cross. One day, someone will. Maybe it's you. Maybe it's the Builder.
+The waterfall is the loudest place in the world. And it's never once told me a secret. Too busy roaring, I suppose.
+Some nights, the river glows. Soft and blue. Like there's a light underneath. I followed it once. It led to the middle of the world. Then I lost it.
+The best thing about a river is that it always goes somewhere. It never stops. The world's like that too. Always going. Never stopping.
+I asked the waterfall how long it's been falling. It roared back at me. I took that as, a very long time. And it's not done yet.

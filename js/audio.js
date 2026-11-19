@@ -67,6 +67,85 @@ const PLACE_SAME = Math.cos(0.5 * Math.PI / 180);
 
 function clamp(v, lo, hi) { return Math.min(hi, Math.max(lo, v)); }
 
+// ---------------------------------------------------------------- one channel for a placed sound
+// Web 6.0.0 (Russell, 19 November 2026): every sound heard from a place in the
+// world (a beacon, a bell, a credit, an exit, a creature, an enemy, anything the
+// game puts somewhere) plays a one-channel copy of its recording. The browser's
+// HRTF panner hears a two-channel sound as two: its left side goes to the left ear
+// and its right side to the right ear, wherever the thing is, so a recording that
+// leans to one side, drifts from side to side, or is wide pulled the thing it
+// belonged to off its place. The copy is made here, in memory, the first time the
+// sound is placed, as loud as the recording (the power of its two sides), and kept
+// for as long as the recording is; the file itself is never changed. A recording
+// whose two sides work against each other (added together they lose more than
+// MONO_THIN of their power: some of it cancels out, and what is left sounds thin
+// and hollow), or that is all on one side, gives the louder side alone instead. Backgrounds, music, menus, the
+// player's own footsteps and speech are never placed and stay as they are.
+// (This takes in 5.2.0's copies for the events' looping sounds, events/engine.js
+// monoCopy, which come here already one channel.)
+const MONO_THIN = 0.447;         // a power ratio: three and a half decibels (unrelated sides lose three; more is cancelling)
+const MONO_ONE_SIDE = 0.01;      // one side under a hundredth of the other's power (20 decibels): the louder side alone
+const MONO_MAX_GAIN = 2.0;
+const MONO_PEAK = 0.98;
+const MONO_FULL_SCAN = 2 * 44100;    // frames: a recording longer than this is measured on every fourth frame
+const MONO_COPIES = new WeakMap();   // recording -> its one-channel copy
+const MONO_PLANS = new WeakMap();    // recording -> how the copy was made (for the tests)
+
+// How a recording's one-channel copy is made: { mode: 'same' | 'mix' | 'left' | 'right', gain, lossDb }.
+export function monoPlan(buf) {
+  if (!buf || buf.numberOfChannels < 2) return { mode: 'same', gain: 1, lossDb: 0 };
+  const have = MONO_PLANS.get(buf);
+  if (have) return have;
+  const l = buf.getChannelData(0); const r = buf.getChannelData(1); const n = buf.length;
+  let ll = 0; let rr = 0; let lr = 0; let pm = 0; let pl = 0; let pr = 0;
+  // (A long recording is measured on every fourth frame: the same powers, a
+  // quarter of the time, so a forty-second background placed for the first time
+  // costs a phone as little as it can.)
+  const step = n > MONO_FULL_SCAN ? 4 : 1;
+  for (let i = 0; i < n; i += step) {
+    const a = l[i]; const b = r[i];
+    ll += a * a; rr += b * b; lr += a * b;
+    const m = a + b > 0 ? a + b : -(a + b); if (m > pm) pm = m;
+    const x = a > 0 ? a : -a; if (x > pl) pl = x;
+    const y = b > 0 ? b : -b; if (y > pr) pr = y;
+  }
+  const mean = (ll + rr) / 2;                  // the recording's power, both sides
+  const mid = (ll + rr + 2 * lr) / 4;          // the power of the two sides averaged
+  let mode = 'mix'; let src = mid; let peak = pm / 2;
+  if (mean > 0 && (mid < mean * MONO_THIN || Math.min(ll, rr) < Math.max(ll, rr) * MONO_ONE_SIDE)) {
+    mode = ll >= rr ? 'left' : 'right'; src = Math.max(ll, rr); peak = mode === 'left' ? pl : pr;
+  }
+  let gain = src > 0 ? Math.sqrt(mean / src) : 1;
+  gain = Math.min(gain, MONO_MAX_GAIN, peak > 0 ? MONO_PEAK / peak : MONO_MAX_GAIN);
+  const plan = { mode, gain, lossDb: mean > 0 && mid > 0 ? 10 * Math.log10(mid / mean) : (mean > 0 ? -99 : 0) };
+  MONO_PLANS.set(buf, plan);
+  return plan;
+}
+
+// A recording's one-channel copy (the recording itself if it is one channel already).
+export function monoCopy(ctx, buf) {
+  if (!buf || buf.numberOfChannels < 2) return buf;
+  const have = MONO_COPIES.get(buf);
+  if (have) return have;
+  const plan = monoPlan(buf);
+  const l = buf.getChannelData(0); const r = buf.getChannelData(1); const n = buf.length;
+  const out = new Float32Array(n);
+  const g = plan.gain;
+  if (plan.mode === 'mix') { const h = 0.5 * g; for (let i = 0; i < n; i++) out[i] = (l[i] + r[i]) * h; }
+  else { const c = plan.mode === 'left' ? l : r; for (let i = 0; i < n; i++) out[i] = c[i] * g; }
+  const mono = ctx.createBuffer(1, n, buf.sampleRate);
+  mono.copyToChannel(out, 0);
+  MONO_COPIES.set(buf, mono);
+  MONO_PLANS.set(mono, { mode: 'same', gain: 1, lossDb: 0, from: plan.mode });
+  monoStats.made += 1;
+  return mono;
+}
+export const monoStats = { made: 0 };
+
+// Recordings with sound on one side only (found in the 6.0.0 mono audit): played
+// from a centred one-channel copy everywhere, so both ears hear them.
+export const CENTRE_COPY = new Set(['ut_crowd_roar_4', 'ut_crowd_roar_5']);
+
 function sameSides(buf, frames) {
   if (buf.numberOfChannels < 2) return true;
   const l = buf.getChannelData(0); const r = buf.getChannelData(1);
@@ -351,7 +430,11 @@ export class AudioEngine {
   _decode(key, e) {
     if (this.buffers.has(key)) return Promise.resolve(this.buffers.get(key));
     if (this.pending.has(key)) return this.pending.get(key);
-    const p = this._decodeEntry(e).then((buf) => {
+    const p = this._decodeEntry(e).then((buf0) => {
+      // A recording with sound on one side only is heard in both ears from a
+      // centred copy made here (the file itself is never changed: Russell, 19 Nov).
+      // (6.0.0 review fix: the key is 'dry:<name>'; asked by the whole key, the copy was never made.)
+      const buf = CENTRE_COPY.has(key.slice(key.indexOf(':') + 1)) ? monoCopy(this.ctx, buf0) : buf0;
       this.buffers.set(key, buf);
       this.pending.delete(key);
       if (e.frames > BIG_FRAMES) this._noteBig(key);
@@ -810,6 +893,9 @@ export class AudioEngine {
   // `direct` plays it past the world's filter and fade (the compass). A sound
   // given no `areaMix` rings where the player is (listenerMix). `send` sets the
   // sound's echo level in place of its family's (a background's light echo).
+  // (Web 6.0.0: `send` outside the 3D world too: the sound rings in the room the
+  // player is in at that level, whatever its own room list says. Battle Mode's
+  // arena crowd, whose recordings have no room list of their own.)
   // `keep`: a cue that must be heard out (a bus's chime, the countdown): it is
   // never the one-shot that gives way to a newer one.
   // `wide` (3D only, web 4.1.0): a recording with no place of its own that still
@@ -864,7 +950,10 @@ export class AudioEngine {
       const mix = areaMix || (direct ? null : this.listenerMix);
       if (mix) v.areaMix = { ...mix };
       if (send !== null && send !== undefined) { v.send = send; v.sendSet = true; }
-    } else if (this.binaural) {
+    } else {
+      if (send !== null && send !== undefined) { v.send = send; v.sendSet = true; }
+    }
+    if (!this.spatial && this.binaural) {
       // A sound played at a place is heard from that place.
       if (at && this.relOf) { try { v.atRel = this.relOf(at) || null; } catch (e) { v.atRel = null; } }
       // A background in a mode that turns: it turns with the world (see _branch).
@@ -890,8 +979,11 @@ export class AudioEngine {
   }
 
   stopAllLoops(keep = []) {
+    // (A sound that follows another, web 6.0.0, is spared with it: see Voice.followers.)
+    const spared = new Set(keep.filter((k) => k));
+    for (const k of [...spared]) for (const f of k.followers || []) spared.add(f);
     for (const v of [...this.live]) {
-      if (v.loop && !keep.includes(v)) v.stop();
+      if (v.loop && !spared.has(v)) v.stop();
     }
   }
 
@@ -951,6 +1043,10 @@ export class Voice {
     this.wide = false;        // a recording with no place that still turns with the world (AudioEngine.play, _branch)
     this.keep = false;        // a cue that is never stopped to make room for a newer one-shot (AudioEngine.play)
     this.jump = false;        // its next place is set at once, not glided to (see resume)
+    // Web 6.0.0: sounds that go with this one (Battle Mode's crowd goes with its
+    // drums): they stop when it stops and fade when it fades, and a stopAllLoops
+    // that spares it spares them.
+    this.followers = [];
     // Binaural 3D outside Ultimate Mode (web 5.0.0).
     this.atRel = null;        // played at a place: the way it lies from the player ([east, south], a unit vector)
     this.posd = false;        // the mode gives it a left and a right level: it has a direction
@@ -964,8 +1060,12 @@ export class Voice {
   // Whether this voice is placed by the panner: the world is 3D and it has a place.
   get placed() { return this.audio.spatial && !!this.pos3 && !this.direct; }
 
-  _branch(buffer) {
+  _branch(buffer, echo = false) {
     const ctx = this.ctx;
+    // A sound heard from a place plays its one-channel copy (web 6.0.0, see monoCopy).
+    // (A wide recording is not placed: its two sides are its west and its east.)
+    const wideHere = this.wide && !this.direct && (this.audio.spatial || (this.audio.binaural && buffer.numberOfChannels === 2));
+    if (!echo && !wideHere && (this.placed || this.binPlaced)) buffer = monoCopy(ctx, buffer);
     const fade = ctx.createGain();
     // A sound kept as one channel is spread to both sides here.
     fade.channelCount = 2;
@@ -981,7 +1081,7 @@ export class Voice {
     gl.connect(merge, 0, 0); gr.connect(merge, 0, 1);
     let panner = null;
     let wide = null;
-    if (this.wide && !this.direct && (this.audio.spatial || (this.audio.binaural && buffer.numberOfChannels === 2))) {
+    if (wideHere) {
       // A wide recording in the 3D world (web 4.1.0): until now it was plain
       // stereo, all round you, and stayed put while everything else swept round
       // as you turned. Now its left side stands in the world's west and its right
@@ -1143,9 +1243,9 @@ export class Voice {
       this.wetScale = 1;
       if (this.areaMix) this.setAreaMix(this.areaMix);
     } else if (loopWet) {
-      const br = this._branch(loopWet);
+      const br = this._branch(loopWet, true);
       this.wet = { buffer: loopWet, fade: br.fade, split: br.split, wl: br.gl, wr: br.gr, merge: br.merge };
-    } else if (a.room && this.send > 0 && rooms.includes(a.room)) {
+    } else if (a.room && this.send > 0 && (rooms.includes(a.room) || (this.sendSet && !a.spatial))) {
       const takes = RULES.TAKES[this.name] || 1;
       const once = !this.loop && (this.pair.dry.loop || reverbIsLoop(this.name));
       const conv = once ? a._convolver(a.room, 0, true)
@@ -1224,6 +1324,7 @@ export class Voice {
       if (this.loop) s.start(now, offset % br.buffer.duration);
       else if (offset < br.buffer.duration) s.start(now, offset);
       else continue;
+      br.src = s;
       this.sources.push(s);
       if (!first) first = s;
     }
@@ -1284,6 +1385,7 @@ export class Voice {
   _binPanner(br) {
     if (br.panner) return br.panner;
     const ctx = this.ctx;
+    this._toMono(br);
     const p = ctx.createPanner();
     p.panningModel = 'HRTF';
     p.distanceModel = 'linear';
@@ -1301,6 +1403,32 @@ export class Voice {
     p.connect(this.audio.bus);
     br.panner = p;
     return p;
+  }
+
+  // A branch that began with the recording's two channels, and is now placed (the
+  // mode gave the sound a direction after it began, web 6.0.0; a beacon in a mode
+  // that turns begins as a wide loop until its first frame): from here on it plays
+  // the one-channel copy, from the same point, in the same instant.
+  _toMono(br) {
+    if (!br || !br.buffer || br.buffer.numberOfChannels < 2) return;
+    const mono = monoCopy(this.ctx, br.buffer);
+    if (mono === br.buffer) return;
+    br.buffer = mono;
+    const old = br.src;
+    if (!old || this.paused || this.stopped || this.ended) return;   // (held: it carries on from br.buffer)
+    const now = this.ctx.currentTime;
+    const offset = Math.max(0, now - this.startedAt);
+    if (!this.loop && offset >= mono.duration) return;
+    const s = this.ctx.createBufferSource();
+    s.buffer = mono;
+    s.loop = this.loop;
+    s.connect(br.fade);
+    s.start(now, this.loop ? offset % mono.duration : offset);
+    if (old.onended) { s.onended = old.onended; old.onended = null; }
+    try { old.stop(now); } catch (e) { /* not started */ }
+    const i = this.sources.indexOf(old);
+    if (i >= 0) this.sources[i] = s; else this.sources.push(s);
+    br.src = s;
   }
 
   // The clean sound giving way to its dull copy as the thing goes behind the
@@ -1385,12 +1513,16 @@ export class Voice {
   stop() {
     if (this.stopped) return;
     this.stopped = true;
+    for (const f of this.followers.splice(0)) f.stop();
     this._stopSources();
     this.audio.live.delete(this);
     setTimeout(() => this._disconnect(), 4000);
   }
 
   fadeout(ms) {
+    // (Its followers fade with it, and are kept until it stops, so a stopAllLoops
+    // that spares it while it fades spares them too.)
+    for (const f of this.followers) f.fadeout(ms);
     if (this.stopped || !this.dry) { this.stop(); return; }
     this.fadingOut = true;
     const now = this.ctx.currentTime;

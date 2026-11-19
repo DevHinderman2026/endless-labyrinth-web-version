@@ -67,6 +67,12 @@ const TAP_MOVE = 22;        // more than this and it is not a tap
 const TAP_TIME = 350;       // ms a tap may last
 const TAP_GAP = 330;        // ms between taps of one count
 const MULTI_START = 220;    // ms within which the fingers of a multi-finger tap must land
+// 5.2.0: a thumb sliding up to run seldom goes straight up: it arcs to one side as it
+// sets off, and that arc used to be read as a slide to the side, so the player turned
+// (and kept turning) instead of running. A slide is now read as sideways only when it
+// is clearly more sideways than up or down (SIDEWAYS_RATIO times), and a sideways start
+// that turns upward or downward before it becomes a held turn is a run after all.
+const SIDEWAYS_RATIO = 1.5;
 export const TURN_FLICK_MS = 150;  // a finger still down this long after setting off sideways is sliding: a held turn begins
 export const TURN_BRIEF_MS = 250;  // a held turn that ends this soon after it began was a slow flick after all: one quick turn
 export const KEY_HOLD_MS = 180;    // an arrow key down this long is held
@@ -102,7 +108,8 @@ export class Gestures {
     document.addEventListener('keydown', (e) => this._key(e));
     document.addEventListener('keyup', (e) => this._keyUp(e));
     // A key still down when the page loses the keyboard is never heard to come up.
-    window.addEventListener('blur', () => this._releaseKeys());
+    // (6.0.0 review fix: the driving accelerator too, when a key holds it.)
+    window.addEventListener('blur', () => { this._releaseKeys(); if (this.accelBy === 'key') this._releaseAccel(); });
   }
 
   setMode(mode) {
@@ -248,7 +255,18 @@ export class Gestures {
       if (g.stride) continue;      // running or walking back: only lifting stops it
       if (g.turn) {
         // Turning, or a flick not yet lifted: moving the finger changes nothing.
-        // Only lifting ends it.
+        // Only lifting ends it. 5.2.0: except a sideways start not yet a held turn
+        // that has since gone clearly up or down: that was a thumb setting off to run
+        // (or walk back), and it runs.
+        const t0 = g.turn;
+        if (!t0.on && t0.id === t.identifier && g.max === 1 && !g.strideDone && this._holds()
+            && Math.abs(dy) >= SWIPE_MIN && Math.abs(dy) > Math.abs(dx)) {
+          clearTimeout(this.turnTimer);
+          this.turnTimer = null;
+          g.turn = null;
+          g.stride = dy < 0 ? 'run' : 'back';
+          this.emit(dy < 0 ? 'run_start' : 'back_start');
+        }
         continue;
       }
       if (g.accelId === t.identifier) {
@@ -264,7 +282,10 @@ export class Gestures {
       if (g.max === 1 && !g.swiped && d >= SWIPE_MIN) {
         g.swiped = true;
         this._resetTaps();
-        if (Math.abs(dx) > Math.abs(dy)) {
+        // (In the modes that turn, sideways only when clearly sideways: 5.2.0.)
+        const sideways = this.turnHold && this._holds()
+          ? Math.abs(dx) > SIDEWAYS_RATIO * Math.abs(dy) : Math.abs(dx) > Math.abs(dy);
+        if (sideways) {
           // Left or right: a swipe; where the game asks (a mode that turns), a
           // flick or a slide, told apart by how soon the finger lifts.
           if (this.turnHold && this._holds() && !g.strideDone) this._armTurn(g, dx > 0 ? 'right' : 'left', t.identifier);

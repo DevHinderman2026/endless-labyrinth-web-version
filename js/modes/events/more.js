@@ -132,8 +132,11 @@ export const MoreMixin = {
   _xRoundDone(points, sound = 'stairs_climb') {
     this.evPoints += points;
     this.xDone += 1;
-    if (sound) this.audio.play(sound);
+    if (sound && sound !== 'stairs_climb') this.audio.play(sound);
     if (this._bEndingReached(this.xDone)) return true;
+    // 6.0.0: the next round waits for the climb. (6.0.0 fix: only once the run is known
+    // to go on, so no climb is heard over the end of a run.)
+    if (sound === 'stairs_climb') this._evClimb();
     const word = MORE[this.ev.mission].word;
     if (word) this._bSayLevel(this.xDone + 1, word);
     return false;
@@ -356,17 +359,21 @@ export const MoreMixin = {
     this.x.goal = this._xThing(this.x.goalSnd, 0.0, -edge);
     const safe = new Set([K(0, n)]);
     let i = 0; let j = n;
-    while (j > -n) {
+    // (6.0.0 fix) The way comes to the goal's column one row early, so its last step is
+    // forward onto the goal: the goal counts only a step forward or back, and a way
+    // along the last row arrived with Left or Right, beside a square that could be a mine.
+    while (j > -n + 1) {
       const turn = random();
       if (turn < 0.3 && i > -n) i -= 1;
       else if (turn < 0.6 && i < n) i += 1;
       else j -= 1;
       safe.add(K(i, j));
     }
-    while (i !== 0) {                     // along the last row to the goal
+    while (i !== 0) {                     // along the row before the last, to below the goal
       i += i < 0 ? 1 : -1;
       safe.add(K(i, j));
     }
+    safe.add(K(0, -n));                   // the last step is forward, onto the goal
     const share = Math.min(c.share_most, c.mines_share + c.more_each * this.xDone);
     const mines = new Set();
     for (let a = -n; a <= n; a++) for (let b = -n; b <= n; b++) if (!safe.has(K(a, b)) && random() < share) mines.add(K(a, b));
@@ -1025,6 +1032,7 @@ export const MoreMixin = {
       this.xPending = [];
       this._bClearThings();
       this._bLayRoom();
+      this._bUnwallThings();      // (6.0.0 review fix) a refill, supply or credit under a new wall is moved
       this._bLayThings();
       this._x_sonar_exit(c);
     }
@@ -1305,7 +1313,11 @@ export const MoreMixin = {
   // ================================================================ 17. mirror twin
   _x_mirror_start(c) {
     Object.assign(this.x, { tsnd: this._xSnd('target_sound', 'beacon', 'event_beacon_shimmer'), target: null });
-    this.x.twin = this._xThing(this._xSnd('twin_sound', 'beacon', this.evBeacons[0]), ...this._xFreeSpot(9.0));
+    // (6.0.0 fix) The twin stands in the middle of its square: off the middle, its
+    // one-step moves could never reach the outermost row or column on one side, and a
+    // calling spot laid there could never be answered.
+    const [ci, cj] = sq(...this._xFreeSpot(9.0));
+    this.x.twin = this._xThing(this._xSnd('twin_sound', 'beacon', this.evBeacons[0]), ci * STEP, cj * STEP);
     this._x_mirror_target(c);
   },
 

@@ -1,0 +1,101 @@
+# Tobias, the night watchman (tavern, city at night). British.
+^Over here, young walker. Follow the lantern.
+^Evening! This way, by the fire.
+^Hello there. Over here, mind the step.
+^This way, friend. The kettle's on.
+^Over here! The night watch is always open.
+^Come in, come in, out of the dark.
+^Evening, walker. I'm by the window.
+^Follow my voice. Steady as you go.
+^Over here, friend. A warm seat is waiting.
+^Hello! This way, past the lamp post.
+^Come along. The streets are quiet, and so am I. Mostly.
+^Over here. I've been keeping an eye out for you.
+<Back this way, friend. I've still got your gift.
+<Over here again. Don't wander off in the dark.
+<Walker! Come back, you've left something behind.
+<This way, follow the lantern.
+<Come back in out of the cold. Your gift's waiting.
+<Over here! The night watch keeps things safe for you.
+<Steady now, back this way.
+<Come back, friend. I'm not one to give up on a gift.
++Here you are. Kept it safe all night.
++Take this, friend. You'll need it more than me.
++A little something from the night watch.
++For you. Mind how you go out there.
+~I'm Tobias. I keep the night watch. Somebody has to, and the night's always here.
+~Have a seat, friend. The cocoa's hot and the stew is better than it smells.
+~I walk the same streets every night. They're never the same streets. It keeps the job interesting.
+~My lantern's been lit since before the first world. Never needed new oil. Don't ask me how.
+~Mind the cat by the door. She belongs to nobody and everybody.
+~The tavern's warm, the streets are cold, and I'm somewhere in between. Always have been.
+~I've got a little book where I write down everything odd I see at night. It's a very thick book.
+~All quiet out there, mostly. The trick is knowing which quiet is the good kind.
+~Old habits. I check every door twice. Even in a world that'll be gone in a few minutes.
+~Pull up a stool, walker. I'm not much for talking, but I'm good at listening.
+I've walked these streets every night for longer than I can say, and I'll tell you this. They rearrange themselves. Every single world.
+Every world, the city has one more street. I count them. I've never found where the new one goes.
+I keep a logbook of the rebuilds. Time, weather, anything odd. There's always something odd. Never the same odd thing twice.
+The lamps go out one by one just before the countdown. Not all at once. One by one. As if someone's walking down the street, blowing them out.
+Folk in the tavern argue about the rebuild every night. The Builder, the dream, the spell. I just listen and pour the cocoa.
+I've seen a figure at the end of my street, just before a rebuild. Tall, still, holding something. By the time I got close|adj, the world had changed. I'm sure it meant no harm. It was waiting, I think, like the rest of us.
+The clock in the square stops at the same time every night. Then the world rebuilds, and it starts again. Pendle won't say why.
+There's a door at the end of Lantern Lane that's painted a different colour every world. I knocked once. The door knocked back, very politely.
+A walker in the tavern told me the city is the oldest part of the world. Built first, and everything else grew out from it. I like that idea.
+On quiet nights, I hear a sound under the cobbles. Like gears turning. Like the whole city is sitting on a very large clock.
+Marigold at the market says the world rebuilds to restock. Well, the tavern's never short of anything. So what's it restocking?
+I found a letter once, under the tavern door. It said, keep watching. Nothing else. No name. It was in my own handwriting. I don't remember writing it.
+I think the watchman's job is the same as the walker's. Keep your ears open. Notice what's changed. And never stop asking why.
+The city sounds different the moment after a rebuild. Like a room just after someone's left it. The air's still moving.
+The cat by the door always knows when a rebuild's coming. She stretches, yawns, and goes under the table. Every time.
+They say the city was once a single street. One street, one lamp, one watchman. I've a feeling that watchman was me.
+Some nights I hear trains from the station, but there are no tracks out that way. Mister Pendle says those are trains from another world, passing close|adj.
+The enemies never come into the tavern. Never. I've seen them stop at the doorstep and turn around. Something keeps them out.
+I asked the oldest regular in the tavern why the world rebuilds. She finished her cocoa, set down the cup, and said, it's practising. Then she left.
+The rain out there always falls from the same direction. From the middle of the world, outward. Like something's breathing out.
+There's a rumour among the watchmen that the city is a puzzle, and when the right walker solves it, the world will stop rebuilding.
+I don't know if I want the world to stop rebuilding. It's the one thing I can count on.
+If you walk to the end of every street in the city, you come back to the tavern. Every street. Every time. I've tried.
+The world's mercy came through the city once while I was on watch. Every lamp burned a little brighter. Then back to normal. Lovely, it was.
+I wrote down every rumour I heard in the tavern for a whole world. Forty three rumours. Not one of them agreed with another.
+The fog rolls in from the river just before a rebuild. Captain Brine says it's the sea's breath. Willa says it's the river's. I say it's damp, and leave it at that.
+There's an empty chair in the corner of the tavern no one sits in. Every world, there's a cup of cocoa on the table in front of it. Still warm.
+The bells in the city ring at odd hours. Once, they rang five times, slow, and the countdown started right after. Coincidence, I tell myself.
+A traveller told me there's a city in every world, and a watchman in every city. I asked if they all look like me. She just smiled.
+Some say the city was built by the Builder as a place to rest. Some say the Builder lives here. I've checked every house. Not yet found them in.
+I've noticed something on my rounds. The city is always laid out a bit like a labyrinth. The labyrinths out there are always laid out a bit like a city.
+On the stroke of every rebuild, the tavern sign swings, though there's no wind. As if somebody's just walked in.
+The cobblestones are warm at night, even in winter. Something underneath is keeping them warm. Or something underneath is awake.
+I used|hab to think the countdown came from the clock tower. Then I stood in the tower and heard it coming from outside.
+The night never ends here. I've been on watch so long, I've forgotten what morning sounds like. Wren says it sounds like birds. I'll take her word for it.
+I once followed a stranger through the streets for an hour. Every corner, they were just ahead. At the last corner, they were gone. Just a lantern, left lit.
+In the tavern, they tell a story about the first walker. She asked the world a question, and the world has been rebuilding ever since, trying to answer.
+Some in the tavern say the first walker gave the world an answer, and the world didn't like it. I prefer the story where she asked a question.
+Every world, the tavern has a new song painted over the fireplace. The words are always nearly the same. One word changes. I've been keeping track.
+The street names change every world. Lantern Lane, Quiet Row, Five Bell Street. Last world, there was one called Why. I didn't walk down it.
+The sound of the city at night is the best map I know. Shutters, footsteps, a kettle somewhere. When the sounds go strange, I know a rebuild's near.
+Hazel came into the tavern once and ordered a cup of nothing. I poured it. She drank it. She said it tasted of the world before this one.
+A walker told me she heard her own footsteps behind her, out in the city. When she stopped, they kept going. Then they turned a corner and were gone.
+I think the city remembers you. Doors you've walked past open a little easier. Lamps you've passed burn a little longer.
+The night watch has one rule. Whatever happens, keep the lantern lit. Nobody told me why. I've a feeling it matters.
+They say if every lamp in the city goes out at once, the world won't come back. I've never let that happen. I'm not about to find out.
+Sprocket says the city runs on gears. Hazel says magic. The cat says nothing. Of the three, I trust the cat most.
+I hear the tavern's old piano play the same tune every night at closing. The tune ends right as the countdown begins. Every time.
+Somewhere in this city, they say, is a window that looks out onto the space between worlds. I've looked through a thousand windows. Not that one, yet.
+~Mind the puddle by the door. It's been there since the first world. I've grown fond of it.
+~The fire in the tavern never goes out. I keep it fed. It keeps me warm. Good partnership.
+The tavern's old clock chimes once per world. Always at the same moment. Just before the countdown. Then it stops, and waits for the next world.
+I found a map of the city scratched into the bottom of a tavern table. Every world, the map is different. And it's always right.
+The bus drivers stop by the tavern sometimes. They never sit. They never drink. They just stand by the door, listening. Then they go.
+There's a street in the city where your footsteps echo twice. Once for you, and once for someone just behind you. I've never seen who.
+The world's mercy sometimes comes to the tavern as laughter. Out of nowhere. Everyone starts laughing, and nobody knows why. Then the world has a little more time.
+The cobblestones are laid in a spiral, if you follow them. Round and round, all the way to the middle of the city. Then the spiral starts again.
+I've noticed the enemies avoid lamp light. Every one. They never step into the glow. I keep the lamps lit for the walkers' sake.
+There's a rumour that the night watch was started by the first walker. To keep the lamps lit, so the next walker could find their way.
+A walker once told me the city is just one big safe place, and the labyrinths are its garden walls. I rather liked that.
+I keep a list of every face I've seen in the tavern. Different faces, every world. But one seat is always taken by someone who never says a word.
+The city fountain runs backward just before a rebuild. Water going up instead of down. Then it stops, and the new world starts the fountain fresh.
+The stars over the city are always arranged the same. A wide circle, with one bright star in the middle. Like a clock face, with no hands.
+Every lamp post in the city has a number. I've counted them. The last number is always one higher than the world before. The city's keeping count.
+I've worn the same coat on my rounds for a thousand worlds. It's never worn out. It's got a pocket I never use. Every world, there's a note inside. It says, thank you.
+The tavern keeper before me said the world will stop rebuilding when every walker has had a warm meal and a kind word. I'm doing my part.

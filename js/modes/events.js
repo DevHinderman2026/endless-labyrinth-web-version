@@ -26,6 +26,7 @@ export default {
 
   reset(game) {
     game.evLastStep = [0, -1];
+    game.evClimbHold = 0;            // 6.0.0: the pause after a climb
   },
 
   update(game, dt) {
@@ -37,6 +38,8 @@ export default {
   input(game, g) {
     if (g === 'clock') { game.eventClockReport(); return; }          // an event with no clock says so
     if (g === 'enter') { game.eventStatusReport(); return; }         // the report, as in every mode
+    // 6.0.0: no walking or shooting during the climb to the next level, room or round.
+    if (game.evClimbHold > 0 && ['up', 'down', 'left', 'right', 'space'].includes(g)) return;
     if (g === 'space') { game.eventFire(); return; }                 // the attack, as in every mode
     if (!['up', 'down', 'left', 'right'].includes(g)) return;
     // Some missions use the swipes for something other than walking: a reflex event
