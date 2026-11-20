@@ -621,6 +621,8 @@ const mixin = {
     this.ut = this._utRunState({
       chaos: true, face: this.tn ? this.tn.face : 0,
       worlds: c.worlds || 0, elapsed: c.elapsed || 0,
+      // Chaos's one health bar (web 6.2.0): the world starts from it, not from 100.
+      hp: this.towerHp, lowWarned: !!this.towerLowWarned,
       ...(c.ammo !== undefined ? { ammo: c.ammo } : {}), ...(c.items !== undefined ? { items: c.items } : {}),
       speedBonus: c.speedBonus || 1.0,
     });
@@ -633,6 +635,8 @@ const mixin = {
     const u = this.ut;
     u.worlds += 1;
     this.chaosWorld = { worlds: u.worlds, elapsed: u.elapsed, ammo: u.ammo, items: u.items, speedBonus: u.speedBonus };
+    this.towerHp = u.hp;                 // what is left goes on with the run
+    this.towerLowWarned = u.lowWarned;
     this.nextLevel();
   },
 

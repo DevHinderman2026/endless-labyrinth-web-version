@@ -618,6 +618,8 @@ const mixin = {
     // player the stop was the game's doing, not theirs.
     this.audio.play('brake');
     this.timeLeft = Math.max(0.0, this.timeLeft - DRIVE_CRASH_PENALTY);
+    // In chaos (web 6.2.0, Russell, 20 November 2026) a crash also costs 20 health.
+    if (this.chaosMode && this._chaosHurt(this._chaosCrashDamage(), 'crash')) return;
     if (this.timeLeft <= 30.0 && !this.thirtySecAnnounced) {
       // The crash took the clock straight past its warning: say where it is.
       const t = Math.trunc(this.timeLeft);

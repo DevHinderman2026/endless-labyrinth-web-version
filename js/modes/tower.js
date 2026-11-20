@@ -417,7 +417,8 @@ const mixin = {
     // Health and items deliberately PERSIST between floors. Nothing restores them
     // except a health potion.
     this.towerHitCooldown = 0.0;
-    this.towerLowWarned = false;
+    // (In chaos the warning belongs to the run's one health bar, not to the floor.)
+    if (!this.chaosMode) this.towerLowWarned = false;
 
     const enemy = new TowerEnemy(this.playerPos, this._towerDifficulty(), randint(0, 9), this.arenaLimit, this.towerNumber, this.towerFloor);
     // Web 5.1.0: its speed and its throws are the rebalance's (see the top of the file).
@@ -570,10 +571,12 @@ const mixin = {
             return;
           }
           const low = Math.max(35, 2 * this._towerHitDamage());
-          if (this.towerHp <= low && !this.towerLowWarned) {
+          // In chaos the run's one health bar warns with the voice too (web 6.2.0).
+          if (this.chaosMode) this._chaosLowCheck(low);
+          else if (this.towerHp <= low && !this.towerLowWarned) {
             this.towerLowWarned = true;
             this.audio.play('health_low');
-            if (!this.chaosMode) this.tts.speak(`Health low. ${this.towerHp}.`, { interrupt: true });
+            this.tts.speak(`Health low. ${this.towerHp}.`, { interrupt: true });
           }
         }
       }
@@ -600,7 +603,9 @@ const mixin = {
       const [left, right, dist] = this._towerBeaconLevels([this.towerPotion.x, this.towerPotion.y]);
       if (this.towerPotion.channel) this.towerPotion.channel.setVolume(left, right, this._behind([this.towerPotion.x, this.towerPotion.y]));
       if (dist < 3.0) {
-        this.towerHp = this.towerMaxHp;
+        // In chaos (web 6.2.0) health has no cap: a potion brings it back to 100 if it
+        // is below, and does nothing above.
+        this.towerHp = this.chaosMode ? Math.max(this.towerHp, this.towerMaxHp) : this.towerMaxHp;
         this.towerLowWarned = false;
         this._towerStopLoop('potion');
         this.towerPotion = null;
@@ -1020,7 +1025,7 @@ const HELP_SECTIONS = [
 const HELP_DEMOS = [
   ['Demos, Tower Mode', [
     { title: 'Tower Demos', sound: null, desc: 'Every sound tower mode makes, including all four wind-ups. The wind-ups are the ones worth learning cold.' },
-    { title: 'Health Low', sound: 'health_low', desc: 'Three quick falling low notes: your health has dropped low on this floor. In tower mode the game then says Health low and how much you have left; in chaos mode nothing is said.' },
+    { title: 'Health Low', sound: 'health_low', desc: 'Three quick falling low notes: your health has dropped low. The game then says Health low and how much you have left, in tower mode and in chaos mode alike.' },
     { title: 'Item Beacon', sound: 'item_beacon', desc: 'The low double knock of an item lying on the floor, waiting to be raced for.' },
     { title: 'Throw', sound: 'item_throw', desc: 'An item leaving a hand, yours or the rival\'s.' },
     { title: 'Item In Flight', sound: 'item_buzz', desc: 'The buzz of an item the rival has thrown, flying toward you. It stops once the item has passed you.' },

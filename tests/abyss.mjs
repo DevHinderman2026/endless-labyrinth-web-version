@@ -322,10 +322,12 @@ const chaos = await page.evaluate(() => {
   t.frames(1.0);
   const ab2 = g.ab;
   out.second = { state: g.state, quota: ab2 && ab2.quota, count: g.chaosAbyssCount };
-  // Catches use the stage's own lives, for the whole run.
-  t.calm(); ab2.grace = 0; t.put(ab2.creatures[0], g.playerPos[0], g.playerPos[1] + 1); g.updateAbyss(1 / 30);
-  out.stageLives = [ab2.lives, g.chaosAbyssLives];
+  // A catch costs 25 of the run's one health bar (6.2.0), not a life.
+  t.calm(); const hp0 = g.towerHp; ab2.grace = 0; t.put(ab2.creatures[0], g.playerPos[0], g.playerPos[1] + 1); g.updateAbyss(1 / 30);
+  out.stageLives = [hp0, g.towerHp, ab2.lives];
+  g.towerHp = 30;
   ab2.grace = 0; t.put(ab2.creatures[1], g.playerPos[0], g.playerPos[1] + 1); g.updateAbyss(1 / 30);
+  out.low = t.said.slice(-1)[0];
   ab2.grace = 0; t.put(ab2.creatures[2], g.playerPos[0], g.playerPos[1] + 1); g.updateAbyss(1 / 30);
   out.end = [g.state, t.said.slice(-1)[0]];
   return out;
@@ -335,10 +337,11 @@ check(chaos.chaosWander.moved > 1 && chaos.chaosWander.nearest >= 9 - 1e-6 && !c
 check(chaos.thunder && chaos.cover > 4.9 && !chaos.saidLevel, 'lightning strikes the moment you arrive, and nothing says which stage it is');
 check(chaos.ticks > 0.9 && chaos.caseTime === 30, 'the chaos clock runs, and a case adds its time to it');
 check(chaos.exitLoops.length === 1 && chaos.exitLoops[0] === 'exit_morse' && chaos.creatures === 0, 'the quota smashed, every creature goes and only the exit is heard: ' + chaos.exitLoops.join(', '));
-check(chaos.waits && /^All [34] glass cases\. 3 lives left\. Clock \d+ seconds\. \d+ points total\. Facing north\.$/.test(chaos.report), 'the clock waits for you to reach the exit; the report: ' + chaos.report);
+check(chaos.waits && /^All [34] glass cases\. \d+ health\. Clock \d+ seconds\. \d+ points total\. Facing north\.$/.test(chaos.report), 'the clock waits for you to reach the exit; the report: ' + chaos.report);
 check(chaos.gap === 'chaos_gap' && chaos.points === 10, 'through the exit: ten points, and the next stage');
 check(chaos.second.state === 'abyss' && chaos.second.quota === Math.min(8, chaos.quota + 1) && chaos.second.count === 2, 'the next Abyss stage wants one case more: ' + JSON.stringify(chaos.second));
-check(chaos.stageLives[0] === 2 && chaos.stageLives[1] === 2, 'a catch costs one of the stage\'s own lives');
+check(chaos.stageLives[1] === chaos.stageLives[0] - 25 && chaos.stageLives[2] === 3, 'in Chaos a catch costs 25 of the run\'s health, not a life: ' + JSON.stringify(chaos.stageLives));
+check(chaos.low === 'Health low. 5.', 'falling low, the voice says so: ' + chaos.low);
 check(chaos.end[0] === 'game_over' && /^Caught\. You scored \d+ points\. /.test(chaos.end[1]), 'losing all three ends the chaos run: ' + chaos.end[1]);
 
 check(!errors.length, 'no page errors ' + errors.join(' | '));

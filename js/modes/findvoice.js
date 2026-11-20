@@ -571,14 +571,18 @@ const mixin = {
 
   _fvCaught() {
     const fv = this.fv;
-    fv.lives -= 1;
-    if (fv.chaos) this.chaosFvLives = fv.lives;
     this.audio.play('player_hit', { keep: true });
     this.stride = null;
-    if (fv.lives <= 0) {
-      fv.lost = true;
-      this.triggerGameOver();
-      return;
+    // In chaos (web 6.2.0) a catch costs 25 of the run's one health bar, not a life.
+    if (fv.chaos) {
+      if (this._chaosHurt(this._chaosCatchDamage(), 'catch')) { fv.lost = true; return; }
+    } else {
+      fv.lives -= 1;
+      if (fv.lives <= 0) {
+        fv.lost = true;
+        this.triggerGameOver();
+        return;
+      }
     }
     // Thrown back, far off and away from the glass, still breathing; at rest.
     const c = fv.creature;
@@ -587,7 +591,8 @@ const mixin = {
     this._fvCreatureSound(false);
     this._fvClearGlassNear([c.x, c.y]);
     fv.caughtAt = K(...cellOf(this.playerPos));
-    this.tts.speak(`Caught. ${fv.lives} ${plural(fv.lives, 'life', 'lives')} left.`, { interrupt: true });
+    if (fv.chaos) { if (!this.towerLowWarned || this.towerHp > 35) this.tts.speak('Caught.', { interrupt: true }); }
+    else this.tts.speak(`Caught. ${fv.lives} ${plural(fv.lives, 'life', 'lives')} left.`, { interrupt: true });
   },
 
   // ---------------------------------------------------------------- Chaos: the exit
@@ -686,7 +691,8 @@ const mixin = {
     const fv = this.fv;
     const lv = `${fv.lives} ${plural(fv.lives, 'life', 'lives')} left.`;
     if (fv.chaos) {
-      this._report(fv.exit ? `All ${fv.quota} found. ${lv}` : `${fv.finds} of ${fv.quota} found. ${lv}`, true);
+      // (Its health is added by _report, as in every chaos level.)
+      this._report(fv.exit ? `All ${fv.quota} found.` : `${fv.finds} of ${fv.quota} found.`, true);
       return;
     }
     this._report(`Level ${fv.level}. ${fv.finds} of ${fv.quota} found. ${lv}`);
@@ -716,7 +722,7 @@ const HELP_SECTIONS = [
     { title: 'Find the Voice The Creature', sound: null, desc: 'One creature shares each level with you. Creatures are blind, just like you, and they hunt by sound. At rest it breathes calmly and does not move. Step on glass and it hears you: it charges, with a constant aggressive growl and a footstep for every step it runs, heard from where it is. It keeps coming for as long as you are on glass, and for 3 seconds after you are back on concrete, and every charge lasts at least 5 seconds, even if you step straight off the glass; then it stops where it is and breathes calmly again. It runs a little slower than you can run, so when it charges, get off the glass and run. It keeps charging through the chime, too. If it catches you, you lose a life, and it is thrown back far away, still breathing, at rest.' },
     { title: 'Find the Voice Glass', sound: null, desc: 'The floor is concrete, with patches of broken glass, and your footsteps tell you which you are on. Glass is never laid close to where the creature rests, so when you step on it there is always time to turn and get away. Sometimes the guide stands where only glass will take you to her: then you must decide when to cross, and be ready to run.' },
     { title: 'Find the Voice Levels, Lives and Score', sound: null, desc: 'You have three lives and there is no clock: a run lasts until the creature has caught you three times. Each level, the guide stands farther away and the creature runs five steps a minute faster, up to a limit that stays below your run. Each level has new air: the first is always the witch\'s, and after that a different event background each level, never repeated until you have heard them all. Your score is the number of levels you complete, and Find the Voice has its own high score board.' },
-    { title: 'Find the Voice in Chaos Mode', sound: null, desc: 'Chaos Mode has Find the Voice levels too, about as often as islands. There the guide must be found a set number of times: three or four the first time in a run, and one more each time after, at most eight. When you have found her enough, everything else goes silent and only an exit is heard, the battle exit\'s Morse signal; the chaos clock waits until you walk through it. Find the Voice levels have three lives of their own for the whole chaos run, and losing all three ends the run. There, double tap for how many you have found and your lives, then the clock and the points.' },
+    { title: 'Find the Voice in Chaos Mode', sound: null, desc: 'Chaos Mode has Find the Voice levels too, about as often as islands. There the guide must be found a set number of times: three or four the first time in a run, and one more each time after, at most eight. When you have found her enough, everything else goes silent and only an exit is heard, the battle exit\'s Morse signal; the chaos clock waits until you walk through it. There a catch costs 25 health from the one health bar of the chaos run (see Chaos Health) instead of a life. There, double tap for how many you have found, then your health, the clock and the points.' },
   ]],
 ];
 

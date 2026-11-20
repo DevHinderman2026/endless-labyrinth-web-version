@@ -438,7 +438,7 @@ check(gapTimes.length > 0 && gapTimes.every((x) => x === 0.1) && run.done.filter
 check(run.climb && run.climb.climb === 'stairs_climb' && run.climb.gap > 0.5 && run.climb.gap <= 1.5,
   'from one tower floor to the next the climb is heard and the floor waits for it: ' + JSON.stringify(run.climb));
 check(/^\d+ seconds? remaining\.$/.test(run.gapClock), 'T between levels says the clock: ' + run.gapClock);
-check(/^\d+ seconds? left\. \d+ points total\. Facing [a-z-]+\.$/.test(run.report), 'double tap in a chaos labyrinth: ' + run.report);
+check(/^\d+ seconds? left\. \d+ health\. \d+ points total\. Facing [a-z-]+\.$/.test(run.report), 'double tap in a chaos labyrinth, with the run\'s health (6.2.0): ' + run.report);
 
 // Each kind scales on its own count.
 const seen = {};

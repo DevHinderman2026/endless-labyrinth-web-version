@@ -925,6 +925,7 @@ const mixin = {
       this._islandUpdateRide(dt);
       return;
     }
+    if (this.chaosMode && this.chaosHitGrace > 0) this.chaosHitGrace = Math.max(0, this.chaosHitGrace - dt);
     if (this.islandPhase === 'seabed') this._islandUpdateSeabed(dt);
     else this._islandUpdateSurface(dt);
   },
@@ -982,6 +983,28 @@ const mixin = {
       }
       if (obs.channel) obs.channel.setVolume(left * fade, right * fade, this._behind([obs.x, obs.y]));
       if (dist < reach && this.islandGrace <= 0) {
+        // In chaos (web 6.2.0, Russell, 20 November 2026) an enemy reaching you costs
+        // health, and it is gone (counted as one of the island's); the guardian
+        // stays, and pushes on after a moment's grace. But a guardian that reaches
+        // you while you are out of shots, hunting you since you can get no more,
+        // takes all your health: the run is over.
+        if (this.chaosMode) {
+          if (this.chaosHitGrace > 0) continue;
+          this.audio.play('player_hit');
+          if (obs.guardian && this.ammo <= 0) {
+            this.islandDeath = 'enemy';
+            this._chaosHurt(this.towerHp, 'hit');
+            return;
+          }
+          if (!obs.guardian) {
+            if (obs.channel) obs.channel.stop();
+            this.obstacles.splice(this.obstacles.indexOf(obs), 1);
+            this.kills += 1;
+            this.islandKillsHere += 1;
+          }
+          if (this._chaosHurt(this._chaosHitDamage(), 'hit')) { this.islandDeath = 'enemy'; return; }
+          break;
+        }
         this.audio.play('player_hit');
         this.islandDeath = 'enemy';
         this.triggerGameOver();
@@ -1056,12 +1079,22 @@ const mixin = {
       this.islandAmb.under = this.audio.play('underwater', { loops: -1, volume: 0.0 });
     }
     this.islandAir -= dt;
-    if (this.islandAir <= 0) {
+    if (this.islandAir <= 0 && this.chaosMode) {
+      // In chaos (web 6.2.0): out of air, you lose ten health a second until you
+      // reach air (an air refill or the elevator up gives it back).
+      this.islandAir = 0;
+      this.chaosDrown = (this.chaosDrown || 0) + dt;
+      if (this.chaosDrown >= 1.0) {
+        this.chaosDrown -= 1.0;
+        this.audio.play('player_hit');
+        if (this._chaosHurt(10, 'drown')) { this.islandDeath = 'drown'; return; }   // chaos.js CHAOS_DROWN
+      }
+    } else if (this.islandAir <= 0) {
       this.audio.play('drown');
       this.islandDeath = 'drown';
       this.triggerGameOver();
       return;
-    }
+    } else this.chaosDrown = 0;
     if (this.islandAir <= ISLAND_AIR_WARN) {
       if (!this.islandAirWarned) {
         this.islandAirWarned = true;

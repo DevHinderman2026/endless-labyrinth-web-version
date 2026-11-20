@@ -29,7 +29,7 @@
 //
 // Chaos Mode has Abyss stages too (js/modes/chaos.js): lightning strikes the moment
 // you arrive, a quota of cases (3 or 4, growing each visit), then everything else
-// goes and only an exit is heard; the stage has its own three lives for the whole
+// goes and only an exit is heard; a catch costs 25 of the chaos run's one health bar (6.2.0) for the whole
 // chaos run, and its cases give chaos time.
 //
 // (The abyss is endless, but phones are not: creatures and cases appear around you
@@ -115,7 +115,10 @@ export const AB_THUNDER = AB_THUNDERS[0];
 export const AB_IDLE = 'ab_creature_still';     // a wandering creature: sniffing, deep breathing
 export const AB_GROWL = 'ab_creature_hunt';     // a hunting creature: a hungry growl
 export const AB_STEPS_GLASS = ['ut_glass_step_1', 'ut_glass_step_2', 'ut_glass_step_3', 'ut_glass_step_4'];
-export const AB_ROOM = 'battle';                // the echo (as Find the Voice's)
+// No echo at all (Russell, 20 November 2026: with the battle arena's echo it sounded
+// like a large hall, not an endless space with no walls): open air, as the events'
+// 'open' room, where nothing bounces back and sounds only fade with distance.
+export const AB_ROOM = 'open';
 // (6.2.0 fix, Russell, 20 November 2026: "I can't even hear lightning at all"; "they
 // have to be thunderclaps".) The events' thunder recording was a ten-second rumble
 // that swelled in after a moment, lost under the wind, the cases' hum and the
@@ -377,21 +380,26 @@ const mixin = {
 
   _abCaught(c) {
     const ab = this.ab;
-    ab.lives -= 1;
-    if (ab.chaos) this.chaosAbyssLives = ab.lives;
     this.audio.play('player_hit', { keep: true });
     this.stride = null;
-    if (ab.lives <= 0) {
-      ab.lost = true;
-      this.triggerGameOver();
-      return;
+    // In chaos (web 6.2.0) a catch costs 25 of the run's one health bar, not a life.
+    if (ab.chaos) {
+      if (this._chaosHurt(this._chaosCatchDamage(), 'catch')) { ab.lost = true; return; }
+    } else {
+      ab.lives -= 1;
+      if (ab.lives <= 0) {
+        ab.lost = true;
+        this.triggerGameOver();
+        return;
+      }
     }
     // Thrown far off; every other creature stops hunting (it wanders again); a moment's grace.
     const others = ab.creatures.filter((x) => x !== c).map((x) => [x.x, x.y]);
     [c.x, c.y] = this._abSpot(AB_THROW_FAR, AB_THROW_FAR + 20, others, 10);
     for (const x of ab.creatures) { x.charge = 0; x.storm = 0; x.move = 0; x.moving = false; }
     ab.grace = AB_GRACE;
-    this.tts.speak(`Caught. ${ab.lives} ${plural(ab.lives, 'life', 'lives')} left.`, { interrupt: true });
+    if (ab.chaos) { if (!this.towerLowWarned || this.towerHp > 35) this.tts.speak('Caught.', { interrupt: true }); }
+    else this.tts.speak(`Caught. ${ab.lives} ${plural(ab.lives, 'life', 'lives')} left.`, { interrupt: true });
   },
 
   // ---------------------------------------------------------------- the lightning
@@ -624,7 +632,8 @@ const mixin = {
     const lv = `${ab.lives} ${plural(ab.lives, 'life', 'lives')} left.`;
     // (Worded with words the recorded voice already has: js/voice-text.js.)
     if (ab.chaos) {
-      this._report(ab.exit ? `All ${ab.quota} glass cases. ${lv}` : `${ab.smashed} of ${ab.quota} glass cases. ${lv}`, true);
+      // (Its health is added by _report, as in every chaos level.)
+      this._report(ab.exit ? `All ${ab.quota} glass cases.` : `${ab.smashed} of ${ab.quota} glass cases.`, true);
       return;
     }
     this._report(`Glass cases: ${ab.smashed}. ${lv}`, true);
@@ -653,7 +662,7 @@ const HELP_SECTIONS = [
     { title: 'The Abyss Lightning', sound: null, desc: 'Lightning is your cover. Every few seconds it strikes somewhere in the abyss, really loud: a thunderclap from where it strikes, while the wind and the hum of the cases dip under it. The creatures near it run toward the strike. For five seconds after a strike your steps are not heard, so that is the moment to move. At first it strikes every six to ten seconds; as you smash more cases it comes less often, but never more than twenty seconds apart.' },
     { title: 'The Abyss Glass Cases', sound: null, desc: 'A glass case hums where it stands, and from about fifteen steps away it knocks too, faster and louder as you close in, so you can turn until the knocking is centred between your ears. When you are beside a case and facing it, a bell rings: tap with two fingers to smash it, or press the spacebar. Smashing glass is loud: every creature that hears it charges you for about three seconds, unless the five seconds after a lightning strike have not yet run out, so a case is best smashed just after the lightning. Each case gives you time: usually ten seconds, sometimes twenty or thirty, and very rarely sixty. About one case in six also holds lightning: as it breaks, lightning strikes somewhere in the abyss and the creatures run to it instead of to you.' },
     { title: 'The Abyss Clock, Lives and Score', sound: null, desc: 'The clock starts at sixty seconds, and only glass cases add to it. You have three lives: when the clock runs out, or a creature catches you for the third time, the run is over. Every three cases you smash, one more creature wakes in the abyss, and the lightning comes a little less often. Your score is the number of cases you smash, and The Abyss has its own high score board.' },
-    { title: 'The Abyss in Chaos Mode', sound: null, desc: 'Chaos Mode has Abyss levels too. You know you are in one at once: lightning strikes the moment you arrive, so move. There you must smash a set number of cases: three or four the first time in a run, and one more each time after, at most eight. Each case adds its time to the chaos clock. When you have smashed enough, everything else goes silent, the creatures included, and only an exit is heard, the battle exit\'s Morse signal; the chaos clock waits until you walk through it. Abyss levels have three lives of their own for the whole chaos run, and losing all three ends the run. There, double tap for the cases smashed and your lives, then the clock and the points.' },
+    { title: 'The Abyss in Chaos Mode', sound: null, desc: 'Chaos Mode has Abyss levels too. You know you are in one at once: lightning strikes the moment you arrive, so move. There you must smash a set number of cases: three or four the first time in a run, and one more each time after, at most eight. Each case adds its time to the chaos clock. When you have smashed enough, everything else goes silent, the creatures included, and only an exit is heard, the battle exit\'s Morse signal; the chaos clock waits until you walk through it. There a catch costs 25 health from the one health bar of the chaos run (see Chaos Health) instead of a life. There, double tap for the cases smashed, then your health, the clock and the points.' },
   ]],
 ];
 

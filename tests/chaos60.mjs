@@ -83,11 +83,12 @@ const fv1 = await page.evaluate(async () => {
   const out = { state: g.state, chaos: fv.chaos, quota: fv.quota, lives: fv.lives, said: t.said.slice(), bg: fv.amb && fv.amb.stem };
   const t0 = g.timeLeft; t.frames(1.0); out.ticks = +(t0 - g.timeLeft).toFixed(2);
   g.input('enter'); out.report = t.said[t.said.length - 1];
-  // A catch: the stage's lives (the run's own).
+  // A catch: 25 of the run's one health bar (web 6.2.0), not a life.
   g.playerPos = [0, 0]; fv.glass.clear(); fv.glass.add('0,0');
   fv.creature.x = 0; fv.creature.y = -6; fv.caughtAt = null;
-  for (let i = 0; i < 30 && fv.lives === 3; i++) g.updateFindVoice(1 / 30);
-  out.afterCatch = [fv.lives, g.chaosFvLives];
+  const hp0 = g.towerHp;
+  for (let i = 0; i < 30 && g.towerHp === hp0; i++) g.updateFindVoice(1 / 30);
+  out.afterCatch = [hp0, g.towerHp, fv.lives];
   // 6.1.1: the same longer charge in Chaos: one step on glass and off again, at least 5 seconds.
   fv.caughtAt = null; fv.glass.clear(); fv.glass.add('0,-1');
   g.playerPos = [0, 0]; g._turnStop(); g._face(0, true);
@@ -111,8 +112,8 @@ const fv1 = await page.evaluate(async () => {
 check(fv1.state === 'findvoice' && fv1.chaos && (fv1.quota === 3 || fv1.quota === 4) && fv1.lives === 3, 'a Find the Voice stage: a quota of 3 or 4 the first time, three lives: ' + JSON.stringify([fv1.quota, fv1.lives]));
 check(fv1.bg === 'evt_amb_witch', 'the first Find the Voice stage of a chaos run has the witch\'s air (as the Windows game): ' + fv1.bg);
 check(!fv1.said.some((s) => /Level/.test(s)) && /^evt_amb_/.test(fv1.bg) && fv1.ticks > 0.9, 'nothing says which stage it is; an event background; the chaos clock runs: ' + JSON.stringify([fv1.bg, fv1.ticks]));
-check(/^0 of [34] found\. 3 lives left\. Clock \d+ seconds\. 0 points total\. Facing north\.$/.test(fv1.report), 'its report: ' + fv1.report);
-check(fv1.afterCatch[0] === 2 && fv1.afterCatch[1] === 2, 'a catch costs one of the stage\'s lives');
+check(/^0 of [34] found\. 100 health\. Clock \d+ seconds\. 0 points total\. Facing north\.$/.test(fv1.report), 'its report, with the run\'s health: ' + fv1.report);
+check(fv1.afterCatch[1] === fv1.afterCatch[0] - 25 && fv1.afterCatch[2] === 3, 'a catch costs 25 of the run\'s health, not a life (6.2.0): ' + JSON.stringify(fv1.afterCatch));
 check(fv1.chaosAt45 === 'charge' && fv1.chaosAt53 === 'rest', 'in Chaos too, one step on glass gives a charge of at least 5 seconds (6.1.1): ' + JSON.stringify([fv1.chaosAt45, fv1.chaosAt53]));
 check(fv1.exit && fv1.loops.length === 1 && fv1.loops[0] === 'exit_morse' && fv1.creature === 'gone', 'the quota found, the exit appears and everything else goes: ' + fv1.loops.join(', '));
 check(fv1.waits, 'the chaos clock waits until you go through the exit');
@@ -127,17 +128,19 @@ const fv2 = await page.evaluate(() => {
   for (let k = 0; k < fv.quota; k++) t.find();
   t.reachExit(); t.frames(0.3);
   out.capped = g.fv && g.fv.quota;
-  // The third catch of the run ends it.
+  // Catches until the run's health is gone end it.
   const f3 = g.fv;
-  const catchOnce = () => { g.playerPos = [0, 0]; f3.glass.clear(); f3.glass.add('0,0'); f3.creature.x = 0; f3.creature.y = -6; f3.caughtAt = null; const lv = f3.lives; for (let i = 0; i < 30 && g.state === 'findvoice' && f3.lives === lv; i++) g.updateFindVoice(1 / 30); };
-  catchOnce(); out.left = f3.lives;
+  out.hpAfterExits = g.towerHp;
+  const catchOnce = () => { g.playerPos = [0, 0]; f3.glass.clear(); f3.glass.add('0,0'); f3.creature.x = 0; f3.creature.y = -6; f3.caughtAt = null; const hp = g.towerHp; for (let i = 0; i < 30 && g.state === 'findvoice' && g.towerHp === hp; i++) g.updateFindVoice(1 / 30); };
+  g.towerHp = 40;
+  catchOnce(); out.left = g.towerHp;
   catchOnce();
   out.end = { state: g.state, said: t.said[t.said.length - 1], loops: t.loops() };
   return out;
 });
-check(fv2.state === 'findvoice' && fv2.count === 2 && fv2.lives === 2, 'the next Find the Voice stage keeps the run\'s lives: ' + fv2.lives);
+check(fv2.state === 'findvoice' && fv2.count === 2, 'the next Find the Voice stage');
 check(fv2.quota === [3, 4].map((q) => q + 1).find((q) => q === fv2.quota) && fv2.capped === 8 && fv2.speed === 225, 'its quota is one more each time, never over 8; its creature a little faster: ' + JSON.stringify([fv2.quota, fv2.capped, fv2.speed]));
-check(fv2.left === 1 && fv2.end.state === 'game_over' && /^Caught\. You scored \d+ points\. /.test(fv2.end.said) && fv2.end.loops.length === 0, 'losing the third life ends the whole chaos run: ' + fv2.end.said);
+check(fv2.left === 15 && fv2.end.state === 'game_over' && /^Caught\. You scored \d+ points\. /.test(fv2.end.said) && fv2.end.loops.length === 0, 'a catch that takes the last of the run\'s health ends it: ' + JSON.stringify([fv2.left, fv2.end.said]));
 
 // ------------------------------------------------------------------ a world stage
 const w1 = await page.evaluate(async () => {

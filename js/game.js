@@ -6,6 +6,7 @@ import { HELP as BASE_HELP } from './help-data.js';
 import { MODES } from './modes/index.js';
 import { RATES } from './speech.js';
 import { keyboardDevice, windowsOnly } from './device.js';
+import { HIT_REACTIONS, HIT_REACT_LEVEL, HIT_REACT_AFTER } from './modes/ultimate.js';
 import { BATTLE_CROWD, BATTLE_BEACON_BOOST, CROWD_LEVEL, AMBIENCE_LEVEL, BACKGROUND_SEND, ROARS, ROAR_LEVEL, ROAR_AFTER,
   crowdSend } from './modes/ultimate.js';
 import { aliasRecording } from './modes/events/sounds.js';
@@ -568,7 +569,13 @@ export class Game {
   }
 
   // (6.1.0, Russell) No groan or gasp from the crowd when an enemy reaches you in a
-  // battle: one hit ends it there. (Ultimate Mode keeps its reactions.)
+  // battle: one hit ends it there. (Ultimate Mode keeps its reactions.) But in chaos's
+  // battles a hit now costs health instead of the run (web 6.2.0), so there the crowd
+  // groans, gasps or boos again, just after the hit, never the same twice running.
+  _battleGroan() {
+    const name = this._battleCrowdPick(HIT_REACTIONS, 'battleLastReact');
+    if (name) this._battleCrowdLater(HIT_REACT_AFTER, name, HIT_REACT_LEVEL);
+  }
 
   _battleSwapAmb(fade = BATTLE_SWAP_FADE) {
     let idx = this.upcoming.battle_amb;
@@ -984,6 +991,7 @@ export class Game {
 
   updateBattleMode(dt) {
     if (this.isPaused) return;
+    if (this.chaosMode && this.chaosHitGrace > 0) this.chaosHitGrace = Math.max(0, this.chaosHitGrace - dt);
     const steps = this.battleSteps;
     this.battleSteps = [];
     // In chaos mode the global run timer keeps ticking during battle levels.
@@ -1089,6 +1097,18 @@ export class Game {
       const [l, r] = this._battleLevels([o.x, o.y]);
       if (o.channel) o.channel.setVolume(l, r, this._behind([o.x, o.y]));
       if (dist < 0.8) {
+        // In chaos (web 6.2.0): it costs health instead of the run, and the enemy that
+        // reached you is gone (counted as one of the level's), so it cannot hit twice.
+        if (this.chaosMode) {
+          if (this.chaosHitGrace > 0) continue;
+          this.audio.play('player_hit');
+          if (o.channel) o.channel.stop();
+          this.obstacles.splice(this.obstacles.indexOf(o), 1);
+          this.kills += 1;
+          this._battleGroan();
+          if (this._chaosHurt(this._chaosHitDamage(), 'hit')) return;
+          break;
+        }
         this.audio.play('player_hit');
         this.triggerGameOver();
         return;
@@ -1640,6 +1660,8 @@ export class Game {
   // Enter's report (the desktop's _report). In chaos mode every report ends with the
   // run's points, since that is the score the run is played for.
   _report(text, clock = false) {
+    // Chaos's one health bar (web 6.2.0), in every level that does not already say it.
+    if (this.chaosMode && this.state !== S.TOWER && this.state !== 'ultimate') text = text.trimEnd() + ` ${this.towerHp} health.`;
     if (clock) text = text.trimEnd() + this._clockTail();
     if (this.chaosMode) text = text.trimEnd() + ` ${(this.chaosPoints || 0) + (this.islandPoints || 0)} points total.`;
     this.tts.speak(text.trimEnd() + this._facingTail());
