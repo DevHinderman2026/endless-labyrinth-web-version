@@ -13,7 +13,8 @@
 //
 // Lightning is your cover. Every few seconds it strikes somewhere in the abyss,
 // really loud, and the creatures run toward the strike; for five seconds after it
-// your steps are not heard. Strikes come every 6 to 10 seconds, the whole run.
+// your steps are not heard. Strikes come every 6 to 10 seconds at first and spread
+// out as you go, never more than 20 seconds apart.
 //
 // The goal: smash as many glass cases as you can before the clock runs out. A case
 // hums, and knocks as you close in (as in Ultimate Mode); a bell says when you are
@@ -24,7 +25,7 @@
 // strike lands somewhere in the abyss and the creatures run to it instead of you.
 // The clock starts at 60 seconds. You have three lives: a catch costs one, and the
 // creature that caught you is thrown far off. Every three cases one more creature
-// wakes. The score is the cases smashed.
+// wakes and the lightning comes a little less often. The score is the cases smashed.
 //
 // Chaos Mode has Abyss stages too (js/modes/chaos.js): lightning strikes the moment
 // you arrive, a quota of cases (3 or 4, growing each visit), then everything else
@@ -56,11 +57,14 @@ export const AB_LIVES = 3;
 // A case's time, and how often: 10 mostly, sometimes 20 or 30, very rarely 60.
 export const AB_REWARDS = [[10, 0.62], [20, 0.25], [30, 0.10], [60, 0.03]];
 export const AB_LIGHTNING_CASE = 1 / 6;         // a case that also holds lightning
-// Lightning: every 6 to 10 seconds, from the first case to the last (web 6.3.1,
-// Russell, 20 November 2026; until then it came less often every three cases, up
-// to 20 seconds apart, while a creature also woke every three cases, which made the
-// late game unfair).
+// Lightning: every 6 to 10 seconds at first; each tier (three cases) a second more at
+// the short end and two at the long end, never more than 20 seconds apart. (6.3.1
+// kept it at 6 to 10 all the way; 6.3.2 puts the growth back, Russell, 20 November
+// 2026: with lightning that often, the clock could climb to four minutes, so it
+// never got harder. The creatures' spacing from 6.3.1 stays.)
 export const AB_STRIKE_GAP = [6.0, 10.0];
+export const AB_STRIKE_GROW = [1.0, 2.0];
+export const AB_STRIKE_MAX = 20.0;
 export const AB_COVER = 5.0;                    // seconds after a strike that your steps are not heard
 // (6.3.1, Russell: "they're too close, so when they run, they're actually running
 // into each other most of the time ... the lightning actually doesn't send them
@@ -161,8 +165,12 @@ export function rollReward(r = rand()) {
 // How hard it is: one tier for every three cases smashed.
 export function tierOf(smashed) { return Math.floor(Math.max(0, smashed) / AB_TIER_CASES); }
 export function creaturesFor(smashed) { return Math.min(AB_CREATURES[2], AB_CREATURES[0] + AB_CREATURES[1] * tierOf(smashed)); }
-// (The same whatever has been smashed, from 6.3.1.)
-export function strikeGap() { return [...AB_STRIKE_GAP]; }
+export function strikeGap(smashed) {
+  const t = tierOf(smashed);
+  const lo = Math.min(AB_STRIKE_MAX, AB_STRIKE_GAP[0] + AB_STRIKE_GROW[0] * t);
+  const hi = Math.min(AB_STRIKE_MAX, AB_STRIKE_GAP[1] + AB_STRIKE_GROW[1] * t);
+  return [lo, Math.max(lo, hi)];
+}
 
 // ------------------------------------------------------------------ the game's methods
 const mixin = {
@@ -419,9 +427,23 @@ const mixin = {
         let dx = b.x - a.x; let dy = b.y - a.y; let d = Math.hypot(dx, dy);
         if (d >= AB_APART) continue;
         if (d < 1e-6) { const t = uniform(0, Math.PI * 2); dx = Math.sin(t); dy = -Math.cos(t); d = 1; }
-        const push = (AB_APART - Math.hypot(b.x - a.x, b.y - a.y)) / 2;
-        a.x -= dx / d * push; a.y -= dy / d * push;
-        b.x += dx / d * push; b.y += dy / d * push;
+        const gap = AB_APART - Math.hypot(b.x - a.x, b.y - a.y);
+        // A creature that is not hunting you (wandering, still, or running to the
+        // lightning) is never eased nearer to you than it may wander (AB_WANDER_KEEP),
+        // so keeping apart can never walk it into you: the other one moves instead.
+        const ux = dx / d; const uy = dy / d;
+        const blocked = (c, sx, sy) => {
+          if (c.charge > 0 || c.move > 0) return false;
+          const now = dist2([c.x, c.y], this.playerPos);
+          const then = dist2([c.x + sx, c.y + sy], this.playerPos);
+          return then < AB_WANDER_KEEP && then < now;
+        };
+        let pa = gap / 2; let pb = gap / 2;
+        const aStuck = blocked(a, -ux * pa, -uy * pa); const bStuck = blocked(b, ux * pb, uy * pb);
+        if (aStuck && bStuck) continue;
+        if (aStuck) { pa = 0; pb = gap; } else if (bStuck) { pb = 0; pa = gap; }
+        a.x -= ux * pa; a.y -= uy * pa;
+        b.x += ux * pb; b.y += uy * pb;
         moved = true;
       }
     }
@@ -707,9 +729,9 @@ const HELP_SECTIONS = [
   ['The Abyss', [
     { title: 'The Abyss', sound: null, desc: 'The Abyss is a mode of its own, new in 6.2.0. You are in a huge, endless abyss, with no walls and no edge, and the whole floor is broken glass: every step you take can be heard. Creatures live all through it. Your goal is to smash as many glass cases as you can before the clock runs out. You turn and walk as in every walking mode (see General Turning). Double tap for the cases you have smashed, your lives, the seconds left and the way you are facing.' },
     { title: 'The Abyss The Creatures', sound: null, desc: 'The creatures are blind, just like you, and they hunt by sound, so they come for you only while you move. Walk, and the ones within about ten steps creep toward the sound of your steps. Run, and the ones within about twenty steps charge you, a little slower than you can run. Stop, and they stop hunting you: each one goes back to wandering the abyss very slowly, in no particular direction, never toward you, and it always turns away before it comes within three steps of you, so a creature that has not heard you can never stumble into you. Standing still never gets you away from them; it only holds them off, while the clock runs on. A wandering creature makes a quieter sound and faint footsteps; a hunting one growls, with a footstep on the glass for every step it takes. The creatures always keep about three steps apart from one another, and a creature that wakes does so fifteen to twenty-five steps from you, never right beside another. You cannot shoot them. If one catches you, you lose a life, and it is thrown far away.' },
-    { title: 'The Abyss Lightning', sound: null, desc: 'Lightning is your cover. Every few seconds it strikes somewhere in the abyss, really loud: a thunderclap from where it strikes, while the wind and the hum of the cases dip under it. It lands fifteen to twenty-five steps from you, and every creature in the abyss runs toward it, each to its own spot around the strike, so they spread out instead of crowding into one pack. For five seconds after a strike your steps are not heard, so that is the moment to move. It strikes every six to ten seconds, from your first case to your last.' },
+    { title: 'The Abyss Lightning', sound: null, desc: 'Lightning is your cover. Every few seconds it strikes somewhere in the abyss, really loud: a thunderclap from where it strikes, while the wind and the hum of the cases dip under it. It lands fifteen to twenty-five steps from you, and every creature in the abyss runs toward it, each to its own spot around the strike, so they spread out instead of crowding into one pack. For five seconds after a strike your steps are not heard, so that is the moment to move. At first it strikes every six to ten seconds; as you smash more cases it comes less often, but never more than twenty seconds apart.' },
     { title: 'The Abyss Glass Cases', sound: null, desc: 'A glass case hums where it stands, and from about fifteen steps away it knocks too, faster and louder as you close in, so you can turn until the knocking is centred between your ears. When you are beside a case and facing it, a bell rings: tap with two fingers to smash it, or press the spacebar. Smashing glass is loud: every creature that hears it charges you for about three seconds, unless the five seconds after a lightning strike have not yet run out, so a case is best smashed just after the lightning. Each case gives you time: usually ten seconds, sometimes twenty or thirty, and very rarely sixty. About one case in six also holds lightning: as it breaks, lightning strikes somewhere in the abyss and the creatures run to it instead of to you.' },
-    { title: 'The Abyss Clock, Lives and Score', sound: null, desc: 'The clock starts at sixty seconds, and only glass cases add to it. You have three lives: when the clock runs out, or a creature catches you for the third time, the run is over. Every three cases you smash, one more creature wakes in the abyss, up to seven; the lightning keeps coming every six to ten seconds. Your score is the number of cases you smash, and The Abyss has its own high score board.' },
+    { title: 'The Abyss Clock, Lives and Score', sound: null, desc: 'The clock starts at sixty seconds, and only glass cases add to it. You have three lives: when the clock runs out, or a creature catches you for the third time, the run is over. Every three cases you smash, one more creature wakes in the abyss, up to seven, and the lightning comes a little less often, never more than twenty seconds apart. Your score is the number of cases you smash, and The Abyss has its own high score board.' },
     { title: 'The Abyss in Chaos Mode', sound: null, desc: 'Chaos Mode has Abyss levels too. You know you are in one at once: lightning strikes the moment you arrive, so move. There you must smash a set number of cases: three or four the first time in a run, and one more each time after, at most eight. Each case adds its time to the chaos clock. When you have smashed enough, everything else goes silent, the creatures included, and only an exit is heard, the battle exit\'s Morse signal; the chaos clock waits until you walk through it. There a catch costs 25 health from the one health bar of the chaos run (see Chaos Health) instead of a life. There, double tap for the cases smashed, then your health, the clock and the points.' },
   ]],
 ];

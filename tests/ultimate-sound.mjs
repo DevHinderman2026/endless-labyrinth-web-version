@@ -1270,7 +1270,8 @@ const parking = await page.evaluate(async () => {
   g.playerPos = W.posOf(nearB[0], nearB[1]); g._utListenerMix(); g.updateUltimateMode(1 / 30);
   u.area = B; g.playerPos = W.posOf(horizontal ? (B.ax > A.ax ? B.x0 + 1 : B.x1 - 1) : B.x0 + 16, horizontal ? B.y0 + 16 : (B.ay > A.ay ? B.y0 + 1 : B.y1 - 1));
   g._utRefreshRooms(); g._utListenerMix(); g.updateUltimateMode(1 / 30);
-  out.inside = { wide: sB.ambIn.l, placed: sB.amb.l, running: !sB.ambIn.paused && !sB.amb.paused };
+  // (An island's air plays at ISLAND_AIR_TRIM of the rest, from 6.3.1.)
+  out.inside = { wide: sB.ambIn.l, placed: sB.amb.l, running: !sB.ambIn.paused && !sB.amb.paused, full: B.kind === 'island' ? 0.5 : 1 };
   // The lift's hum: held off its island, playing on it.
   const isl = u.world.areas.find((x) => x.kind === 'island' && u.areaSounds.has(x.id) && x !== u.area);
   if (isl) {
@@ -1291,7 +1292,7 @@ check(parking.skipped || parking.running === parking.ownCount, `so the only area
 check(parking.skipped || (parking.near.level > 0 && parking.near.resumed && parking.near.sources && parking.near.carriedOn), 'near a neighbour\'s border its air is heard again, carrying on from where it was held: ' + JSON.stringify(parking.near));
 check(parking.skipped || (Math.abs(parking.near.skew) < 0.02 && parking.apart < 1e-9), `its placed copy and its wide copy are in step when it carries on (${parking.near && parking.near.skew} seconds apart by their clocks), and being held six more times adds nothing to that (${parking.apart})`);
 check(parking.skipped || (parking.grace.level === 0 && parking.grace.running && parking.again), 'out of earshot again it plays on unheard for a moment, then is held again: ' + JSON.stringify(parking.grace) + ' ' + parking.again);
-check(parking.skipped || (parking.inside.running && parking.inside.wide > 0.5 && parking.inside.placed === 0), 'across the border its wide copy takes over at once: ' + JSON.stringify(parking.inside));
+check(parking.skipped || (parking.inside.running && parking.inside.wide > 0.5 * parking.inside.full && parking.inside.placed === 0), 'across the border its wide copy takes over at once (an island\'s at its own, lower level): ' + JSON.stringify(parking.inside));
 check(parking.skipped || !parking.hum || (parking.hum.held && parking.hum.same && parking.hum.playing), 'the lift\'s hum is held off its island and plays, the same voice, on it: ' + JSON.stringify(parking.hum));
 
 // --------------------------------------------------------------- 19. a chaser in the area you left is let go at once (web 3.3.0)

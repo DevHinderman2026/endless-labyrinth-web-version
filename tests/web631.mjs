@@ -124,6 +124,45 @@ check(isle.ride === 0.7, 'the ride plays at 0.7: ' + isle.ride);
 check(isle.place === 'seabed' && isle.hum !== null && isle.hum <= 0.4 + 1e-6, 'on the seabed, standing at the lift, its hum is no louder than 0.4: ' + JSON.stringify(isle));
 check(isle.water !== null && isle.water <= 0.8 * 0.46 + 1e-6, 'and the water all round you is brought down with it: ' + isle.water);
 
+// ------------------------------------------------------------------ 4. chimes from one point (6.3.2)
+const chimes = await page.evaluate(async () => {
+  const a = window.__el.audio; const mod = await import('./js/audio.js'); const out = {};
+  for (const n of [...a.entries.keys()].filter((k) => mod.centred(k) && !/_muffled$/.test(k))) {
+    const b = await a._decode('dry:' + n, a.entries.get(n).dry || a.entries.get(n));
+    out[n] = b.numberOfChannels;
+  }
+  return out;
+});
+const names = Object.keys(chimes);
+check(names.length >= 5 && names.includes('elevator_ding') && names.includes('ut_bus_chime') && names.some((n) => n.startsWith('event_pickup_')), 'the chimes to hear from one point include the elevator\'s, the bus\'s and the events\' pickups: ' + names.length);
+check(Object.values(chimes).every((c) => c === 1), 'every chime, bell and ding plays as one point: ' + JSON.stringify(Object.entries(chimes).filter(([, c]) => c !== 1)));
+const rules = await page.evaluate(async () => {
+  const mod = await import('./js/audio.js');
+  const yes = ['elevator_ding', 'elevator_arrive_1', 'ut_bus_chime', 'event_pickup_file_evt_chime_clear', 'evt_chime_clear',
+    'event_sting_file_evt_victory_bell', 'event_sting_file_evt_gong', 'event_sting_file_evt_church_bell', 'event_toll', 'event_toll_end',
+    'event_pickup_file_evt_oven_ding', 'evt_ding', 'evt_cowbell'];
+  const no = ['evt_amb_crickets', 'event_amb_file_evt_wind_chimes', 'bat_06_grinding', 'lab_01_cavewind', 'credit_10', 'treasure_pickup', 'evt_chest_open'];
+  return { notCentred: yes.filter((n) => !mod.centred(n)), centred: no.filter((n) => mod.centred(n)) };
+});
+check(!rules.notCentred.length, 'a chime, bell, ding, gong or toll, whatever plays it (an event\'s start and end included), is one point: ' + JSON.stringify(rules.notCentred));
+check(!rules.centred.length, 'but never a background, which turns with you, nor a sound that is no chime: ' + JSON.stringify(rules.centred));
+// An event's own recording (one it brings in its folder) of a bell, made one point as it loads.
+const own = await page.evaluate(async () => {
+  const g = window.__el.game; const a = window.__el.audio;
+  const ctx = a.ctx; const n = 4410;
+  const b = ctx.createBuffer(2, n, ctx.sampleRate);
+  const l = new Float32Array(n); const r = new Float32Array(n);
+  for (let i = 0; i < n; i++) { l[i] = Math.sin(i / 7) * 0.3; r[i] = Math.sin(i / 11) * 0.3; }
+  b.copyToChannel(l, 0); b.copyToChannel(r, 1);
+  const stem = 'zz_test_bell';
+  a.entries.set(stem, a.entries.get('evt_gong'));
+  g.evRecordings = { [stem]: { dry: b, dull: null } }; g.evHeld = g.evHeld || [];
+  const name = g.loadEventRecording(stem + '.ogg', 'sting');
+  const got = a.buffers.get('dry:' + name);
+  return { name, ch: got && got.numberOfChannels };
+});
+check(own.ch === 1, 'an event\'s own bell recording, as it loads, is made one point too: ' + JSON.stringify(own));
+
 check(!errors.length, 'no page errors ' + errors.join(' | '));
 await browser.close();
 console.log(failures ? `${failures} FAILED` : 'ALL PASSED');

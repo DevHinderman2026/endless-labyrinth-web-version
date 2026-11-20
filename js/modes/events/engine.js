@@ -10,7 +10,7 @@ import { saysLives, status as eventStatus, describeDuration, hasClock, ITEMS_NEE
 import { aliasRecording, addMade, fromBuffer, ringPeriodCopy, warpCopy, padded, ensureCopies } from './sounds.js';
 // 6.0.0: the one mono copy every placed sound uses (audio.js); events no longer keep their
 // own averaged copy, so a recording is folded the same way here as everywhere else.
-import { monoCopy } from '../../audio.js';
+import { monoCopy, centred } from '../../audio.js';
 import { uniform, randint, randrange, choice, sample, choices, random, shuffle } from './py.js';
 
 import { gestureWords } from './wording.js';
@@ -430,7 +430,8 @@ export const EngineMixin = {
       // plays a mono copy made here, so only the game's own panning says where it is.
       // Some recordings drift from side to side by themselves (the fairy dust swings
       // about ten decibels each way) and could never be centred. The file is untouched.
-      const mono = role === 'beacon' || role === 'beacon_hazard';
+      // (6.3.2) And a chime, a bell or a gong, whatever it is for (see centred).
+      const mono = role === 'beacon' || role === 'beacon_hazard' || centred(name);
       const fold = (b) => (mono ? monoCopy(this.audio.ctx, b) : b);
       this.audio.buffers.set('dry:' + name, fold(got.dry));
       const pair = this.audio.entries.get(name);

@@ -189,7 +189,7 @@ check(storm.ducked < 0.5 && storm.pinned && storm.varied, 'each strike is one of
 check(storm.storm[0] && storm.storm[1] && !storm.storm[2] && storm.toward, 'creatures near the strike run toward it; one far off does not: ' + JSON.stringify(storm.storm));
 check(storm.coveredStep, 'a step during the cover is not heard');
 check(storm.coverAfter === 0 && storm.heardAgain, 'once the five seconds are over, your steps are heard again');
-check(JSON.stringify(storm.gaps) === JSON.stringify([[6, 10], [6, 10], [6, 10], [6, 10], [6, 10]]), 'strikes every 6 to 10 seconds, however many cases are smashed (6.3.1): ' + JSON.stringify(storm.gaps));
+check(JSON.stringify(storm.gaps) === JSON.stringify([[6, 10], [7, 12], [9, 16], [16, 20], [20, 20]]), 'strikes every 6 to 10 seconds, less often every three cases, never more than 20 apart (back in 6.3.2): ' + JSON.stringify(storm.gaps));
 
 // ------------------------------------------------------------------ glass cases
 const cases = await page.evaluate(async () => {
@@ -364,6 +364,58 @@ check(chaos.second.state === 'abyss' && chaos.second.quota === Math.min(8, chaos
 check(chaos.stageLives[1] === chaos.stageLives[0] - 25 && chaos.stageLives[2] === 3, 'in Chaos a catch costs 25 of the run\'s health, not a life: ' + JSON.stringify(chaos.stageLives));
 check(chaos.low === 'Health low. 5.', 'falling low, the voice says so: ' + chaos.low);
 check(chaos.end[0] === 'game_over' && /^Caught\. You scored \d+ points\. /.test(chaos.end[1]), 'losing all three ends the chaos run: ' + chaos.end[1]);
+
+// ------------------------------------------------------------------ 6.3.2: lightning grows in Chaos too; spacing over time
+const grow = await page.evaluate(() => {
+  const g = window.__el.game; const t = window.__t; const out = {};
+  // A Chaos Abyss level, six cases in (two tiers): the next strike is 8 to 14 seconds off.
+  t.start('chaos', ['abyss', 'abyss', 'standard']);
+  const ab = g.ab; out.chaos = !!(ab && ab.chaos);
+  out.trials = [];
+  for (let k = 0; ab && k < 5; k++) { ab.smashed = 6; ab.nextStrike = 0; ab.duck = 0; const st = g.state; g.updateAbyss(1 / 30); out.trials.push([st, g.state, g.ab === ab, ab.smashed, +ab.nextStrike.toFixed(2)]); }
+  out.next = out.trials.length ? Math.min(...out.trials.map((x) => x[4])) : null;
+  out.nextHi = out.trials.length ? Math.max(...out.trials.map((x) => x[4])) : null;
+  // The mode itself, seven creatures, a minute of walking and lightning: they keep
+  // three steps apart, none is lost, nothing goes astray.
+  t.start('abyss');
+  const b = g.ab; b.smashed = 12; g.timeLeft = 999;
+  g._abFillCreatures(); g.updateAbyss(1 / 30);
+  let worst = 1e9; let lost = 0; let bad = 0; let tooNear = 0; const n0 = b.creatures.length;
+  // Keeping apart, watched: it never moves a creature that is not hunting you nearer
+  // to you than three steps.
+  const keepApart = g._abKeepApart.bind(g);
+  g._abKeepApart = () => {
+    const calm = b.creatures.filter((c) => c.charge <= 0 && c.move <= 0).map((c) => [c, Math.hypot(c.x - g.playerPos[0], c.y - g.playerPos[1])]);
+    keepApart();
+    for (const [c, d0] of calm) { const d1 = Math.hypot(c.x - g.playerPos[0], c.y - g.playerPos[1]); if (d1 < 9 && d1 < d0 - 1e-6) tooNear += 1; }
+  };
+  for (let f = 0; f < 30 * 60; f++) {
+    b.grace = 5; if (g.timeLeft < 900) g.timeLeft = 999;
+    if (f % 15 === 0) { g.playerPos = [g.playerPos[0] + 1.5 * Math.sin(f / 200), g.playerPos[1] - 1.5]; g._abHeard(f % 90 === 0); }
+    g.updateAbyss(1 / 30);
+    const cs = b.creatures;
+    if (cs.length < n0) lost += 1;
+    for (const c of cs) {
+      if (!Number.isFinite(c.x) || !Number.isFinite(c.y)) bad += 1;
+    }
+    for (let i = 0; i < cs.length; i++) for (let j = i + 1; j < cs.length; j++) worst = Math.min(worst, Math.hypot(cs[i].x - cs[j].x, cs[i].y - cs[j].y));
+  }
+  Object.assign(out, { n0, worst, lost, bad, tooNear });
+  g._abKeepApart = keepApart;
+  // A creature wandering three steps off, another charging past right beside it:
+  // keeping apart moves the charging one, never the wanderer toward you.
+  t.calm(); g.playerPos = [0, 0];
+  const [w, k] = b.creatures; for (const c of b.creatures.slice(2)) t.put(c, 200, 200);
+  t.put(w, 0, -9.2); t.put(k, 0.5, -9.6); k.charge = 1;
+  const keep = []; for (let f = 0; f < 3; f++) { b.grace = 1; g.updateAbyss(1 / 30); keep.push(Math.hypot(w.x, w.y)); }
+  out.keep = Math.min(...keep);
+  t.menu();
+  return out;
+});
+check(grow.chaos && grow.next >= 8 - 0.04 && grow.nextHi <= 14 && grow.trials.every((x) => x[0] === 'abyss'), 'in a Chaos Abyss level too, the lightning comes less often as cases are smashed (six cases in, two tiers: 8 to 14 seconds): ' + JSON.stringify(grow.trials.map((x) => x[4])));
+check(grow.n0 === 7 && grow.lost === 0 && grow.bad === 0, 'seven creatures through a minute of walking and lightning: none lost, none astray: ' + JSON.stringify([grow.n0, grow.lost, grow.bad]));
+check(grow.worst >= 8.9, 'and they keep three steps apart all the while: ' + grow.worst.toFixed(2));
+check(grow.tooNear === 0 && grow.keep >= 9 - 0.6, 'keeping apart never eases a creature that is not hunting you in toward you: ' + JSON.stringify([grow.tooNear, +grow.keep.toFixed(2)]));
 
 check(!errors.length, 'no page errors ' + errors.join(' | '));
 await browser.close();

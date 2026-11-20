@@ -8,7 +8,7 @@
   <link rel="icon" href="icons/icon-192.png">
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
   <meta name="theme-color" content="#0c0f14">
-  <link rel="stylesheet" href="css/site.css?v=6.3.1">
+  <link rel="stylesheet" href="css/site.css?v=6.3.2">
 </head>
 <body data-update-alert="history">
   <header class="site">
@@ -20,8 +20,21 @@
     <p>This page lists the web version. For the Windows version, see its <a href="https://github.com/DevHinderman2026/Endless-Labyrinth/blob/main/Credits%20and%20Version%20History/CHANGELOG.md">changelog</a> on GitHub.</p>
     <p>The game updates by itself: the next time you open it, you have the latest version. Only a sound pack that has changed is downloaded again, and your high scores are kept. Events are not listed here: they appear in the Events menu as they open.</p>
 
+    <h2>6.3.2 (20 November 2026)</h2>
+    <p>Lightning in The Abyss grows further apart again as you go; and every chime is heard from one point.</p>
+    <p><em>Four versions in one day, and this is the one where the lightning goes back to how it was this morning. The creatures stay the way 6.3.1 made them, though: they now keep three polite steps apart, which is more personal space than anyone working on this update got today.</em></p>
+    <h3>Changed: lightning in The Abyss</h3>
+    <ul>
+      <li>Lightning strikes every six to ten seconds at first and, every three cases you smash, comes a little less often, never more than twenty seconds apart, as it did before 6.3.1, in The Abyss and in Chaos mode's Abyss levels. With lightning every six to ten seconds the whole way, the clock could climb to four minutes, so the run never got harder. The creatures still keep their distance from one another, as in 6.3.1, and keeping them apart never moves one that isn't hunting you any closer to you.</li>
+    </ul>
+    <h3>Fixed: chimes heard from one point</h3>
+    <ul>
+      <li>A chime, a bell or a ding is now heard from one point: the elevator's, the bus's, the chime when you reach the guide in Find the Voice, and every event's pickups. Some of them were recorded in stereo and, played where you stood, were spread from ear to ear instead. An event's bell or gong that starts or ends it is now heard from one point too, as is any chime or bell an event brings with it. The same in Windows version 4.0.0.</li>
+    </ul>
+
     <h2>6.3.1 (20 November 2026)</h2>
     <p>The popping in the labyrinths and the static on the islands of the worlds, both fixed; lightning in The Abyss every six to ten seconds all the way through, with the creatures spread out; and every background now turns with you.</p>
+    <p><em>A confession: the popping came from 6.3.0's fix for the static. That is a bit like fixing a squeaky door by taking the door off. The door is back on, and it no longer squeaks. The islands, meanwhile, had simply been turned up far too loud, like a neighbour who discovers a new speaker.</em></p>
     <h3>Fixed: popping in the labyrinths</h3>
     <ul>
       <li>In Standard mode, and in Chaos mode's labyrinths, the sound could pop every few seconds, between the exit's beeps. It came from 6.3.0's fix for the static: each finished sound was unplugged from the game's mix a few seconds after it ended, and some devices can be heard to pop whenever that happens. A finished sound's part in the mix is now handed on to the next sound instead, so nothing is unplugged as you play, and nothing piles up either.</li>
@@ -42,6 +55,7 @@
 
     <h2>6.3.0 (20 November 2026)</h2>
     <p>One health bar for the whole of a Chaos run; time on the Chaos clock for everything you score in a Chaos world; footsteps that match the ground in outdoor safe zones; gaps between wall corners you can walk through in every labyrinth; and the static that could still creep into the sound the longer you played, found and fixed for good.</p>
+    <p><em>Just above, it says the static was "found and fixed for good." For good lasted about three hours. See 6.3.1.</em></p>
     <h3>Changed: one health bar in Chaos mode</h3>
     <ul>
       <li>Chaos mode now has one health bar for the whole run, starting at 100, in place of separate lives and health. Every level you finish adds 10, with no limit.</li>
@@ -68,6 +82,7 @@
 
     <h2>6.2.0 (20 November 2026), web only</h2>
     <p>A new mode made for the web alone, The Abyss, which Chaos mode now visits too; the creature in Find the Voice no longer gives up so soon; and a fix for static that could creep into the sound the longer you played.</p>
+    <p><em>Somewhere in The Abyss, a creature is still waiting for the lightning to strike. It will be waiting a while longer once you get to 6.3.2.</em></p>
     <h3>New: The Abyss</h3>
     <ul>
       <li>A huge, endless abyss with no walls and no edge, open air where nothing echoes back, and the whole floor is broken glass, so every step you take can be heard. Blind creatures live all through it and hunt by sound: they come for you only while you move. Walk, and the ones nearby creep toward your steps; run, and they charge from farther away; stop, and they go back to wandering the abyss very slowly, never toward you and never within three steps of you.</li>
@@ -668,65 +683,65 @@
   <script type="importmap">
   {
     "imports": {
-      "./js/accessibility.js": "./js/accessibility.js?v=6.3.1",
-      "./js/audio.js": "./js/audio.js?v=6.3.1",
-      "./js/backup.js": "./js/backup.js?v=6.3.1",
-      "./js/backups-page.js": "./js/backups-page.js?v=6.3.1",
-      "./js/bella-lexicon.js": "./js/bella-lexicon.js?v=6.3.1",
-      "./js/bella-words.js": "./js/bella-words.js?v=6.3.1",
-      "./js/braille.js": "./js/braille.js?v=6.3.1",
-      "./js/calendar.js": "./js/calendar.js?v=6.3.1",
-      "./js/device.js": "./js/device.js?v=6.3.1",
-      "./js/display.js": "./js/display.js?v=6.3.1",
-      "./js/game.js": "./js/game.js?v=6.3.1",
-      "./js/gestures.js": "./js/gestures.js?v=6.3.1",
-      "./js/help-data.js": "./js/help-data.js?v=6.3.1",
-      "./js/help-page.js": "./js/help-page.js?v=6.3.1",
-      "./js/keywords.js": "./js/keywords.js?v=6.3.1",
-      "./js/main.js": "./js/main.js?v=6.3.1",
-      "./js/modes/abyss.js": "./js/modes/abyss.js?v=6.3.1",
-      "./js/modes/chaos.js": "./js/modes/chaos.js?v=6.3.1",
-      "./js/modes/driving.js": "./js/modes/driving.js?v=6.3.1",
-      "./js/modes/events/blocks.js": "./js/modes/events/blocks.js?v=6.3.1",
-      "./js/modes/events/engine.js": "./js/modes/events/engine.js?v=6.3.1",
-      "./js/modes/events/feed.js": "./js/modes/events/feed.js?v=6.3.1",
-      "./js/modes/events/help.js": "./js/modes/events/help.js?v=6.3.1",
-      "./js/modes/events/missions.js": "./js/modes/events/missions.js?v=6.3.1",
-      "./js/modes/events/more-spec.js": "./js/modes/events/more-spec.js?v=6.3.1",
-      "./js/modes/events/more.js": "./js/modes/events/more.js?v=6.3.1",
-      "./js/modes/events/py.js": "./js/modes/events/py.js?v=6.3.1",
-      "./js/modes/events/schema.js": "./js/modes/events/schema.js?v=6.3.1",
-      "./js/modes/events/sign.js": "./js/modes/events/sign.js?v=6.3.1",
-      "./js/modes/events/sounds.js": "./js/modes/events/sounds.js?v=6.3.1",
-      "./js/modes/events/tunes.js": "./js/modes/events/tunes.js?v=6.3.1",
-      "./js/modes/events/wording.js": "./js/modes/events/wording.js?v=6.3.1",
-      "./js/modes/events.js": "./js/modes/events.js?v=6.3.1",
-      "./js/modes/findvoice-guide.js": "./js/modes/findvoice-guide.js?v=6.3.1",
-      "./js/modes/findvoice.js": "./js/modes/findvoice.js?v=6.3.1",
-      "./js/modes/index.js": "./js/modes/index.js?v=6.3.1",
-      "./js/modes/island.js": "./js/modes/island.js?v=6.3.1",
-      "./js/modes/tower.js": "./js/modes/tower.js?v=6.3.1",
-      "./js/modes/ultimate/cast.js": "./js/modes/ultimate/cast.js?v=6.3.1",
-      "./js/modes/ultimate/help.js": "./js/modes/ultimate/help.js?v=6.3.1",
-      "./js/modes/ultimate/world.js": "./js/modes/ultimate/world.js?v=6.3.1",
-      "./js/modes/ultimate.js": "./js/modes/ultimate.js?v=6.3.1",
-      "./js/packs.js": "./js/packs.js?v=6.3.1",
-      "./js/site.js": "./js/site.js?v=6.3.1",
-      "./js/sound-rules.js": "./js/sound-rules.js?v=6.3.1",
-      "./js/speech.js": "./js/speech.js?v=6.3.1",
-      "./js/stats.js": "./js/stats.js?v=6.3.1",
-      "./js/storage.js": "./js/storage.js?v=6.3.1",
-      "./js/turning.js": "./js/turning.js?v=6.3.1",
-      "./js/update-alert.js": "./js/update-alert.js?v=6.3.1",
-      "./js/version.js": "./js/version.js?v=6.3.1",
-      "./js/voice-text.js": "./js/voice-text.js?v=6.3.1",
-      "./js/voice.js": "./js/voice.js?v=6.3.1",
-      "./js/wetworker.js": "./js/wetworker.js?v=6.3.1"
+      "./js/accessibility.js": "./js/accessibility.js?v=6.3.2",
+      "./js/audio.js": "./js/audio.js?v=6.3.2",
+      "./js/backup.js": "./js/backup.js?v=6.3.2",
+      "./js/backups-page.js": "./js/backups-page.js?v=6.3.2",
+      "./js/bella-lexicon.js": "./js/bella-lexicon.js?v=6.3.2",
+      "./js/bella-words.js": "./js/bella-words.js?v=6.3.2",
+      "./js/braille.js": "./js/braille.js?v=6.3.2",
+      "./js/calendar.js": "./js/calendar.js?v=6.3.2",
+      "./js/device.js": "./js/device.js?v=6.3.2",
+      "./js/display.js": "./js/display.js?v=6.3.2",
+      "./js/game.js": "./js/game.js?v=6.3.2",
+      "./js/gestures.js": "./js/gestures.js?v=6.3.2",
+      "./js/help-data.js": "./js/help-data.js?v=6.3.2",
+      "./js/help-page.js": "./js/help-page.js?v=6.3.2",
+      "./js/keywords.js": "./js/keywords.js?v=6.3.2",
+      "./js/main.js": "./js/main.js?v=6.3.2",
+      "./js/modes/abyss.js": "./js/modes/abyss.js?v=6.3.2",
+      "./js/modes/chaos.js": "./js/modes/chaos.js?v=6.3.2",
+      "./js/modes/driving.js": "./js/modes/driving.js?v=6.3.2",
+      "./js/modes/events/blocks.js": "./js/modes/events/blocks.js?v=6.3.2",
+      "./js/modes/events/engine.js": "./js/modes/events/engine.js?v=6.3.2",
+      "./js/modes/events/feed.js": "./js/modes/events/feed.js?v=6.3.2",
+      "./js/modes/events/help.js": "./js/modes/events/help.js?v=6.3.2",
+      "./js/modes/events/missions.js": "./js/modes/events/missions.js?v=6.3.2",
+      "./js/modes/events/more-spec.js": "./js/modes/events/more-spec.js?v=6.3.2",
+      "./js/modes/events/more.js": "./js/modes/events/more.js?v=6.3.2",
+      "./js/modes/events/py.js": "./js/modes/events/py.js?v=6.3.2",
+      "./js/modes/events/schema.js": "./js/modes/events/schema.js?v=6.3.2",
+      "./js/modes/events/sign.js": "./js/modes/events/sign.js?v=6.3.2",
+      "./js/modes/events/sounds.js": "./js/modes/events/sounds.js?v=6.3.2",
+      "./js/modes/events/tunes.js": "./js/modes/events/tunes.js?v=6.3.2",
+      "./js/modes/events/wording.js": "./js/modes/events/wording.js?v=6.3.2",
+      "./js/modes/events.js": "./js/modes/events.js?v=6.3.2",
+      "./js/modes/findvoice-guide.js": "./js/modes/findvoice-guide.js?v=6.3.2",
+      "./js/modes/findvoice.js": "./js/modes/findvoice.js?v=6.3.2",
+      "./js/modes/index.js": "./js/modes/index.js?v=6.3.2",
+      "./js/modes/island.js": "./js/modes/island.js?v=6.3.2",
+      "./js/modes/tower.js": "./js/modes/tower.js?v=6.3.2",
+      "./js/modes/ultimate/cast.js": "./js/modes/ultimate/cast.js?v=6.3.2",
+      "./js/modes/ultimate/help.js": "./js/modes/ultimate/help.js?v=6.3.2",
+      "./js/modes/ultimate/world.js": "./js/modes/ultimate/world.js?v=6.3.2",
+      "./js/modes/ultimate.js": "./js/modes/ultimate.js?v=6.3.2",
+      "./js/packs.js": "./js/packs.js?v=6.3.2",
+      "./js/site.js": "./js/site.js?v=6.3.2",
+      "./js/sound-rules.js": "./js/sound-rules.js?v=6.3.2",
+      "./js/speech.js": "./js/speech.js?v=6.3.2",
+      "./js/stats.js": "./js/stats.js?v=6.3.2",
+      "./js/storage.js": "./js/storage.js?v=6.3.2",
+      "./js/turning.js": "./js/turning.js?v=6.3.2",
+      "./js/update-alert.js": "./js/update-alert.js?v=6.3.2",
+      "./js/version.js": "./js/version.js?v=6.3.2",
+      "./js/voice-text.js": "./js/voice-text.js?v=6.3.2",
+      "./js/voice.js": "./js/voice.js?v=6.3.2",
+      "./js/wetworker.js": "./js/wetworker.js?v=6.3.2"
     }
   }
   </script>
   <!-- end of versions -->
-  <script type="module" src="js/site.js?v=6.3.1"></script>
-  <script type="module" src="js/update-alert.js?v=6.3.1"></script>
+  <script type="module" src="js/site.js?v=6.3.2"></script>
+  <script type="module" src="js/update-alert.js?v=6.3.2"></script>
 </body>
 </html>

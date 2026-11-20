@@ -198,6 +198,21 @@ export const monoStats = { made: 0 };
 // Recordings with sound on one side only (found in the 6.0.0 mono audit): played
 // from a centred one-channel copy everywhere, so both ears hear them.
 export const CENTRE_COPY = new Set(['ut_crowd_roar_4', 'ut_crowd_roar_5']);
+// (Web 6.3.2, Russell, 20 November 2026: "chimes are basically stereo spread instead
+// of at one central point".) A chime, a bell, a ding, a gong or a toll is heard from
+// one point, as the Windows game hears its placed ones (its mono_sweep): the
+// elevator's, the bus's, every event's pickup (Find the Voice's chime among them),
+// an event's bell or gong that starts or ends it, a glass case's chime. Placed, it
+// is one point where it rings; played where you stand, one point in the middle;
+// until now a stereo recording played where you stood was spread from ear to ear.
+// (A background is never made one point: it turns with you, its sides west and east.)
+export const CENTRE_CHIMES = ['elevator_ding', 'elevator_arrive', 'ut_bus_chime', 'event_pickup_'];
+export const CENTRE_WORDS = /chime|bell|(^|_)ding($|_)|gong|(^|_)toll($|_)/;
+const NEVER_CENTRED = /^(event_amb_file_|evt_amb_)/;
+export function centred(name) {
+  if (!name || NEVER_CENTRED.test(name)) return false;
+  return CENTRE_COPY.has(name) || CENTRE_CHIMES.some((k) => name.startsWith(k)) || CENTRE_WORDS.test(name);
+}
 // (Web 6.3.1, Russell, 20 November 2026: "if the world turns with you, then the
 // ambience has to turn".) Every background turns with you in a mode that turns,
 // its left side in the world's west and its right side in the east; but these four
@@ -532,7 +547,7 @@ export class AudioEngine {
       // centred copy made here (the file itself is never changed: Russell, 19 Nov).
       // (6.0.0 review fix: the key is 'dry:<name>'; asked by the whole key, the copy was never made.)
       const bare = key.slice(key.indexOf(':') + 1);
-      let buf = CENTRE_COPY.has(bare) ? monoCopy(this.ctx, buf0) : buf0;
+      let buf = centred(bare) ? monoCopy(this.ctx, buf0) : buf0;
       if (TWO_SIDED.has(bare.replace(/_muffled$/, ''))) buf = twoSidedCopy(this.ctx, buf);
       this.buffers.set(key, buf);
       this.pending.delete(key);
