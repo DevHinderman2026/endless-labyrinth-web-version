@@ -41,6 +41,19 @@ const BIG_FRAMES = RATE * 6;
 // what the two panners take off it, put back (measured with noise: 0.135 against
 // 0.174 plain, facing north; a drone's low notes lose less, so a little under).
 const WIDE_GAIN = 1.2;
+// (Web 6.1.0, the Fable review; Russell, 19 November 2026: static riding the elevator
+// up from Island Mode's seabed.) WIDE_GAIN was set with noise, whose two sides have
+// nothing in common. A recording whose two sides are much alike and deep, as the
+// seabed's water is, comes out of the two panners far louder than it was made to be:
+// "underwater" by 6.8 decibels, more than twice as loud, and at Island Mode's level
+// its peaks alone were over the top (1.12 of full scale, before anything else was
+// played). So through every dive the limiter was holding the whole game down, and
+// with the strokes, the beacons and the elevator on top it could not hold it all.
+// Such a recording is trimmed back here to the loudness it has played plain (as it is
+// in the Windows game, and was here before backgrounds turned). Outside Ultimate
+// Mode only: Ultimate's own levels were set by ear with its backgrounds already wide.
+// (Measured: the same recording rendered plain and wide, facing north and east.)
+const WIDE_TRIM = { underwater: 0.46 };
 const BIG_KEEP = 3;
 // A looping sound's own echoes (see _loopWet) are kept up to this many bytes.
 const LOOP_WET_KEEP = 32e6;
@@ -901,7 +914,10 @@ export class AudioEngine {
   // `wide` (3D only, web 4.1.0): a recording with no place of its own that still
   // turns with the world: its left side stands in the world's west and its right
   // side in the east (see Voice._branch).
-  play(name, { loops = 0, volume = 1.0, fadeMs = 0, at = null, pos = null, height = 0, areaMix = null, direct = false, send = null, keep = false, wide = false } = {}) {
+  // `offset` (web 6.1.0): seconds into the recording to start from (a loop carries on
+  // round from there): Battle's crowd plays a second copy of its recording half a
+  // loop on (game.js BATTLE_CROWD_COPY).
+  play(name, { loops = 0, volume = 1.0, fadeMs = 0, at = null, pos = null, height = 0, areaMix = null, direct = false, send = null, keep = false, wide = false, offset = 0 } = {}) {
     const pair = this.entries.get(name);
     if (!pair || !pair.dry) return null;
     if (loops === -1) {
@@ -965,7 +981,7 @@ export class AudioEngine {
       }
     }
     this.live.add(v);
-    v.begin();
+    v.begin(Math.max(0, offset || 0));
     return v;
   }
 
@@ -1103,7 +1119,7 @@ export class Voice {
       const west = side(-1); const east = side(1);
       // (The panners take a little off a sound straight to the side: put back.)
       const lift = ctx.createGain();
-      lift.gain.value = WIDE_GAIN;
+      lift.gain.value = WIDE_GAIN * (this.audio.spatial ? 1 : (WIDE_TRIM[this.name] || 1));
       gl.connect(west); gr.connect(east);
       west.connect(lift); east.connect(lift);
       lift.connect(this.audio.bus);

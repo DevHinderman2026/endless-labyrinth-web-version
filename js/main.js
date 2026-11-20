@@ -11,7 +11,7 @@ import { keyWords } from './keywords.js';
 import { applyDisplay, followDisplay } from './display.js';
 import { freshen } from './version.js';
 import { Braille } from './braille.js';
-import { Bella } from './bella.js';
+import { GameVoice } from './voice.js';
 
 const $ = (id) => document.getElementById(id);
 const kind = deviceKind();
@@ -27,7 +27,7 @@ const keyboard = keyboardDevice();
 // view of the game (js/braille.js); on every other device it does nothing.
 const braille = new Braille({ field: $('console'), store, enabled: windowsOnly(), emit: (g) => onGesture(g), speak: (t) => speech.speak(t) });
 const speech = new Speech({ show: (t) => { shown.textContent = t; braille.show(t); }, rateLevel: store.settings.speechRate, words: keyboard ? keyWords : null, muted: () => braille.speechMuted,
-  // Web 6.0.0: during a run the game speaks with Bella (js/bella.js), set up once the sound starts.
+  // During a run the game speaks with Bella's recordings (js/voice.js, web 6.1.0), set up once the sound starts.
   inRun: () => !!(game && game.playing && !game.isPaused) });
 let audio = null;
 let game = null;
@@ -92,9 +92,9 @@ async function start() {
   speech.speak('Endless Labyrinth. Loading sounds.', { now: true });
   audio = new AudioEngine();
   await audio.unlock();
-  // Bella's voice downloads alongside the sound packs (once; then kept on the device).
-  // If anything fails, the device's voice simply goes on speaking (web 6.0.0).
-  try { speech.bella = new Bella({ audio }); speech.bella.start(); } catch (e) { speech.bella = null; }
+  // The game's voices are recordings in the sound packs (web 6.1.0): known once the
+  // packs have loaded. Until then, the device's voice speaks.
+  try { speech.bella = new GameVoice({ audio }); } catch (e) { speech.bella = null; }
   setText('lead', 'Loading sounds. The first time takes a moment; after that they are kept on your ' + deviceWord(kind) + '.');
   let lastSaid = 0;
   try {
@@ -122,6 +122,7 @@ async function start() {
     return;
   }
   setText('progress', '');
+  try { if (speech.bella) speech.bella.attach(); } catch (e) { speech.bella = null; }
   const text = 'Sounds loaded. ' + offInstructions();
   setText('lead', text);
   if (windowsOnly()) {

@@ -66,6 +66,11 @@ check(Object.keys(demoOk).length === 5 && Object.values(demoOk).every((x) => x),
 // ------------------------------------------------------------------ a run: the start
 const start = await page.evaluate(async () => {
   const g = window.__el.game; const a = window.__el.audio; const T = window.T;
+  // (6.1.0) Her recordings are always there now: the device-voice way, used only should
+  // one be missing, is tried with the voice module taken away for this run.
+  const gm = await import('./js/modes/findvoice-guide.js');
+  const bel = window.__el.speech.bella; const realGuide = bel.guide;
+  bel.guide = null; gm.setGuideSource(null);
   const L = T.heard();
   T.start('findvoice');
   const fv = g.fv;
@@ -87,6 +92,7 @@ const start = await page.evaluate(async () => {
   // The report.
   g.input('enter'); out.report = T.said();
   L.stop();
+  bel.guide = realGuide; gm.setGuideSource(realGuide);
   return out;
 });
 check(start.state === 'findvoice' && start.said === 'Level 1.' && start.turns && start.face === 30, 'Find the Voice starts at level 1 and turns as the walking modes do: ' + JSON.stringify([start.said, start.face]));
@@ -95,7 +101,7 @@ check(start.lives === 3 && start.quota === 5, 'three lives, five finds a level')
 check(start.creature === 'rest' && start.cDist >= 28 && /evt_beast_breathing/.test(start.breath) && start.glassNear === 0,
   'one creature, idle and breathing, far from you, with no glass near it: ' + JSON.stringify([start.cDist.toFixed(1), start.breath]));
 check(start.gDist >= 12 && start.gDist <= 22, 'the guide calls from 12 to 22 units away on level 1: ' + start.gDist.toFixed(1));
-check(start.beacon && start.fallback, 'without Heart her calls are said by the device\'s voice, with the shimmering beacon placed where she is');
+check(start.beacon && start.fallback, 'without her recordings her calls are said by the device\'s voice, with the shimmering beacon placed where she is');
 check(start.clock.length === 0, 'there is no clock (T says nothing)');
 check(start.report === 'Level 1. 0 of 5 found. 3 lives left. Facing north.', 'the report: ' + start.report);
 
@@ -285,49 +291,47 @@ check(caught.end.state === 'game_over' && /^Game Over\. You completed 3 levels\.
 const quiet = await page.evaluate(() => [...window.__el.audio.live].filter((v) => v.loop && v.busy).map((v) => v.name));
 check(quiet.length === 0, 'nothing is left playing after the run: ' + quiet.join(', '));
 
-// ------------------------------------------------------------------ Heart is given time (6.0.1)
-const hold = await page.evaluate(async () => {
+// ------------------------------------------------------------------ her recordings (6.1.0): no waiting
+// Russell (19 Nov): her voice is recordings now, in the voice-guide pack, so 6.0.2's
+// waits for her calls to be made are gone. The real guide (speech.bella.guide) is used.
+const rec = await page.evaluate(async () => {
   const g = window.__el.game; const a = window.__el.audio; const T = window.T;
+  const fvMod = await import('./js/modes/findvoice.js');
   const mod = await import('./js/modes/findvoice-guide.js');
-  const st = { stock: 0, busy: true, n: 0 };
-  const fake = { ready: () => true, stock: () => st.stock, get busy() { return st.busy; },
-    next: () => { st.n += 1; if (st.stock < 1) return { buffer: null, text: 'Over here.', id: null };
-      const b = a.ctx.createBuffer(1, 22050, 44100); b.getChannelData(0).fill(0.1); return { buffer: b, text: 'Over here.', id: 'hold' + st.n }; } };
-  const bel = window.__el.speech.bella; const realGuide = bel ? bel.guide : null;
-  if (bel) bel.guide = fake;
-  mod.setGuideSource(fake);
-  const out = {};
-  const said = () => L.spoken.filter((t) => t === 'Over here.').length;
-  let L = T.heard();
-  // Her first call waits while her calls are being made...
-  T.start('findvoice'); T.frames(4.0);
-  out.heldCalls = st.n; out.heldSpoken = said();
-  // ...and comes in her own voice as soon as two are ready.
-  st.stock = 2; T.frames(0.3);
-  out.afterReady = st.n; out.heartVoice = !![...a.live].find((x) => /^fv_guide_hold/.test(x.name)); out.spokenThen = said();
-  // Later, a call due while her next is still being made waits a moment, then the device's voice says it.
-  st.stock = 0;
-  if (g.fv.guide.voice) g.fv.guide.voice.stop();
-  T.frames(2.2); out.midHeld = said();
-  T.frames(1.8); out.midSpoken = said();
-  L.stop(); g._stopRunSounds(); g.runId += 1; g.state = 'menu'; g._refreshMenu();
-  // The first call never waits more than eight seconds.
-  L = T.heard(); st.n = 0; st.stock = 0; st.busy = true;
-  T.start('findvoice'); T.frames(7.5); out.longHeld = said(); T.frames(1.6); out.longSpoken = said();
-  L.stop(); g._stopRunSounds(); g.runId += 1; g.state = 'menu'; g._refreshMenu();
-  // Nothing being made (she cannot speak just now): no waiting at all.
-  L = T.heard(); st.n = 0; st.stock = 0; st.busy = false;
-  T.start('findvoice'); T.frames(1.5); out.idleSpoken = said();
-  L.stop(); g._stopRunSounds(); g.runId += 1; g.state = 'menu'; g._refreshMenu();
-  if (bel) bel.guide = realGuide;
-  mod.setGuideSource(realGuide);
+  const bel = window.__el.speech.bella;
+  mod.setGuideSource(bel.guide);
+  await bel.guide.load();
+  bel.guide.prepare(12);
+  for (let i = 0; i < 100 && bel.guide.stock() < 6; i++) await new Promise((r) => setTimeout(r, 50));
+  const out = { phrases: bel.guide.phrases ? bel.guide.phrases.length : 0, packed: [...a.entries.keys()].filter((k) => k.startsWith('vg_')).length,
+    noWaits: !('FV_FIRST_HOLD' in fvMod) && !('FV_HEART_WAIT' in fvMod) && !('FV_FIRST_STOCK' in fvMod) && !('guideStock' in mod) };
+  const L = T.heard();
+  T.start('findvoice');
+  T.frames(fvMod.FV_FIRST_CALL - 0.2);
+  out.before = [...a.live].filter((x) => /^fv_guide_/.test(x.name)).length;
+  T.frames(0.4);
+  const v = [...a.live].find((x) => /^fv_guide_/.test(x.name));
+  out.atFirst = !!v; out.placed = !!(v && v.binPlaced);
+  out.spoken = L.spoken.filter((t) => !/^Level/.test(t)).length;
+  out.beacon = L.names.includes('event_beacon_shimmer');
+  // Each call heard out: the next one comes FV_CALL_GAP later, always a recording, never the same twice running.
+  const ids = [];
+  for (let i = 0; i < 8; i++) {
+    const cur = [...a.live].find((x) => /^fv_guide_/.test(x.name));
+    if (cur) { ids.push(cur.name); cur.stop(); }
+    T.frames(2.2);
+  }
+  out.ids = ids;
+  out.spokenLater = L.spoken.filter((t) => !/^Level/.test(t)).length;
+  L.stop();
+  g._stopRunSounds(); g.runId += 1; g.state = 'menu'; g._refreshMenu();
   return out;
 });
-check(hold.heldCalls === 0 && hold.heldSpoken === 0, `her first call waits while her calls are still being made (${JSON.stringify(hold)})`);
-check(hold.afterReady === 1 && hold.heartVoice && hold.spokenThen === 0, 'and comes in her own voice once two are ready, with nothing from the device\'s voice');
-check(hold.midHeld === 0 && hold.midSpoken >= 1, 'a later call waits a moment for her, then the device\'s voice says it');
-check(hold.longHeld === 0 && hold.longSpoken >= 1, 'the first call never waits more than eight seconds');
-check(hold.idleSpoken >= 1, 'when none of her calls is being made, nothing is waited for');
+check(rec.phrases === rec.packed && rec.phrases >= 300, `every one of her phrases has its recording in the voice pack (${rec.phrases} phrases, ${rec.packed} recordings)`);
+check(rec.noWaits, "6.0.2's waits for her voice to be made are gone");
+check(rec.before === 0 && rec.atFirst && rec.placed, 'her first call comes FV_FIRST_CALL after the level is said, a recording placed in 3D: ' + JSON.stringify(rec));
+check(rec.spoken === 0 && rec.spokenLater === 0 && !rec.beacon, "the device's voice never speaks for her, and no beacon plays");
+check(rec.ids.length >= 6 && rec.ids.every((x, i) => i === 0 || x !== rec.ids[i - 1]), 'every later call is a recording too, never the same twice running: ' + rec.ids.join(' '));
 
 // ------------------------------------------------------------------ Speech off: the beacon in place of her voice (6.0.1)
 const silent = await page.evaluate(async () => {
@@ -364,7 +368,7 @@ check(silent.off.taken === 0 && silent.off.heart === 0 && silent.off.spoken === 
 check(silent.off.beacon, 'her shimmering beacon plays where she stands instead');
 check(silent.on.taken >= 1 && !silent.on.beacon, 'with Speech on again her voice returns and the beacon stops');
 
-// ------------------------------------------------------------------ Heart, when the voice module is ready
+// ------------------------------------------------------------------ any source of her calls (a stand-in)
 const heart = await page.evaluate(async () => {
   const g = window.__el.game; const a = window.__el.audio; const T = window.T;
   const mod = await import('./js/modes/findvoice-guide.js');

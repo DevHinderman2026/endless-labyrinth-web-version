@@ -44,6 +44,9 @@ const DECOY_START_SPREAD = 2.5;       // the bells of a new level start ringing 
 const DECOY_EXIT_GAP = 15.0;          // the exit appears at least this far from you
 const DECOY_DARK_GUARD = 6.0;         // the exit of the dead opens this far in front of the way out (2 steps)
 const DECOY_RING_PAUSE = 1.5;         // after a ring, the real bell is quiet this long before ringing from its new place
+// Web 6.1.0 (Russell): a level's "Ring N times" is said this long before the climb up to
+// it ends (it was said as the climb began), and the level begins as the climb ends.
+const CLIMB_SAY_BEFORE = 0.5;
 const ZONE_LEVEL = 0.75;              // the background zones together, at their loudest
 const ZONE_BASE_LEVEL = 0.45;         // the event's main background, when it has zones over it
 const ZONE_REACH = 1.1;               // a zone fades out this many half-widths of the room from its spot
@@ -544,6 +547,7 @@ export const EngineMixin = {
     this.evLives = ev.hazards.lives;
     this.evEndSound = this.loadEventRecording(ev.messages.end_sound, 'sting') || 'event_toll_end';
     this.evClimbHold = 0;
+    this.evClimbSay = null;
     if (_carry) this._evClimb();                 // 6.0.0: a new stage waits for its climb too
     else this.audio.play(this.loadEventRecording(ev.messages.start_sound, 'sting') || 'event_toll');
     // No spoken intro: the event's description, read in the Events menu, already said
@@ -1169,12 +1173,13 @@ export const EngineMixin = {
     // Level 1 is described in the Events menu, so the run starts in silence. Each level
     // after says only how many rings (or real ones) it asks for.
     if (dc.announce_levels && this.evLevel > 1) {
-      if (rings > 1 || (dc.rings_random && realN === 1)) {
-        this.tts.speak(rings === 1 ? 'Ring once.' : `Ring ${rings} times.`);
-      } else {
-        const word = realN === 1 ? it.name : it.plural;
-        this.tts.speak(`Find ${realN} real ${word}.`);
-      }
+      let said;
+      if (rings > 1 || (dc.rings_random && realN === 1)) said = rings === 1 ? 'Ring once.' : `Ring ${rings} times.`;
+      else said = `Find ${realN} real ${realN === 1 ? it.name : it.plural}.`;
+      // (6.1.0) During the climb up to this level it waits, to be said just before the
+      // climb ends (see updateEventMode).
+      if (this.evClimbHold > CLIMB_SAY_BEFORE) this.evClimbSay = said;
+      else this.tts.speak(said);
     }
   },
 
@@ -1368,6 +1373,11 @@ export const EngineMixin = {
     if (this.evClimbHold > 0) {
       // 6.0.0: the pause after a climb. The air keeps playing; everything else waits.
       this.evClimbHold -= dt;
+      if (this.evClimbSay && this.evClimbHold <= CLIMB_SAY_BEFORE) {
+        const said = this.evClimbSay;
+        this.evClimbSay = null;
+        this.tts.speak(said);
+      }
       this._eventUpdateZones(dt);
       this._evHush();
       return;

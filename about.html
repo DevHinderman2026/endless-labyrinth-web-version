@@ -8,7 +8,7 @@
   <link rel="icon" href="icons/icon-192.png">
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
   <meta name="theme-color" content="#0c0f14">
-  <link rel="stylesheet" href="css/site.css?v=6.0.3">
+  <link rel="stylesheet" href="css/site.css?v=6.1.0">
 </head>
 <body>
   <header class="site">
@@ -27,12 +27,12 @@
 
     <h2>How the sound works</h2>
     <p>Everything is placed by sound. From web version 5.0.0 the whole game is heard in binaural 3D, the browser's own head-related panning, so with headphones a sound is placed properly in front of you, behind you or to one side, not only left and right. Distance is loudness: the closer something is, the louder it gets. Something behind you also sounds duller, as if heard over your shoulder. In Standard, Battle, Tower, Island, Find the Voice, the walking levels of Chaos and Ultimate Mode the world turns with you: you turn where you stand, every sound sweeps round you as you do, the background included, and you walk the way you are facing. Driving, a road in Chaos, the events and an elevator ride do not turn: there north is always ahead. In the labyrinth, the battle arena, a tower and a road's tunnels, every sound has a slight echo of the place it is in, shaped by the walls around you and by the air of each level; islands, the seabed and the open road have none. In Ultimate Mode every area of the world has an echo sized to that area, and a sound can be below you as well. Every sound that has a place is played from one exact point, so it sits precisely where its thing is. Together these make a space you can move through by ear.</p>
-    <p>During a run the game speaks with its own voice, Bella, a natural American voice made by Kokoro, an open speech model, on your own device, and heard with the echo of the room you are in. The menus, the help, Game Over and your final score keep your device's own voice. Your browser downloads Bella once, with the game's sounds, and keeps her. If she cannot be downloaded, or your device cannot keep up, the game uses your device's own voice instead, by itself, so nothing is ever left unsaid.</p>
+    <p>During a run the game speaks with its own voice, Bella, a natural American voice made by Kokoro, an open speech model, and heard with the echo of the room you are in. The menus, the help, Game Over and your final score keep your device's own voice. Every line Bella says is a recording that comes with the game's sounds, so she is always ready, and sounds the same on every device.</p>
 
     <h2>Starting</h2>
     <ol>
       <li>Put on headphones and open <a href="play.html">the play page</a>. On an iPhone or iPad, turn silent mode off: it mutes the game's sounds, though not its voice.</li>
-      <li>Press Start. The first time, the game downloads its sounds, about 120 megabytes, and its voice, Bella, about 100 megabytes more, so use Wi-Fi if you can; after that they stay on your device.</li>
+      <li>Press Start. The first time, the game downloads its sounds, about 120 megabytes, and its voices, about 95 megabytes more, so use Wi-Fi if you can; after that they stay on your device.</li>
       <li>The game speaks for itself, so it asks you to turn your screen reader off. On an iPhone or iPad, triple-click the side button (or the Home button) if your Accessibility Shortcut is set up, or ask Siri. On Android, hold both volume keys for three seconds if that shortcut is set up. On a Mac, press Command F5 for VoiceOver; on a Chromebook, Control Alt Z for ChromeVox; on Linux, Super Alt S for Orca.</li>
       <li>With the screen reader off, swipe up anywhere on the screen to begin, or on a computer press Enter.</li>
       <li>When you leave the game, turn your screen reader back on the same way.</li>
@@ -108,7 +108,7 @@
     <h2>Differences from the Windows version</h2>
     <ul>
             <li>On a phone or tablet, gestures instead of keys, and a Gesture Practice in place of the Key Test. Phones have no T key, so in driving, and in chaos's battles, roads, tower floors and islands, the double tap's report also gives the seconds left on the clock.</li>
-      <li>During a run the game speaks with Bella, with the room's echo; the menus, Game Over and your final score use your device's own voice, with a Speech Rate setting on the main menu. The Windows version speaks with the Windows voice throughout, and uses Kokoro only for the guide in Find the Voice.</li>
+      <li>During a run the game speaks with Bella, with the room's echo; the menus, Game Over and your final score use your device's own voice, with a Speech Rate setting on the main menu. The Windows version speaks with the Windows voice throughout, and uses Kokoro's recordings only for the guide in Find the Voice.</li>
       <li>On a phone, tablet, Chromebook, Mac or Linux computer there is no Braille output, since the screen reader is off while you play. On a Windows computer the game works (from web 3.0.0) with a Braille display and a Braille keyboard through NVDA or JAWS, as the Windows version does: it keeps the keyboard focus in a game area of its own and shows everything it says there on the display, so a Braille keyboard's letters reach the game at once, a key held down on a Braille notetaker counts as one press, contracted wordsigns typed as text are turned back into the letters they stand for, and the main menu has a Speech setting, to turn the game's own voice off, and a Braille Key Test.</li>
       <li>High scores are kept separately from the Windows version's.</li>
       <li>Ultimate Mode exists only here, and so do the worlds of Ultimate Mode in Chaos Mode. Both versions are heard in 3D and turn in the same walking modes: the website through your browser's own 3D sound, the Windows version, from version 4.0.0, through 3D sound of its own.</li>
@@ -119,64 +119,63 @@
   <script type="importmap">
   {
     "imports": {
-      "./js/accessibility.js": "./js/accessibility.js?v=6.0.3",
-      "./js/audio.js": "./js/audio.js?v=6.0.3",
-      "./js/backup.js": "./js/backup.js?v=6.0.3",
-      "./js/backups-page.js": "./js/backups-page.js?v=6.0.3",
-      "./js/bella-lexicon.js": "./js/bella-lexicon.js?v=6.0.3",
-      "./js/bella-words.js": "./js/bella-words.js?v=6.0.3",
-      "./js/bella-worker.js": "./js/bella-worker.js?v=6.0.3",
-      "./js/bella.js": "./js/bella.js?v=6.0.3",
-      "./js/braille.js": "./js/braille.js?v=6.0.3",
-      "./js/calendar.js": "./js/calendar.js?v=6.0.3",
-      "./js/device.js": "./js/device.js?v=6.0.3",
-      "./js/display.js": "./js/display.js?v=6.0.3",
-      "./js/game.js": "./js/game.js?v=6.0.3",
-      "./js/gestures.js": "./js/gestures.js?v=6.0.3",
-      "./js/help-data.js": "./js/help-data.js?v=6.0.3",
-      "./js/help-page.js": "./js/help-page.js?v=6.0.3",
-      "./js/isolate.js": "./js/isolate.js?v=6.0.3",
-      "./js/keywords.js": "./js/keywords.js?v=6.0.3",
-      "./js/main.js": "./js/main.js?v=6.0.3",
-      "./js/modes/chaos.js": "./js/modes/chaos.js?v=6.0.3",
-      "./js/modes/driving.js": "./js/modes/driving.js?v=6.0.3",
-      "./js/modes/events/blocks.js": "./js/modes/events/blocks.js?v=6.0.3",
-      "./js/modes/events/engine.js": "./js/modes/events/engine.js?v=6.0.3",
-      "./js/modes/events/feed.js": "./js/modes/events/feed.js?v=6.0.3",
-      "./js/modes/events/help.js": "./js/modes/events/help.js?v=6.0.3",
-      "./js/modes/events/missions.js": "./js/modes/events/missions.js?v=6.0.3",
-      "./js/modes/events/more-spec.js": "./js/modes/events/more-spec.js?v=6.0.3",
-      "./js/modes/events/more.js": "./js/modes/events/more.js?v=6.0.3",
-      "./js/modes/events/py.js": "./js/modes/events/py.js?v=6.0.3",
-      "./js/modes/events/schema.js": "./js/modes/events/schema.js?v=6.0.3",
-      "./js/modes/events/sign.js": "./js/modes/events/sign.js?v=6.0.3",
-      "./js/modes/events/sounds.js": "./js/modes/events/sounds.js?v=6.0.3",
-      "./js/modes/events/tunes.js": "./js/modes/events/tunes.js?v=6.0.3",
-      "./js/modes/events/wording.js": "./js/modes/events/wording.js?v=6.0.3",
-      "./js/modes/events.js": "./js/modes/events.js?v=6.0.3",
-      "./js/modes/findvoice-guide.js": "./js/modes/findvoice-guide.js?v=6.0.3",
-      "./js/modes/findvoice.js": "./js/modes/findvoice.js?v=6.0.3",
-      "./js/modes/index.js": "./js/modes/index.js?v=6.0.3",
-      "./js/modes/island.js": "./js/modes/island.js?v=6.0.3",
-      "./js/modes/tower.js": "./js/modes/tower.js?v=6.0.3",
-      "./js/modes/ultimate/cast.js": "./js/modes/ultimate/cast.js?v=6.0.3",
-      "./js/modes/ultimate/help.js": "./js/modes/ultimate/help.js?v=6.0.3",
-      "./js/modes/ultimate/world.js": "./js/modes/ultimate/world.js?v=6.0.3",
-      "./js/modes/ultimate.js": "./js/modes/ultimate.js?v=6.0.3",
-      "./js/packs.js": "./js/packs.js?v=6.0.3",
-      "./js/site.js": "./js/site.js?v=6.0.3",
-      "./js/sound-rules.js": "./js/sound-rules.js?v=6.0.3",
-      "./js/speech.js": "./js/speech.js?v=6.0.3",
-      "./js/stats.js": "./js/stats.js?v=6.0.3",
-      "./js/storage.js": "./js/storage.js?v=6.0.3",
-      "./js/turning.js": "./js/turning.js?v=6.0.3",
-      "./js/update-alert.js": "./js/update-alert.js?v=6.0.3",
-      "./js/version.js": "./js/version.js?v=6.0.3",
-      "./js/wetworker.js": "./js/wetworker.js?v=6.0.3"
+      "./js/accessibility.js": "./js/accessibility.js?v=6.1.0",
+      "./js/audio.js": "./js/audio.js?v=6.1.0",
+      "./js/backup.js": "./js/backup.js?v=6.1.0",
+      "./js/backups-page.js": "./js/backups-page.js?v=6.1.0",
+      "./js/bella-lexicon.js": "./js/bella-lexicon.js?v=6.1.0",
+      "./js/bella-words.js": "./js/bella-words.js?v=6.1.0",
+      "./js/braille.js": "./js/braille.js?v=6.1.0",
+      "./js/calendar.js": "./js/calendar.js?v=6.1.0",
+      "./js/device.js": "./js/device.js?v=6.1.0",
+      "./js/display.js": "./js/display.js?v=6.1.0",
+      "./js/game.js": "./js/game.js?v=6.1.0",
+      "./js/gestures.js": "./js/gestures.js?v=6.1.0",
+      "./js/help-data.js": "./js/help-data.js?v=6.1.0",
+      "./js/help-page.js": "./js/help-page.js?v=6.1.0",
+      "./js/keywords.js": "./js/keywords.js?v=6.1.0",
+      "./js/main.js": "./js/main.js?v=6.1.0",
+      "./js/modes/chaos.js": "./js/modes/chaos.js?v=6.1.0",
+      "./js/modes/driving.js": "./js/modes/driving.js?v=6.1.0",
+      "./js/modes/events/blocks.js": "./js/modes/events/blocks.js?v=6.1.0",
+      "./js/modes/events/engine.js": "./js/modes/events/engine.js?v=6.1.0",
+      "./js/modes/events/feed.js": "./js/modes/events/feed.js?v=6.1.0",
+      "./js/modes/events/help.js": "./js/modes/events/help.js?v=6.1.0",
+      "./js/modes/events/missions.js": "./js/modes/events/missions.js?v=6.1.0",
+      "./js/modes/events/more-spec.js": "./js/modes/events/more-spec.js?v=6.1.0",
+      "./js/modes/events/more.js": "./js/modes/events/more.js?v=6.1.0",
+      "./js/modes/events/py.js": "./js/modes/events/py.js?v=6.1.0",
+      "./js/modes/events/schema.js": "./js/modes/events/schema.js?v=6.1.0",
+      "./js/modes/events/sign.js": "./js/modes/events/sign.js?v=6.1.0",
+      "./js/modes/events/sounds.js": "./js/modes/events/sounds.js?v=6.1.0",
+      "./js/modes/events/tunes.js": "./js/modes/events/tunes.js?v=6.1.0",
+      "./js/modes/events/wording.js": "./js/modes/events/wording.js?v=6.1.0",
+      "./js/modes/events.js": "./js/modes/events.js?v=6.1.0",
+      "./js/modes/findvoice-guide.js": "./js/modes/findvoice-guide.js?v=6.1.0",
+      "./js/modes/findvoice.js": "./js/modes/findvoice.js?v=6.1.0",
+      "./js/modes/index.js": "./js/modes/index.js?v=6.1.0",
+      "./js/modes/island.js": "./js/modes/island.js?v=6.1.0",
+      "./js/modes/tower.js": "./js/modes/tower.js?v=6.1.0",
+      "./js/modes/ultimate/cast.js": "./js/modes/ultimate/cast.js?v=6.1.0",
+      "./js/modes/ultimate/help.js": "./js/modes/ultimate/help.js?v=6.1.0",
+      "./js/modes/ultimate/world.js": "./js/modes/ultimate/world.js?v=6.1.0",
+      "./js/modes/ultimate.js": "./js/modes/ultimate.js?v=6.1.0",
+      "./js/packs.js": "./js/packs.js?v=6.1.0",
+      "./js/site.js": "./js/site.js?v=6.1.0",
+      "./js/sound-rules.js": "./js/sound-rules.js?v=6.1.0",
+      "./js/speech.js": "./js/speech.js?v=6.1.0",
+      "./js/stats.js": "./js/stats.js?v=6.1.0",
+      "./js/storage.js": "./js/storage.js?v=6.1.0",
+      "./js/turning.js": "./js/turning.js?v=6.1.0",
+      "./js/update-alert.js": "./js/update-alert.js?v=6.1.0",
+      "./js/version.js": "./js/version.js?v=6.1.0",
+      "./js/voice-text.js": "./js/voice-text.js?v=6.1.0",
+      "./js/voice.js": "./js/voice.js?v=6.1.0",
+      "./js/wetworker.js": "./js/wetworker.js?v=6.1.0"
     }
   }
   </script>
   <!-- end of versions -->
-  <script type="module" src="js/site.js?v=6.0.3"></script>
+  <script type="module" src="js/site.js?v=6.1.0"></script>
 </body>
 </html>

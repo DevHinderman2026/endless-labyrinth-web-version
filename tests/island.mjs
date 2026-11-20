@@ -419,6 +419,35 @@ check(gd.hits === 2 && gd.gone && gd.points === 100 && gd.down && gd.clear, 'two
 check(gd.hp2 === 4, 'the second guardian takes 4 hits');
 check(gd.caught, `out of shots, the guardian hunts you down (${gd.secs.toFixed(1)} s)`);
 
+// ------------------------------------------------------------ the seabed's water at the loudness it was made for (web 6.1.0)
+// Russell, 19 November 2026: static riding the elevator up from the seabed. Spread
+// round you (as every background is in a mode that turns), the deep, alike-sided
+// "underwater" came out more than twice as loud as when played plain, over the top by
+// itself. It is trimmed to its plain loudness (js/audio.js WIDE_TRIM).
+const water = await page.evaluate(async () => {
+  const g = window.__el.game; const a = window.__el.audio;
+  const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+  g._toMenu(''); g.menuIndex = g.menuKeys.indexOf('island'); g.input('enter');
+  await sleep(1500);
+  const lift = (v) => (v && v.dry && v.dry.wide ? v.dry.wide.lift.gain.value : null);
+  const out = { under: lift(g.islandAmb.under), shore: lift(g.islandAmb.surface), binaural: !!a.binaural, spatial: !!a.spatial };
+  // The total at rest on the seabed, before the limiter: well under the top.
+  g._islandStartRide('down');
+  for (let i = 0; i < 400 && g.islandRide; i++) await sleep(50);
+  await sleep(2500);
+  const an = a.ctx.createAnalyser(); an.fftSize = 2048; a.out.connect(an);
+  const buf = new Float32Array(2048); let peak = 0; let red = 0;
+  for (let i = 0; i < 120; i++) { g.islandAir = 40; an.getFloatTimeDomainData(buf); for (let k = 0; k < 2048; k++) peak = Math.max(peak, Math.abs(buf[k])); if (a.limiter) red = Math.min(red, a.limiter.reduction); await sleep(30); }
+  out.peak = peak; out.reduction = red; out.phase = g.islandPhase;
+  g.triggerGameOver();
+  return out;
+});
+if (water.under === null) console.log('(Backgrounds are not spread round the listener in this browser: the seabed\'s water is not checked.)');
+else {
+  check(Math.abs(water.under / water.shore - 0.46) < 0.01, `the seabed's water is trimmed to its plain loudness when spread round you, a shore is as it was: ${JSON.stringify([water.under, water.shore])}`);
+  check(water.phase === 'seabed' && water.peak < 0.75, `at rest on the seabed the game's sound stays well under the top before the limiter (peak ${water.peak.toFixed(2)}; it was 0.8 to 1.1), and the limiter is all but idle (${water.reduction.toFixed(1)} dB)`);
+}
+
 check(errors.length === 0, 'no errors in the page' + (errors.length ? ': ' + errors.join(' | ') : ''));
 await browser.close();
 console.log(failures ? `${failures} FAILED` : 'ALL PASSED');

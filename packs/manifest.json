@@ -43,6 +43,30 @@
   "ultimate": {
    "file": "ultimate-826971f6b1.elpack",
    "bytes": 3090785
+  },
+  "voice-bella": {
+   "file": "voice-bella-4b5e2c4efb.elpack",
+   "bytes": 13444885
+  },
+  "voice-guide": {
+   "file": "voice-guide-d4899f01ed.elpack",
+   "bytes": 2916750
+  },
+  "voice-cast": {
+   "file": "voice-cast-134dba91e5.elpack",
+   "bytes": 23138282
+  },
+  "voice-cast2": {
+   "file": "voice-cast2-a91c67f1ff.elpack",
+   "bytes": 23144937
+  },
+  "voice-cast3": {
+   "file": "voice-cast3-6626f8e898.elpack",
+   "bytes": 23136578
+  },
+  "voice-cast4": {
+   "file": "voice-cast4-bbc3279a26.elpack",
+   "bytes": 8728794
   }
  }
 }

@@ -9,7 +9,7 @@
   <link rel="icon" href="icons/icon-192.png">
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
   <meta name="theme-color" content="#0c0f14">
-  <link rel="stylesheet" href="css/site.css?v=6.0.3">
+  <link rel="stylesheet" href="css/site.css?v=6.1.0">
 </head>
 <body>
   <header class="site">
@@ -41,7 +41,7 @@
     <p>On the Website, your play stays in your browser. Your high scores, statistics, settings and Event records (together, your "Save Data") are held in the local storage of your own browser, on your own device, and the Game's sound packs and voice files are cached on your device so that they need not be downloaded again. None of this data is transmitted to the Developer or to any other person. The <a href="stats.html">Game Stats</a> and <a href="events.html">Events</a> pages read it from your browser alone. You may delete it at any time by clearing your browser's storage for the Website.</p>
 
     <h2 id="p3">3. Transmissions during play and backups</h2>
-    <p>The Web Game sends nothing about you during play. The only requests it makes are ordinary requests to GitHub, to read the list of Events and the Event files, and to the Website itself, to learn the current time; and, to download the Game's voices once, requests to Hugging Face, which hosts the Kokoro speech model and its voices, and to jsDelivr, which hosts ONNX Runtime Web, the software that runs that model in your browser. The voices are made on your own device: nothing you do, and nothing the Game says, is sent to either service. In common with any download, Hugging Face and jsDelivr receive the ordinary technical details of those requests, such as your IP address, and process them under their own privacy policies. A <a href="backups.html">backup file</a> of your Save Data is written only to the location that you choose; the Website does not receive it.</p>
+    <p>The Web Game sends nothing about you during play. The only requests it makes are ordinary requests to GitHub, to read the list of Events and the Event files, and to the Website itself, to learn the current time. The Game's voices are recordings that come with its sounds, from the Website itself: no other service is contacted for them, and nothing the Game says is sent anywhere. A <a href="backups.html">backup file</a> of your Save Data is written only to the location that you choose; the Website does not receive it.</p>
 
     <h2 id="p4">4. GitHub, the hosting provider</h2>
     <p>The Website is hosted on GitHub Pages, and the Game reads its Events from GitHub. In common with every web host, GitHub receives the ordinary technical details of a visit, such as your IP address and the pages that your browser requests, and processes them in accordance with <a href="https://docs.github.com/en/site-policy/privacy-policies/github-general-privacy-statement">GitHub's General Privacy Statement</a>. Those details are not disclosed to the Developer.</p>
@@ -58,8 +58,7 @@
       <li>GitHub, to read the list of Events and the Event files, and to obtain the current time from GitHub's response, so that Events begin and end at the correct moment;</li>
       <li>GitHub, to determine whether a newer version of the game has been released, so that the main menu may inform you of it; nothing is downloaded by that check;</li>
       <li>GitHub, to download the Program's latest release archive, in either of two circumstances only: when you choose Check for Updates and confirm the update by pressing Y, in which case the archive is used to install the update and is then deleted (see section 6.3); or only if a sound in its sounds folder is missing or damaged, in which case the sound is restored from the archive and the archive is then deleted;</li>
-      <li>NV Access, the developer of the NVDA screen reader, to download NVDA's controller library, only if that library is missing from the Program's folder, for the purpose of Braille display support;</li>
-      <li>GitHub, to download, once, the files of the Kokoro speech model that gives the guide in Find the Voice her voice, published there by the kokoro-onnx project, which are kept in the AppData\Local\Endless Labyrinth\voices folder on your computer. The voice is made on your computer: nothing is sent.</li>
+      <li>NV Access, the developer of the NVDA screen reader, to download NVDA's controller library, only if that library is missing from the Program's folder, for the purpose of Braille display support.</li>
     </ol>
     <p>In common with any download, GitHub and NV Access receive the ordinary technical details of those requests, such as your IP address, and process them under their own privacy policies; GitHub's is linked in section 4.</p>
     <h3 id="p6-3">6.3 Updates</h3>
@@ -76,64 +75,63 @@
   <script type="importmap">
   {
     "imports": {
-      "./js/accessibility.js": "./js/accessibility.js?v=6.0.3",
-      "./js/audio.js": "./js/audio.js?v=6.0.3",
-      "./js/backup.js": "./js/backup.js?v=6.0.3",
-      "./js/backups-page.js": "./js/backups-page.js?v=6.0.3",
-      "./js/bella-lexicon.js": "./js/bella-lexicon.js?v=6.0.3",
-      "./js/bella-words.js": "./js/bella-words.js?v=6.0.3",
-      "./js/bella-worker.js": "./js/bella-worker.js?v=6.0.3",
-      "./js/bella.js": "./js/bella.js?v=6.0.3",
-      "./js/braille.js": "./js/braille.js?v=6.0.3",
-      "./js/calendar.js": "./js/calendar.js?v=6.0.3",
-      "./js/device.js": "./js/device.js?v=6.0.3",
-      "./js/display.js": "./js/display.js?v=6.0.3",
-      "./js/game.js": "./js/game.js?v=6.0.3",
-      "./js/gestures.js": "./js/gestures.js?v=6.0.3",
-      "./js/help-data.js": "./js/help-data.js?v=6.0.3",
-      "./js/help-page.js": "./js/help-page.js?v=6.0.3",
-      "./js/isolate.js": "./js/isolate.js?v=6.0.3",
-      "./js/keywords.js": "./js/keywords.js?v=6.0.3",
-      "./js/main.js": "./js/main.js?v=6.0.3",
-      "./js/modes/chaos.js": "./js/modes/chaos.js?v=6.0.3",
-      "./js/modes/driving.js": "./js/modes/driving.js?v=6.0.3",
-      "./js/modes/events/blocks.js": "./js/modes/events/blocks.js?v=6.0.3",
-      "./js/modes/events/engine.js": "./js/modes/events/engine.js?v=6.0.3",
-      "./js/modes/events/feed.js": "./js/modes/events/feed.js?v=6.0.3",
-      "./js/modes/events/help.js": "./js/modes/events/help.js?v=6.0.3",
-      "./js/modes/events/missions.js": "./js/modes/events/missions.js?v=6.0.3",
-      "./js/modes/events/more-spec.js": "./js/modes/events/more-spec.js?v=6.0.3",
-      "./js/modes/events/more.js": "./js/modes/events/more.js?v=6.0.3",
-      "./js/modes/events/py.js": "./js/modes/events/py.js?v=6.0.3",
-      "./js/modes/events/schema.js": "./js/modes/events/schema.js?v=6.0.3",
-      "./js/modes/events/sign.js": "./js/modes/events/sign.js?v=6.0.3",
-      "./js/modes/events/sounds.js": "./js/modes/events/sounds.js?v=6.0.3",
-      "./js/modes/events/tunes.js": "./js/modes/events/tunes.js?v=6.0.3",
-      "./js/modes/events/wording.js": "./js/modes/events/wording.js?v=6.0.3",
-      "./js/modes/events.js": "./js/modes/events.js?v=6.0.3",
-      "./js/modes/findvoice-guide.js": "./js/modes/findvoice-guide.js?v=6.0.3",
-      "./js/modes/findvoice.js": "./js/modes/findvoice.js?v=6.0.3",
-      "./js/modes/index.js": "./js/modes/index.js?v=6.0.3",
-      "./js/modes/island.js": "./js/modes/island.js?v=6.0.3",
-      "./js/modes/tower.js": "./js/modes/tower.js?v=6.0.3",
-      "./js/modes/ultimate/cast.js": "./js/modes/ultimate/cast.js?v=6.0.3",
-      "./js/modes/ultimate/help.js": "./js/modes/ultimate/help.js?v=6.0.3",
-      "./js/modes/ultimate/world.js": "./js/modes/ultimate/world.js?v=6.0.3",
-      "./js/modes/ultimate.js": "./js/modes/ultimate.js?v=6.0.3",
-      "./js/packs.js": "./js/packs.js?v=6.0.3",
-      "./js/site.js": "./js/site.js?v=6.0.3",
-      "./js/sound-rules.js": "./js/sound-rules.js?v=6.0.3",
-      "./js/speech.js": "./js/speech.js?v=6.0.3",
-      "./js/stats.js": "./js/stats.js?v=6.0.3",
-      "./js/storage.js": "./js/storage.js?v=6.0.3",
-      "./js/turning.js": "./js/turning.js?v=6.0.3",
-      "./js/update-alert.js": "./js/update-alert.js?v=6.0.3",
-      "./js/version.js": "./js/version.js?v=6.0.3",
-      "./js/wetworker.js": "./js/wetworker.js?v=6.0.3"
+      "./js/accessibility.js": "./js/accessibility.js?v=6.1.0",
+      "./js/audio.js": "./js/audio.js?v=6.1.0",
+      "./js/backup.js": "./js/backup.js?v=6.1.0",
+      "./js/backups-page.js": "./js/backups-page.js?v=6.1.0",
+      "./js/bella-lexicon.js": "./js/bella-lexicon.js?v=6.1.0",
+      "./js/bella-words.js": "./js/bella-words.js?v=6.1.0",
+      "./js/braille.js": "./js/braille.js?v=6.1.0",
+      "./js/calendar.js": "./js/calendar.js?v=6.1.0",
+      "./js/device.js": "./js/device.js?v=6.1.0",
+      "./js/display.js": "./js/display.js?v=6.1.0",
+      "./js/game.js": "./js/game.js?v=6.1.0",
+      "./js/gestures.js": "./js/gestures.js?v=6.1.0",
+      "./js/help-data.js": "./js/help-data.js?v=6.1.0",
+      "./js/help-page.js": "./js/help-page.js?v=6.1.0",
+      "./js/keywords.js": "./js/keywords.js?v=6.1.0",
+      "./js/main.js": "./js/main.js?v=6.1.0",
+      "./js/modes/chaos.js": "./js/modes/chaos.js?v=6.1.0",
+      "./js/modes/driving.js": "./js/modes/driving.js?v=6.1.0",
+      "./js/modes/events/blocks.js": "./js/modes/events/blocks.js?v=6.1.0",
+      "./js/modes/events/engine.js": "./js/modes/events/engine.js?v=6.1.0",
+      "./js/modes/events/feed.js": "./js/modes/events/feed.js?v=6.1.0",
+      "./js/modes/events/help.js": "./js/modes/events/help.js?v=6.1.0",
+      "./js/modes/events/missions.js": "./js/modes/events/missions.js?v=6.1.0",
+      "./js/modes/events/more-spec.js": "./js/modes/events/more-spec.js?v=6.1.0",
+      "./js/modes/events/more.js": "./js/modes/events/more.js?v=6.1.0",
+      "./js/modes/events/py.js": "./js/modes/events/py.js?v=6.1.0",
+      "./js/modes/events/schema.js": "./js/modes/events/schema.js?v=6.1.0",
+      "./js/modes/events/sign.js": "./js/modes/events/sign.js?v=6.1.0",
+      "./js/modes/events/sounds.js": "./js/modes/events/sounds.js?v=6.1.0",
+      "./js/modes/events/tunes.js": "./js/modes/events/tunes.js?v=6.1.0",
+      "./js/modes/events/wording.js": "./js/modes/events/wording.js?v=6.1.0",
+      "./js/modes/events.js": "./js/modes/events.js?v=6.1.0",
+      "./js/modes/findvoice-guide.js": "./js/modes/findvoice-guide.js?v=6.1.0",
+      "./js/modes/findvoice.js": "./js/modes/findvoice.js?v=6.1.0",
+      "./js/modes/index.js": "./js/modes/index.js?v=6.1.0",
+      "./js/modes/island.js": "./js/modes/island.js?v=6.1.0",
+      "./js/modes/tower.js": "./js/modes/tower.js?v=6.1.0",
+      "./js/modes/ultimate/cast.js": "./js/modes/ultimate/cast.js?v=6.1.0",
+      "./js/modes/ultimate/help.js": "./js/modes/ultimate/help.js?v=6.1.0",
+      "./js/modes/ultimate/world.js": "./js/modes/ultimate/world.js?v=6.1.0",
+      "./js/modes/ultimate.js": "./js/modes/ultimate.js?v=6.1.0",
+      "./js/packs.js": "./js/packs.js?v=6.1.0",
+      "./js/site.js": "./js/site.js?v=6.1.0",
+      "./js/sound-rules.js": "./js/sound-rules.js?v=6.1.0",
+      "./js/speech.js": "./js/speech.js?v=6.1.0",
+      "./js/stats.js": "./js/stats.js?v=6.1.0",
+      "./js/storage.js": "./js/storage.js?v=6.1.0",
+      "./js/turning.js": "./js/turning.js?v=6.1.0",
+      "./js/update-alert.js": "./js/update-alert.js?v=6.1.0",
+      "./js/version.js": "./js/version.js?v=6.1.0",
+      "./js/voice-text.js": "./js/voice-text.js?v=6.1.0",
+      "./js/voice.js": "./js/voice.js?v=6.1.0",
+      "./js/wetworker.js": "./js/wetworker.js?v=6.1.0"
     }
   }
   </script>
   <!-- end of versions -->
-  <script type="module" src="js/site.js?v=6.0.3"></script>
+  <script type="module" src="js/site.js?v=6.1.0"></script>
 </body>
 </html>

@@ -1,7 +1,7 @@
 // Find the Voice (web 6.0.0, Russell's design, 19 November 2026).
 //
 // A guide calls from somewhere in the room, placed in 3D, with Kokoro's Heart
-// voice (js/modes/findvoice-guide.js), and keeps calling, never the same phrase
+// voice (recorded: js/voice.js, js/modes/findvoice-guide.js), and keeps calling, never the same phrase
 // twice running, until you reach her: within two steps. One chime, always the
 // same; half a second of silence; and she calls from somewhere new. Five finds
 // complete a level, and the next level begins at once, with a new background
@@ -29,7 +29,7 @@
 import { aliasRecording } from './events/sounds.js';
 import { EVENT_BACKGROUNDS, AMBIENCE_LEVEL, BACKGROUND_SEND } from './ultimate.js';
 import { RULES } from '../sound-rules.js';
-import { getGuideCall, guideVoiceReady, guideRunStarts, guideRunEnds, setGuideSource, sayLocatable, guideStock, guideMaking, FALLBACK_PHRASES } from './findvoice-guide.js';
+import { getGuideCall, guideVoiceReady, guideRunStarts, guideRunEnds, setGuideSource, sayLocatable, FALLBACK_PHRASES } from './findvoice-guide.js';
 
 export const STATE = 'findvoice';
 export const BOARD = 'findvoice';
@@ -51,13 +51,10 @@ export const FV_GUIDE_FLOOR = 0.15;             // ... and is never quieter than
 export const FV_CALL_GAP = [1.0, 2.0];          // seconds of quiet between two of Heart's calls
 export const FV_FALLBACK_GAP = [2.2, 3.2];      // between two calls said by the device's voice
 export const FV_FIRST_CALL = 0.8;               // the first call of a run, after the level is said
-// (6.0.1, Russell) Heart is given time: her first call of a run waits until two of
-// her calls are made, this long at most; and later, a call that is due while her
-// next one is still being made waits this long for it. Only then does the device's
-// voice speak for her. (Nothing is waited for when Heart cannot speak at all.)
-export const FV_FIRST_HOLD = 8.0;
-export const FV_FIRST_STOCK = 2;
-export const FV_HEART_WAIT = 1.5;
+// (6.1.0, Russell: her calls are recordings now, always ready, so the waits 6.0.2
+// added for her voice to be made are gone. FV_LOAD_WAIT is only a safety: the most a
+// call waits for its recording to be decoded, a moment, before the device's voice says it.)
+export const FV_LOAD_WAIT = 2.0;
 export const FV_PAUSE = 0.5;                    // the quiet after the chime before she calls again (as Call of Fate)
 export const FV_CHIME = 'evt_chime_clear';      // reaching her: one chime, always this one (as Trapped in Darkness's)
 export const FV_CHIME_LEVEL = 0.9;
@@ -144,13 +141,22 @@ export async function makeFindVoiceSounds(audio) {
   await Promise.all([makeGuideDemo(audio), makeChargeDemo(audio)]);
 }
 
-// Help's demo of the guide: three of her calls, a moment apart, when Heart's voice
-// is ready; otherwise the shimmering beacon that marks where she stands.
+// Help's demo of the guide: three of her calls, a moment apart, when her recordings
+// are there; otherwise the shimmering beacon that marks where she stands.
 export async function makeGuideDemo(audio) {
   const name = 'fv_demo_guide';
   try {
-    if (guideVoiceReady()) {
-      const calls = [getGuideCall(), getGuideCall(), getGuideCall()].filter((c) => c.buffer);
+    // (6.1.0) Three of her recordings, straight from the voice pack, so the website's
+    // Help page has her real voice too (it has no game, and no guide of its own).
+    const ids = [...audio.entries.keys()].filter((k) => k.startsWith('vg_') && audio.entries.get(k).voice);
+    const pick = [];
+    while (ids.length && pick.length < Math.min(3, ids.length)) {
+      const k = ids.splice(Math.floor(Math.random() * ids.length), 1)[0];
+      pick.push(k);
+    }
+    if (pick.length) {
+      const calls = (await Promise.all(pick.map((k) => audio._decodeEntry(audio.entries.get(k).voice).catch(() => null))))
+        .filter((b) => b).map((buffer) => ({ buffer }));
       if (calls.length) {
         const rate = calls[0].buffer.sampleRate;
         const gap = Math.floor(rate * 1.2);
@@ -259,8 +265,8 @@ const mixin = {
     fv.guide.until = 0;
   },
 
-  // Heart's calls come from the voice module (js/bella.js GuideVoice, as
-  // speech.bella.guide), when it could be made; without it, the device's voice.
+  // Heart's calls are recordings (js/voice.js GuideVoice, as speech.bella.guide);
+  // without them (the sounds not loaded), the device's voice.
   _fvWireGuide() {
     const b = this.tts && this.tts.bella;
     if (b && b.guide) setGuideSource(b.guide);
@@ -388,10 +394,10 @@ const mixin = {
     if (!first && rand() < FV_MOAT_CHANCE) fv.ring = this._fvMoatAround(fv.guide.pos);
   },
 
-  // Whether her calls are said by the device's voice (Heart not available).
+  // Whether her calls are said by the device's voice (her recordings not there).
   _fvFallback() { return !guideVoiceReady(); },
 
-  // One call from her spot: Heart's voice when it is ready, placed; otherwise the
+  // One call from her spot: her recording, placed; if it cannot be played, the
   // device's voice says it (not placed) and her shimmering beacon plays where she stands.
   // (6.0.1, Russell) With the Speech setting Off no voice is heard for her at all,
   // neither Heart's nor the device's: her shimmering beacon takes the voice's place.
@@ -410,6 +416,14 @@ const mixin = {
       return;
     }
     const call = getGuideCall();
+    // (6.1.0) Her recordings are decoded a few ahead; should none be ready this
+    // instant, the call waits a moment for one (never the device's voice for that).
+    if (!call.buffer && guideVoiceReady() && (gd.loadWait || 0) < FV_LOAD_WAIT) {
+      gd.loadWait = (gd.loadWait || 0) + 0.05;
+      gd.wait = 0.05;
+      return;
+    }
+    gd.loadWait = 0;
     gd.calls += 1;
     gd.lastText = call.text;
     if (call.buffer) {
@@ -634,11 +648,8 @@ const mixin = {
       if (gd.wait === null || gd.wait === undefined || gd.wait < 0) gd.wait = uniform(...(gd.gap || FV_CALL_GAP));
       gd.wait -= dt;
       if (gd.wait <= 0) {
-        const first = gd.calls === 0 && !fv.chaos;
-        const short = !this._fvSilent() && (first ? guideStock() < FV_FIRST_STOCK : guideStock() < 1);
-        gd.held = (gd.held || 0) + (short ? dt : 0);
-        if (short && guideMaking() && gd.held < (first ? FV_FIRST_HOLD : FV_HEART_WAIT)) gd.wait = 0;   // a moment more for Heart
-        else { gd.wait = -1; gd.held = 0; this._fvCall(); }
+        gd.wait = -1;
+        this._fvCall();
       }
     }
     this._fvLevelGuide();
@@ -694,7 +705,7 @@ const mixin = {
 const HELP_SECTIONS = [
   ['Find the Voice', [
     { title: 'Find the Voice', sound: null, desc: "Find the Voice is a mode of its own, new in 6.0.0. A woman's voice, the guide, calls to you from somewhere in a dark room: over here, this way, follow me, and hundreds more. Find her. Turn until her voice is centred between your ears and bright, then walk to her. You turn and walk as in every walking mode (see General Turning). When you are within two steps of her you hear a chime, always the same one; after half a second of quiet she calls again from somewhere new. Five finds complete a level, and the next level begins at once. You are not alone in the room, and there is no clock. Double tap for the level, how many you have found, your lives and the way you are facing." },
-    { title: 'Find the Voice The Guide', sound: null, desc: "The guide's voice is Heart, a natural American voice made by Kokoro on your own device, as Bella's is (see The Game's Voice), and you hear her from where she stands: as loud as the game's voice up close, and fainter the farther away she is, but never so faint that you lose her. She never says the same thing twice in a row. On each new level she stands farther away. With the Speech setting turned Off no voice is heard for her: a soft shimmering beacon plays where she stands in place of her voice, and you follow that. Until her voice is ready, or if your device cannot make it, your device's own voice says her words instead, in the middle of your head, and a soft shimmering beacon plays where she stands, so you follow the beacon. Everything else in this mode is said by the game's voice." },
+    { title: 'Find the Voice The Guide', sound: null, desc: "The guide's voice is Heart, a natural American voice made by Kokoro and recorded for the game, as Bella's is (see The Game's Voice), and you hear her from where she stands: as loud as the game's voice up close, and fainter the farther away she is, but never so faint that you lose her. She never says the same thing twice in a row. On each new level she stands farther away. With the Speech setting turned Off no voice is heard for her: a soft shimmering beacon plays where she stands in place of her voice, and you follow that. Everything else in this mode is said by the game's voice." },
     { title: 'Find the Voice The Creature', sound: null, desc: 'One creature shares each level with you. Creatures are blind, just like you, and they hunt by sound. At rest it breathes calmly and does not move. Step on glass and it hears you: it charges, with a constant aggressive growl and a footstep for every step it runs, heard from where it is. It keeps coming for as long as you are on glass, and about a second after you are back on concrete; then it stops where it is and breathes calmly again. It runs a little slower than you can run, so when it charges, get off the glass and run. It keeps charging through the chime, too. If it catches you, you lose a life, and it is thrown back far away, still breathing, at rest.' },
     { title: 'Find the Voice Glass', sound: null, desc: 'The floor is concrete, with patches of broken glass, and your footsteps tell you which you are on. Glass is never laid close to where the creature rests, so when you step on it there is always time to turn and get away. Sometimes the guide stands where only glass will take you to her: then you must decide when to cross, and be ready to run.' },
     { title: 'Find the Voice Levels, Lives and Score', sound: null, desc: 'You have three lives and there is no clock: a run lasts until the creature has caught you three times. Each level, the guide stands farther away and the creature runs five steps a minute faster, up to a limit that stays below your run. Each level has new air: the first is always the witch\'s, and after that a different event background each level, never repeated until you have heard them all. Your score is the number of levels you complete, and Find the Voice has its own high score board.' },
@@ -705,7 +716,7 @@ const HELP_SECTIONS = [
 const HELP_DEMOS = [
   ['Demos, Find the Voice', [
     { title: 'Find the Voice Demos', sound: null, desc: 'The sounds of Find the Voice.' },
-    { title: 'The Guide', sound: 'fv_demo_guide', desc: 'Three of the guide\'s calls, as you hear her from a few steps away. Until her voice is ready on your device, or if it cannot be made, you hear instead the soft shimmering beacon that marks where she stands while your device\'s own voice says her words.' },
+    { title: 'The Guide', sound: 'fv_demo_guide', desc: 'Three of the guide\'s calls, as you hear her from a few steps away.' },
     { title: 'Guide Reached', sound: FV_CHIME, desc: 'The chime when you reach her. It is always the same.' },
     { title: 'Creature at Rest', sound: FV_BREATH, desc: 'The creature breathing calmly. It is not hunting, and it does not move.' },
     { title: 'Creature Charging', sound: 'fv_demo_charge', desc: 'The creature charging: a constant growl, and a footstep for every step it runs.' },

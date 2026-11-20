@@ -8,7 +8,7 @@
   <link rel="icon" href="icons/icon-192.png">
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
   <meta name="theme-color" content="#0c0f14">
-  <link rel="stylesheet" href="css/site.css?v=6.0.3">
+  <link rel="stylesheet" href="css/site.css?v=6.1.0">
 </head>
 <body>
   <header class="site">
@@ -23,10 +23,9 @@
     <p><strong>AI assisted.</strong> The game's code, including its modes, its sound design code, the event system and the developer tools, was written with the help of AI: Claude, by Anthropic, working under Russell's direction. Russell decides how every part of the game works, sounds and plays, and tests it by ear; the AI writes and checks the code that carries those decisions out.</p>
     <h2 id="voices">Voices</h2>
     <p>The voices of the game during play are <strong>Kokoro</strong> (Kokoro-82M) by hexgrad, used under the <a href="https://www.apache.org/licenses/LICENSE-2.0">Apache License 2.0</a>. Model page: <a href="https://huggingface.co/hexgrad/Kokoro-82M">hexgrad/Kokoro-82M on Hugging Face</a>.</p>
-    <p>In the web version (6.0.0 and later), the game speaks during a run with Kokoro's American voice "Bella", and the guide of Find the Voice is Kokoro's American voice "Heart". In the Windows game (4.0.0 and later), the guide of Find the Voice is Kokoro's American voice "Heart", and everything else the game says is spoken by the voices built into Windows.</p>
-    <p>The Kokoro model and voice files are not part of the game download. The web version's browser downloads them once, unchanged, from <a href="https://huggingface.co/onnx-community/Kokoro-82M-v1.0-ONNX">onnx-community's ONNX copy of the model</a> (Apache License 2.0) and keeps them; the Windows game downloads them once, unchanged, from the <a href="https://github.com/thewh1teagle/kokoro-onnx">kokoro-onnx</a> project's releases (kokoro-onnx is MIT licensed; the model files are Apache 2.0).</p>
-    <p>The model runs on the player's own device through <a href="https://onnxruntime.ai/">ONNX Runtime</a> by Microsoft, MIT License: ONNX Runtime Web in the browser (fetched from <a href="https://www.jsdelivr.com/package/npm/onnxruntime-web">jsDelivr</a>), and ONNX Runtime in the Windows game.</p>
-    <p>The pronunciations the game gives the model are written by hand in the phoneme notation of <a href="https://github.com/hexgrad/misaki">Misaki</a> by hexgrad, Apache License 2.0. The game does not use eSpeak NG or any other GPL-licensed code. Whenever Kokoro cannot be used (before its files are downloaded, without an internet connection, on a device that cannot keep up, or for a word with no written pronunciation), the device's own voice speaks instead, and menus, help, Game Over and the final score always use it.</p>
+    <p>In the web version (6.0.0 and later), the game speaks during a run with Kokoro's American voice "Bella", the guide of Find the Voice is Kokoro's American voice "Heart", and each character of Ultimate Mode's safe zones speaks with a Kokoro voice of their own. In the Windows game (4.0.0 and later), the guide of Find the Voice is Kokoro's American voice "Heart", and everything else the game says is spoken by the voices built into Windows.</p>
+    <p>Since web 6.1.0 and Windows 4.0.0, every one of these lines is a recording. Each was made once from the Kokoro v1.0 model files published by the <a href="https://github.com/thewh1teagle/kokoro-onnx">kokoro-onnx</a> project (kokoro-onnx is MIT licensed; the model files are Apache 2.0), and they come with the game's sounds: in the web version's voice packs, and in the Windows game's sounds folder as ftv_guide_1.ogg to ftv_guide_361.ogg. Nothing is downloaded from another site for them, and no voice is made on the player's device.</p>
+    <p>The pronunciations given to the model are written by hand in the phoneme notation of <a href="https://github.com/hexgrad/misaki">Misaki</a> by hexgrad, Apache License 2.0. No eSpeak NG or any other GPL-licensed code was used. A line the game builds itself, such as a score or a time, is said by joining recordings of its words and numbers. A line with no recording (only text typed into an event made after the recordings) is said by the device's own voice, and menus, help, Game Over and the final score always use the device's own voice.</p>
     <h2 id="sounds">Sounds</h2>
     <p>Every recorded sound in Endless Labyrinth comes from <a href="https://pixabay.com/">Pixabay</a> and is used under the <a href="https://pixabay.com/service/license-summary/">Pixabay Content License</a>, except one, a set of announcer lines downloaded for the web version and not used, which comes from <a href="https://freesound.org/">Freesound</a> under the <a href="https://creativecommons.org/licenses/by/4.0/">Creative Commons Attribution 4.0 licence</a>. The Pixabay license allows free use, including in games, and allows editing. It does not require credit, but every recording is credited here anyway, with a link to its original page; the Freesound recording requires this credit, and has it, although it is not played.</p>
     <p>Each recording has been edited for the game: trimmed, cut into single sounds or made into seamless loops, and set to a steady loudness. The game works them into its own sound design, so these files are part of the game and are not offered as a sound collection of their own. Please do not take them out of the game to redistribute them on their own; get them from Pixabay instead.</p>
@@ -487,12 +486,12 @@
       <li><strong>Bus doors close automatically</strong> by spinopel. The bus's doors closing, before the ride and before it drives off (web 3.0.0). Game file: ut_bus_doors_close.ogg (in the web version's ultimate pack). <a href="https://pixabay.com/sound-effects/film-special-effects-bus-doors-close-automatically-442339/">Original on Pixabay</a></li>
       <li><strong>INSIDE BUS</strong> by freesound_community, recorded by rengidiego (Freesound). The ride to the nearest safe zone, heard from your seat (web 3.0.0); a twenty-eight second seamless loop. Game file: ut_bus_ride.ogg (in the web version's ultimate pack). <a href="https://pixabay.com/sound-effects/city-inside-bus-67286/">Original on Pixabay</a></li>
       <li><strong>Bus Leaving From a Bus Stop</strong> by freesound_community, recorded by bcatalog (Freesound). The bus driving off once you have climbed down (web 3.0.0). Game file: ut_bus_leave.ogg (in the web version's ultimate pack). <a href="https://pixabay.com/sound-effects/city-bus-leaving-from-a-bus-stop-101481/">Original on Pixabay</a></li>
-      <li><strong>Crowd Disappointment Reaction</strong> by Universfield. The arena crowd groaning when a chaser strikes you in a battle area of Ultimate Mode (web 3.0.0), and in every battle of Battle Mode and Chaos Mode (web 6.0.0 and Windows 4.0.0); trimmed and set to the roars' loudness. Game file: ut_crowd_hit_1.ogg (in the web version's ultimate pack, and in the Windows game's sounds folder). <a href="https://pixabay.com/sound-effects/people-crowd-disappointment-reaction-352718/">Original on Pixabay</a></li>
-      <li><strong>Crowd Shocked Reaction</strong> by Universfield. The arena crowd gasping when a chaser strikes you in a battle area of Ultimate Mode (web 3.0.0), and in every battle of Battle Mode and Chaos Mode (web 6.0.0 and Windows 4.0.0), in turn with the groan at random; trimmed and set to the roars' loudness. Game file: ut_crowd_hit_2.ogg (in the web version's ultimate pack, and in the Windows game's sounds folder). <a href="https://pixabay.com/sound-effects/people-crowd-shocked-reaction-352766/">Original on Pixabay</a></li>
-      <li><strong>Crowd shocked reaction</strong> by olivia_parker. One of the arena crowd's reactions when a chaser strikes you in a battle area of Ultimate Mode (web 3.0.0), and in every battle of Battle Mode and Chaos Mode (web 6.0.0 and Windows 4.0.0), a gasp and a murmur; set to the reactions' loudness. Game file: ut_crowd_hit_3.ogg (in the web version's ultimate pack, and in the Windows game's sounds folder). <a href="https://pixabay.com/sound-effects/people-crowd-shocked-reaction-demo-309883/">Original on Pixabay</a></li>
-      <li><strong>AWW</strong> by adhimahadi. One of the arena crowd's reactions to a blow in Ultimate Mode (web 3.0.0), and in every battle of Battle Mode and Chaos Mode (web 6.0.0 and Windows 4.0.0); trimmed and set to the reactions' loudness. Game file: ut_crowd_hit_4.ogg (in the web version's ultimate pack, and in the Windows game's sounds folder). <a href="https://pixabay.com/sound-effects/people-aww-8277/">Original on Pixabay</a></li>
-      <li><strong>Crowd boo, disapproval</strong> by olivia_parker. One of the arena crowd's reactions to a blow in Ultimate Mode (web 3.0.0), and in every battle of Battle Mode and Chaos Mode (web 6.0.0 and Windows 4.0.0); set to the reactions' loudness. Game file: ut_crowd_hit_5.ogg (in the web version's ultimate pack, and in the Windows game's sounds folder). <a href="https://pixabay.com/sound-effects/people-crowd-boo-disapproval-demo-309882/">Original on Pixabay</a></li>
-      <li><strong>Crowd Booing</strong> by DRAGON-STUDIO. One of the arena crowd's reactions to a blow in Ultimate Mode (web 3.0.0), and in every battle of Battle Mode and Chaos Mode (web 6.0.0 and Windows 4.0.0); set to the reactions' loudness. Game file: ut_crowd_hit_6.ogg (in the web version's ultimate pack, and in the Windows game's sounds folder). <a href="https://pixabay.com/sound-effects/people-crowd-booing-494319/">Original on Pixabay</a></li>
+      <li><strong>Crowd Disappointment Reaction</strong> by Universfield. The arena crowd groaning when a chaser strikes you in a battle area of Ultimate Mode (web 3.0.0), and in every battle of Battle Mode and Chaos Mode in web 6.0.0 to 6.0.3 (no longer there since web 6.1.0, nor in the Windows game: in those battles one hit ends the run); trimmed and set to the roars' loudness. Game file: ut_crowd_hit_1.ogg (in the web version's ultimate pack, and in the Windows game's sounds folder). <a href="https://pixabay.com/sound-effects/people-crowd-disappointment-reaction-352718/">Original on Pixabay</a></li>
+      <li><strong>Crowd Shocked Reaction</strong> by Universfield. The arena crowd gasping when a chaser strikes you in a battle area of Ultimate Mode (web 3.0.0), and in every battle of Battle Mode and Chaos Mode in web 6.0.0 to 6.0.3 (no longer there since web 6.1.0, nor in the Windows game: in those battles one hit ends the run), in turn with the groan at random; trimmed and set to the roars' loudness. Game file: ut_crowd_hit_2.ogg (in the web version's ultimate pack, and in the Windows game's sounds folder). <a href="https://pixabay.com/sound-effects/people-crowd-shocked-reaction-352766/">Original on Pixabay</a></li>
+      <li><strong>Crowd shocked reaction</strong> by olivia_parker. One of the arena crowd's reactions when a chaser strikes you in a battle area of Ultimate Mode (web 3.0.0), and in every battle of Battle Mode and Chaos Mode in web 6.0.0 to 6.0.3 (no longer there since web 6.1.0, nor in the Windows game: in those battles one hit ends the run), a gasp and a murmur; set to the reactions' loudness. Game file: ut_crowd_hit_3.ogg (in the web version's ultimate pack, and in the Windows game's sounds folder). <a href="https://pixabay.com/sound-effects/people-crowd-shocked-reaction-demo-309883/">Original on Pixabay</a></li>
+      <li><strong>AWW</strong> by adhimahadi. One of the arena crowd's reactions to a blow in Ultimate Mode (web 3.0.0), and in every battle of Battle Mode and Chaos Mode in web 6.0.0 to 6.0.3 (no longer there since web 6.1.0, nor in the Windows game: in those battles one hit ends the run); trimmed and set to the reactions' loudness. Game file: ut_crowd_hit_4.ogg (in the web version's ultimate pack, and in the Windows game's sounds folder). <a href="https://pixabay.com/sound-effects/people-aww-8277/">Original on Pixabay</a></li>
+      <li><strong>Crowd boo, disapproval</strong> by olivia_parker. One of the arena crowd's reactions to a blow in Ultimate Mode (web 3.0.0), and in every battle of Battle Mode and Chaos Mode in web 6.0.0 to 6.0.3 (no longer there since web 6.1.0, nor in the Windows game: in those battles one hit ends the run); set to the reactions' loudness. Game file: ut_crowd_hit_5.ogg (in the web version's ultimate pack, and in the Windows game's sounds folder). <a href="https://pixabay.com/sound-effects/people-crowd-boo-disapproval-demo-309882/">Original on Pixabay</a></li>
+      <li><strong>Crowd Booing</strong> by DRAGON-STUDIO. One of the arena crowd's reactions to a blow in Ultimate Mode (web 3.0.0), and in every battle of Battle Mode and Chaos Mode in web 6.0.0 to 6.0.3 (no longer there since web 6.1.0, nor in the Windows game: in those battles one hit ends the run); set to the reactions' loudness. Game file: ut_crowd_hit_6.ogg (in the web version's ultimate pack, and in the Windows game's sounds folder). <a href="https://pixabay.com/sound-effects/people-crowd-booing-494319/">Original on Pixabay</a></li>
       <li><strong>Walking in the water 3</strong> by shakil10000. Wading through the pool at the foot of a water slide in Ultimate Mode (web 4.1.0): four single steps cut from the recording and set to the footsteps' loudness. Game file: ut_water_step_1.ogg to ut_water_step_4.ogg (in the web version's ultimate pack). From Windows 3.0.0 also the footsteps of an event's water floor. Game file: step_water_1.ogg to step_water_4.ogg. <a href="https://pixabay.com/sound-effects/nature-walking-in-the-water-3-234728/">Original on Pixabay</a></li>
       <li><strong>Swimming Sounds</strong> by DRAGON-STUDIO. Swimming through the pool at the foot of a water slide, when you run through it, in Ultimate Mode (web 4.1.0): four single strokes cut from the recording and set to a steady loudness. Game file: ut_swim_1.ogg to ut_swim_4.ogg (in the web version's ultimate pack). <a href="https://pixabay.com/sound-effects/nature-swimming-sounds-331502/">Original on Pixabay</a></li>
       <li><strong>Glass Shatter</strong> by Universfield. A glass case being smashed in Ultimate Mode (web 4.1.0); trimmed and set to a steady loudness. Game file: ut_glass_smash.ogg (in the web version's ultimate pack). From Windows 3.0.0 also a glass case being smashed in an event. Game file: evt_glass_smash.ogg. <a href="https://pixabay.com/sound-effects/film-special-effects-glass-shatter-291049/">Original on Pixabay</a></li>
@@ -521,64 +520,63 @@
   <script type="importmap">
   {
     "imports": {
-      "./js/accessibility.js": "./js/accessibility.js?v=6.0.3",
-      "./js/audio.js": "./js/audio.js?v=6.0.3",
-      "./js/backup.js": "./js/backup.js?v=6.0.3",
-      "./js/backups-page.js": "./js/backups-page.js?v=6.0.3",
-      "./js/bella-lexicon.js": "./js/bella-lexicon.js?v=6.0.3",
-      "./js/bella-words.js": "./js/bella-words.js?v=6.0.3",
-      "./js/bella-worker.js": "./js/bella-worker.js?v=6.0.3",
-      "./js/bella.js": "./js/bella.js?v=6.0.3",
-      "./js/braille.js": "./js/braille.js?v=6.0.3",
-      "./js/calendar.js": "./js/calendar.js?v=6.0.3",
-      "./js/device.js": "./js/device.js?v=6.0.3",
-      "./js/display.js": "./js/display.js?v=6.0.3",
-      "./js/game.js": "./js/game.js?v=6.0.3",
-      "./js/gestures.js": "./js/gestures.js?v=6.0.3",
-      "./js/help-data.js": "./js/help-data.js?v=6.0.3",
-      "./js/help-page.js": "./js/help-page.js?v=6.0.3",
-      "./js/isolate.js": "./js/isolate.js?v=6.0.3",
-      "./js/keywords.js": "./js/keywords.js?v=6.0.3",
-      "./js/main.js": "./js/main.js?v=6.0.3",
-      "./js/modes/chaos.js": "./js/modes/chaos.js?v=6.0.3",
-      "./js/modes/driving.js": "./js/modes/driving.js?v=6.0.3",
-      "./js/modes/events/blocks.js": "./js/modes/events/blocks.js?v=6.0.3",
-      "./js/modes/events/engine.js": "./js/modes/events/engine.js?v=6.0.3",
-      "./js/modes/events/feed.js": "./js/modes/events/feed.js?v=6.0.3",
-      "./js/modes/events/help.js": "./js/modes/events/help.js?v=6.0.3",
-      "./js/modes/events/missions.js": "./js/modes/events/missions.js?v=6.0.3",
-      "./js/modes/events/more-spec.js": "./js/modes/events/more-spec.js?v=6.0.3",
-      "./js/modes/events/more.js": "./js/modes/events/more.js?v=6.0.3",
-      "./js/modes/events/py.js": "./js/modes/events/py.js?v=6.0.3",
-      "./js/modes/events/schema.js": "./js/modes/events/schema.js?v=6.0.3",
-      "./js/modes/events/sign.js": "./js/modes/events/sign.js?v=6.0.3",
-      "./js/modes/events/sounds.js": "./js/modes/events/sounds.js?v=6.0.3",
-      "./js/modes/events/tunes.js": "./js/modes/events/tunes.js?v=6.0.3",
-      "./js/modes/events/wording.js": "./js/modes/events/wording.js?v=6.0.3",
-      "./js/modes/events.js": "./js/modes/events.js?v=6.0.3",
-      "./js/modes/findvoice-guide.js": "./js/modes/findvoice-guide.js?v=6.0.3",
-      "./js/modes/findvoice.js": "./js/modes/findvoice.js?v=6.0.3",
-      "./js/modes/index.js": "./js/modes/index.js?v=6.0.3",
-      "./js/modes/island.js": "./js/modes/island.js?v=6.0.3",
-      "./js/modes/tower.js": "./js/modes/tower.js?v=6.0.3",
-      "./js/modes/ultimate/cast.js": "./js/modes/ultimate/cast.js?v=6.0.3",
-      "./js/modes/ultimate/help.js": "./js/modes/ultimate/help.js?v=6.0.3",
-      "./js/modes/ultimate/world.js": "./js/modes/ultimate/world.js?v=6.0.3",
-      "./js/modes/ultimate.js": "./js/modes/ultimate.js?v=6.0.3",
-      "./js/packs.js": "./js/packs.js?v=6.0.3",
-      "./js/site.js": "./js/site.js?v=6.0.3",
-      "./js/sound-rules.js": "./js/sound-rules.js?v=6.0.3",
-      "./js/speech.js": "./js/speech.js?v=6.0.3",
-      "./js/stats.js": "./js/stats.js?v=6.0.3",
-      "./js/storage.js": "./js/storage.js?v=6.0.3",
-      "./js/turning.js": "./js/turning.js?v=6.0.3",
-      "./js/update-alert.js": "./js/update-alert.js?v=6.0.3",
-      "./js/version.js": "./js/version.js?v=6.0.3",
-      "./js/wetworker.js": "./js/wetworker.js?v=6.0.3"
+      "./js/accessibility.js": "./js/accessibility.js?v=6.1.0",
+      "./js/audio.js": "./js/audio.js?v=6.1.0",
+      "./js/backup.js": "./js/backup.js?v=6.1.0",
+      "./js/backups-page.js": "./js/backups-page.js?v=6.1.0",
+      "./js/bella-lexicon.js": "./js/bella-lexicon.js?v=6.1.0",
+      "./js/bella-words.js": "./js/bella-words.js?v=6.1.0",
+      "./js/braille.js": "./js/braille.js?v=6.1.0",
+      "./js/calendar.js": "./js/calendar.js?v=6.1.0",
+      "./js/device.js": "./js/device.js?v=6.1.0",
+      "./js/display.js": "./js/display.js?v=6.1.0",
+      "./js/game.js": "./js/game.js?v=6.1.0",
+      "./js/gestures.js": "./js/gestures.js?v=6.1.0",
+      "./js/help-data.js": "./js/help-data.js?v=6.1.0",
+      "./js/help-page.js": "./js/help-page.js?v=6.1.0",
+      "./js/keywords.js": "./js/keywords.js?v=6.1.0",
+      "./js/main.js": "./js/main.js?v=6.1.0",
+      "./js/modes/chaos.js": "./js/modes/chaos.js?v=6.1.0",
+      "./js/modes/driving.js": "./js/modes/driving.js?v=6.1.0",
+      "./js/modes/events/blocks.js": "./js/modes/events/blocks.js?v=6.1.0",
+      "./js/modes/events/engine.js": "./js/modes/events/engine.js?v=6.1.0",
+      "./js/modes/events/feed.js": "./js/modes/events/feed.js?v=6.1.0",
+      "./js/modes/events/help.js": "./js/modes/events/help.js?v=6.1.0",
+      "./js/modes/events/missions.js": "./js/modes/events/missions.js?v=6.1.0",
+      "./js/modes/events/more-spec.js": "./js/modes/events/more-spec.js?v=6.1.0",
+      "./js/modes/events/more.js": "./js/modes/events/more.js?v=6.1.0",
+      "./js/modes/events/py.js": "./js/modes/events/py.js?v=6.1.0",
+      "./js/modes/events/schema.js": "./js/modes/events/schema.js?v=6.1.0",
+      "./js/modes/events/sign.js": "./js/modes/events/sign.js?v=6.1.0",
+      "./js/modes/events/sounds.js": "./js/modes/events/sounds.js?v=6.1.0",
+      "./js/modes/events/tunes.js": "./js/modes/events/tunes.js?v=6.1.0",
+      "./js/modes/events/wording.js": "./js/modes/events/wording.js?v=6.1.0",
+      "./js/modes/events.js": "./js/modes/events.js?v=6.1.0",
+      "./js/modes/findvoice-guide.js": "./js/modes/findvoice-guide.js?v=6.1.0",
+      "./js/modes/findvoice.js": "./js/modes/findvoice.js?v=6.1.0",
+      "./js/modes/index.js": "./js/modes/index.js?v=6.1.0",
+      "./js/modes/island.js": "./js/modes/island.js?v=6.1.0",
+      "./js/modes/tower.js": "./js/modes/tower.js?v=6.1.0",
+      "./js/modes/ultimate/cast.js": "./js/modes/ultimate/cast.js?v=6.1.0",
+      "./js/modes/ultimate/help.js": "./js/modes/ultimate/help.js?v=6.1.0",
+      "./js/modes/ultimate/world.js": "./js/modes/ultimate/world.js?v=6.1.0",
+      "./js/modes/ultimate.js": "./js/modes/ultimate.js?v=6.1.0",
+      "./js/packs.js": "./js/packs.js?v=6.1.0",
+      "./js/site.js": "./js/site.js?v=6.1.0",
+      "./js/sound-rules.js": "./js/sound-rules.js?v=6.1.0",
+      "./js/speech.js": "./js/speech.js?v=6.1.0",
+      "./js/stats.js": "./js/stats.js?v=6.1.0",
+      "./js/storage.js": "./js/storage.js?v=6.1.0",
+      "./js/turning.js": "./js/turning.js?v=6.1.0",
+      "./js/update-alert.js": "./js/update-alert.js?v=6.1.0",
+      "./js/version.js": "./js/version.js?v=6.1.0",
+      "./js/voice-text.js": "./js/voice-text.js?v=6.1.0",
+      "./js/voice.js": "./js/voice.js?v=6.1.0",
+      "./js/wetworker.js": "./js/wetworker.js?v=6.1.0"
     }
   }
   </script>
   <!-- end of versions -->
-  <script type="module" src="js/site.js?v=6.0.3"></script>
+  <script type="module" src="js/site.js?v=6.1.0"></script>
 </body>
 </html>

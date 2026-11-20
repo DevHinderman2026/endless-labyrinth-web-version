@@ -1,0 +1,4367 @@
+[
+ {
+  "text": "Level 1.",
+  "n": 8,
+  "where": "standard (standard)"
+ },
+ {
+  "text": "57 seconds left. Facing north-north-west.",
+  "n": 2,
+  "where": "standard (standard)"
+ },
+ {
+  "text": "57 seconds left. Facing west-north-west.",
+  "n": 1,
+  "where": "standard (standard)"
+ },
+ {
+  "text": "56 seconds left. Facing west-south-west.",
+  "n": 1,
+  "where": "standard (standard)"
+ },
+ {
+  "text": "55 seconds left. Facing west-south-west.",
+  "n": 1,
+  "where": "standard (standard)"
+ },
+ {
+  "text": "54 seconds left. Facing west-south-west.",
+  "n": 1,
+  "where": "standard (standard)"
+ },
+ {
+  "text": "52 seconds left. Facing west-south-west.",
+  "n": 1,
+  "where": "standard (standard)"
+ },
+ {
+  "text": "50 seconds left. Facing east-north-east.",
+  "n": 1,
+  "where": "standard (standard)"
+ },
+ {
+  "text": "48 seconds left. Facing south-south-east.",
+  "n": 1,
+  "where": "standard (standard)"
+ },
+ {
+  "text": "Level 2.",
+  "n": 1,
+  "where": "standard (standard)"
+ },
+ {
+  "text": "54 seconds left. Facing south-south-west.",
+  "n": 2,
+  "where": "standard (standard)"
+ },
+ {
+  "text": "53 seconds left. Facing west-south-west.",
+  "n": 1,
+  "where": "standard (standard)"
+ },
+ {
+  "text": "57 seconds left. Facing north-north-east.",
+  "n": 1,
+  "where": "standard (standard)"
+ },
+ {
+  "text": "55 seconds left. Facing west-north-west.",
+  "n": 1,
+  "where": "standard (standard)"
+ },
+ {
+  "text": "55 seconds left. Facing north-north-west.",
+  "n": 1,
+  "where": "standard (standard)"
+ },
+ {
+  "text": "52 seconds left. Facing south.",
+  "n": 1,
+  "where": "standard (standard)"
+ },
+ {
+  "text": "52 seconds left. Facing south-south-east.",
+  "n": 2,
+  "where": "standard (standard)"
+ },
+ {
+  "text": "51 seconds left. Facing east.",
+  "n": 1,
+  "where": "standard (standard)"
+ },
+ {
+  "text": "51 seconds left. Facing south-south-east.",
+  "n": 1,
+  "where": "standard (standard)"
+ },
+ {
+  "text": "51 seconds left. Facing east-south-east.",
+  "n": 1,
+  "where": "standard (standard)"
+ },
+ {
+  "text": "50 seconds left. Facing south.",
+  "n": 2,
+  "where": "standard (standard)"
+ },
+ {
+  "text": "49 seconds left. Facing east-south-east.",
+  "n": 1,
+  "where": "standard (standard)"
+ },
+ {
+  "text": "48 seconds left. Facing east-north-east.",
+  "n": 1,
+  "where": "standard (standard)"
+ },
+ {
+  "text": "47 seconds left. Facing north.",
+  "n": 1,
+  "where": "standard (standard)"
+ },
+ {
+  "text": "47 seconds left. Facing west.",
+  "n": 1,
+  "where": "standard (standard)"
+ },
+ {
+  "text": "58 seconds left. Facing north.",
+  "n": 1,
+  "where": "standard (standard)"
+ },
+ {
+  "text": "53 seconds left. Facing south-south-east.",
+  "n": 1,
+  "where": "standard (standard)"
+ },
+ {
+  "text": "52 seconds left. Facing east.",
+  "n": 1,
+  "where": "standard (standard)"
+ },
+ {
+  "text": "51 seconds left. Facing south-south-west.",
+  "n": 2,
+  "where": "standard (standard)"
+ },
+ {
+  "text": "49 seconds left. Facing south.",
+  "n": 1,
+  "where": "standard (standard)"
+ },
+ {
+  "text": "49 seconds left. Facing south-south-east.",
+  "n": 1,
+  "where": "standard (standard)"
+ },
+ {
+  "text": "47 seconds left. Facing south.",
+  "n": 1,
+  "where": "standard (standard)"
+ },
+ {
+  "text": "47 seconds left. Facing south-south-west.",
+  "n": 1,
+  "where": "standard (standard)"
+ },
+ {
+  "text": "Battle mode started.",
+  "n": 4,
+  "where": "battle (battle)"
+ },
+ {
+  "text": "9 shots. 0 down. Wave 1, 6 left. Clock 79 seconds. Facing north.",
+  "n": 1,
+  "where": "battle (battle)"
+ },
+ {
+  "text": "4 shots. 1 down. Wave 1, 5 left. Clock 79 seconds. Facing west-north-west.",
+  "n": 1,
+  "where": "battle (battle)"
+ },
+ {
+  "text": "3 shots. 1 down. Wave 1, 5 left. Clock 79 seconds. Facing west-north-west.",
+  "n": 1,
+  "where": "battle (battle)"
+ },
+ {
+  "text": "2 shots. 2 down. Wave 1, 4 left. Clock 79 seconds. Facing west-north-west.",
+  "n": 1,
+  "where": "battle (battle)"
+ },
+ {
+  "text": "0 shots. 2 down. Wave 1, 4 left. Clock 78 seconds. Facing west.",
+  "n": 1,
+  "where": "battle (battle)"
+ },
+ {
+  "text": "0 shots. 2 down. Wave 1, 4 left. Clock 76 seconds. Facing south-south-west.",
+  "n": 1,
+  "where": "battle (battle)"
+ },
+ {
+  "text": "0 shots. 2 down. Wave 1, 4 left. Clock 75 seconds. Facing west-south-west.",
+  "n": 1,
+  "where": "battle (battle)"
+ },
+ {
+  "text": "0 shots. 2 down. Wave 1, 4 left. Clock 74 seconds. Facing west-south-west.",
+  "n": 2,
+  "where": "battle (battle)"
+ },
+ {
+  "text": "0 shots. 2 down. Wave 1, 4 left. Clock 73 seconds. Facing south-south-west.",
+  "n": 3,
+  "where": "battle (battle)"
+ },
+ {
+  "text": "0 shots. 2 down. Wave 1, 4 left. Clock 72 seconds. Facing west-south-west.",
+  "n": 3,
+  "where": "battle (battle)"
+ },
+ {
+  "text": "0 shots. 2 down. Wave 1, 4 left. Clock 70 seconds. Facing east.",
+  "n": 1,
+  "where": "battle (battle)"
+ },
+ {
+  "text": "0 shots. 2 down. Wave 1, 4 left. Clock 69 seconds. Facing east-south-east.",
+  "n": 1,
+  "where": "battle (battle)"
+ },
+ {
+  "text": "9 shots. 0 down. Wave 1, 6 left. Clock 78 seconds. Facing north.",
+  "n": 1,
+  "where": "battle (battle)"
+ },
+ {
+  "text": "0 shots. 0 down. Wave 1, 6 left. Clock 77 seconds. Facing north.",
+  "n": 1,
+  "where": "battle (battle)"
+ },
+ {
+  "text": "0 shots. 0 down. Wave 1, 6 left. Clock 76 seconds. Facing north-north-east.",
+  "n": 2,
+  "where": "battle (battle)"
+ },
+ {
+  "text": "0 shots. 0 down. Wave 1, 6 left. Clock 75 seconds. Facing north-west.",
+  "n": 2,
+  "where": "battle (battle)"
+ },
+ {
+  "text": "0 shots. 0 down. Wave 1, 6 left. Clock 73 seconds. Facing north-north-east.",
+  "n": 1,
+  "where": "battle (battle)"
+ },
+ {
+  "text": "0 shots. 0 down. Wave 1, 6 left. Clock 72 seconds. Facing north.",
+  "n": 1,
+  "where": "battle (battle)"
+ },
+ {
+  "text": "0 shots. 0 down. Wave 1, 6 left. Clock 70 seconds. Facing north-north-west.",
+  "n": 1,
+  "where": "battle (battle)"
+ },
+ {
+  "text": "0 shots. 0 down. Wave 1, 6 left. Clock 68 seconds. Facing north-north-west.",
+  "n": 1,
+  "where": "battle (battle)"
+ },
+ {
+  "text": "0 shots. 0 down. Wave 1, 6 left. Clock 67 seconds. Facing north-north-west.",
+  "n": 3,
+  "where": "battle (battle)"
+ },
+ {
+  "text": "0 shots. 0 down. Wave 1, 6 left. Clock 66 seconds. Facing west-north-west.",
+  "n": 1,
+  "where": "battle (battle)"
+ },
+ {
+  "text": "0 shots. 0 down. Wave 1, 6 left. Clock 66 seconds. Facing west.",
+  "n": 1,
+  "where": "battle (battle)"
+ },
+ {
+  "text": "8 shots. 1 down. Wave 1, 5 left. Clock 79 seconds. Facing north.",
+  "n": 1,
+  "where": "battle (battle)"
+ },
+ {
+  "text": "7 shots. 1 down. Wave 1, 5 left. Clock 79 seconds. Facing north.",
+  "n": 1,
+  "where": "battle (battle)"
+ },
+ {
+  "text": "2 shots. 1 down. Wave 1, 5 left. Clock 79 seconds. Facing north-north-east.",
+  "n": 1,
+  "where": "battle (battle)"
+ },
+ {
+  "text": "1 shot. 1 down. Wave 1, 5 left. Clock 79 seconds. Facing north-north-west.",
+  "n": 1,
+  "where": "battle (battle)"
+ },
+ {
+  "text": "0 shots. 2 down. Wave 1, 4 left. Clock 79 seconds. Facing west.",
+  "n": 1,
+  "where": "battle (battle)"
+ },
+ {
+  "text": "0 shots. 2 down. Wave 1, 4 left. Clock 77 seconds. Facing north.",
+  "n": 1,
+  "where": "battle (battle)"
+ },
+ {
+  "text": "0 shots. 2 down. Wave 1, 4 left. Clock 77 seconds. Facing east.",
+  "n": 1,
+  "where": "battle (battle)"
+ },
+ {
+  "text": "0 shots. 2 down. Wave 1, 4 left. Clock 75 seconds. Facing north-north-east.",
+  "n": 1,
+  "where": "battle (battle)"
+ },
+ {
+  "text": "0 shots. 2 down. Wave 1, 4 left. Clock 74 seconds. Facing south-south-east.",
+  "n": 2,
+  "where": "battle (battle)"
+ },
+ {
+  "text": "0 shots. 2 down. Wave 1, 4 left. Clock 73 seconds. Facing south-south-east.",
+  "n": 1,
+  "where": "battle (battle)"
+ },
+ {
+  "text": "0 shots. 2 down. Wave 1, 4 left. Clock 71 seconds. Facing south-south-west.",
+  "n": 1,
+  "where": "battle (battle)"
+ },
+ {
+  "text": "0 shots. 2 down. Wave 1, 4 left. Clock 71 seconds. Facing south-east.",
+  "n": 1,
+  "where": "battle (battle)"
+ },
+ {
+  "text": "0 shots. 2 down. Wave 1, 4 left. Clock 70 seconds. Facing east-south-east.",
+  "n": 1,
+  "where": "battle (battle)"
+ },
+ {
+  "text": "0 shots. 2 down. Wave 1, 4 left. Clock 70 seconds. Facing east-north-east.",
+  "n": 1,
+  "where": "battle (battle)"
+ },
+ {
+  "text": "0 shots. 2 down. Wave 1, 4 left. Clock 69 seconds. Facing east-north-east.",
+  "n": 1,
+  "where": "battle (battle)"
+ },
+ {
+  "text": "0 shots. 2 down. Wave 1, 4 left. Clock 69 seconds. Facing east.",
+  "n": 1,
+  "where": "battle (battle)"
+ },
+ {
+  "text": "Driving Mode. Two minutes.",
+  "n": 4,
+  "where": "drive (drive)"
+ },
+ {
+  "text": "0 shots. 0 cars down. 0 metres. Clock 114 seconds.",
+  "n": 5,
+  "where": "drive (drive)"
+ },
+ {
+  "text": "0 shots. 0 cars down. 0 metres. Clock 112 seconds.",
+  "n": 8,
+  "where": "drive (drive)"
+ },
+ {
+  "text": "0 shots. 0 cars down. 0 metres. Clock 111 seconds.",
+  "n": 7,
+  "where": "drive (drive)"
+ },
+ {
+  "text": "0 shots. 0 cars down. 0 metres. Clock 110 seconds.",
+  "n": 6,
+  "where": "drive (drive)"
+ },
+ {
+  "text": "0 shots. 0 cars down. 0 metres. Clock 109 seconds.",
+  "n": 4,
+  "where": "drive (drive)"
+ },
+ {
+  "text": "0 shots. 0 cars down. 0 metres. Clock 108 seconds.",
+  "n": 4,
+  "where": "drive (drive)"
+ },
+ {
+  "text": "0 shots. 0 cars down. 0 metres. Clock 107 seconds.",
+  "n": 2,
+  "where": "drive (drive)"
+ },
+ {
+  "text": "0 shots. 1 car down. 0 metres. Clock 116 seconds.",
+  "n": 1,
+  "where": "drive (drive)"
+ },
+ {
+  "text": "0 shots. 1 car down. 0 metres. Clock 113 seconds.",
+  "n": 3,
+  "where": "drive (drive)"
+ },
+ {
+  "text": "0 shots. 1 car down. 0 metres. Clock 109 seconds.",
+  "n": 1,
+  "where": "drive (drive)"
+ },
+ {
+  "text": "0 shots. 1 car down. 0 metres. Clock 108 seconds.",
+  "n": 1,
+  "where": "drive (drive)"
+ },
+ {
+  "text": "0 shots. 1 car down. 0 metres. Clock 107 seconds.",
+  "n": 1,
+  "where": "drive (drive)"
+ },
+ {
+  "text": "2 shots. 0 cars down. 0 metres. Clock 117 seconds.",
+  "n": 2,
+  "where": "drive (drive)"
+ },
+ {
+  "text": "0 shots. 0 cars down. 0 metres. Clock 117 seconds.",
+  "n": 1,
+  "where": "drive (drive)"
+ },
+ {
+  "text": "0 shots. 0 cars down. 0 metres. Clock 116 seconds.",
+  "n": 2,
+  "where": "drive (drive)"
+ },
+ {
+  "text": "0 shots. 0 cars down. 0 metres. Clock 115 seconds.",
+  "n": 3,
+  "where": "drive (drive)"
+ },
+ {
+  "text": "0 shots. 0 cars down. 0 metres. Clock 113 seconds.",
+  "n": 5,
+  "where": "drive (drive)"
+ },
+ {
+  "text": "Tower Mode.",
+  "n": 4,
+  "where": "tower (tower)"
+ },
+ {
+  "text": "Floor 1 of 9.",
+  "n": 1,
+  "where": "tower (tower)"
+ },
+ {
+  "text": "Floor 1 of 9, 100 health, 0 items, 1 to go. Facing east-north-east.",
+  "n": 1,
+  "where": "tower (tower)"
+ },
+ {
+  "text": "Floor 1 of 9, 100 health, 0 items, 1 to go. Facing east-south-east.",
+  "n": 1,
+  "where": "tower (tower)"
+ },
+ {
+  "text": "Floor 1 of 9, 100 health, 0 items. Facing east-south-east.",
+  "n": 3,
+  "where": "tower (tower)"
+ },
+ {
+  "text": "Floor 1 of 9, 100 health, 0 items. Facing north.",
+  "n": 1,
+  "where": "tower (tower)"
+ },
+ {
+  "text": "Floor 1 of 9, 100 health, 0 items. Facing north-east.",
+  "n": 2,
+  "where": "tower (tower)"
+ },
+ {
+  "text": "Floor 1 of 9, 100 health, 0 items. Facing north-north-east.",
+  "n": 2,
+  "where": "tower (tower)"
+ },
+ {
+  "text": "Floor 1 of 9, 100 health, 0 items. Facing east-north-east.",
+  "n": 2,
+  "where": "tower (tower)"
+ },
+ {
+  "text": "Floor 1 of 9, 100 health, 0 items. Facing east.",
+  "n": 1,
+  "where": "tower (tower)"
+ },
+ {
+  "text": "Floor 1 of 9, 100 health, 0 items. Facing north-north-west.",
+  "n": 1,
+  "where": "tower (tower)"
+ },
+ {
+  "text": "Floor 1 of 9, 100 health, 0 items. Facing west-north-west.",
+  "n": 3,
+  "where": "tower (tower)"
+ },
+ {
+  "text": "Floor 1 of 7.",
+  "n": 1,
+  "where": "tower (tower)"
+ },
+ {
+  "text": "Floor 1 of 7, 100 health, 0 items, 1 to go. Facing east-north-east.",
+  "n": 1,
+  "where": "tower (tower)"
+ },
+ {
+  "text": "Floor 1 of 7, 100 health, 0 items, 1 to go. Facing south-east.",
+  "n": 1,
+  "where": "tower (tower)"
+ },
+ {
+  "text": "Floor 1 of 7, 100 health, 0 items, 1 to go. Facing east-south-east.",
+  "n": 2,
+  "where": "tower (tower)"
+ },
+ {
+  "text": "Floor 1 of 7, 100 health, 0 items, 1 to go. Facing east.",
+  "n": 1,
+  "where": "tower (tower)"
+ },
+ {
+  "text": "Floor 1 of 7, 100 health, 0 items, 1 to go. Facing west-south-west.",
+  "n": 1,
+  "where": "tower (tower)"
+ },
+ {
+  "text": "Floor 1 of 7, 100 health, 0 items, 1 to go. Facing south-south-east.",
+  "n": 1,
+  "where": "tower (tower)"
+ },
+ {
+  "text": "Floor 1 of 7, 100 health, 0 items, 1 to go. Facing north-east.",
+  "n": 3,
+  "where": "tower (tower)"
+ },
+ {
+  "text": "Floor 1 of 7, 100 health, 0 items, 1 to go. Facing west-north-west.",
+  "n": 2,
+  "where": "tower (tower)"
+ },
+ {
+  "text": "Floor 1 of 6.",
+  "n": 1,
+  "where": "tower (tower)"
+ },
+ {
+  "text": "Floor 1 of 6, 100 health, 0 items, 1 to go. Facing north-north-west.",
+  "n": 3,
+  "where": "tower (tower)"
+ },
+ {
+  "text": "Floor 1 of 6, 100 health, 0 items, 1 to go. Facing east.",
+  "n": 1,
+  "where": "tower (tower)"
+ },
+ {
+  "text": "Floor 1 of 6, 100 health, 0 items, 1 to go. Facing east-south-east.",
+  "n": 1,
+  "where": "tower (tower)"
+ },
+ {
+  "text": "Floor 1 of 6, 100 health, 0 items, 1 to go. Facing south-south-east.",
+  "n": 3,
+  "where": "tower (tower)"
+ },
+ {
+  "text": "Floor 1 of 6, 100 health, 0 items, 1 to go. Facing west-south-west.",
+  "n": 1,
+  "where": "tower (tower)"
+ },
+ {
+  "text": "Floor 1 of 6, 100 health, 0 items. Facing east.",
+  "n": 1,
+  "where": "tower (tower)"
+ },
+ {
+  "text": "Floor 1 of 6, 100 health, 0 items. Facing south-south-west.",
+  "n": 1,
+  "where": "tower (tower)"
+ },
+ {
+  "text": "Floor 1 of 6, 100 health, 0 items. Facing west-south-west.",
+  "n": 2,
+  "where": "tower (tower)"
+ },
+ {
+  "text": "Island Mode.",
+  "n": 4,
+  "where": "island (island)"
+ },
+ {
+  "text": "5 shots. 4 enemies left. Key not found. 0 points. Facing north-north-east.",
+  "n": 1,
+  "where": "island (island)"
+ },
+ {
+  "text": "1 shot. 4 enemies left. Key not found. 0 points. Facing east-north-east.",
+  "n": 1,
+  "where": "island (island)"
+ },
+ {
+  "text": "0 shots. 3 enemies left. Key not found. 10 points. Facing east-south-east.",
+  "n": 3,
+  "where": "island (island)"
+ },
+ {
+  "text": "0 shots. 3 enemies left. Key not found. 10 points. Facing south-south-east.",
+  "n": 1,
+  "where": "island (island)"
+ },
+ {
+  "text": "0 shots. 3 enemies left. Key not found. 10 points. Facing east.",
+  "n": 1,
+  "where": "island (island)"
+ },
+ {
+  "text": "0 shots. 3 enemies left. Key not found. 10 points. Facing west-north-west.",
+  "n": 3,
+  "where": "island (island)"
+ },
+ {
+  "text": "0 shots. 3 enemies left. Key not found. 10 points. Facing north.",
+  "n": 4,
+  "where": "island (island)"
+ },
+ {
+  "text": "0 shots. 3 enemies left. Key not found. 10 points. Facing north-north-east.",
+  "n": 6,
+  "where": "island (island)"
+ },
+ {
+  "text": "0 shots. 3 enemies left. Key not found. 10 points. Facing north-north-west.",
+  "n": 2,
+  "where": "island (island)"
+ },
+ {
+  "text": "7 shots. 4 enemies left. Key not found. 0 points. Facing north.",
+  "n": 2,
+  "where": "island (island)"
+ },
+ {
+  "text": "3 shots. 4 enemies left. Key not found. 0 points. Facing north.",
+  "n": 1,
+  "where": "island (island)"
+ },
+ {
+  "text": "2 shots. 4 enemies left. Key not found. 0 points. Facing north.",
+  "n": 1,
+  "where": "island (island)"
+ },
+ {
+  "text": "0 shots. 4 enemies left. Key not found. 0 points. Facing west-south-west.",
+  "n": 1,
+  "where": "island (island)"
+ },
+ {
+  "text": "0 shots. 4 enemies left. Key not found. 0 points. Facing west-north-west.",
+  "n": 2,
+  "where": "island (island)"
+ },
+ {
+  "text": "0 shots. 4 enemies left. Key not found. 0 points. Facing west.",
+  "n": 1,
+  "where": "island (island)"
+ },
+ {
+  "text": "0 shots. 4 enemies left. Key not found. 0 points. Facing south.",
+  "n": 1,
+  "where": "island (island)"
+ },
+ {
+  "text": "0 shots. 4 enemies left. Key not found. 0 points. Facing south-south-east.",
+  "n": 1,
+  "where": "island (island)"
+ },
+ {
+  "text": "0 shots. 4 enemies left. Key not found. 0 points. Facing south-south-west.",
+  "n": 1,
+  "where": "island (island)"
+ },
+ {
+  "text": "5 shots. 4 enemies left. Key not found. 0 points. Facing north.",
+  "n": 1,
+  "where": "island (island)"
+ },
+ {
+  "text": "2 shots. 3 enemies left. Key not found. 10 points. Facing west.",
+  "n": 1,
+  "where": "island (island)"
+ },
+ {
+  "text": "0 shots. 3 enemies left. Key not found. 10 points. Facing north-west.",
+  "n": 1,
+  "where": "island (island)"
+ },
+ {
+  "text": "Level 1. 0 of 5 found. 3 lives left. Facing west.",
+  "n": 1,
+  "where": "findvoice (findvoice)"
+ },
+ {
+  "text": "Level 1. 1 of 5 found. 3 lives left. Facing south.",
+  "n": 4,
+  "where": "findvoice (findvoice)"
+ },
+ {
+  "text": "Level 1. 1 of 5 found. 3 lives left. Facing west-south-west.",
+  "n": 3,
+  "where": "findvoice (findvoice)"
+ },
+ {
+  "text": "Level 1. 1 of 5 found. 3 lives left. Facing north-north-west.",
+  "n": 1,
+  "where": "findvoice (findvoice)"
+ },
+ {
+  "text": "Level 1. 1 of 5 found. 3 lives left. Facing west-north-west.",
+  "n": 2,
+  "where": "findvoice (findvoice)"
+ },
+ {
+  "text": "Level 1. 1 of 5 found. 3 lives left. Facing west.",
+  "n": 1,
+  "where": "findvoice (findvoice)"
+ },
+ {
+  "text": "Level 1. 1 of 5 found. 3 lives left. Facing east-south-east.",
+  "n": 3,
+  "where": "findvoice (findvoice)"
+ },
+ {
+  "text": "Level 1. 0 of 5 found. 3 lives left. Facing east-north-east.",
+  "n": 3,
+  "where": "findvoice (findvoice)"
+ },
+ {
+  "text": "Level 1. 0 of 5 found. 3 lives left. Facing east.",
+  "n": 4,
+  "where": "findvoice (findvoice)"
+ },
+ {
+  "text": "Level 1. 0 of 5 found. 3 lives left. Facing south-south-east.",
+  "n": 3,
+  "where": "findvoice (findvoice)"
+ },
+ {
+  "text": "Level 1. 0 of 5 found. 3 lives left. Facing south-south-west.",
+  "n": 1,
+  "where": "findvoice (findvoice)"
+ },
+ {
+  "text": "Level 1. 0 of 5 found. 3 lives left. Facing south.",
+  "n": 4,
+  "where": "findvoice (findvoice)"
+ },
+ {
+  "text": "Level 1. 0 of 5 found. 3 lives left. Facing west-south-west.",
+  "n": 1,
+  "where": "findvoice (findvoice)"
+ },
+ {
+  "text": "Level 1. 0 of 5 found. 3 lives left. Facing north-north-west.",
+  "n": 2,
+  "where": "findvoice (findvoice)"
+ },
+ {
+  "text": "Level 1. 0 of 5 found. 3 lives left. Facing west-north-west.",
+  "n": 6,
+  "where": "findvoice (findvoice)"
+ },
+ {
+  "text": "Level 1. 0 of 5 found. 3 lives left. Facing north.",
+  "n": 2,
+  "where": "findvoice (findvoice)"
+ },
+ {
+  "text": "Level 1. 0 of 5 found. 3 lives left. Facing east-south-east.",
+  "n": 1,
+  "where": "findvoice (findvoice)"
+ },
+ {
+  "text": "Level 1. 0 of 5 found. 3 lives left. Facing south-east.",
+  "n": 1,
+  "where": "findvoice (findvoice)"
+ },
+ {
+  "text": "Level 1. 0 of 5 found. 3 lives left. Facing north-west.",
+  "n": 1,
+  "where": "findvoice (findvoice)"
+ },
+ {
+  "text": "100 health. 0 points. 19 shots. 2 items. Facing north.",
+  "n": 1,
+  "where": "ultimate (ultimate)"
+ },
+ {
+  "text": "100 health. 10 points. 20 shots. 2 items. Facing east.",
+  "n": 3,
+  "where": "ultimate (ultimate)"
+ },
+ {
+  "text": "100 health. 10 points. 19 shots. 2 items. Facing north-north-east.",
+  "n": 1,
+  "where": "ultimate (ultimate)"
+ },
+ {
+  "text": "Compass on. You are on an island. The safe zone is 11 steps away, starting east, 60 degrees to your right. Nearby: the elevator, 21 steps away, starting south, 150 degrees to your right. Facing north-north-east.",
+  "n": 1,
+  "where": "ultimate (ultimate)"
+ },
+ {
+  "text": "Facing east-north-east. The way to the safe zone is east, 30 degrees to your right.",
+  "n": 4,
+  "where": "ultimate (ultimate)"
+ },
+ {
+  "text": "100 health. 10 points. 20 shots. 2 items. Facing east-north-east.",
+  "n": 2,
+  "where": "ultimate (ultimate)"
+ },
+ {
+  "text": "East, the way to the safe zone. Open to the border, 10 steps, into a safe zone, then an island. Walk 11 steps this way, and you are there.",
+  "n": 7,
+  "where": "ultimate (ultimate)"
+ },
+ {
+  "text": "Facing east. The way to the safe zone is east, 10 degrees to your right.",
+  "n": 3,
+  "where": "ultimate (ultimate)"
+ },
+ {
+  "text": "Facing east-south-east. The way to the safe zone is east, 15 degrees to your left.",
+  "n": 2,
+  "where": "ultimate (ultimate)"
+ },
+ {
+  "text": "Facing east-south-east. The way to the safe zone is east, 30 degrees to your left.",
+  "n": 8,
+  "where": "ultimate (ultimate)"
+ },
+ {
+  "text": "100 health. 10 points. 20 shots. 2 items. Facing east-south-east.",
+  "n": 5,
+  "where": "ultimate (ultimate)"
+ },
+ {
+  "text": "Facing south-south-east. The way to the safe zone is east, 60 degrees to your left.",
+  "n": 21,
+  "where": "ultimate (ultimate)"
+ },
+ {
+  "text": "Compass off.",
+  "n": 22,
+  "where": "ultimate (ultimate)"
+ },
+ {
+  "text": "100 health. 10 points. 19 shots. 2 items. Facing east.",
+  "n": 1,
+  "where": "ultimate (ultimate)"
+ },
+ {
+  "text": "100 health. 10 points. 19 shots. 2 items. Facing east-south-east.",
+  "n": 1,
+  "where": "ultimate (ultimate)"
+ },
+ {
+  "text": "Compass on. You are in a safe zone. The way out is 2 steps away, starting west, behind you. Nearby: ammo, 12 steps away, starting south, to your right; ammo, 25 steps away, starting south, to your right. East. Open for 31 steps, then a wall. Beyond, an island, 32 steps away.",
+  "n": 1,
+  "where": "ultimate (ultimate)"
+ },
+ {
+  "text": "East. Open for 31 steps, then a wall. Beyond, an island, 32 steps away. The way out is west, behind you.",
+  "n": 2,
+  "where": "ultimate (ultimate)"
+ },
+ {
+  "text": "Facing east-south-east. The way out is west, 150 degrees to your right.",
+  "n": 2,
+  "where": "ultimate (ultimate)"
+ },
+ {
+  "text": "Facing north-east. The way out is west, 130 degrees to your left.",
+  "n": 2,
+  "where": "ultimate (ultimate)"
+ },
+ {
+  "text": "Facing east-north-east. The way out is west, 150 degrees to your left.",
+  "n": 8,
+  "where": "ultimate (ultimate)"
+ },
+ {
+  "text": "Facing north-north-east. The way out is west, 120 degrees to your left.",
+  "n": 2,
+  "where": "ultimate (ultimate)"
+ },
+ {
+  "text": "100 health. 10 points. 20 shots. 2 items. Facing north-north-east.",
+  "n": 2,
+  "where": "ultimate (ultimate)"
+ },
+ {
+  "text": "North. Open to the border, 8 steps, into a battle area. The way out is west, to your left.",
+  "n": 3,
+  "where": "ultimate (ultimate)"
+ },
+ {
+  "text": "Facing north-north-west. The way out is west, 60 degrees to your left.",
+  "n": 4,
+  "where": "ultimate (ultimate)"
+ },
+ {
+  "text": "100 health. 10 points. 20 shots. 2 items. Facing north-north-west.",
+  "n": 3,
+  "where": "ultimate (ultimate)"
+ },
+ {
+  "text": "West, the way out. Open to the border, 1 step, into an island. Walk 2 steps this way, and you are there.",
+  "n": 5,
+  "where": "ultimate (ultimate)"
+ },
+ {
+  "text": "100 health. 10 points. 20 shots. 2 items. Facing west.",
+  "n": 3,
+  "where": "ultimate (ultimate)"
+ },
+ {
+  "text": "Facing west-south-west. The way out is west, 30 degrees to your right.",
+  "n": 1,
+  "where": "ultimate (ultimate)"
+ },
+ {
+  "text": "100 health. 10 points. 20 shots. 2 items. Facing west-south-west.",
+  "n": 1,
+  "where": "ultimate (ultimate)"
+ },
+ {
+  "text": "Facing south-west. The way out is west, 50 degrees to your right.",
+  "n": 2,
+  "where": "ultimate (ultimate)"
+ },
+ {
+  "text": "100 health. 10 points. 20 shots. 2 items. Facing south-west.",
+  "n": 2,
+  "where": "ultimate (ultimate)"
+ },
+ {
+  "text": "100 health. 10 points. 19 shots. 2 items. Facing west-south-west.",
+  "n": 1,
+  "where": "ultimate (ultimate)"
+ },
+ {
+  "text": "100 health. 10 points. 18 shots. 2 items. Facing north-north-west.",
+  "n": 1,
+  "where": "ultimate (ultimate)"
+ },
+ {
+  "text": "100 health. 10 points. 19 shots. 2 items. Facing north.",
+  "n": 2,
+  "where": "ultimate (ultimate)"
+ },
+ {
+  "text": "100 health. 10 points. 17 shots. 2 items. Facing north.",
+  "n": 1,
+  "where": "ultimate (ultimate)"
+ },
+ {
+  "text": "100 health. 10 points. 19 shots. 2 items. Facing east-north-east.",
+  "n": 1,
+  "where": "ultimate (ultimate)"
+ },
+ {
+  "text": "100 health. 10 points. 19 shots. 2 items. Facing west-north-west.",
+  "n": 2,
+  "where": "ultimate (ultimate)"
+ },
+ {
+  "text": "100 health. 10 points. 19 shots. 2 items. Facing north-north-west.",
+  "n": 1,
+  "where": "ultimate (ultimate)"
+ },
+ {
+  "text": "Compass on. You are in a safe zone. The way out is 17 steps away, starting north, to your right. Nearby: ammo, 16 steps away, starting north, to your right. West. Open for 18 steps, then a wall; the edge of the world is 19 steps away.",
+  "n": 1,
+  "where": "ultimate (ultimate)"
+ },
+ {
+  "text": "West. Open for 18 steps, then a wall; the edge of the world is 19 steps away. The way out is north, to your right.",
+  "n": 2,
+  "where": "ultimate (ultimate)"
+ },
+ {
+  "text": "Facing south-south-west. The way out is north, 150 degrees to your right.",
+  "n": 10,
+  "where": "ultimate (ultimate)"
+ },
+ {
+  "text": "Facing south-west. The way out is north, 130 degrees to your right.",
+  "n": 3,
+  "where": "ultimate (ultimate)"
+ },
+ {
+  "text": "Facing west-south-west. The way out is north, 120 degrees to your right.",
+  "n": 10,
+  "where": "ultimate (ultimate)"
+ },
+ {
+  "text": "South. Open for 21 steps, then a wall; the edge of the world is 22 steps away. The way out is north, behind you.",
+  "n": 5,
+  "where": "ultimate (ultimate)"
+ },
+ {
+  "text": "Facing south-south-east. The way out is north, 150 degrees to your left.",
+  "n": 2,
+  "where": "ultimate (ultimate)"
+ },
+ {
+  "text": "Facing east-south-east. The way out is north, 120 degrees to your left.",
+  "n": 4,
+  "where": "ultimate (ultimate)"
+ },
+ {
+  "text": "Compass on. You are in a safe zone. The way out is 19 steps away, starting north, 150 degrees to your left. Nearby: ammo, 14 steps away, starting north, 150 degrees to your left. Facing south-south-east.",
+  "n": 1,
+  "where": "ultimate (ultimate)"
+ },
+ {
+  "text": "Facing south. The way out is north, 170 degrees to your left.",
+  "n": 2,
+  "where": "ultimate (ultimate)"
+ },
+ {
+  "text": "100 health. 10 points. 19 shots. 2 items. Facing south-south-east.",
+  "n": 1,
+  "where": "ultimate (ultimate)"
+ },
+ {
+  "text": "100 health. 10 points. 20 shots. 2 items. Facing south-south-west.",
+  "n": 2,
+  "where": "ultimate (ultimate)"
+ },
+ {
+  "text": "Compass on. You are in a safe zone. The way out is 23 steps away, starting north, 150 degrees to your left. Nearby: ammo, 18 steps away, starting north, 150 degrees to your left. Facing south-south-east.",
+  "n": 1,
+  "where": "ultimate (ultimate)"
+ },
+ {
+  "text": "100 health. 10 points. 20 shots. 0 items. Facing east-south-east.",
+  "n": 6,
+  "where": "ultimate (ultimate)"
+ },
+ {
+  "text": "100 health. 10 points. 20 shots. 0 items. Facing east.",
+  "n": 2,
+  "where": "ultimate (ultimate)"
+ },
+ {
+  "text": "100 health. 10 points. 20 shots. 0 items. Facing east-north-east.",
+  "n": 2,
+  "where": "ultimate (ultimate)"
+ },
+ {
+  "text": "100 health. 10 points. 20 shots. 0 items. Facing south-south-east.",
+  "n": 1,
+  "where": "ultimate (ultimate)"
+ },
+ {
+  "text": "100 health. 0 points. 20 shots. 3 items. Facing west-north-west.",
+  "n": 5,
+  "where": "ultimate (ultimate)"
+ },
+ {
+  "text": "100 health. 0 points. 19 shots. 3 items. Facing north-north-west.",
+  "n": 1,
+  "where": "ultimate (ultimate)"
+ },
+ {
+  "text": "100 health. 0 points. 19 shots. 3 items. Facing west-north-west.",
+  "n": 1,
+  "where": "ultimate (ultimate)"
+ },
+ {
+  "text": "Compass on. You are in a safe zone. The way out is 8 steps away, starting south, 150 degrees to your left. Nothing to pick up nearby. Facing north-north-west.",
+  "n": 1,
+  "where": "ultimate (ultimate)"
+ },
+ {
+  "text": "Facing north-north-west. The way out is south, 150 degrees to your left.",
+  "n": 1,
+  "where": "ultimate (ultimate)"
+ },
+ {
+  "text": "North. A wall; the edge of the world is 1 step away. The way out is south, behind you.",
+  "n": 6,
+  "where": "ultimate (ultimate)"
+ },
+ {
+  "text": "100 health. 0 points. 19 shots. 3 items. Facing west.",
+  "n": 2,
+  "where": "ultimate (ultimate)"
+ },
+ {
+  "text": "100 health. 0 points. 20 shots. 3 items. Facing west.",
+  "n": 2,
+  "where": "ultimate (ultimate)"
+ },
+ {
+  "text": "100 health. 0 points. 17 shots. 3 items. Facing west-south-west.",
+  "n": 1,
+  "where": "ultimate (ultimate)"
+ },
+ {
+  "text": "Compass on. You are in a safe zone. The way out is 6 steps away, starting south, 120 degrees to your left. Nothing to pick up nearby. Facing west-north-west.",
+  "n": 1,
+  "where": "ultimate (ultimate)"
+ },
+ {
+  "text": "Facing north-west. The way out is south, 140 degrees to your left.",
+  "n": 3,
+  "where": "ultimate (ultimate)"
+ },
+ {
+  "text": "Facing west-north-west. The way out is south, 120 degrees to your left.",
+  "n": 1,
+  "where": "ultimate (ultimate)"
+ },
+ {
+  "text": "Facing west-north-west. The way out is south, 110 degrees to your left.",
+  "n": 1,
+  "where": "ultimate (ultimate)"
+ },
+ {
+  "text": "100 health. 0 points. 20 shots. 3 items. Facing south-west.",
+  "n": 1,
+  "where": "ultimate (ultimate)"
+ },
+ {
+  "text": "West. A wall. Beyond, a safe zone, 1 step away, then a battle area. The way out is south, to your left.",
+  "n": 9,
+  "where": "ultimate (ultimate)"
+ },
+ {
+  "text": "100 health. 0 points. 20 shots. 3 items. Facing north-north-west.",
+  "n": 2,
+  "where": "ultimate (ultimate)"
+ },
+ {
+  "text": "Compass on. You are on an island. The safe zone is 105 steps away, starting south, 120 degrees to your left. Nearby: the elevator, 21 steps away, starting east, 150 degrees to your right; ammo, 53 steps away, starting south, 120 degrees to your left. Facing west-north-west.",
+  "n": 1,
+  "where": "ultimate (ultimate)"
+ },
+ {
+  "text": "Facing west-north-west. The way to the safe zone is south, 120 degrees to your left.",
+  "n": 21,
+  "where": "ultimate (ultimate)"
+ },
+ {
+  "text": "Facing north-west. The way to the safe zone is south, 145 degrees to your left.",
+  "n": 2,
+  "where": "ultimate (ultimate)"
+ },
+ {
+  "text": "100 health. 0 points. 20 shots. 3 items. Facing north-west.",
+  "n": 1,
+  "where": "ultimate (ultimate)"
+ },
+ {
+  "text": "Compass on. You are on an island. The safe zone is 113 steps away, starting south, 150 degrees to your left. Nearby: ammo, 61 steps away, starting south, 150 degrees to your left. Facing north-north-west.",
+  "n": 1,
+  "where": "ultimate (ultimate)"
+ },
+ {
+  "text": "Facing north-north-west. The way to the safe zone is south, 150 degrees to your left.",
+  "n": 16,
+  "where": "ultimate (ultimate)"
+ },
+ {
+  "text": "North. Open for 3 steps, then the island's edge; the edge of the world is 4 steps away. The way to the safe zone is south, behind you.",
+  "n": 1,
+  "where": "ultimate (ultimate)"
+ },
+ {
+  "text": "100 health. 0 points. 20 shots. 3 items. Facing north.",
+  "n": 1,
+  "where": "ultimate (ultimate)"
+ },
+ {
+  "text": "100 health. 0 points. 20 shots. 3 items. Facing north-north-east.",
+  "n": 1,
+  "where": "ultimate (ultimate)"
+ },
+ {
+  "text": "Facing east-north-east. The way to the safe zone is south, 120 degrees to your right.",
+  "n": 8,
+  "where": "ultimate (ultimate)"
+ },
+ {
+  "text": "Facing north-north-east. The way to the safe zone is south, 150 degrees to your right.",
+  "n": 2,
+  "where": "ultimate (ultimate)"
+ },
+ {
+  "text": "Facing east. The way to the safe zone is south, to your right.",
+  "n": 2,
+  "where": "ultimate (ultimate)"
+ },
+ {
+  "text": "East. Open for 32 steps, then the island's edge; the edge of the world is 33 steps away. The way to the safe zone is south, to your right.",
+  "n": 2,
+  "where": "ultimate (ultimate)"
+ },
+ {
+  "text": "Compass on. You are on an island. The safe zone is 116 steps away, starting south, to your right. Nearby: the elevator, 26 steps away, starting east, straight ahead; ammo, 64 steps away, starting south, to your right. East. Open for 29 steps, then the island's edge; the edge of the world is 30 steps away.",
+  "n": 1,
+  "where": "ultimate (ultimate)"
+ },
+ {
+  "text": "East. Open for 29 steps, then the island's edge; the edge of the world is 30 steps away. The way to the safe zone is south, to your right.",
+  "n": 1,
+  "where": "ultimate (ultimate)"
+ },
+ {
+  "text": "100 health. 0 points. 20 shots. 3 items. Facing east-south-east.",
+  "n": 1,
+  "where": "ultimate (ultimate)"
+ },
+ {
+  "text": "100 health. 15 points. 18 shots. 3 items. Facing south-south-east.",
+  "n": 1,
+  "where": "ultimate (ultimate)"
+ },
+ {
+  "text": "100 health. 15 points. 19 shots. 3 items. Facing east.",
+  "n": 1,
+  "where": "ultimate (ultimate)"
+ },
+ {
+  "text": "100 health. 15 points. 18 shots. 3 items. Facing east.",
+  "n": 1,
+  "where": "ultimate (ultimate)"
+ },
+ {
+  "text": "100 health. 15 points. 19 shots. 3 items. Facing east-south-east.",
+  "n": 1,
+  "where": "ultimate (ultimate)"
+ },
+ {
+  "text": "100 health. 15 points. 20 shots. 3 items. Facing east-south-east.",
+  "n": 2,
+  "where": "ultimate (ultimate)"
+ },
+ {
+  "text": "Compass on. You are in a battle area. The safe zone is 156 steps away, starting north, behind you. Nothing to pick up nearby. South. A wall; the edge of the world is 1 step away.",
+  "n": 1,
+  "where": "ultimate (ultimate)"
+ },
+ {
+  "text": "South. A wall; the edge of the world is 1 step away. The way to the safe zone is north, behind you.",
+  "n": 8,
+  "where": "ultimate (ultimate)"
+ },
+ {
+  "text": "100 health. 15 points. 20 shots. 3 items. Facing south.",
+  "n": 2,
+  "where": "ultimate (ultimate)"
+ },
+ {
+  "text": "Facing south-south-east. The way to the safe zone is north, 150 degrees to your left.",
+  "n": 2,
+  "where": "ultimate (ultimate)"
+ },
+ {
+  "text": "Facing east. The way to the safe zone is north, 85 degrees to your left.",
+  "n": 2,
+  "where": "ultimate (ultimate)"
+ },
+ {
+  "text": "Facing east-north-east. The way to the safe zone is north, 60 degrees to your left.",
+  "n": 2,
+  "where": "ultimate (ultimate)"
+ },
+ {
+  "text": "100 health. 15 points. 20 shots. 3 items. Facing east-north-east.",
+  "n": 1,
+  "where": "ultimate (ultimate)"
+ },
+ {
+  "text": "Facing east-south-east. The way to the safe zone is north, 120 degrees to your left.",
+  "n": 3,
+  "where": "ultimate (ultimate)"
+ },
+ {
+  "text": "Facing west-south-west. The way to the safe zone is north, 120 degrees to your right.",
+  "n": 6,
+  "where": "ultimate (ultimate)"
+ },
+ {
+  "text": "Facing south-south-west. The way to the safe zone is north, 150 degrees to your right.",
+  "n": 8,
+  "where": "ultimate (ultimate)"
+ },
+ {
+  "text": "West. Open for 32 steps, then a wall; the edge of the world is 33 steps away. The way to the safe zone is north, to your right.",
+  "n": 6,
+  "where": "ultimate (ultimate)"
+ },
+ {
+  "text": "100 health. 10 points. 20 shots. 2 items. Facing west-north-west.",
+  "n": 1,
+  "where": "ultimate (ultimate)"
+ },
+ {
+  "text": "100 health. 30 points. 20 shots. 1 item. Facing west-south-west.",
+  "n": 1,
+  "where": "ultimate (ultimate)"
+ },
+ {
+  "text": "100 health. 30 points. 20 shots. 1 item. Facing west.",
+  "n": 1,
+  "where": "ultimate (ultimate)"
+ },
+ {
+  "text": "100 health. 30 points. 20 shots. 1 item. Facing south.",
+  "n": 1,
+  "where": "ultimate (ultimate)"
+ },
+ {
+  "text": "100 health. 35 points. 24 shots. 1 item. Facing west-north-west.",
+  "n": 2,
+  "where": "ultimate (ultimate)"
+ },
+ {
+  "text": "Compass on. You are in a tower area. The safe zone is 20 steps away, starting east, 150 degrees to your right. Nearby: a tower item, 19 steps away, starting north, 60 degrees to your right. Facing west-north-west.",
+  "n": 1,
+  "where": "ultimate (ultimate)"
+ },
+ {
+  "text": "North. Open for 16 steps, then a wall; the edge of the world is 17 steps away. The way to the safe zone is east, to your right.",
+  "n": 8,
+  "where": "ultimate (ultimate)"
+ },
+ {
+  "text": "Compass on. You are on an island. The safe zone is 51 steps away, starting south, 125 degrees to your left. Nearby: a 60 credit, 6 steps away, starting north, 55 degrees to your right; the elevator, 19 steps away, starting north, 55 degrees to your right. Facing north-west.",
+  "n": 1,
+  "where": "ultimate (ultimate)"
+ },
+ {
+  "text": "Facing north-west. The way to the safe zone is south, 125 degrees to your left.",
+  "n": 2,
+  "where": "ultimate (ultimate)"
+ },
+ {
+  "text": "Facing west-north-west. The way to the safe zone is south, 100 degrees to your left.",
+  "n": 1,
+  "where": "ultimate (ultimate)"
+ },
+ {
+  "text": "100 health. 35 points. 20 shots. 1 item. Facing west-north-west.",
+  "n": 1,
+  "where": "ultimate (ultimate)"
+ },
+ {
+  "text": "Facing west-south-west. The way to the safe zone is south, 60 degrees to your left.",
+  "n": 22,
+  "where": "ultimate (ultimate)"
+ },
+ {
+  "text": "Facing south-south-west. The way to the safe zone is south, 30 degrees to your left.",
+  "n": 6,
+  "where": "ultimate (ultimate)"
+ },
+ {
+  "text": "Facing south-south-west. The way to the safe zone is south, 10 degrees to your left.",
+  "n": 2,
+  "where": "ultimate (ultimate)"
+ },
+ {
+  "text": "100 health. 35 points. 20 shots. 1 item. Facing south-south-west.",
+  "n": 1,
+  "where": "ultimate (ultimate)"
+ },
+ {
+  "text": "South, the way to the safe zone. Open to the border, 10 steps, into a battle area. Walk 17 steps this way, then turn right, to face west.",
+  "n": 3,
+  "where": "ultimate (ultimate)"
+ },
+ {
+  "text": "Facing south-south-east. The way to the safe zone is south, 30 degrees to your right.",
+  "n": 2,
+  "where": "ultimate (ultimate)"
+ },
+ {
+  "text": "Facing east. The way to the safe zone is south, 95 degrees to your right.",
+  "n": 1,
+  "where": "ultimate (ultimate)"
+ },
+ {
+  "text": "100 health. 35 points. 20 shots. 1 item. Facing east.",
+  "n": 1,
+  "where": "ultimate (ultimate)"
+ },
+ {
+  "text": "100 health. 35 points. 20 shots. 1 item. Facing east-north-east.",
+  "n": 2,
+  "where": "ultimate (ultimate)"
+ },
+ {
+  "text": "Facing east-south-east. The way to the safe zone is south, 60 degrees to your right.",
+  "n": 4,
+  "where": "ultimate (ultimate)"
+ },
+ {
+  "text": "100 health. 35 points. 20 shots. 1 item. Facing east-south-east.",
+  "n": 1,
+  "where": "ultimate (ultimate)"
+ },
+ {
+  "text": "Facing south. The way to the safe zone is south, 5 degrees to your left.",
+  "n": 4,
+  "where": "ultimate (ultimate)"
+ },
+ {
+  "text": "Facing south-south-west. The way to the safe zone is south, 20 degrees to your left.",
+  "n": 2,
+  "where": "ultimate (ultimate)"
+ },
+ {
+  "text": "Facing south-west. The way to the safe zone is south, 45 degrees to your left.",
+  "n": 3,
+  "where": "ultimate (ultimate)"
+ },
+ {
+  "text": "West. Open for 4 steps, then the island's edge; the edge of the world is 5 steps away. The way to the safe zone is south, to your left.",
+  "n": 8,
+  "where": "ultimate (ultimate)"
+ },
+ {
+  "text": "Facing west-south-west. The way to the safe zone is south, 70 degrees to your left.",
+  "n": 2,
+  "where": "ultimate (ultimate)"
+ },
+ {
+  "text": "100 health. 35 points. 20 shots. 1 item. Facing west-south-west.",
+  "n": 1,
+  "where": "ultimate (ultimate)"
+ },
+ {
+  "text": "100 health. 35 points. 20 shots. 1 item. Facing west.",
+  "n": 2,
+  "where": "ultimate (ultimate)"
+ },
+ {
+  "text": "Compass on. You are on an island. The safe zone is 48 steps away, starting south, 60 degrees to your left. Nearby: a 60 credit, 5 steps away, starting north, 120 degrees to your right; the elevator, 22 steps away, starting north, 120 degrees to your right. Facing west-south-west.",
+  "n": 1,
+  "where": "ultimate (ultimate)"
+ },
+ {
+  "text": "West. Open for 2 steps, then the island's edge; the edge of the world is 3 steps away. The way to the safe zone is south, to your left.",
+  "n": 7,
+  "where": "ultimate (ultimate)"
+ },
+ {
+  "text": "100 health. 125 points. 19 shots. 1 item. Facing west-north-west.",
+  "n": 1,
+  "where": "ultimate (ultimate)"
+ },
+ {
+  "text": "100 health. 125 points. 20 shots. 1 item. Facing west-north-west.",
+  "n": 1,
+  "where": "ultimate (ultimate)"
+ },
+ {
+  "text": "100 health. 125 points. 18 shots. 1 item. Facing west-north-west.",
+  "n": 1,
+  "where": "ultimate (ultimate)"
+ },
+ {
+  "text": "100 health. 125 points. 19 shots. 1 item. Facing west.",
+  "n": 2,
+  "where": "ultimate (ultimate)"
+ },
+ {
+  "text": "100 health. 125 points. 20 shots. 1 item. Facing south.",
+  "n": 2,
+  "where": "ultimate (ultimate)"
+ },
+ {
+  "text": "Compass on. You are on an island. The safe zone is 53 steps away, starting south, 30 degrees to your left. Nearby: the elevator, 17 steps away, starting north, 150 degrees to your right. Facing south-south-west.",
+  "n": 1,
+  "where": "ultimate (ultimate)"
+ },
+ {
+  "text": "Facing south-east. The way to the safe zone is south, 35 degrees to your right.",
+  "n": 1,
+  "where": "ultimate (ultimate)"
+ },
+ {
+  "text": "100 health. 125 points. 20 shots. 1 item. Facing south-east.",
+  "n": 1,
+  "where": "ultimate (ultimate)"
+ },
+ {
+  "text": "South, the way to the safe zone. Open to the border, 16 steps, into a battle area. Walk 23 steps this way, then turn right, to face west.",
+  "n": 3,
+  "where": "ultimate (ultimate)"
+ },
+ {
+  "text": "100 health. 125 points. 20 shots. 1 item. Facing west-south-west.",
+  "n": 3,
+  "where": "ultimate (ultimate)"
+ },
+ {
+  "text": "Compass on. You are in a labyrinth. The safe zone is 77 steps away, starting north, 120 degrees to your right. Nearby: ammo, 13 steps away, starting north, 120 degrees to your right. Facing west-south-west.",
+  "n": 1,
+  "where": "ultimate (ultimate)"
+ },
+ {
+  "text": "West. Open for 10 steps, then a wall. Beyond, a battle area, 21 steps away. The way to the safe zone is north, to your right.",
+  "n": 3,
+  "where": "ultimate (ultimate)"
+ },
+ {
+  "text": "Facing west. The way to the safe zone is north, 80 degrees to your right.",
+  "n": 2,
+  "where": "ultimate (ultimate)"
+ },
+ {
+  "text": "3 shots. 4 enemies left. Key not found. Clock 297 seconds. 0 points total. Facing north-north-west.",
+  "n": 1,
+  "where": "chaos (island)"
+ },
+ {
+  "text": "0 shots. 4 enemies left. Key not found. Clock 297 seconds. 0 points total. Facing north.",
+  "n": 1,
+  "where": "chaos (island)"
+ },
+ {
+  "text": "0 shots. 4 enemies left. Key not found. Clock 296 seconds. 0 points total. Facing north-north-east.",
+  "n": 1,
+  "where": "chaos (island)"
+ },
+ {
+  "text": "0 shots. 4 enemies left. Key not found. Clock 295 seconds. 0 points total. Facing north-north-west.",
+  "n": 1,
+  "where": "chaos (island)"
+ },
+ {
+  "text": "0 shots. 4 enemies left. Key not found. Clock 295 seconds. 0 points total. Facing west-north-west.",
+  "n": 1,
+  "where": "chaos (island)"
+ },
+ {
+  "text": "0 shots. 4 enemies left. Key not found. Clock 294 seconds. 0 points total. Facing west-south-west.",
+  "n": 1,
+  "where": "chaos (island)"
+ },
+ {
+  "text": "0 shots. 4 enemies left. Key not found. Clock 293 seconds. 0 points total. Facing south-south-east.",
+  "n": 1,
+  "where": "chaos (island)"
+ },
+ {
+  "text": "0 shots. 4 enemies left. Key not found. Clock 292 seconds. 0 points total. Facing south-south-east.",
+  "n": 1,
+  "where": "chaos (island)"
+ },
+ {
+  "text": "0 shots. 4 enemies left. Key not found. Clock 290 seconds. 0 points total. Facing north-north-east.",
+  "n": 1,
+  "where": "chaos (island)"
+ },
+ {
+  "text": "0 shots. 4 enemies left. Key not found. Clock 289 seconds. 0 points total. Facing east.",
+  "n": 2,
+  "where": "chaos (island)"
+ },
+ {
+  "text": "0 shots. 4 enemies left. Key not found. Clock 288 seconds. 0 points total. Facing east.",
+  "n": 1,
+  "where": "chaos (island)"
+ },
+ {
+  "text": "0 shots. 4 enemies left. Key not found. Clock 288 seconds. 0 points total. Facing east-south-east.",
+  "n": 1,
+  "where": "chaos (island)"
+ },
+ {
+  "text": "297 seconds left. 0 points total. Facing north.",
+  "n": 2,
+  "where": "chaos (standard)"
+ },
+ {
+  "text": "297 seconds left. 0 points total. Facing east-north-east.",
+  "n": 1,
+  "where": "chaos (standard)"
+ },
+ {
+  "text": "296 seconds left. 0 points total. Facing east-north-east.",
+  "n": 1,
+  "where": "chaos (standard)"
+ },
+ {
+  "text": "294 seconds left. 0 points total. Facing west.",
+  "n": 2,
+  "where": "chaos (standard)"
+ },
+ {
+  "text": "293 seconds left. 0 points total. Facing north-north-east.",
+  "n": 1,
+  "where": "chaos (standard)"
+ },
+ {
+  "text": "292 seconds left. 0 points total. Facing north.",
+  "n": 1,
+  "where": "chaos (standard)"
+ },
+ {
+  "text": "292 seconds left. 0 points total. Facing north-north-west.",
+  "n": 1,
+  "where": "chaos (standard)"
+ },
+ {
+  "text": "292 seconds left. 0 points total. Facing west-north-west.",
+  "n": 1,
+  "where": "chaos (standard)"
+ },
+ {
+  "text": "291 seconds left. 0 points total. Facing west.",
+  "n": 1,
+  "where": "chaos (standard)"
+ },
+ {
+  "text": "289 seconds left. 0 points total. Facing west.",
+  "n": 1,
+  "where": "chaos (standard)"
+ },
+ {
+  "text": "288 seconds left. 0 points total. Facing south-south-east.",
+  "n": 1,
+  "where": "chaos (standard)"
+ },
+ {
+  "text": "287 seconds left. 0 points total. Facing south.",
+  "n": 1,
+  "where": "chaos (standard)"
+ },
+ {
+  "text": "0 shots. 4 enemies left. Key not found. Clock 295 seconds. 0 points total. Facing north-north-east.",
+  "n": 2,
+  "where": "chaos (island)"
+ },
+ {
+  "text": "0 shots. 4 enemies left. Key not found. Clock 294 seconds. 0 points total. Facing north.",
+  "n": 1,
+  "where": "chaos (island)"
+ },
+ {
+  "text": "0 shots. 4 enemies left. Key not found. Clock 294 seconds. 0 points total. Facing north-north-east.",
+  "n": 1,
+  "where": "chaos (island)"
+ },
+ {
+  "text": "0 shots. 4 enemies left. Key not found. Clock 293 seconds. 0 points total. Facing north-north-west.",
+  "n": 1,
+  "where": "chaos (island)"
+ },
+ {
+  "text": "0 shots. 4 enemies left. Key not found. Clock 293 seconds. 0 points total. Facing west.",
+  "n": 1,
+  "where": "chaos (island)"
+ },
+ {
+  "text": "0 shots. 4 enemies left. Key not found. Clock 292 seconds. 0 points total. Facing west-south-west.",
+  "n": 1,
+  "where": "chaos (island)"
+ },
+ {
+  "text": "0 shots. 4 enemies left. Key not found. Clock 291 seconds. 0 points total. Facing south.",
+  "n": 2,
+  "where": "chaos (island)"
+ },
+ {
+  "text": "0 shots. 4 enemies left. Key not found. Clock 291 seconds. 0 points total. Facing west-south-west.",
+  "n": 1,
+  "where": "chaos (island)"
+ },
+ {
+  "text": "0 shots. 4 enemies left. Key not found. Clock 291 seconds. 0 points total. Facing west.",
+  "n": 1,
+  "where": "chaos (island)"
+ },
+ {
+  "text": "0 shots. 4 enemies left. Key not found. Clock 289 seconds. 0 points total. Facing east-south-east.",
+  "n": 1,
+  "where": "chaos (island)"
+ },
+ {
+  "text": "0 shots. 4 enemies left. Key not found. Clock 288 seconds. 0 points total. Facing south-south-west.",
+  "n": 1,
+  "where": "chaos (island)"
+ },
+ {
+  "text": "0 shots. 4 enemies left. Key not found. Clock 286 seconds. 0 points total. Facing east.",
+  "n": 3,
+  "where": "chaos (island)"
+ },
+ {
+  "text": "Round 1. 3 pairs left. 0 points. 238 seconds left.",
+  "n": 2,
+  "where": "event animal-pairs.json (event)"
+ },
+ {
+  "text": "Round 1. 3 pairs left. 0 points. 236 seconds left.",
+  "n": 1,
+  "where": "event animal-pairs.json (event)"
+ },
+ {
+  "text": "Round 1. 3 pairs left. 0 points. 235 seconds left.",
+  "n": 2,
+  "where": "event animal-pairs.json (event)"
+ },
+ {
+  "text": "Round 1. Listen to the tune. 0 points.",
+  "n": 5,
+  "where": "event barnyard-band.json (event)"
+ },
+ {
+  "text": "Round 1. Note 1 of 2. 0 points.",
+  "n": 3,
+  "where": "event barnyard-band.json (event)"
+ },
+ {
+  "text": "0 animals caught. 0 points. 8 left. 177 seconds left.",
+  "n": 2,
+  "where": "event barnyard-roundup.json (event)"
+ },
+ {
+  "text": "0 animals caught. 0 points. 8 left. 174 seconds left.",
+  "n": 3,
+  "where": "event barnyard-roundup.json (event)"
+ },
+ {
+  "text": "0 hits. 3 lives. 0 points.",
+  "n": 8,
+  "where": "event bat-and-ball.json (event)"
+ },
+ {
+  "text": "0 gems, 0 points. 1 beast about. 89 seconds left.",
+  "n": 1,
+  "where": "event beast-cave.json (event)"
+ },
+ {
+  "text": "0 gems, 4 points. 1 beast about. 85 seconds left.",
+  "n": 3,
+  "where": "event beast-cave.json (event)"
+ },
+ {
+  "text": "0 gems, 5 points. 1 beast about. 84 seconds left.",
+  "n": 2,
+  "where": "event beast-cave.json (event)"
+ },
+ {
+  "text": "0 bells, 0 points. 4 left to find. Level 1.",
+  "n": 10,
+  "where": "event bell-garden.json (event)"
+ },
+ {
+  "text": "Round 1. 3 left in this round. 0 points. 239 seconds left.",
+  "n": 4,
+  "where": "event bell-scale.json (event)"
+ },
+ {
+  "text": "Round 1. 3 left in this round. 0 points. 238 seconds left.",
+  "n": 2,
+  "where": "event bell-scale.json (event)"
+ },
+ {
+  "text": "Round 1. 3 left in this round. 0 points. 237 seconds left.",
+  "n": 6,
+  "where": "event bell-scale.json (event)"
+ },
+ {
+  "text": "Round 1. 3 left in this round. 0 points. 236 seconds left.",
+  "n": 4,
+  "where": "event bell-scale.json (event)"
+ },
+ {
+  "text": "Round 1. 3 left in this round. 0 points. 235 seconds left.",
+  "n": 4,
+  "where": "event bell-scale.json (event)"
+ },
+ {
+  "text": "Round 1. 3 left in this round. 0 points. 234 seconds left.",
+  "n": 4,
+  "where": "event bell-scale.json (event)"
+ },
+ {
+  "text": "0 balloons, 0 points. 118 seconds left.",
+  "n": 1,
+  "where": "event birthday-balloons.json (event)"
+ },
+ {
+  "text": "0 balloons, 0 points. 117 seconds left.",
+  "n": 2,
+  "where": "event birthday-balloons.json (event)"
+ },
+ {
+  "text": "0 balloons, 0 points. 116 seconds left.",
+  "n": 1,
+  "where": "event birthday-balloons.json (event)"
+ },
+ {
+  "text": "0 balloons, 0 points. 114 seconds left.",
+  "n": 2,
+  "where": "event birthday-balloons.json (event)"
+ },
+ {
+  "text": "0 pumpkins, 0 points. Shelter 1. 43 seconds before the storm.",
+  "n": 3,
+  "where": "event blizzard-run.json (event)"
+ },
+ {
+  "text": "0 pumpkins, 0 points. Shelter 1. 42 seconds before the storm.",
+  "n": 1,
+  "where": "event blizzard-run.json (event)"
+ },
+ {
+  "text": "0 pumpkins, 0 points. Shelter 1. 41 seconds before the storm.",
+  "n": 1,
+  "where": "event blizzard-run.json (event)"
+ },
+ {
+  "text": "0 pumpkins, 0 points. Shelter 1. 40 seconds before the storm.",
+  "n": 1,
+  "where": "event blizzard-run.json (event)"
+ },
+ {
+  "text": "0 defused. 24 seconds on the fuse. 3 lives left. 0 points.",
+  "n": 1,
+  "where": "event bomb-squad.json (event)"
+ },
+ {
+  "text": "0 defused. 22 seconds on the fuse. 3 lives left. 0 points.",
+  "n": 1,
+  "where": "event bomb-squad.json (event)"
+ },
+ {
+  "text": "0 defused. 21 seconds on the fuse. 3 lives left. 0 points.",
+  "n": 3,
+  "where": "event bomb-squad.json (event)"
+ },
+ {
+  "text": "0 defused. 20 seconds on the fuse. 3 lives left. 0 points.",
+  "n": 2,
+  "where": "event bomb-squad.json (event)"
+ },
+ {
+  "text": "0 defused. 19 seconds on the fuse. 3 lives left. 0 points.",
+  "n": 1,
+  "where": "event bomb-squad.json (event)"
+ },
+ {
+  "text": "Trip 1. The friend has 3 lives. 0 points.",
+  "n": 2,
+  "where": "event bring-the-lamb-home.json (event)"
+ },
+ {
+  "text": "Trip 1. The friend has 2 lives. 0 points.",
+  "n": 1,
+  "where": "event bring-the-lamb-home.json (event)"
+ },
+ {
+  "text": "Level 1. 0 of 1 real bell found. 0 points.",
+  "n": 15,
+  "where": "event call-of-fate.json (event)"
+ },
+ {
+  "text": "0 flags delivered. 0 points. 149 seconds left.",
+  "n": 1,
+  "where": "event capture-the-flag.json (event)"
+ },
+ {
+  "text": "0 flags delivered. 0 points. 148 seconds left.",
+  "n": 3,
+  "where": "event capture-the-flag.json (event)"
+ },
+ {
+  "text": "0 flags delivered. 0 points. 147 seconds left.",
+  "n": 1,
+  "where": "event capture-the-flag.json (event)"
+ },
+ {
+  "text": "0 flags delivered. 0 points. 146 seconds left.",
+  "n": 3,
+  "where": "event capture-the-flag.json (event)"
+ },
+ {
+  "text": "0 flags delivered. 0 points. 144 seconds left.",
+  "n": 1,
+  "where": "event capture-the-flag.json (event)"
+ },
+ {
+  "text": "0 pieces, 0 points. 5 left to find. Level 1.",
+  "n": 11,
+  "where": "event carol-pieces.json (event)"
+ },
+ {
+  "text": "The treasure has 3 lives left. 2 raiders coming. 55 shots. 10 points. 179 seconds left.",
+  "n": 1,
+  "where": "event castle-siege.json (event)"
+ },
+ {
+  "text": "The treasure has 3 lives left. 2 raiders coming. 48 shots. 10 points. 177 seconds left.",
+  "n": 1,
+  "where": "event castle-siege.json (event)"
+ },
+ {
+  "text": "The treasure has 3 lives left. 2 raiders coming. 47 shots. 10 points. 177 seconds left.",
+  "n": 1,
+  "where": "event castle-siege.json (event)"
+ },
+ {
+  "text": "The treasure has 3 lives left. 2 raiders coming. 43 shots. 10 points. 176 seconds left.",
+  "n": 1,
+  "where": "event castle-siege.json (event)"
+ },
+ {
+  "text": "The treasure has 3 lives left. 2 raiders coming. 39 shots. 20 points. 176 seconds left.",
+  "n": 1,
+  "where": "event castle-siege.json (event)"
+ },
+ {
+  "text": "The treasure has 3 lives left. 2 raiders coming. 36 shots. 20 points. 176 seconds left.",
+  "n": 1,
+  "where": "event castle-siege.json (event)"
+ },
+ {
+  "text": "The treasure has 3 lives left. 2 raiders coming. 29 shots. 20 points. 175 seconds left.",
+  "n": 1,
+  "where": "event castle-siege.json (event)"
+ },
+ {
+  "text": "0 cats caught. 0 points. 6 left. 179 seconds left.",
+  "n": 1,
+  "where": "event cat-chase.json (event)"
+ },
+ {
+  "text": "0 cats caught. 0 points. 6 left. 178 seconds left.",
+  "n": 1,
+  "where": "event cat-chase.json (event)"
+ },
+ {
+  "text": "0 cats caught. 0 points. 6 left. 177 seconds left.",
+  "n": 1,
+  "where": "event cat-chase.json (event)"
+ },
+ {
+  "text": "0 cats caught. 0 points. 6 left. 175 seconds left.",
+  "n": 2,
+  "where": "event cat-chase.json (event)"
+ },
+ {
+  "text": "0 cats caught. 0 points. 6 left. 174 seconds left.",
+  "n": 2,
+  "where": "event cat-chase.json (event)"
+ },
+ {
+  "text": "0 carrots, 0 points. 3 hares about. 119 seconds left.",
+  "n": 1,
+  "where": "event catch-the-hares.json (event)"
+ },
+ {
+  "text": "0 carrots, 0 points. 3 hares about. 118 seconds left.",
+  "n": 2,
+  "where": "event catch-the-hares.json (event)"
+ },
+ {
+  "text": "0 carrots, 0 points. 3 hares about. 116 seconds left.",
+  "n": 2,
+  "where": "event catch-the-hares.json (event)"
+ },
+ {
+  "text": "0 carrots, 0 points. 3 hares about. 114 seconds left.",
+  "n": 1,
+  "where": "event catch-the-hares.json (event)"
+ },
+ {
+  "text": "0 catches. 5 treasures left. 0 points. 178 seconds left.",
+  "n": 5,
+  "where": "event catch-the-thief.json (event)"
+ },
+ {
+  "text": "0 catches. 5 treasures left. 0 points. 177 seconds left.",
+  "n": 1,
+  "where": "event catch-the-thief.json (event)"
+ },
+ {
+  "text": "0 catches. 5 treasures left. 0 points. 175 seconds left.",
+  "n": 1,
+  "where": "event catch-the-thief.json (event)"
+ },
+ {
+  "text": "0 catches. 5 treasures left. 0 points. 174 seconds left.",
+  "n": 4,
+  "where": "event catch-the-thief.json (event)"
+ },
+ {
+  "text": "0 presents, 0 points. 119 seconds left.",
+  "n": 1,
+  "where": "event christmas-presents.json (event)"
+ },
+ {
+  "text": "0 presents, 0 points. 118 seconds left.",
+  "n": 1,
+  "where": "event christmas-presents.json (event)"
+ },
+ {
+  "text": "0 presents, 0 points. 117 seconds left.",
+  "n": 4,
+  "where": "event christmas-presents.json (event)"
+ },
+ {
+  "text": "0 presents, 0 points. 115 seconds left.",
+  "n": 3,
+  "where": "event christmas-presents.json (event)"
+ },
+ {
+  "text": "0 presents, 0 points. 114 seconds left.",
+  "n": 4,
+  "where": "event christmas-presents.json (event)"
+ },
+ {
+  "text": "0 presents, 0 points. 113 seconds left.",
+  "n": 1,
+  "where": "event christmas-presents.json (event)"
+ },
+ {
+  "text": "0 checkpoints. 14 seconds to reach this one. 0 points.",
+  "n": 1,
+  "where": "event city-sprint.json (event)"
+ },
+ {
+  "text": "0 checkpoints. 13 seconds to reach this one. 0 points.",
+  "n": 1,
+  "where": "event city-sprint.json (event)"
+ },
+ {
+  "text": "0 checkpoints. 12 seconds to reach this one. 0 points.",
+  "n": 2,
+  "where": "event city-sprint.json (event)"
+ },
+ {
+  "text": "0 checkpoints. 11 seconds to reach this one. 0 points.",
+  "n": 1,
+  "where": "event city-sprint.json (event)"
+ },
+ {
+  "text": "0 checkpoints. 10 seconds to reach this one. 0 points.",
+  "n": 4,
+  "where": "event city-sprint.json (event)"
+ },
+ {
+  "text": "0 checkpoints. 9 seconds to reach this one. 0 points.",
+  "n": 1,
+  "where": "event city-sprint.json (event)"
+ },
+ {
+  "text": "0 sticks, 0 points. 179 seconds left. Warmth: 34 seconds.",
+  "n": 2,
+  "where": "event cold-night.json (event)"
+ },
+ {
+  "text": "0 sticks, 0 points. 178 seconds left. Warmth: 33 seconds.",
+  "n": 2,
+  "where": "event cold-night.json (event)"
+ },
+ {
+  "text": "0 sticks, 0 points. 177 seconds left. Warmth: 32 seconds.",
+  "n": 2,
+  "where": "event cold-night.json (event)"
+ },
+ {
+  "text": "0 sticks, 0 points. 176 seconds left. Warmth: 31 seconds.",
+  "n": 3,
+  "where": "event cold-night.json (event)"
+ },
+ {
+  "text": "0 sticks, 0 points. 175 seconds left. Warmth: 30 seconds.",
+  "n": 2,
+  "where": "event cold-night.json (event)"
+ },
+ {
+  "text": "0 sticks, 0 points. 174 seconds left. Warmth: 29 seconds.",
+  "n": 3,
+  "where": "event cold-night.json (event)"
+ },
+ {
+  "text": "0 cookies, 0 points. 1 guard about. 119 seconds left.",
+  "n": 2,
+  "where": "event cookie-raid.json (event)"
+ },
+ {
+  "text": "0 cookies, 0 points. 1 guard about. 118 seconds left.",
+  "n": 2,
+  "where": "event cookie-raid.json (event)"
+ },
+ {
+  "text": "0 cookies, 0 points. 1 guard about. 116 seconds left.",
+  "n": 3,
+  "where": "event cookie-raid.json (event)"
+ },
+ {
+  "text": "0 cookies, 0 points. 1 guard about. 115 seconds left.",
+  "n": 3,
+  "where": "event cookie-raid.json (event)"
+ },
+ {
+  "text": "0 cookies, 0 points. 1 guard about. 114 seconds left.",
+  "n": 1,
+  "where": "event cookie-raid.json (event)"
+ },
+ {
+  "text": "Round 1. 3 lives. 0 points.",
+  "n": 10,
+  "where": "event count-the-chimes.json (event)"
+ },
+ {
+  "text": "It was 2.",
+  "n": 1,
+  "where": "event count-the-chimes.json (event)"
+ },
+ {
+  "text": "Round 1. 2 lives. 0 points.",
+  "n": 8,
+  "where": "event count-the-chimes.json (event)"
+ },
+ {
+  "text": "Code 1. 0 of 3 right. 0 wrong tries. 0 points. 299 seconds left.",
+  "n": 1,
+  "where": "event crack-the-code.json (event)"
+ },
+ {
+  "text": "Code 1. 0 of 3 right. 0 wrong tries. 0 points. 298 seconds left.",
+  "n": 3,
+  "where": "event crack-the-code.json (event)"
+ },
+ {
+  "text": "Code 1. 0 of 3 right. 0 wrong tries. 0 points. 297 seconds left.",
+  "n": 1,
+  "where": "event crack-the-code.json (event)"
+ },
+ {
+  "text": "Code 1. 0 of 3 right. 0 wrong tries. 0 points. 296 seconds left.",
+  "n": 1,
+  "where": "event crack-the-code.json (event)"
+ },
+ {
+  "text": "Code 1. 0 of 3 right. 0 wrong tries. 0 points. 295 seconds left.",
+  "n": 2,
+  "where": "event crack-the-code.json (event)"
+ },
+ {
+  "text": "Code 1. 0 of 3 right. 0 wrong tries. 0 points. 294 seconds left.",
+  "n": 1,
+  "where": "event crack-the-code.json (event)"
+ },
+ {
+  "text": "Road 1. 3 lanes. 3 lives. 0 points.",
+  "n": 4,
+  "where": "event crossing-the-road.json (event)"
+ },
+ {
+  "text": "Road 2.",
+  "n": 1,
+  "where": "event crossing-the-road.json (event)"
+ },
+ {
+  "text": "Road 2. 4 lanes. 3 lives. 20 points.",
+  "n": 3,
+  "where": "event crossing-the-road.json (event)"
+ },
+ {
+  "text": "Round 1. 3 steps. 3 lives. 0 points.",
+  "n": 8,
+  "where": "event dance-steps.json (event)"
+ },
+ {
+  "text": "Round 1. 3 steps. 2 lives. 0 points.",
+  "n": 4,
+  "where": "event dance-steps.json (event)"
+ },
+ {
+  "text": "0 coins, 50 points. 0 shots. 0 dragons about. 145 seconds left.",
+  "n": 1,
+  "where": "event dragon-hoard.json (event)"
+ },
+ {
+  "text": "0 coins, 50 points. 0 shots. 0 dragons about. 144 seconds left.",
+  "n": 1,
+  "where": "event dragon-hoard.json (event)"
+ },
+ {
+  "text": "0 coins, 50 points. 0 shots. 0 dragons about. 143 seconds left.",
+  "n": 1,
+  "where": "event dragon-hoard.json (event)"
+ },
+ {
+  "text": "Room 1. Find the key. 0 points. 3 lives left.",
+  "n": 14,
+  "where": "event dungeon-keys.json (event)"
+ },
+ {
+  "text": "0 echoes, 0 points. 149 seconds left.",
+  "n": 2,
+  "where": "event echo-hunt.json (event)"
+ },
+ {
+  "text": "0 echoes, 0 points. 148 seconds left.",
+  "n": 1,
+  "where": "event echo-hunt.json (event)"
+ },
+ {
+  "text": "0 echoes, 0 points. 146 seconds left.",
+  "n": 1,
+  "where": "event echo-hunt.json (event)"
+ },
+ {
+  "text": "0 echoes, 0 points. 144 seconds left.",
+  "n": 1,
+  "where": "event echo-hunt.json (event)"
+ },
+ {
+  "text": "0 sorted. 0 points. 179 seconds left.",
+  "n": 1,
+  "where": "event farm-sorting.json (event)"
+ },
+ {
+  "text": "0 sorted. 0 points. 178 seconds left.",
+  "n": 1,
+  "where": "event farm-sorting.json (event)"
+ },
+ {
+  "text": "0 sorted. 0 points. 177 seconds left.",
+  "n": 1,
+  "where": "event farm-sorting.json (event)"
+ },
+ {
+  "text": "0 sorted. 0 points. 175 seconds left.",
+  "n": 1,
+  "where": "event farm-sorting.json (event)"
+ },
+ {
+  "text": "0 sorted. 0 points. 174 seconds left.",
+  "n": 1,
+  "where": "event farm-sorting.json (event)"
+ },
+ {
+  "text": "0 dodged. 3 lives left. 0 points.",
+  "n": 9,
+  "where": "event fireworks-night.json (event)"
+ },
+ {
+  "text": "1 dodged. 3 lives left. 2 points.",
+  "n": 5,
+  "where": "event fireworks-night.json (event)"
+ },
+ {
+  "text": "0 fish caught. 0 points. 179 seconds left.",
+  "n": 1,
+  "where": "event fishing-trip.json (event)"
+ },
+ {
+  "text": "0 fish caught. 0 points. 175 seconds left.",
+  "n": 3,
+  "where": "event fishing-trip.json (event)"
+ },
+ {
+  "text": "0 pumpkins, 0 points. Room 1.",
+  "n": 20,
+  "where": "event flooded-cellar.json (event)"
+ },
+ {
+  "text": "0 memories, 0 points. 4 left to find. 1 ice beast about. 2 lives left. Level 1.",
+  "n": 1,
+  "where": "event frozen-memories.json (event)"
+ },
+ {
+  "text": "1 memory, 1 point. 3 left to find. 1 ice beast about. 2 lives left. Level 1.",
+  "n": 6,
+  "where": "event frozen-memories.json (event)"
+ },
+ {
+  "text": "0 cases, 0 points. 10 left to find. 89 seconds left.",
+  "n": 1,
+  "where": "event glass-gallery.json (event)"
+ },
+ {
+  "text": "0 cases, 0 points. 10 left to find. 88 seconds left.",
+  "n": 1,
+  "where": "event glass-gallery.json (event)"
+ },
+ {
+  "text": "0 cases, 0 points. 10 left to find. 87 seconds left.",
+  "n": 2,
+  "where": "event glass-gallery.json (event)"
+ },
+ {
+  "text": "0 cases, 0 points. 10 left to find. 86 seconds left.",
+  "n": 1,
+  "where": "event glass-gallery.json (event)"
+ },
+ {
+  "text": "0 cases, 0 points. 10 left to find. 85 seconds left.",
+  "n": 1,
+  "where": "event glass-gallery.json (event)"
+ },
+ {
+  "text": "0 cases, 0 points. 10 left to find. 84 seconds left.",
+  "n": 2,
+  "where": "event glass-gallery.json (event)"
+ },
+ {
+  "text": "0 pumpkins, 0 points. 1 ghost about. 119 seconds left.",
+  "n": 2,
+  "where": "event haunted-hall.json (event)"
+ },
+ {
+  "text": "0 pumpkins, 0 points. 1 ghost about. 118 seconds left.",
+  "n": 1,
+  "where": "event haunted-hall.json (event)"
+ },
+ {
+  "text": "0 pumpkins, 0 points. 1 ghost about. 117 seconds left.",
+  "n": 1,
+  "where": "event haunted-hall.json (event)"
+ },
+ {
+  "text": "0 pumpkins, 0 points. 1 ghost about. 116 seconds left.",
+  "n": 1,
+  "where": "event haunted-hall.json (event)"
+ },
+ {
+  "text": "0 pumpkins, 0 points. 1 ghost about. 115 seconds left.",
+  "n": 1,
+  "where": "event haunted-hall.json (event)"
+ },
+ {
+  "text": "0 pumpkins, 0 points. 1 ghost about. 114 seconds left.",
+  "n": 1,
+  "where": "event haunted-hall.json (event)"
+ },
+ {
+  "text": "0 apples, 0 points. 3 left to find. 297 seconds left. Level 1.",
+  "n": 1,
+  "where": "event hedge-maze.json (event)"
+ },
+ {
+  "text": "0 apples, 0 points. 3 left to find. 296 seconds left. Level 1.",
+  "n": 4,
+  "where": "event hedge-maze.json (event)"
+ },
+ {
+  "text": "0 apples, 0 points. 3 left to find. 295 seconds left. Level 1.",
+  "n": 2,
+  "where": "event hedge-maze.json (event)"
+ },
+ {
+  "text": "0 apples, 0 points. 3 left to find. 294 seconds left. Level 1.",
+  "n": 2,
+  "where": "event hedge-maze.json (event)"
+ },
+ {
+  "text": "0 jewels, 0 points. 0 shots. 3 lives left. 149 seconds left.",
+  "n": 1,
+  "where": "event jewel-heist.json (event)"
+ },
+ {
+  "text": "0 jewels, 0 points. 0 shots. 3 lives left. 147 seconds left.",
+  "n": 3,
+  "where": "event jewel-heist.json (event)"
+ },
+ {
+  "text": "0 jewels, 0 points. 0 shots. 3 lives left. 145 seconds left.",
+  "n": 3,
+  "where": "event jewel-heist.json (event)"
+ },
+ {
+  "text": "4 bears left. 8 shots. 0 points. 179 seconds left.",
+  "n": 1,
+  "where": "event jungle-hunt.json (event)"
+ },
+ {
+  "text": "2 bears left. 3 shots. 40 points. 178 seconds left.",
+  "n": 1,
+  "where": "event jungle-hunt.json (event)"
+ },
+ {
+  "text": "1 bear left. 0 shots. 60 points. 177 seconds left.",
+  "n": 2,
+  "where": "event jungle-hunt.json (event)"
+ },
+ {
+  "text": "1 bear left. 0 shots. 60 points. 176 seconds left.",
+  "n": 1,
+  "where": "event jungle-hunt.json (event)"
+ },
+ {
+  "text": "1 bear left. 0 shots. 60 points. 175 seconds left.",
+  "n": 5,
+  "where": "event jungle-hunt.json (event)"
+ },
+ {
+  "text": "1 bear left. 0 shots. 60 points. 174 seconds left.",
+  "n": 2,
+  "where": "event jungle-hunt.json (event)"
+ },
+ {
+  "text": "Outside the spot. 0 points. 117 seconds left.",
+  "n": 1,
+  "where": "event king-of-the-court.json (event)"
+ },
+ {
+  "text": "Outside the spot. 0 points. 116 seconds left.",
+  "n": 1,
+  "where": "event king-of-the-court.json (event)"
+ },
+ {
+  "text": "Outside the spot. 0 points. 114 seconds left.",
+  "n": 1,
+  "where": "event king-of-the-court.json (event)"
+ },
+ {
+  "text": "0 dishes delivered. 0 points. 149 seconds left.",
+  "n": 1,
+  "where": "event kitchen-rush.json (event)"
+ },
+ {
+  "text": "0 dishes delivered. 0 points. 148 seconds left.",
+  "n": 1,
+  "where": "event kitchen-rush.json (event)"
+ },
+ {
+  "text": "0 dishes delivered. 0 points. 147 seconds left.",
+  "n": 2,
+  "where": "event kitchen-rush.json (event)"
+ },
+ {
+  "text": "0 dishes delivered. 0 points. 146 seconds left.",
+  "n": 1,
+  "where": "event kitchen-rush.json (event)"
+ },
+ {
+  "text": "0 dishes delivered. 0 points. 145 seconds left.",
+  "n": 1,
+  "where": "event kitchen-rush.json (event)"
+ },
+ {
+  "text": "4 of 4 lamps lit. 0 points.",
+  "n": 9,
+  "where": "event lighthouse-keeper.json (event)"
+ },
+ {
+  "text": "0 rescued. 0 following you. 0 points. 8 left to find. 239 seconds left.",
+  "n": 2,
+  "where": "event lost-kittens.json (event)"
+ },
+ {
+  "text": "0 rescued. 0 following you. 0 points. 8 left to find. 238 seconds left.",
+  "n": 3,
+  "where": "event lost-kittens.json (event)"
+ },
+ {
+  "text": "0 rescued. 0 following you. 0 points. 8 left to find. 236 seconds left.",
+  "n": 2,
+  "where": "event lost-kittens.json (event)"
+ },
+ {
+  "text": "0 rescued. 0 following you. 0 points. 8 left to find. 235 seconds left.",
+  "n": 1,
+  "where": "event lost-kittens.json (event)"
+ },
+ {
+  "text": "0 pieces, 0 points. 12 left to find. 1 owl about. 179 seconds left.",
+  "n": 1,
+  "where": "event lost-lullaby.json (event)"
+ },
+ {
+  "text": "0 pieces, 0 points. 12 left to find. 1 owl about. 178 seconds left.",
+  "n": 2,
+  "where": "event lost-lullaby.json (event)"
+ },
+ {
+  "text": "0 pieces, 0 points. 12 left to find. 1 owl about. 177 seconds left.",
+  "n": 1,
+  "where": "event lost-lullaby.json (event)"
+ },
+ {
+  "text": "0 pieces, 0 points. 12 left to find. 1 owl about. 175 seconds left.",
+  "n": 3,
+  "where": "event lost-lullaby.json (event)"
+ },
+ {
+  "text": "0 pieces, 0 points. 12 left to find. 1 owl about. 174 seconds left.",
+  "n": 2,
+  "where": "event lost-lullaby.json (event)"
+ },
+ {
+  "text": "0 gems, 0 points. 6 left to find. 3 creatures about. 0 stones in hand.",
+  "n": 9,
+  "where": "event lure.json (event)"
+ },
+ {
+  "text": "0 stars. Out of step 0 of 8 times. 0 points.",
+  "n": 5,
+  "where": "event march-in-time.json (event)"
+ },
+ {
+  "text": "0 memories, 0 points. 3 left to find. Level 1.",
+  "n": 2,
+  "where": "event memory-garden.json (event)"
+ },
+ {
+  "text": "1 memory, 1 point. 2 left to find. Level 1.",
+  "n": 5,
+  "where": "event memory-garden.json (event)"
+ },
+ {
+  "text": "The house is just as you left it.",
+  "n": 1,
+  "where": "event memory-lane.json (event)"
+ },
+ {
+  "text": "0 memories, 0 points. 3 left to find. 1 ghost about. Level 1.",
+  "n": 3,
+  "where": "event memory-lane.json (event)"
+ },
+ {
+  "text": "With the guide. 0 points.",
+  "n": 2,
+  "where": "event music-box-guide.json (event)"
+ },
+ {
+  "text": "The guide is getting away. 1 point.",
+  "n": 10,
+  "where": "event music-box-guide.json (event)"
+ },
+ {
+  "text": "0 pieces, 0 points. 4 left to find. 1 clockwork toy about. Level 1.",
+  "n": 10,
+  "where": "event music-box-menders.json (event)"
+ },
+ {
+  "text": "1 answered. 3 lives left. 6 points.",
+  "n": 3,
+  "where": "event ninja-reflex.json (event)"
+ },
+ {
+  "text": "1 answered. 2 lives left. 6 points.",
+  "n": 1,
+  "where": "event ninja-reflex.json (event)"
+ },
+ {
+  "text": "Round 1. 3 things. 3 lives. 0 points.",
+  "n": 2,
+  "where": "event odd-one-out.json (event)"
+ },
+ {
+  "text": "Round 1. 3 things. 2 lives. 0 points.",
+  "n": 7,
+  "where": "event odd-one-out.json (event)"
+ },
+ {
+  "text": "0 owls, 0 points. 10 left to find.",
+  "n": 11,
+  "where": "event owl-night.json (event)"
+ },
+ {
+  "text": "9 squares covered. 9 points. 88 seconds left.",
+  "n": 1,
+  "where": "event paint-the-floor.json (event)"
+ },
+ {
+  "text": "21 squares covered. 21 points. 87 seconds left.",
+  "n": 1,
+  "where": "event paint-the-floor.json (event)"
+ },
+ {
+  "text": "28 squares covered. 28 points. 86 seconds left.",
+  "n": 1,
+  "where": "event paint-the-floor.json (event)"
+ },
+ {
+  "text": "32 squares covered. 32 points. 86 seconds left.",
+  "n": 1,
+  "where": "event paint-the-floor.json (event)"
+ },
+ {
+  "text": "38 squares covered. 38 points. 84 seconds left.",
+  "n": 1,
+  "where": "event paint-the-floor.json (event)"
+ },
+ {
+  "text": "39 squares covered. 39 points. 84 seconds left.",
+  "n": 1,
+  "where": "event paint-the-floor.json (event)"
+ },
+ {
+  "text": "Round 1. Music playing. 0 points.",
+  "n": 6,
+  "where": "event party-chairs.json (event)"
+ },
+ {
+  "text": "0 coins, 0 points. 3 dogs about. 178 seconds left. 0 stones in hand.",
+  "n": 2,
+  "where": "event pebble-path.json (event)"
+ },
+ {
+  "text": "0 coins, 0 points. 3 dogs about. 177 seconds left. 0 stones in hand.",
+  "n": 1,
+  "where": "event pebble-path.json (event)"
+ },
+ {
+  "text": "0 coins, 0 points. 3 dogs about. 176 seconds left. 0 stones in hand.",
+  "n": 1,
+  "where": "event pebble-path.json (event)"
+ },
+ {
+  "text": "0 coins, 0 points. 3 dogs about. 175 seconds left. 0 stones in hand.",
+  "n": 3,
+  "where": "event pebble-path.json (event)"
+ },
+ {
+  "text": "0 chests found. 0 points. 5 left.",
+  "n": 5,
+  "where": "event pirate-treasure.json (event)"
+ },
+ {
+  "text": "You have 0, the raven has 0. 0 points. 149 seconds left.",
+  "n": 1,
+  "where": "event race-the-raven.json (event)"
+ },
+ {
+  "text": "You have 0, the raven has 0. 0 points. 147 seconds left.",
+  "n": 1,
+  "where": "event race-the-raven.json (event)"
+ },
+ {
+  "text": "You have 0, the raven has 0. 0 points. 145 seconds left.",
+  "n": 2,
+  "where": "event race-the-raven.json (event)"
+ },
+ {
+  "text": "You have 0, the raven has 0. 0 points. 144 seconds left.",
+  "n": 2,
+  "where": "event race-the-raven.json (event)"
+ },
+ {
+  "text": "0 pieces, 0 points. 6 left to find. 239 seconds left. Level 1.",
+  "n": 2,
+  "where": "event rebuild-the-song.json (event)"
+ },
+ {
+  "text": "0 pieces, 0 points. 6 left to find. 237 seconds left. Level 1.",
+  "n": 1,
+  "where": "event rebuild-the-song.json (event)"
+ },
+ {
+  "text": "0 pieces, 0 points. 6 left to find. 236 seconds left. Level 1.",
+  "n": 1,
+  "where": "event rebuild-the-song.json (event)"
+ },
+ {
+  "text": "0 pieces, 0 points. 6 left to find. 235 seconds left. Level 1.",
+  "n": 3,
+  "where": "event rebuild-the-song.json (event)"
+ },
+ {
+  "text": "Round 1. Green light. 3 lives. 0 points.",
+  "n": 7,
+  "where": "event red-light-green-light.json (event)"
+ },
+ {
+  "text": "Round 1. Red light. 1 life. 0 points.",
+  "n": 1,
+  "where": "event red-light-green-light.json (event)"
+ },
+ {
+  "text": "Room 1. 1 robot about. 0 points. 3 lives left.",
+  "n": 5,
+  "where": "event robot-factory.json (event)"
+ },
+ {
+  "text": "0 cases, 0 points. 6 left to find. 0 shots. 178 seconds left. Level 1. 6 cases before the exit opens.",
+  "n": 1,
+  "where": "event shattered-heaven.json (event)"
+ },
+ {
+  "text": "0 cases, 0 points. 6 left to find. 0 shots. 177 seconds left. Level 1. 6 cases before the exit opens.",
+  "n": 1,
+  "where": "event shattered-heaven.json (event)"
+ },
+ {
+  "text": "0 cases, 0 points. 6 left to find. 0 shots. 176 seconds left. Level 1. 6 cases before the exit opens.",
+  "n": 1,
+  "where": "event shattered-heaven.json (event)"
+ },
+ {
+  "text": "5 shots.",
+  "n": 1,
+  "where": "event shattered-heaven.json (event)"
+ },
+ {
+  "text": "1 case, 25 points. 5 left to find. 0 shots. 175 seconds left. Level 1. 5 cases before the exit opens.",
+  "n": 1,
+  "where": "event shattered-heaven.json (event)"
+ },
+ {
+  "text": "1 case, 25 points. 5 left to find. 0 shots. 174 seconds left. Level 1. 5 cases before the exit opens.",
+  "n": 1,
+  "where": "event shattered-heaven.json (event)"
+ },
+ {
+  "text": "0 sheep in the pen. 0 points. 8 left to find. 298 seconds left.",
+  "n": 4,
+  "where": "event sheepdog.json (event)"
+ },
+ {
+  "text": "0 sheep in the pen. 0 points. 8 left to find. 297 seconds left.",
+  "n": 1,
+  "where": "event sheepdog.json (event)"
+ },
+ {
+  "text": "0 sheep in the pen. 0 points. 8 left to find. 295 seconds left.",
+  "n": 4,
+  "where": "event sheepdog.json (event)"
+ },
+ {
+  "text": "0 sheep in the pen. 0 points. 8 left to find. 294 seconds left.",
+  "n": 1,
+  "where": "event sheepdog.json (event)"
+ },
+ {
+  "text": "0 pumpkins, 0 points. 2 lives left. Room 1.",
+  "n": 9,
+  "where": "event sleeping-dragons.json (event)"
+ },
+ {
+  "text": "0 coins. The guard is asleep. 0 points. 119 seconds left.",
+  "n": 1,
+  "where": "event sleeping-giant.json (event)"
+ },
+ {
+  "text": "0 coins. The guard is awake! 0 points. 119 seconds left.",
+  "n": 2,
+  "where": "event sleeping-giant.json (event)"
+ },
+ {
+  "text": "0 coins. The guard is awake! 0 points. 118 seconds left.",
+  "n": 2,
+  "where": "event sleeping-giant.json (event)"
+ },
+ {
+  "text": "0 coins. The guard is awake! 0 points. 117 seconds left.",
+  "n": 1,
+  "where": "event sleeping-giant.json (event)"
+ },
+ {
+  "text": "0 coins. The guard is awake! 0 points. 116 seconds left.",
+  "n": 1,
+  "where": "event sleeping-giant.json (event)"
+ },
+ {
+  "text": "0 cases, 0 points. 119 seconds left.",
+  "n": 1,
+  "where": "event smash-and-grab.json (event)"
+ },
+ {
+  "text": "0 cases, 0 points. 118 seconds left.",
+  "n": 2,
+  "where": "event smash-and-grab.json (event)"
+ },
+ {
+  "text": "0 cases, 0 points. 117 seconds left.",
+  "n": 3,
+  "where": "event smash-and-grab.json (event)"
+ },
+ {
+  "text": "10 more seconds.",
+  "n": 1,
+  "where": "event smash-and-grab.json (event)"
+ },
+ {
+  "text": "1 case, 10 points. 124 seconds left.",
+  "n": 2,
+  "where": "event smash-and-grab.json (event)"
+ },
+ {
+  "text": "0 cups of cocoa. 46 steps left. 0 points.",
+  "n": 1,
+  "where": "event snow-trek.json (event)"
+ },
+ {
+  "text": "0 cups of cocoa. 37 steps left. 0 points.",
+  "n": 1,
+  "where": "event snow-trek.json (event)"
+ },
+ {
+  "text": "0 cups of cocoa. 22 steps left. 0 points.",
+  "n": 1,
+  "where": "event snow-trek.json (event)"
+ },
+ {
+  "text": "0 cups of cocoa. 20 steps left. 0 points.",
+  "n": 1,
+  "where": "event snow-trek.json (event)"
+ },
+ {
+  "text": "0 cups of cocoa. 19 steps left. 0 points.",
+  "n": 1,
+  "where": "event snow-trek.json (event)"
+ },
+ {
+  "text": "Room 1. 1 wolf about. 0 points. 3 lives left.",
+  "n": 10,
+  "where": "event snowy-escape.json (event)"
+ },
+ {
+  "text": "0 crystals found. 0 points. 6 left to find.",
+  "n": 6,
+  "where": "event sonar-dive.json (event)"
+ },
+ {
+  "text": "0 energy cells, 1 point. 2 alien machines about. 118 seconds left.",
+  "n": 1,
+  "where": "event space-station.json (event)"
+ },
+ {
+  "text": "0 energy cells, 2 points. 2 alien machines about. 117 seconds left.",
+  "n": 2,
+  "where": "event space-station.json (event)"
+ },
+ {
+  "text": "0 energy cells, 3 points. 2 alien machines about. 116 seconds left.",
+  "n": 1,
+  "where": "event space-station.json (event)"
+ },
+ {
+  "text": "0 energy cells, 4 points. 2 alien machines about. 115 seconds left.",
+  "n": 1,
+  "where": "event space-station.json (event)"
+ },
+ {
+  "text": "0 energy cells, 5 points. 2 alien machines about. 114 seconds left.",
+  "n": 3,
+  "where": "event space-station.json (event)"
+ },
+ {
+  "text": "0 eggs, 0 points. 20 left to find. 179 seconds left.",
+  "n": 1,
+  "where": "event spring-eggs.json (event)"
+ },
+ {
+  "text": "0 eggs, 0 points. 20 left to find. 178 seconds left.",
+  "n": 1,
+  "where": "event spring-eggs.json (event)"
+ },
+ {
+  "text": "0 eggs, 0 points. 20 left to find. 177 seconds left.",
+  "n": 1,
+  "where": "event spring-eggs.json (event)"
+ },
+ {
+  "text": "0 eggs, 0 points. 20 left to find. 176 seconds left.",
+  "n": 3,
+  "where": "event spring-eggs.json (event)"
+ },
+ {
+  "text": "0 eggs, 0 points. 20 left to find. 175 seconds left.",
+  "n": 2,
+  "where": "event spring-eggs.json (event)"
+ },
+ {
+  "text": "0 eggs, 0 points. 20 left to find. 174 seconds left.",
+  "n": 2,
+  "where": "event spring-eggs.json (event)"
+ },
+ {
+  "text": "Crossing 1. 0 of 5 stones. 3 lives. 2 replays left. 0 points.",
+  "n": 6,
+  "where": "event stepping-stones.json (event)"
+ },
+ {
+  "text": "Crossing 1. 1 of 5 stones. 3 lives. 2 replays left. 0 points.",
+  "n": 1,
+  "where": "event stepping-stones.json (event)"
+ },
+ {
+  "text": "Crossing 1. 2 of 5 stones. 3 lives. 1 replay left. 0 points.",
+  "n": 1,
+  "where": "event stepping-stones.json (event)"
+ },
+ {
+  "text": "0 pumpkins, 0 points. Shelter 1. 39 seconds before the storm.",
+  "n": 2,
+  "where": "event storm-chase.json (event)"
+ },
+ {
+  "text": "0 pumpkins, 0 points. Shelter 1. 36 seconds before the storm.",
+  "n": 2,
+  "where": "event storm-chase.json (event)"
+ },
+ {
+  "text": "0 pumpkins, 0 points. Shelter 1. 35 seconds before the storm.",
+  "n": 3,
+  "where": "event storm-chase.json (event)"
+ },
+ {
+  "text": "0 pumpkins, 0 points. Shelter 1. 34 seconds before the storm.",
+  "n": 2,
+  "where": "event storm-chase.json (event)"
+ },
+ {
+  "text": "0 pumpkins, 0 points. Shelter 1. 57 seconds before the storm.",
+  "n": 1,
+  "where": "event storm-in-the-maze.json (event)"
+ },
+ {
+  "text": "0 pumpkins, 0 points. Shelter 1. 56 seconds before the storm.",
+  "n": 1,
+  "where": "event storm-in-the-maze.json (event)"
+ },
+ {
+  "text": "0 pumpkins, 0 points. Shelter 1. 54 seconds before the storm.",
+  "n": 2,
+  "where": "event storm-in-the-maze.json (event)"
+ },
+ {
+  "text": "0 bubbles, 0 points. 15 left to find. 119 seconds left.",
+  "n": 3,
+  "where": "event summer-splash.json (event)"
+ },
+ {
+  "text": "0 bubbles, 0 points. 15 left to find. 118 seconds left.",
+  "n": 2,
+  "where": "event summer-splash.json (event)"
+ },
+ {
+  "text": "0 bubbles, 0 points. 15 left to find. 117 seconds left.",
+  "n": 3,
+  "where": "event summer-splash.json (event)"
+ },
+ {
+  "text": "0 bubbles, 0 points. 15 left to find. 116 seconds left.",
+  "n": 2,
+  "where": "event summer-splash.json (event)"
+ },
+ {
+  "text": "0 bubbles, 0 points. 15 left to find. 115 seconds left.",
+  "n": 2,
+  "where": "event summer-splash.json (event)"
+ },
+ {
+  "text": "0 points. 10 shots. 3 beasts about. 3 lives left. 179 seconds left.",
+  "n": 1,
+  "where": "event supply-run.json (event)"
+ },
+ {
+  "text": "0 points. 7 shots. 3 beasts about. 3 lives left. 179 seconds left.",
+  "n": 1,
+  "where": "event supply-run.json (event)"
+ },
+ {
+  "text": "21 points. 2 shots. 1 beast about. 3 lives left. 178 seconds left.",
+  "n": 1,
+  "where": "event supply-run.json (event)"
+ },
+ {
+  "text": "23 points. 0 shots. 1 beast about. 3 lives left. 176 seconds left.",
+  "n": 2,
+  "where": "event supply-run.json (event)"
+ },
+ {
+  "text": "24 points. 0 shots. 1 beast about. 3 lives left. 175 seconds left.",
+  "n": 2,
+  "where": "event supply-run.json (event)"
+ },
+ {
+  "text": "25 points. 0 shots. 1 beast about. 3 lives left. 174 seconds left.",
+  "n": 2,
+  "where": "event supply-run.json (event)"
+ },
+ {
+  "text": "You are not it. Tagged 0 times. 0 points. 119 seconds left.",
+  "n": 1,
+  "where": "event tag-in-the-park.json (event)"
+ },
+ {
+  "text": "You are not it. Tagged 0 times. 1 point. 118 seconds left.",
+  "n": 1,
+  "where": "event tag-in-the-park.json (event)"
+ },
+ {
+  "text": "You are not it. Tagged 0 times. 2 points. 117 seconds left.",
+  "n": 2,
+  "where": "event tag-in-the-park.json (event)"
+ },
+ {
+  "text": "You are not it. Tagged 0 times. 3 points. 116 seconds left.",
+  "n": 1,
+  "where": "event tag-in-the-park.json (event)"
+ },
+ {
+  "text": "You are not it. Tagged 0 times. 4 points. 115 seconds left.",
+  "n": 4,
+  "where": "event tag-in-the-park.json (event)"
+ },
+ {
+  "text": "You are not it. Tagged 0 times. 5 points. 114 seconds left.",
+  "n": 1,
+  "where": "event tag-in-the-park.json (event)"
+ },
+ {
+  "text": "Boss 1. 10 hits to go. 3 lives. 0 points.",
+  "n": 7,
+  "where": "event the-dragons-lair.json (event)"
+ },
+ {
+  "text": "0 apples, 0 points. 4 left to find. 119 seconds left. Stage 1 of 3.",
+  "n": 1,
+  "where": "event the-expedition.json (event)"
+ },
+ {
+  "text": "0 apples, 0 points. 4 left to find. 118 seconds left. Stage 1 of 3.",
+  "n": 2,
+  "where": "event the-expedition.json (event)"
+ },
+ {
+  "text": "0 apples, 0 points. 4 left to find. 117 seconds left. Stage 1 of 3.",
+  "n": 3,
+  "where": "event the-expedition.json (event)"
+ },
+ {
+  "text": "0 apples, 0 points. 4 left to find. 115 seconds left. Stage 1 of 3.",
+  "n": 1,
+  "where": "event the-expedition.json (event)"
+ },
+ {
+  "text": "0 apples, 0 points. 4 left to find. 114 seconds left. Stage 1 of 3.",
+  "n": 1,
+  "where": "event the-expedition.json (event)"
+ },
+ {
+  "text": "Find the key.",
+  "n": 1,
+  "where": "event the-long-night.json (event)"
+ },
+ {
+  "text": "0 keys, 0 points. 1 left to find. 3 creatures about. Stage 1 of 3.",
+  "n": 7,
+  "where": "event the-long-night.json (event)"
+ },
+ {
+  "text": "0 spots reached. 0 points. 179 seconds left.",
+  "n": 2,
+  "where": "event the-mirror-twin.json (event)"
+ },
+ {
+  "text": "0 spots reached. 0 points. 177 seconds left.",
+  "n": 3,
+  "where": "event the-mirror-twin.json (event)"
+ },
+ {
+  "text": "0 spots reached. 0 points. 176 seconds left.",
+  "n": 1,
+  "where": "event the-mirror-twin.json (event)"
+ },
+ {
+  "text": "0 spots reached. 0 points. 174 seconds left.",
+  "n": 5,
+  "where": "event the-mirror-twin.json (event)"
+ },
+ {
+  "text": "0 served, 0 lost. 44 seconds of patience left. 0 points.",
+  "n": 1,
+  "where": "event the-pet-shop.json (event)"
+ },
+ {
+  "text": "0 served, 0 lost. 43 seconds of patience left. 0 points.",
+  "n": 1,
+  "where": "event the-pet-shop.json (event)"
+ },
+ {
+  "text": "0 served, 0 lost. 42 seconds of patience left. 0 points.",
+  "n": 2,
+  "where": "event the-pet-shop.json (event)"
+ },
+ {
+  "text": "0 served, 0 lost. 41 seconds of patience left. 0 points.",
+  "n": 1,
+  "where": "event the-pet-shop.json (event)"
+ },
+ {
+  "text": "0 served, 0 lost. 40 seconds of patience left. 0 points.",
+  "n": 1,
+  "where": "event the-pet-shop.json (event)"
+ },
+ {
+  "text": "0 served, 0 lost. 39 seconds of patience left. 0 points.",
+  "n": 2,
+  "where": "event the-pet-shop.json (event)"
+ },
+ {
+  "text": "0 served, 0 lost. 38 seconds of patience left. 0 points.",
+  "n": 1,
+  "where": "event the-pet-shop.json (event)"
+ },
+ {
+  "text": "Tide 1. The water is 4 steps behind you. 0 points.",
+  "n": 1,
+  "where": "event the-rising-tide.json (event)"
+ },
+ {
+  "text": "Tide 1. The water is 3 steps behind you. 0 points.",
+  "n": 2,
+  "where": "event the-rising-tide.json (event)"
+ },
+ {
+  "text": "Tide 1. The water is 2 steps behind you. 0 points.",
+  "n": 2,
+  "where": "event the-rising-tide.json (event)"
+ },
+ {
+  "text": "Tide 1. The water is 9 steps behind you. 0 points.",
+  "n": 1,
+  "where": "event the-rising-tide.json (event)"
+ },
+ {
+  "text": "Tide 1. The water is 7 steps behind you. 0 points.",
+  "n": 2,
+  "where": "event the-rising-tide.json (event)"
+ },
+ {
+  "text": "0 hits. 0 misses of 5 allowed. 0 points.",
+  "n": 7,
+  "where": "event the-shooting-gallery.json (event)"
+ },
+ {
+  "text": "1 hit. 1 miss of 5 allowed. 5 points.",
+  "n": 1,
+  "where": "event the-shooting-gallery.json (event)"
+ },
+ {
+  "text": "Maze 1. 0 points. 240 seconds left.",
+  "n": 1,
+  "where": "event the-sonar-maze.json (event)"
+ },
+ {
+  "text": "Maze 1. 0 points. 239 seconds left.",
+  "n": 3,
+  "where": "event the-sonar-maze.json (event)"
+ },
+ {
+  "text": "Maze 1. 0 points. 238 seconds left.",
+  "n": 3,
+  "where": "event the-sonar-maze.json (event)"
+ },
+ {
+  "text": "Maze 1. 0 points. 236 seconds left.",
+  "n": 1,
+  "where": "event the-sonar-maze.json (event)"
+ },
+ {
+  "text": "Maze 1. 0 points. 235 seconds left.",
+  "n": 1,
+  "where": "event the-sonar-maze.json (event)"
+ },
+ {
+  "text": "Maze 1. 0 points. 234 seconds left.",
+  "n": 1,
+  "where": "event the-sonar-maze.json (event)"
+ },
+ {
+  "text": "7 steps east, then 2 steps south.",
+  "n": 1,
+  "where": "event the-treasure-map.json (event)"
+ },
+ {
+  "text": "8 steps north, then 1 step east.",
+  "n": 1,
+  "where": "event the-treasure-map.json (event)"
+ },
+ {
+  "text": "8 steps north, then 1 step east. 0 found. 0 points. 299 seconds left.",
+  "n": 1,
+  "where": "event the-treasure-map.json (event)"
+ },
+ {
+  "text": "3 steps east, then 3 steps south.",
+  "n": 1,
+  "where": "event the-treasure-map.json (event)"
+ },
+ {
+  "text": "5 steps west, then 4 steps south.",
+  "n": 1,
+  "where": "event the-treasure-map.json (event)"
+ },
+ {
+  "text": "5 steps north, then 7 steps west.",
+  "n": 1,
+  "where": "event the-treasure-map.json (event)"
+ },
+ {
+  "text": "2 steps north, then 1 step west.",
+  "n": 1,
+  "where": "event the-treasure-map.json (event)"
+ },
+ {
+  "text": "1 step north, then 3 steps east.",
+  "n": 1,
+  "where": "event the-treasure-map.json (event)"
+ },
+ {
+  "text": "4 steps west, then 2 steps south.",
+  "n": 1,
+  "where": "event the-treasure-map.json (event)"
+ },
+ {
+  "text": "6 steps north, then 4 steps west.",
+  "n": 1,
+  "where": "event the-treasure-map.json (event)"
+ },
+ {
+  "text": "7 steps south, then 4 steps east.",
+  "n": 1,
+  "where": "event the-treasure-map.json (event)"
+ },
+ {
+  "text": "7 steps east, then 6 steps north.",
+  "n": 1,
+  "where": "event the-treasure-map.json (event)"
+ },
+ {
+  "text": "4 steps east, then 7 steps south.",
+  "n": 1,
+  "where": "event the-treasure-map.json (event)"
+ },
+ {
+  "text": "1 step east, then 1 step south.",
+  "n": 1,
+  "where": "event the-treasure-map.json (event)"
+ },
+ {
+  "text": "8 steps north, then 6 steps west.",
+  "n": 1,
+  "where": "event the-treasure-map.json (event)"
+ },
+ {
+  "text": "7 steps north, then 4 steps east.",
+  "n": 1,
+  "where": "event the-treasure-map.json (event)"
+ },
+ {
+  "text": "8 steps south, then 6 steps east.",
+  "n": 1,
+  "where": "event the-treasure-map.json (event)"
+ },
+ {
+  "text": "3 steps north, then 4 steps west.",
+  "n": 1,
+  "where": "event the-treasure-map.json (event)"
+ },
+ {
+  "text": "6 steps east, then 7 steps north.",
+  "n": 1,
+  "where": "event the-treasure-map.json (event)"
+ },
+ {
+  "text": "3 steps south, then 6 steps east.",
+  "n": 1,
+  "where": "event the-treasure-map.json (event)"
+ },
+ {
+  "text": "4 steps east, then 8 steps south.",
+  "n": 1,
+  "where": "event the-treasure-map.json (event)"
+ },
+ {
+  "text": "2 steps north, then 6 steps west.",
+  "n": 1,
+  "where": "event the-treasure-map.json (event)"
+ },
+ {
+  "text": "1 step north, then 2 steps east.",
+  "n": 1,
+  "where": "event the-treasure-map.json (event)"
+ },
+ {
+  "text": "1 step north, then 2 steps east. 0 found. 0 points. 297 seconds left.",
+  "n": 1,
+  "where": "event the-treasure-map.json (event)"
+ },
+ {
+  "text": "2 steps east, then 5 steps north.",
+  "n": 1,
+  "where": "event the-treasure-map.json (event)"
+ },
+ {
+  "text": "8 steps west, then 1 step north.",
+  "n": 1,
+  "where": "event the-treasure-map.json (event)"
+ },
+ {
+  "text": "8 steps west, then 1 step north. 0 found. 0 points. 297 seconds left.",
+  "n": 1,
+  "where": "event the-treasure-map.json (event)"
+ },
+ {
+  "text": "6 steps east, then 1 step south.",
+  "n": 1,
+  "where": "event the-treasure-map.json (event)"
+ },
+ {
+  "text": "2 steps east, then 6 steps south.",
+  "n": 1,
+  "where": "event the-treasure-map.json (event)"
+ },
+ {
+  "text": "4 steps south, then 7 steps east.",
+  "n": 1,
+  "where": "event the-treasure-map.json (event)"
+ },
+ {
+  "text": "5 steps south, then 3 steps east.",
+  "n": 1,
+  "where": "event the-treasure-map.json (event)"
+ },
+ {
+  "text": "5 steps east, then 6 steps north.",
+  "n": 1,
+  "where": "event the-treasure-map.json (event)"
+ },
+ {
+  "text": "8 steps west, then 5 steps south.",
+  "n": 1,
+  "where": "event the-treasure-map.json (event)"
+ },
+ {
+  "text": "5 steps north, then 8 steps west.",
+  "n": 1,
+  "where": "event the-treasure-map.json (event)"
+ },
+ {
+  "text": "5 steps west, then 3 steps south.",
+  "n": 1,
+  "where": "event the-treasure-map.json (event)"
+ },
+ {
+  "text": "5 steps west, then 3 steps south. 0 found. 0 points. 296 seconds left.",
+  "n": 1,
+  "where": "event the-treasure-map.json (event)"
+ },
+ {
+  "text": "2 steps north, then 3 steps east.",
+  "n": 1,
+  "where": "event the-treasure-map.json (event)"
+ },
+ {
+  "text": "4 steps south, then 1 step west.",
+  "n": 1,
+  "where": "event the-treasure-map.json (event)"
+ },
+ {
+  "text": "6 steps west, then 7 steps south.",
+  "n": 1,
+  "where": "event the-treasure-map.json (event)"
+ },
+ {
+  "text": "6 steps west, then 7 steps south. 0 found. 0 points. 296 seconds left.",
+  "n": 1,
+  "where": "event the-treasure-map.json (event)"
+ },
+ {
+  "text": "2 steps east, then 8 steps north.",
+  "n": 1,
+  "where": "event the-treasure-map.json (event)"
+ },
+ {
+  "text": "3 steps east, then 4 steps south.",
+  "n": 1,
+  "where": "event the-treasure-map.json (event)"
+ },
+ {
+  "text": "3 steps east, then 4 steps south. 0 found. 0 points. 296 seconds left.",
+  "n": 1,
+  "where": "event the-treasure-map.json (event)"
+ },
+ {
+  "text": "3 steps east, then 4 steps south. 0 found. 0 points. 295 seconds left.",
+  "n": 1,
+  "where": "event the-treasure-map.json (event)"
+ },
+ {
+  "text": "5 steps south, then 2 steps east.",
+  "n": 1,
+  "where": "event the-treasure-map.json (event)"
+ },
+ {
+  "text": "3 steps west, then 8 steps north.",
+  "n": 1,
+  "where": "event the-treasure-map.json (event)"
+ },
+ {
+  "text": "3 steps west, then 8 steps north. 0 found. 0 points. 295 seconds left.",
+  "n": 1,
+  "where": "event the-treasure-map.json (event)"
+ },
+ {
+  "text": "2 steps east, then 7 steps south.",
+  "n": 1,
+  "where": "event the-treasure-map.json (event)"
+ },
+ {
+  "text": "2 steps east, then 7 steps south. 0 found. 0 points. 295 seconds left.",
+  "n": 1,
+  "where": "event the-treasure-map.json (event)"
+ },
+ {
+  "text": "2 steps south, then 7 steps west.",
+  "n": 1,
+  "where": "event the-treasure-map.json (event)"
+ },
+ {
+  "text": "2 steps south, then 7 steps west. 0 found. 0 points. 295 seconds left.",
+  "n": 1,
+  "where": "event the-treasure-map.json (event)"
+ },
+ {
+  "text": "1 step west, then 1 step north.",
+  "n": 1,
+  "where": "event the-treasure-map.json (event)"
+ },
+ {
+  "text": "8 steps west, then 8 steps south.",
+  "n": 1,
+  "where": "event the-treasure-map.json (event)"
+ },
+ {
+  "text": "8 steps south, then 7 steps east.",
+  "n": 1,
+  "where": "event the-treasure-map.json (event)"
+ },
+ {
+  "text": "7 steps west, then 3 steps south.",
+  "n": 1,
+  "where": "event the-treasure-map.json (event)"
+ },
+ {
+  "text": "1 step north, then 4 steps west.",
+  "n": 1,
+  "where": "event the-treasure-map.json (event)"
+ },
+ {
+  "text": "1 step north, then 4 steps west. 0 found. 0 points. 294 seconds left.",
+  "n": 1,
+  "where": "event the-treasure-map.json (event)"
+ },
+ {
+  "text": "5 steps west, then 1 step north.",
+  "n": 1,
+  "where": "event the-treasure-map.json (event)"
+ },
+ {
+  "text": "7 steps east, then 2 steps north.",
+  "n": 1,
+  "where": "event the-treasure-map.json (event)"
+ },
+ {
+  "text": "1 step north, then 6 steps west.",
+  "n": 1,
+  "where": "event the-treasure-map.json (event)"
+ },
+ {
+  "text": "1 step west, then 1 step south.",
+  "n": 1,
+  "where": "event the-treasure-map.json (event)"
+ },
+ {
+  "text": "0 crates home. 0 points. 239 seconds left.",
+  "n": 1,
+  "where": "event the-warehouse.json (event)"
+ },
+ {
+  "text": "0 crates home. 0 points. 238 seconds left.",
+  "n": 1,
+  "where": "event the-warehouse.json (event)"
+ },
+ {
+  "text": "0 crates home. 0 points. 237 seconds left.",
+  "n": 1,
+  "where": "event the-warehouse.json (event)"
+ },
+ {
+  "text": "0 crates home. 0 points. 235 seconds left.",
+  "n": 3,
+  "where": "event the-warehouse.json (event)"
+ },
+ {
+  "text": "0 crates home. 0 points. 234 seconds left.",
+  "n": 1,
+  "where": "event the-warehouse.json (event)"
+ },
+ {
+  "text": "0 crystals, 0 points. Air: 44 seconds.",
+  "n": 1,
+  "where": "event thin-air.json (event)"
+ },
+ {
+  "text": "0 crystals, 0 points. Air: 43 seconds.",
+  "n": 1,
+  "where": "event thin-air.json (event)"
+ },
+ {
+  "text": "0 crystals, 0 points. Air: 42 seconds.",
+  "n": 1,
+  "where": "event thin-air.json (event)"
+ },
+ {
+  "text": "0 crystals, 0 points. Air: 41 seconds.",
+  "n": 2,
+  "where": "event thin-air.json (event)"
+ },
+ {
+  "text": "0 crystals, 0 points. Air: 39 seconds.",
+  "n": 1,
+  "where": "event thin-air.json (event)"
+ },
+ {
+  "text": "0 gems, 0 points. 3 wolfs about. 179 seconds left.",
+  "n": 1,
+  "where": "event three-beasts.json (event)"
+ },
+ {
+  "text": "0 gems, 0 points. 3 wolfs about. 178 seconds left.",
+  "n": 1,
+  "where": "event three-beasts.json (event)"
+ },
+ {
+  "text": "0 gems, 0 points. 3 wolfs about. 177 seconds left.",
+  "n": 2,
+  "where": "event three-beasts.json (event)"
+ },
+ {
+  "text": "0 gems, 0 points. 3 wolfs about. 176 seconds left.",
+  "n": 1,
+  "where": "event three-beasts.json (event)"
+ },
+ {
+  "text": "0 gems, 0 points. 3 wolfs about. 174 seconds left.",
+  "n": 2,
+  "where": "event three-beasts.json (event)"
+ },
+ {
+  "text": "0 memories, 0 points. 3 left to find. 1 creature about. Level 1.",
+  "n": 5,
+  "where": "event trapped-in-darkness.json (event)"
+ },
+ {
+  "text": "Room 1. Find the key. 0 points. 238 seconds left.",
+  "n": 2,
+  "where": "event trapped-vault.json (event)"
+ },
+ {
+  "text": "Room 1. Find the key. 0 points. 237 seconds left.",
+  "n": 1,
+  "where": "event trapped-vault.json (event)"
+ },
+ {
+  "text": "Room 1. Find the key. 0 points. 236 seconds left.",
+  "n": 5,
+  "where": "event trapped-vault.json (event)"
+ },
+ {
+  "text": "Room 1. Find the key. 0 points. 234 seconds left.",
+  "n": 3,
+  "where": "event trapped-vault.json (event)"
+ },
+ {
+  "text": "Room 1. Find the key. 0 points. 233 seconds left.",
+  "n": 1,
+  "where": "event trapped-vault.json (event)"
+ },
+ {
+  "text": "0 coins delivered. 0 points. 149 seconds left.",
+  "n": 1,
+  "where": "event treasure-haul.json (event)"
+ },
+ {
+  "text": "0 coins delivered. 0 points. 148 seconds left.",
+  "n": 1,
+  "where": "event treasure-haul.json (event)"
+ },
+ {
+  "text": "0 coins delivered. 0 points. 145 seconds left.",
+  "n": 1,
+  "where": "event treasure-haul.json (event)"
+ },
+ {
+  "text": "0 coins delivered. 0 points. 144 seconds left.",
+  "n": 1,
+  "where": "event treasure-haul.json (event)"
+ },
+ {
+  "text": "0 coins delivered. 0 points. 143 seconds left.",
+  "n": 1,
+  "where": "event treasure-haul.json (event)"
+ },
+ {
+  "text": "0 jewels. 0 brought down. 0 points. 119 seconds left.",
+  "n": 1,
+  "where": "event turn-the-tables.json (event)"
+ },
+ {
+  "text": "0 jewels. 0 brought down. 0 points. 118 seconds left.",
+  "n": 2,
+  "where": "event turn-the-tables.json (event)"
+ },
+ {
+  "text": "0 jewels. 0 brought down. 0 points. 117 seconds left.",
+  "n": 1,
+  "where": "event turn-the-tables.json (event)"
+ },
+ {
+  "text": "0 jewels. 0 brought down. 0 points. 116 seconds left.",
+  "n": 1,
+  "where": "event turn-the-tables.json (event)"
+ },
+ {
+  "text": "0 jewels. 0 brought down. 0 points. 115 seconds left.",
+  "n": 2,
+  "where": "event turn-the-tables.json (event)"
+ },
+ {
+  "text": "0 jewels. 0 brought down. 0 points. 114 seconds left.",
+  "n": 1,
+  "where": "event turn-the-tables.json (event)"
+ },
+ {
+  "text": "0 caught, 0 missed. 0 points.",
+  "n": 5,
+  "where": "event whack-a-mole.json (event)"
+ },
+ {
+  "text": "1 caught, 0 missed. 2 points.",
+  "n": 1,
+  "where": "event whack-a-mole.json (event)"
+ },
+ {
+  "text": "1 caught, 1 missed. 2 points.",
+  "n": 3,
+  "where": "event whack-a-mole.json (event)"
+ },
+ {
+  "text": "With the guide. 3 points.",
+  "n": 3,
+  "where": "event whale-song.json (event)"
+ },
+ {
+  "text": "With the guide. 5 points.",
+  "n": 1,
+  "where": "event whale-song.json (event)"
+ },
+ {
+  "text": "The guide is getting away. 8 points.",
+  "n": 1,
+  "where": "event whale-song.json (event)"
+ },
+ {
+  "text": "5 outlaws left. 7 shots. 0 points. 149 seconds left.",
+  "n": 3,
+  "where": "event wild-west.json (event)"
+ },
+ {
+  "text": "4 outlaws left. 0 shots. 15 points. 147 seconds left.",
+  "n": 3,
+  "where": "event wild-west.json (event)"
+ },
+ {
+  "text": "4 outlaws left. 0 shots. 15 points. 146 seconds left.",
+  "n": 2,
+  "where": "event wild-west.json (event)"
+ },
+ {
+  "text": "4 outlaws left. 0 shots. 5 points. 145 seconds left.",
+  "n": 4,
+  "where": "event wild-west.json (event)"
+ },
+ {
+  "text": "4 outlaws left. 0 shots. 5 points. 144 seconds left.",
+  "n": 1,
+  "where": "event wild-west.json (event)"
+ },
+ {
+  "text": "0 mushrooms, 0 points. 2 left to find. 2 wolfs about. 3 lives left. Level 1. 0 stones in hand.",
+  "n": 5,
+  "where": "event wolf-woods.json (event)"
+ },
+ {
+  "text": "0 presents, 0 points. 116 seconds left.",
+  "n": 3,
+  "where": "event christmas-presents-2026.json (event)"
+ },
+ {
+  "text": "It was 5.",
+  "n": 1,
+  "where": "event count-the-chimes-2026.json (event)"
+ },
+ {
+  "text": "0 pumpkins, 0 points. 119 seconds left.",
+  "n": 2,
+  "where": "event pumpkin-hunt-2026.json (event)"
+ },
+ {
+  "text": "0 pumpkins, 0 points. 118 seconds left.",
+  "n": 2,
+  "where": "event pumpkin-hunt-2026.json (event)"
+ },
+ {
+  "text": "0 pumpkins, 0 points. 116 seconds left.",
+  "n": 3,
+  "where": "event pumpkin-hunt-2026.json (event)"
+ },
+ {
+  "text": "0 pumpkins, 0 points. 115 seconds left.",
+  "n": 1,
+  "where": "event pumpkin-hunt-2026.json (event)"
+ },
+ {
+  "text": "0 pumpkins, 0 points. 113 seconds left.",
+  "n": 1,
+  "where": "event pumpkin-hunt-2026.json (event)"
+ },
+ {
+  "text": "0 pumpkins, 0 points. 0 shots. 119 seconds left.",
+  "n": 1,
+  "where": "event pumpkin-hunt-second-addition-2026-2.json (event)"
+ },
+ {
+  "text": "0 pumpkins, 0 points. 0 shots. 118 seconds left.",
+  "n": 2,
+  "where": "event pumpkin-hunt-second-addition-2026-2.json (event)"
+ },
+ {
+  "text": "0 pumpkins, 0 points. 0 shots. 117 seconds left.",
+  "n": 3,
+  "where": "event pumpkin-hunt-second-addition-2026-2.json (event)"
+ },
+ {
+  "text": "0 pumpkins, 0 points. 0 shots. 116 seconds left.",
+  "n": 2,
+  "where": "event pumpkin-hunt-second-addition-2026-2.json (event)"
+ },
+ {
+  "text": "0 pumpkins, 0 points. 0 shots. 115 seconds left.",
+  "n": 1,
+  "where": "event pumpkin-hunt-second-addition-2026-2.json (event)"
+ },
+ {
+  "text": "0 pumpkins, 0 points. 0 shots. 114 seconds left.",
+  "n": 1,
+  "where": "event pumpkin-hunt-second-addition-2026-2.json (event)"
+ },
+ {
+  "text": "0 Cookies, 0 points.",
+  "n": 3,
+  "where": "event the-angry-papa-2026.json (event)"
+ },
+ {
+  "text": "0 jewels, 0 points. 6 shots. 3 lives left. 149 seconds left.",
+  "n": 1,
+  "where": "event the-jewel-heist-2026.json (event)"
+ },
+ {
+  "text": "0 jewels, 0 points. 4 shots. 3 lives left. 149 seconds left.",
+  "n": 1,
+  "where": "event the-jewel-heist-2026.json (event)"
+ },
+ {
+  "text": "0 jewels, 0 points. 0 shots. 3 lives left. 146 seconds left.",
+  "n": 1,
+  "where": "event the-jewel-heist-2026.json (event)"
+ },
+ {
+  "text": "0 jewels, 0 points. 0 shots. 3 lives left. 143 seconds left.",
+  "n": 1,
+  "where": "event the-jewel-heist-2026.json (event)"
+ },
+ {
+  "text": "With the guide. 1 point.",
+  "n": 1,
+  "where": "event the-music-box-2026.json (event)"
+ },
+ {
+  "text": "With the guide. 2 points.",
+  "n": 1,
+  "where": "event the-music-box-2026.json (event)"
+ },
+ {
+  "text": "The guide is getting away. 3 points.",
+  "n": 5,
+  "where": "event the-music-box-2026.json (event)"
+ },
+ {
+  "text": "0 memories, 0 points. 2 left to find. 1 creature about. Level 1.",
+  "n": 13,
+  "where": "event trapped-in-darkness-2026.json (event)"
+ },
+ {
+  "text": "7 Turkeys left. 990 shots. 60 points. 118 seconds left.",
+  "n": 1,
+  "where": "event turkey-hunt-2026-2.json (event)"
+ },
+ {
+  "text": "10 Turkeys left. 989 shots. 60 points. 117 seconds left.",
+  "n": 1,
+  "where": "event turkey-hunt-2026-2.json (event)"
+ },
+ {
+  "text": "10 Turkeys left. 981 shots. 60 points. 116 seconds left.",
+  "n": 1,
+  "where": "event turkey-hunt-2026-2.json (event)"
+ },
+ {
+  "text": "4 Turkeys left. 975 shots. 120 points. 115 seconds left.",
+  "n": 2,
+  "where": "event turkey-hunt-2026-2.json (event)"
+ },
+ {
+  "text": "58 seconds left. Facing north-east.",
+  "n": 1,
+  "where": "standard (standard)"
+ },
+ {
+  "text": "57 seconds left. Facing east.",
+  "n": 1,
+  "where": "standard (standard)"
+ },
+ {
+  "text": "56 seconds left. Facing north.",
+  "n": 1,
+  "where": "standard (standard)"
+ },
+ {
+  "text": "55 seconds left. Facing south-south-east.",
+  "n": 2,
+  "where": "standard (standard)"
+ },
+ {
+  "text": "53 seconds left. Facing south-south-west.",
+  "n": 2,
+  "where": "standard (standard)"
+ },
+ {
+  "text": "50 seconds left. Facing south-south-west.",
+  "n": 1,
+  "where": "standard (standard)"
+ },
+ {
+  "text": "50 seconds left. Facing west.",
+  "n": 1,
+  "where": "standard (standard)"
+ },
+ {
+  "text": "50 seconds left. Facing west-north-west.",
+  "n": 1,
+  "where": "standard (standard)"
+ },
+ {
+  "text": "50 seconds left. Facing north-north-west.",
+  "n": 2,
+  "where": "standard (standard)"
+ },
+ {
+  "text": "49 seconds left. Facing north-north-east.",
+  "n": 2,
+  "where": "standard (standard)"
+ },
+ {
+  "text": "47 seconds left. Facing north-north-west.",
+  "n": 1,
+  "where": "standard (standard)"
+ },
+ {
+  "text": "0 shots. 0 down. Wave 1, 6 left. Clock 77 seconds. Facing north-north-east.",
+  "n": 1,
+  "where": "battle (battle)"
+ },
+ {
+  "text": "0 shots. 0 down. Wave 1, 6 left. Clock 76 seconds. Facing west-north-west.",
+  "n": 1,
+  "where": "battle (battle)"
+ },
+ {
+  "text": "0 shots. 0 down. Wave 1, 6 left. Clock 76 seconds. Facing north-north-west.",
+  "n": 1,
+  "where": "battle (battle)"
+ },
+ {
+  "text": "0 shots. 0 down. Wave 1, 6 left. Clock 75 seconds. Facing west-north-west.",
+  "n": 1,
+  "where": "battle (battle)"
+ },
+ {
+  "text": "0 shots. 0 down. Wave 1, 6 left. Clock 74 seconds. Facing west-north-west.",
+  "n": 1,
+  "where": "battle (battle)"
+ },
+ {
+  "text": "0 shots. 0 down. Wave 1, 6 left. Clock 73 seconds. Facing west-north-west.",
+  "n": 3,
+  "where": "battle (battle)"
+ },
+ {
+  "text": "0 shots. 0 down. Wave 1, 6 left. Clock 72 seconds. Facing west-south-west.",
+  "n": 1,
+  "where": "battle (battle)"
+ },
+ {
+  "text": "0 shots. 0 down. Wave 1, 6 left. Clock 71 seconds. Facing west.",
+  "n": 1,
+  "where": "battle (battle)"
+ },
+ {
+  "text": "0 shots. 0 down. Wave 1, 6 left. Clock 70 seconds. Facing north-north-east.",
+  "n": 1,
+  "where": "battle (battle)"
+ },
+ {
+  "text": "0 shots. 0 down. Wave 1, 6 left. Clock 69 seconds. Facing west.",
+  "n": 2,
+  "where": "battle (battle)"
+ },
+ {
+  "text": "0 shots. 0 down. Wave 1, 6 left. Clock 69 seconds. Facing west-north-west.",
+  "n": 1,
+  "where": "battle (battle)"
+ },
+ {
+  "text": "Floor 1 of 5.",
+  "n": 1,
+  "where": "tower (tower)"
+ },
+ {
+  "text": "Floor 1 of 5, 100 health, 2 items, 1 to go. Facing north.",
+  "n": 2,
+  "where": "tower (tower)"
+ },
+ {
+  "text": "Floor 1 of 5, 100 health, 0 items, 1 to go. Facing north.",
+  "n": 1,
+  "where": "tower (tower)"
+ },
+ {
+  "text": "Floor 1 of 5, 100 health, 0 items, 1 to go. Facing north-north-west.",
+  "n": 1,
+  "where": "tower (tower)"
+ },
+ {
+  "text": "Floor 1 of 5, 100 health, 0 items, 1 to go. Facing west-north-west.",
+  "n": 1,
+  "where": "tower (tower)"
+ },
+ {
+  "text": "Floor 1 of 5, 100 health, 0 items, 1 to go. Facing east-north-east.",
+  "n": 3,
+  "where": "tower (tower)"
+ },
+ {
+  "text": "Floor 1 of 5, 100 health, 0 items, 1 to go. Facing east-south-east.",
+  "n": 2,
+  "where": "tower (tower)"
+ },
+ {
+  "text": "Floor 1 of 5, 100 health, 0 items, 1 to go. Facing south-south-east.",
+  "n": 1,
+  "where": "tower (tower)"
+ },
+ {
+  "text": "Floor 1 of 5, 100 health, 0 items, 1 to go. Facing south.",
+  "n": 1,
+  "where": "tower (tower)"
+ },
+ {
+  "text": "Floor 1 of 5, 100 health, 0 items, 1 to go. Facing north-north-east.",
+  "n": 2,
+  "where": "tower (tower)"
+ },
+ {
+  "text": "Floor 1 of 5, 100 health, 0 items, 1 to go. Facing east.",
+  "n": 2,
+  "where": "tower (tower)"
+ },
+ {
+  "text": "0 shots. 2 enemies left. Key not found. 20 points. Facing east-north-east.",
+  "n": 5,
+  "where": "island (island)"
+ },
+ {
+  "text": "0 shots. 2 enemies left. Key not found. 20 points. Facing north.",
+  "n": 3,
+  "where": "island (island)"
+ },
+ {
+  "text": "0 shots. 2 enemies left. Key not found. 20 points. Facing west.",
+  "n": 2,
+  "where": "island (island)"
+ },
+ {
+  "text": "0 shots. 2 enemies left. Key not found. 20 points. Facing south-south-west.",
+  "n": 2,
+  "where": "island (island)"
+ },
+ {
+  "text": "0 shots. 2 enemies left. Key not found. 20 points. Facing south.",
+  "n": 1,
+  "where": "island (island)"
+ },
+ {
+  "text": "0 shots. 2 enemies left. Key not found. 20 points. Facing west-south-west.",
+  "n": 1,
+  "where": "island (island)"
+ },
+ {
+  "text": "0 shots. 2 enemies left. Key not found. 20 points. Facing west-north-west.",
+  "n": 1,
+  "where": "island (island)"
+ },
+ {
+  "text": "0 shots. 2 enemies left. Key not found. 20 points. Facing east.",
+  "n": 1,
+  "where": "island (island)"
+ },
+ {
+  "text": "Level 1. 1 of 5 found. 3 lives left. Facing north-north-east.",
+  "n": 3,
+  "where": "findvoice (findvoice)"
+ },
+ {
+  "text": "Level 1. 1 of 5 found. 3 lives left. Facing north.",
+  "n": 1,
+  "where": "findvoice (findvoice)"
+ },
+ {
+  "text": "Level 1. 1 of 5 found. 3 lives left. Facing south-south-east.",
+  "n": 4,
+  "where": "findvoice (findvoice)"
+ },
+ {
+  "text": "Level 1. 1 of 5 found. 3 lives left. Facing south-south-west.",
+  "n": 2,
+  "where": "findvoice (findvoice)"
+ },
+ {
+  "text": "Level 1. 1 of 5 found. 3 lives left. Facing south-east.",
+  "n": 2,
+  "where": "findvoice (findvoice)"
+ },
+ {
+  "text": "100 health. 10 points. 18 shots. 3 items. Facing north.",
+  "n": 1,
+  "where": "ultimate (ultimate)"
+ },
+ {
+  "text": "100 health. 10 points. 20 shots. 3 items. Facing north-north-west.",
+  "n": 2,
+  "where": "ultimate (ultimate)"
+ },
+ {
+  "text": "100 health. 10 points. 19 shots. 3 items. Facing west.",
+  "n": 1,
+  "where": "ultimate (ultimate)"
+ },
+ {
+  "text": "Compass on. You are in a battle area. The safe zone is 42 steps away, starting east, behind you. Nothing to pick up nearby. West. Open for 5 steps, then a wall; the edge of the world is 6 steps away.",
+  "n": 1,
+  "where": "ultimate (ultimate)"
+ },
+ {
+  "text": "West. Open for 5 steps, then a wall; the edge of the world is 6 steps away. The way to the safe zone is east, behind you.",
+  "n": 4,
+  "where": "ultimate (ultimate)"
+ },
+ {
+  "text": "Facing west. The way to the safe zone is east, 170 degrees to your right.",
+  "n": 1,
+  "where": "ultimate (ultimate)"
+ },
+ {
+  "text": "Facing west-north-west. The way to the safe zone is east, 150 degrees to your right.",
+  "n": 15,
+  "where": "ultimate (ultimate)"
+ },
+ {
+  "text": "Facing west-south-west. The way to the safe zone is east, 150 degrees to your left.",
+  "n": 26,
+  "where": "ultimate (ultimate)"
+ },
+ {
+  "text": "100 health. 10 points. 20 shots. 3 items. Facing west-south-west.",
+  "n": 3,
+  "where": "ultimate (ultimate)"
+ },
+ {
+  "text": "Compass on. You are in a battle area. The safe zone is 41 steps away, starting east, 150 degrees to your left. Nothing to pick up nearby. Facing west-south-west.",
+  "n": 1,
+  "where": "ultimate (ultimate)"
+ },
+ {
+  "text": "West. Open for 4 steps, then a wall; the edge of the world is 5 steps away. The way to the safe zone is east, behind you.",
+  "n": 4,
+  "where": "ultimate (ultimate)"
+ },
+ {
+  "text": "100 health. 10 points. 20 shots. 3 items. Facing west-north-west.",
+  "n": 2,
+  "where": "ultimate (ultimate)"
+ },
+ {
+  "text": "Facing north-north-west. The way to the safe zone is east, 120 degrees to your right.",
+  "n": 3,
+  "where": "ultimate (ultimate)"
+ },
+ {
+  "text": "Compass on. You are in a battle area. The safe zone is 36 steps away, starting east, 30 degrees to your left. Nothing to pick up nearby. Facing east-south-east.",
+  "n": 1,
+  "where": "ultimate (ultimate)"
+ },
+ {
+  "text": "100 health. 10 points. 20 shots. 3 items. Facing south.",
+  "n": 2,
+  "where": "ultimate (ultimate)"
+ },
+ {
+  "text": "Compass on. You are in a battle area. The safe zone is 31 steps away, starting east, 120 degrees to your left. Nothing to pick up nearby. Facing south-south-west.",
+  "n": 1,
+  "where": "ultimate (ultimate)"
+ },
+ {
+  "text": "100 health. 10 points. 19 shots. 3 items. Facing south-south-west.",
+  "n": 1,
+  "where": "ultimate (ultimate)"
+ },
+ {
+  "text": "Compass on. You are in a battle area. The safe zone is 32 steps away, starting east, behind you. Nothing to pick up nearby. West. Open for 5 steps, then a wall; the edge of the world is 6 steps away.",
+  "n": 1,
+  "where": "ultimate (ultimate)"
+ },
+ {
+  "text": "Facing west-south-west. The way to the safe zone is east, 160 degrees to your left.",
+  "n": 2,
+  "where": "ultimate (ultimate)"
+ },
+ {
+  "text": "100 health. 10 points. 20 shots. 0 items. Facing west.",
+  "n": 1,
+  "where": "ultimate (ultimate)"
+ },
+ {
+  "text": "100 health. 10 points. 20 shots. 0 items. Facing north-north-west.",
+  "n": 2,
+  "where": "ultimate (ultimate)"
+ },
+ {
+  "text": "100 health. 10 points. 20 shots. 0 items. Facing west-north-west.",
+  "n": 1,
+  "where": "ultimate (ultimate)"
+ },
+ {
+  "text": "100 health. 10 points. 20 shots. 0 items. Facing west-south-west.",
+  "n": 1,
+  "where": "ultimate (ultimate)"
+ },
+ {
+  "text": "Compass on. You are in a tower area. The safe zone is 11 steps away, starting east, 150 degrees to your left. Nearby: a tower item, 14 steps away, starting north, 120 degrees to your right; ammo, 18 steps away, starting north, 120 degrees to your right; a 50 credit, 21 steps away, starting north, 120 degrees to your right. Facing west-south-west.",
+  "n": 1,
+  "where": "ultimate (ultimate)"
+ },
+ {
+  "text": "Facing south-south-west. The way to the safe zone is east, 120 degrees to your left.",
+  "n": 10,
+  "where": "ultimate (ultimate)"
+ },
+ {
+  "text": "Compass on. You are in a tower area. The safe zone is 8 steps away, starting east, 60 degrees to your left. Nearby: a tower item, 15 steps away, starting north, 150 degrees to your left; ammo, 19 steps away, starting north, 150 degrees to your left; a 50 credit, 22 steps away, starting north, 150 degrees to your left. Facing south-south-east.",
+  "n": 1,
+  "where": "ultimate (ultimate)"
+ },
+ {
+  "text": "South. A wall. Beyond, a safe zone, 1 step away. The way to the safe zone is east, to your left.",
+  "n": 13,
+  "where": "ultimate (ultimate)"
+ },
+ {
+  "text": "Facing south. The way to the safe zone is east, 80 degrees to your left.",
+  "n": 1,
+  "where": "ultimate (ultimate)"
+ },
+ {
+  "text": "Facing south. The way to the safe zone is east, 100 degrees to your left.",
+  "n": 1,
+  "where": "ultimate (ultimate)"
+ },
+ {
+  "text": "100 health. 10 points. 20 shots. 0 items. Facing south-south-west.",
+  "n": 3,
+  "where": "ultimate (ultimate)"
+ },
+ {
+  "text": "Compass on. You are in a tower area. The safe zone is 1 step away, starting south, 30 degrees to your right. Nearby: a tower item, 6 steps away, starting north, 150 degrees to your left; ammo, 14 steps away, starting north, 150 degrees to your left; a 50 credit, 17 steps away, starting north, 150 degrees to your left. Facing south-south-east.",
+  "n": 1,
+  "where": "ultimate (ultimate)"
+ },
+ {
+  "text": "East. Open for 1 step, then a wall; the edge of the world is 26 steps away. The way to the safe zone is south, to your right.",
+  "n": 3,
+  "where": "ultimate (ultimate)"
+ },
+ {
+  "text": "South, the way to the safe zone. Open to the border, 0 steps, into a safe zone. Walk 1 step this way, and you are there.",
+  "n": 4,
+  "where": "ultimate (ultimate)"
+ },
+ {
+  "text": "Compass on. You are in a safe zone. The way out is 3 steps away, starting north, 120 degrees to your right. Nearby: ammo, 15 steps away, starting south, 60 degrees to your left; ammo, 17 steps away, starting north, 120 degrees to your right; a 50 credit, 20 steps away, starting north, 120 degrees to your right. Facing west-south-west.",
+  "n": 1,
+  "where": "ultimate (ultimate)"
+ },
+ {
+  "text": "West. Open for 6 steps, then a wall. Beyond, a tower area, 7 steps away. The way out is north, to your right.",
+  "n": 3,
+  "where": "ultimate (ultimate)"
+ },
+ {
+  "text": "Compass on. You are in a safe zone. The way out is 3 steps away, starting north, to your right. Nearby: ammo, 15 steps away, starting south, to your left; ammo, 17 steps away, starting north, to your right; a 50 credit, 20 steps away, starting north, to your right. West. Open for 6 steps, then a wall. Beyond, a tower area, 7 steps away.",
+  "n": 1,
+  "where": "ultimate (ultimate)"
+ },
+ {
+  "text": "Compass on. You are in a safe zone. The way out is 5 steps away, starting north, 150 degrees to your left. Nearby: ammo, 14 steps away, starting south, 30 degrees to your right; ammo, 18 steps away, starting north, 150 degrees to your left; a 50 credit, 21 steps away, starting north, 150 degrees to your left. Facing south-south-east.",
+  "n": 1,
+  "where": "ultimate (ultimate)"
+ },
+ {
+  "text": "East. Open for 24 steps, then a wall; the edge of the world is 25 steps away. The way out is north, to your left.",
+  "n": 2,
+  "where": "ultimate (ultimate)"
+ },
+ {
+  "text": "Facing east-north-east. The way out is north, 70 degrees to your left.",
+  "n": 2,
+  "where": "ultimate (ultimate)"
+ },
+ {
+  "text": "Facing east-north-east. The way out is north, 60 degrees to your left.",
+  "n": 3,
+  "where": "ultimate (ultimate)"
+ },
+ {
+  "text": "Compass on. You are in a safe zone. The way out is 5 steps away, starting north, 60 degrees to your left. Nearby: ammo, 16 steps away, starting south, 120 degrees to your right; ammo, 18 steps away, starting north, 60 degrees to your left; a 50 credit, 21 steps away, starting north, 60 degrees to your left. Facing east-north-east.",
+  "n": 1,
+  "where": "ultimate (ultimate)"
+ },
+ {
+  "text": "100 health, 1 item, 1 to go. Clock 298 seconds. 0 points total. Facing north.",
+  "n": 1,
+  "where": "chaos (tower)"
+ },
+ {
+  "text": "100 health, 0 items, 1 to go. Clock 297 seconds. 0 points total. Facing north.",
+  "n": 1,
+  "where": "chaos (tower)"
+ },
+ {
+  "text": "100 health, 0 items, 1 to go. Clock 295 seconds. 0 points total. Facing north-north-east.",
+  "n": 1,
+  "where": "chaos (tower)"
+ },
+ {
+  "text": "100 health, 0 items, 1 to go. Clock 295 seconds. 0 points total. Facing north-north-west.",
+  "n": 2,
+  "where": "chaos (tower)"
+ },
+ {
+  "text": "100 health, 0 items, 1 to go. Clock 294 seconds. 0 points total. Facing north.",
+  "n": 1,
+  "where": "chaos (tower)"
+ },
+ {
+  "text": "100 health, 0 items, 1 to go. Clock 293 seconds. 0 points total. Facing north-north-west.",
+  "n": 1,
+  "where": "chaos (tower)"
+ },
+ {
+  "text": "100 health, 0 items, 1 to go. Clock 291 seconds. 0 points total. Facing east-north-east.",
+  "n": 2,
+  "where": "chaos (tower)"
+ },
+ {
+  "text": "100 health, 0 items, 1 to go. Clock 290 seconds. 0 points total. Facing east-north-east.",
+  "n": 1,
+  "where": "chaos (tower)"
+ },
+ {
+  "text": "100 health, 0 items, 1 to go. Clock 289 seconds. 0 points total. Facing north-north-east.",
+  "n": 1,
+  "where": "chaos (tower)"
+ },
+ {
+  "text": "100 health, 0 items, 1 to go. Clock 289 seconds. 0 points total. Facing south-east.",
+  "n": 1,
+  "where": "chaos (tower)"
+ },
+ {
+  "text": "100 health, 0 items, 1 to go. Clock 289 seconds. 0 points total. Facing east-south-east.",
+  "n": 1,
+  "where": "chaos (tower)"
+ },
+ {
+  "text": "100 health, 0 items, 1 to go. Clock 288 seconds. 0 points total. Facing east-north-east.",
+  "n": 1,
+  "where": "chaos (tower)"
+ },
+ {
+  "text": "100 health, 0 items, 1 to go. Clock 288 seconds. 0 points total. Facing north-north-east.",
+  "n": 1,
+  "where": "chaos (tower)"
+ },
+ {
+  "text": "100 health, 0 items, 1 to go. Clock 287 seconds. 0 points total. Facing north.",
+  "n": 1,
+  "where": "chaos (tower)"
+ },
+ {
+  "text": "100 health, 0 items, 1 to go. Clock 287 seconds. 0 points total. Facing north-north-west.",
+  "n": 1,
+  "where": "chaos (tower)"
+ }
+]

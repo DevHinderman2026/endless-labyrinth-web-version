@@ -382,7 +382,7 @@ export const CHAOS_SLIDE_TIME = 30;
 // The safe zones' characters (web 6.0.0, Russell, 19 Nov; the cast and their lines
 // in js/data, see ultimate/cast.js). Each safe zone has its character standing
 // somewhere in it. While you are in the zone they greet you now and then, from
-// where they stand, in their own Kokoro voice with the world's echo. Walk to them
+// where they stand, in their own Kokoro voice (recorded, web 6.1.0) with the world's echo. Walk to them
 // (within two steps) and they tell you one story line, then give you a gift. Walk
 // away while they talk and they talk on; the gift waits for you, and they call you
 // back now and then. One gift a character, each world. Their lines are always
@@ -393,7 +393,7 @@ export const CAST_CALLBACK_EVERY = [5.0, 8.0];  // between call-backs, while the
 export const CAST_LEVEL = 1.0;                  // beside them: the in-run voice's level
 export const CAST_RANGE = 45.0;                 // they fade over this many units
 export const CAST_FLOOR = 0.15;                 // and are never quieter than this inside their zone
-export const CAST_WAIT_VOICE = 2.5;             // seconds a story or gift line waits to be made before the device's voice says it
+export const CAST_WAIT_VOICE = 2.5;             // seconds a line may wait for its recording to be decoded (a moment) before the device's voice says it
 export const CAST_BEACON = 'event_beacon_shimmer';   // where they stand, while the device's voice speaks for them
 // The gifts, by Russell's eight groups: supplies only. Health is added on top, even
 // over 100 (only potions never give more than 100).
@@ -439,8 +439,10 @@ const levelAt = (d, range = HEAR_RANGE) => Math.max(0, 1 - d / range);
 export const AIM_CLOSE = 6.0;                   // units: two steps
 
 // One step's walk over the floor (js/turning.js: stopped by a wall, sliding along
-// it at a slant), on this mode's squares.
-export function walkStep(from, dir, len, open) { return walkSquares(from, dir, len, open, cellOf, posOf); }
+// it at a slant), on this mode's squares. (6.1.0, Russell: here you fit between two
+// wall squares that touch only at their corners, so a gap you face at a slant, with
+// a wall to your left and your right, lets you through. See js/turning.js walkStep.)
+export function walkStep(from, dir, len, open) { return walkSquares(from, dir, len, open, cellOf, posOf, 1, true); }
 
 function pointToSegment(x, y, a, b) {
   const [ax, ay] = a; const [bx, by] = b;
@@ -665,7 +667,7 @@ const mixin = {
 
   // ---------------------------------------------------------------- the safe zones' characters (web 6.0.0)
   _utCastVoices() {
-    if (!this.castVoices) this.castVoices = new CastVoices(() => (this.tts && this.tts.bella ? this.tts.bella.engine : null));
+    if (!this.castVoices) this.castVoices = new CastVoices(this.tts && this.tts.bella ? this.tts.bella.library : null);
     return this.castVoices;
   },
 
@@ -688,27 +690,26 @@ const mixin = {
     return ln;
   },
 
-  // Their lines made ahead while you are near: the next greeting, the story, a
+  // Their lines decoded ahead while you are near: the next greeting, the story, a
   // call-back and a gift line.
   _utCastPrepare(w) {
     const cv = this._utCastVoices();
-    if (!cv.usable(w.ch.voice)) return;
     if (!w.story) w.story = pickStory(w.ch, this.scores && this.scores.settings);
     w.nextGreet = w.nextGreet || this._utCastLine(w, 'greeting');
     w.nextCallback = w.nextCallback || this._utCastLine(w, 'callback');
     w.nextGift = w.nextGift || this._utCastLine(w, 'gift');
-    for (const ln of [w.nextGreet, w.story, w.nextCallback, w.nextGift]) if (ln) cv.peek(w.ch.voice, ln, this.audio.ctx);
+    for (const ln of [w.nextGreet, w.story, w.nextCallback, w.nextGift]) if (ln) cv.peek(ln);
   },
 
-  // Say a line from where they stand. Their own voice when it is made; the device's
-  // voice (and their beacon) when it cannot be. Returns false when the line is not
-  // ready yet (it is being made: asked again next frame).
-  _utCastSay(a, ln, { mayWait = false } = {}) {
+  // Say a line from where they stand: its recording, in their own voice; the device's
+  // voice (and their beacon) only if the recording cannot be played. Returns false
+  // when the recording is not decoded yet (a moment: asked again next frame).
+  _utCastSay(a, ln) {
     const w = a.who;
     if (!ln) return true;
     const cv = this._utCastVoices();
-    if (cv.usable(w.ch.voice)) {
-      const buf = cv.peek(w.ch.voice, ln, this.audio.ctx);
+    if (cv.has(ln)) {
+      const buf = cv.peek(ln);
       if (buf) {
         const name = `ut_cast_${ln.id}`;
         // Each character's last line is all the sound engine keeps of theirs: the one
@@ -725,17 +726,22 @@ const mixin = {
         }
         this.audio.buffers.set('dry:' + name, buf);
         w.voice = this._utPlay(name, w.pos, { volume: 0.0 });
-        w.until = 0; w.waited = 0;
+        w.until = 0; w.waitSince = 0;
         if (w.beacon) { w.beacon.stop(); this.ut.voices.delete(w.beacon); w.beacon = null; }
         return true;
       }
-      if (mayWait && w.waited < CAST_WAIT_VOICE) return false;
+      // (The wait is for this line, asked for frame after frame: a wait begun for
+      // another line, or one left off a while ago, starts again.)
+      const now = performance.now();
+      if (!w.waitSince || w.waitFor !== ln.id || now - (w.waitAsked || 0) > 500) { w.waitSince = now; w.waitFor = ln.id; }
+      w.waitAsked = now;
+      if (!cv.failed(ln) && now - w.waitSince < CAST_WAIT_VOICE * 1000) return false;
     }
+    w.waitSince = 0;
     // The device's voice (heard whatever the Speech setting), not placed; the
     // shimmering beacon marks where they stand.
     sayLocatable(this.tts, ln.text);
     w.until = 0.6 + ln.text.length * 0.065;
-    w.waited = 0;
     if (!w.beacon && this.audio.has(CAST_BEACON)) w.beacon = this._utPlay(CAST_BEACON, w.pos, { loops: -1, volume: 0.0 });
     return true;
   },
@@ -762,8 +768,7 @@ const mixin = {
         if (!here) continue;
         if (d <= CAST_REACH && !talking) {
           if (!w.story) w.story = pickStory(w.ch, this.scores && this.scores.settings);
-          w.waited += dt;
-          if (this._utCastSay(a, w.story, { mayWait: true })) { w.state = 'telling'; w.told = w.story; }
+          if (this._utCastSay(a, w.story)) { w.state = 'telling'; w.told = w.story; }
           continue;
         }
         w.timer -= dt;
@@ -786,9 +791,8 @@ const mixin = {
         }
       } else if (w.state === 'gift') {
         // Their gift line, then the gift.
-        w.waited += dt;
         const ln = w.nextGift || this._utCastLine(w, 'gift');
-        if (this._utCastSay(a, ln, { mayWait: true })) { w.nextGift = null; w.state = 'giving'; }
+        if (this._utCastSay(a, ln)) { w.nextGift = null; w.state = 'giving'; }
       } else if (w.state === 'giving') {
         if (talking) continue;
         this._utCastGive(a);
@@ -1055,7 +1059,7 @@ const mixin = {
       const pos = randomFloor(u.world, a, rand, { from: this.playerPos, minDist: 8.0, avoid, clearance: 6.0 }) || randomFloor(u.world, a, rand, {});
       if (!pos) continue;
       u.castHere.add(ch.id);
-      a.who = { ch, pos, state: 'greet', timer: uniform(1.0, 3.0), voice: null, beacon: null, until: 0, waited: 0, line: null, story: null };
+      a.who = { ch, pos, state: 'greet', timer: uniform(1.0, 3.0), voice: null, beacon: null, until: 0, waitSince: 0, line: null, story: null };
     }
     this._utRefreshRooms();
     this._utPotions(0);        // already low: the new world's safe zones have their potions from the start

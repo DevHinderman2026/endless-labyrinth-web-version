@@ -6,7 +6,7 @@ import { HELP as BASE_HELP } from './help-data.js';
 import { MODES } from './modes/index.js';
 import { RATES } from './speech.js';
 import { keyboardDevice, windowsOnly } from './device.js';
-import { BATTLE_CROWD, BATTLE_BEACON_BOOST, CROWD_LEVEL, AMBIENCE_LEVEL, BACKGROUND_SEND, ROARS, ROAR_LEVEL, ROAR_AFTER, HIT_REACTIONS, HIT_REACT_LEVEL,
+import { BATTLE_CROWD, BATTLE_BEACON_BOOST, CROWD_LEVEL, AMBIENCE_LEVEL, BACKGROUND_SEND, ROARS, ROAR_LEVEL, ROAR_AFTER,
   crowdSend } from './modes/ultimate.js';
 import { aliasRecording } from './modes/events/sounds.js';
 
@@ -44,10 +44,14 @@ const BATTLE_CREDIT_GAIN = 0.7;
 // do, so its cartridge and credit beacons are twice as loud, as they are there
 // (BATTLE_BEACON_BOOST), to be heard over it. Held to full loudness up close.
 const BATTLE_AMMO_GAIN = 0.55 * BATTLE_BEACON_BOOST;
+// (6.1.0, Russell) In Battle Mode and Chaos's battles the crowd's cheer for a kill is a
+// little quieter than in Ultimate Mode's battle areas (ROAR_LEVEL, unchanged there).
+const BATTLE_ROAR_LEVEL = ROAR_LEVEL * 0.8;
 // The crowd goes wild when a wave begins, with the war horn: three of its roars
-// at once, a little apart and louder than a kill's, and its own loop swelling to
-// WAVE_SURGE times its level for a few seconds and easing back.
-const WAVE_ROAR_LEVEL = 0.9;
+// at once, a little apart, and its own loop swelling to WAVE_SURGE times its level
+// for a few seconds and easing back. (6.1.0, Russell: the roars as loud as a kill's
+// cheer, no louder; they were 0.9.)
+const WAVE_ROAR_LEVEL = BATTLE_ROAR_LEVEL;
 const WAVE_ROAR_AT = [0.0, 0.3, 0.7];
 const WAVE_SURGE = 2.0;
 const WAVE_SURGE_RISE = 0.4;
@@ -56,12 +60,19 @@ const WAVE_SURGE_END = 5.0;
 const BATTLE_BREAK_COUNTDOWN = 5;
 // The arena crowd (web 6.0.0, Russell, 19 November 2026): Ultimate Mode's arena
 // crowd in every battle, Battle Mode's and Chaos's, exactly as in Ultimate's battle
-// areas: the stadium crowd under the drums, a roar when you shoot an enemy down, a
-// groan or a gasp when one reaches you, every one of them ringing in the arena's
-// echo (the cheers and reactions further into it, as Russell asked of Ultimate's).
+// areas: the stadium crowd under the drums and a roar when you shoot an enemy down,
+// ringing in the arena's echo (the cheers further into it, as Russell asked of
+// Ultimate's). (6.1.0: no groan or gasp when one reaches you; see below.)
 // No announcer. Its level against the drone is Ultimate's (there the drone is
 // AMBIENCE_LEVEL and the crowd CROWD_LEVEL of that; here the drone is 0.8).
 const BATTLE_CROWD_LEVEL = CROWD_LEVEL * AMBIENCE_LEVEL;
+// (6.1.0, Russell: the stadium crowd must be heard everywhere, never silent.) Its
+// recording has a long lull, about eleven seconds where it falls to a third of its
+// loudness, and under the drums that was heard as no crowd at all. So the crowd is
+// two copies of the recording, the second started half a loop later, each at
+// 1/sqrt(2) of the level (together as loud as one): one copy's lull always meets the
+// other's full crowd. (The recording itself is never changed.)
+const BATTLE_CROWD_COPY = Math.SQRT1_2;
 const LAB_DENSITY_CAP = 0.25;            // the most of a labyrinth's cells that may be walls (2.0.0; was 0.35)
 const STANDARD_CREDIT_VALUES = [20, 30, 40];   // 5.0.0 (were 15, 20, 30)
 const STANDARD_CREDIT_WEIGHTS = [70, 22, 8];
@@ -425,11 +436,11 @@ export class Game {
     this.battleAmbTimer = uniform(...BATTLE_AMB_SWAP);
     this.battleBeatIdx = -1;
     this.battleAmbIdx = -1;
-    if (this.battleCrowdChannel) this.battleCrowdChannel.stop();
+    for (const c of [this.battleCrowdChannel, this.battleCrowdTwin]) if (c) c.stop();
     this.battleCrowdChannel = null;
+    this.battleCrowdTwin = null;
     this.battleLastRoar = null;
     this.battleCrowdSurge = null;
-    this.battleLastReact = null;
     this.breakLastBeep = null;
     for (const m of MODES) if (m.reset) m.reset(this);
   }
@@ -478,20 +489,26 @@ export class Game {
   // stops with them, so a chaos battle's crowd fades out with its drums when the
   // level ends, and a game over or a new run stops it with them. When the drums
   // change partway through a battle the crowd is handed on to the new ones.
+  // (Returns the crowd, both copies, if it is still playing: [main, twin], or null.)
   _battleCrowdLetGo() {
-    const c = this.battleCrowdChannel;
-    if (c && this.beatChannel) this.beatChannel.followers = this.beatChannel.followers.filter((f) => f !== c);
-    return c && c.busy && !c.fadingOut ? c : null;
+    const c = this.battleCrowdChannel; const t = this.battleCrowdTwin;
+    if (this.beatChannel) this.beatChannel.followers = this.beatChannel.followers.filter((f) => f !== c && f !== t);
+    return c && c.busy && !c.fadingOut ? [c, t && t.busy && !t.fadingOut ? t : null] : null;
   }
 
   _battleCrowdOn(crowd, fade) {
-    let c = crowd;
-    if (!c && this.audio.has(BATTLE_CROWD)) {
+    let [c, t] = crowd || [null, null];
+    if ((!c || !t) && this.audio.has(BATTLE_CROWD)) {
       const name = aliasRecording(this.audio, BATTLE_CROWD, `event_amb_file_${BATTLE_CROWD}`);
-      if (name) c = this.audio.play(name, { loops: -1, volume: BATTLE_CROWD_LEVEL, fadeMs: fade * 1000, send: BACKGROUND_SEND });
+      const pair = name ? this.audio.entries.get(name) : null;
+      const length = pair && pair.dry && pair.dry.frames ? pair.dry.frames / 44100 : 0;
+      const level = BATTLE_CROWD_LEVEL * BATTLE_CROWD_COPY;
+      if (name && !c) c = this.audio.play(name, { loops: -1, volume: level, fadeMs: fade * 1000, send: BACKGROUND_SEND });
+      if (name && !t) t = this.audio.play(name, { loops: -1, volume: level, fadeMs: fade * 1000, send: BACKGROUND_SEND, offset: length / 2 });
     }
     this.battleCrowdChannel = c || null;
-    if (c && this.beatChannel) this.beatChannel.followers.push(c);
+    this.battleCrowdTwin = t || null;
+    if (this.beatChannel) for (const x of [c, t]) if (x) this.beatChannel.followers.push(x);
   }
 
   // One of the crowd's recordings, never the one heard last (Ultimate's _utFresh).
@@ -508,7 +525,7 @@ export class Game {
   // _utKillEnemy), all round you, in the arena's echo. Only in the battle it was for.
   _battleCheer(bang) {
     const name = this._battleCrowdPick(ROARS, 'battleLastRoar');
-    if (name) this._battleCrowdLater(bang + ROAR_AFTER, name, ROAR_LEVEL);
+    if (name) this._battleCrowdLater(bang + ROAR_AFTER, name, BATTLE_ROAR_LEVEL);
   }
 
   // One of the crowd's recordings a little later, only in the battle it was for,
@@ -545,16 +562,13 @@ export class Game {
     else if (t < WAVE_SURGE_HOLD) k = WAVE_SURGE;
     else if (t < WAVE_SURGE_END) k = WAVE_SURGE - (WAVE_SURGE - 1) * ((t - WAVE_SURGE_HOLD) / (WAVE_SURGE_END - WAVE_SURGE_HOLD));
     else { k = 1; this.battleCrowdSurge = null; }
-    const c = this.battleCrowdChannel;
-    if (c && c.busy && !c.fadingOut) c.setVolume(BATTLE_CROWD_LEVEL * k);
+    for (const c of [this.battleCrowdChannel, this.battleCrowdTwin]) {
+      if (c && c.busy && !c.fadingOut) c.setVolume(BATTLE_CROWD_LEVEL * BATTLE_CROWD_COPY * k);
+    }
   }
 
-  // An enemy reaches you: the crowd reacts. In a battle that is the end, so the
-  // reaction comes at once, as Ultimate's does for the blow that ends a run.
-  _battleCrowdReact() {
-    const name = this._battleCrowdPick(HIT_REACTIONS, 'battleLastReact');
-    if (name) this.audio.play(name, { volume: HIT_REACT_LEVEL, send: crowdSend(name) });
-  }
+  // (6.1.0, Russell) No groan or gasp from the crowd when an enemy reaches you in a
+  // battle: one hit ends it there. (Ultimate Mode keeps its reactions.)
 
   _battleSwapAmb(fade = BATTLE_SWAP_FADE) {
     let idx = this.upcoming.battle_amb;
@@ -1076,7 +1090,6 @@ export class Game {
       if (o.channel) o.channel.setVolume(l, r, this._behind([o.x, o.y]));
       if (dist < 0.8) {
         this.audio.play('player_hit');
-        this._battleCrowdReact();
         this.triggerGameOver();
         return;
       }

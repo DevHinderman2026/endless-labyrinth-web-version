@@ -29,6 +29,7 @@ const NEAR8 = [];
 for (const i of [-1, 0, 1]) for (const j of [-1, 0, 1]) if (i || j) NEAR8.push([i, j]);
 const RED_GRACE = 0.35;            // seconds after the music stops before a step counts against you
 const CLICK_GAP = 0.13;            // seconds between a minefield's clicks
+const COUNT_AFTER_MISS = 2.0;      // Count the Chimes: after a miscount, the next count waits this much more (6.1.0)
 const PONG_REACH = 1.9;            // how near the ball's line counts as in it (a square is 3 across)
 const SCALE = [0, 2, 4, 7, 9, 12, 9, 7, 4, 2];            // the notes of a path of stones, rising and falling
 const CARS_MOST = 10;              // cars sounding at once, whatever the lanes
@@ -1416,15 +1417,18 @@ export const MoreMixin = {
     this._x_count_round(c);
   },
 
-  _x_count_round(c) {
+  // `wait`: seconds more before the first chime (6.1.0, Russell: after a miscount the
+  // voice says what it was, and the next count waits until it has been heard).
+  _x_count_round(c, wait = 0) {
     const n = Math.floor(this.arenaLimit / STEP);
     const most = Math.min(c.most, c.most_first + c.more_each * this.xDone, 2 * n);
     const gap = Math.max(0.15, c.chime_seconds * (1.0 - c.faster_each) ** this.xDone);
     Object.assign(this.x, { number: randint(1, Math.max(1, most)), home: n });
     this.playerPos = [0.0, n * STEP];
     this.xPending = [];
-    for (let k = 0; k < this.x.number; k++) this._xSoon(1.0 + k * gap, this.x.snd, null, 1.0, 'chime');
-    this.x.until = this.evElapsed + 1.0 + (this.x.number - 1) * gap;
+    const first = 1.0 + wait;
+    for (let k = 0; k < this.x.number; k++) this._xSoon(first + k * gap, this.x.snd, null, 1.0, 'chime');
+    this.x.until = this.evElapsed + first + (this.x.number - 1) * gap;
   },
 
   _x_count_fire(c) {
@@ -1436,7 +1440,7 @@ export const MoreMixin = {
     }
     this.audio.play('event_wrong');
     this._bSay(`It was ${this.x.number}.`);
-    if (!this._xLoseLife('miscount')) this._x_count_round(c);
+    if (!this._xLoseLife('miscount')) this._x_count_round(c, COUNT_AFTER_MISS);
   },
 
   _x_count_status(c) { return `Round ${this.xDone + 1}. ${lifeWord(this.xLives)}.`; },

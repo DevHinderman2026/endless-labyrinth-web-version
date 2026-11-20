@@ -29,6 +29,7 @@ export const TURN_BRIEF = 0.3;                  // seconds: a held turn let go w
 export const TICK_LEVEL = 0.5;                  // the tick at each main direction, as you turn
 export const CLICK_LEVEL = 0.3;                 // the softer click of a quick turn that lands between two main directions
 export const SLIDE_MIN = 0.75;                  // of a step: a blocked step still slides along the wall when its part along the wall is at least this
+export const SQUEEZE_LEAN = 0.26;               // (squeeze) you face a gap between two corners when the step leans at least this much to each side: 15 degrees or more off both walls
 export const STEP_SAMPLE = 0.25;                // of a square: how finely a step's path is checked against the walls
 export const COMPASS_DIRS = [[0, -1], [1, 0], [0, 1], [-1, 0]];   // north, east, south, west (exact, so a squared-up step is square to square)
 export const FACING_WORDS = ['north', 'north-north-east', 'north-east', 'east-north-east', 'east', 'east-south-east', 'south-east', 'south-south-east',
@@ -164,7 +165,14 @@ export function updateTurn(h, dt, on) {
 // a square's width. Clear all the way: there. Stopped by a wall: along it, when
 // the step meets it at a slant. Returns { pos, moved, hit }: where you end, how
 // far that is, and where the wall was met (null when nothing was in the way).
-export function walkStep(from, dir, len, open, cellOf, posOf, unit = 1) {
+// `squeeze` (web 6.1.0, Russell, 19 November 2026: Ultimate Mode's worlds): whether
+// you fit between two shut squares that touch only at their corners, when the
+// square beyond them is floor. In Ultimate Mode's labyrinth areas the walls are
+// scattered squares, and facing such a gap at a slant, with the safe zone or a
+// voice heard straight through it and a wall to your left and your right, you
+// were stopped as if by a wall. There you now walk through. (The Standard
+// labyrinth keeps the rule: its walls are a maze, and its corners stay shut.)
+export function walkStep(from, dir, len, open, cellOf, posOf, unit = 1, squeeze = false) {
   // The square you stand in never stops you leaving it. You are always on floor,
   // so this changes nothing; but if a fault ever put you inside a wall, you could
   // still walk out of it, as you could when a step was square to square.
@@ -178,9 +186,9 @@ export function walkStep(from, dir, len, open, cellOf, posOf, unit = 1) {
       // (The last look is at the very place the step would end, to the last digit.)
       const p = i === n ? [from[0] + vx, from[1] + vy] : [from[0] + vx * i / n, from[1] + vy * i / n];
       if (!clear(p)) return p;
-      // Never between two shut squares that meet at a corner.
+      // Never between two shut squares that meet at a corner (unless you fit: `squeeze`).
       const a = cellOf(prev); const b = cellOf(p);
-      if (a[0] !== b[0] && a[1] !== b[1] && !clear(posOf(b[0], a[1])) && !clear(posOf(a[0], b[1]))) return p;
+      if (!squeeze && a[0] !== b[0] && a[1] !== b[1] && !clear(posOf(b[0], a[1])) && !clear(posOf(a[0], b[1]))) return p;
       prev = p;
     }
     return null;
@@ -188,6 +196,30 @@ export function walkStep(from, dir, len, open, cellOf, posOf, unit = 1) {
   const vx = dir[0] * len; const vy = dir[1] * len;
   const hit = shutAt(vx, vy);
   if (!hit) return { pos: [from[0] + vx, from[1] + vy], moved: len, hit: null };
+  // (squeeze) Stopped, facing at a slant a gap between two shut squares that touch
+  // at their corners, with floor beyond: the step goes through the gap. Unless you
+  // stand just where a straight line threads it, that line nicks one of the two
+  // squares; so the step is taken to the corner the four squares share and on from
+  // there the way you face (or, from too far off to reach it, toward it: the next
+  // step goes through). Only when you face the gap, not one of the two walls:
+  // SQUEEZE_LEAN.
+  if (squeeze && vx && vy && Math.min(Math.abs(vx), Math.abs(vy)) >= SQUEEZE_LEAN * Math.max(Math.abs(vx), Math.abs(vy))) {
+    const sx = Math.sign(vx); const sy = Math.sign(vy);
+    const here = posOf(home[0], home[1]);
+    const beyond = posOf(home[0] + sx, home[1] + sy);
+    if (!clear(posOf(home[0] + sx, home[1])) && !clear(posOf(home[0], home[1] + sy)) && clear(beyond)) {
+      const cx = (here[0] + beyond[0]) / 2; const cy = (here[1] + beyond[1]) / 2;
+      const reach = Math.hypot(cx - from[0], cy - from[1]);
+      let pos;
+      if (reach >= len) pos = [from[0] + (cx - from[0]) * (len / reach) * 0.999, from[1] + (cy - from[1]) * (len / reach) * 0.999];
+      else pos = [cx + dir[0] * (len - reach), cy + dir[1] * (len - reach)];
+      const c = cellOf(pos);
+      const inHome = c[0] === home[0] && c[1] === home[1];
+      const inBeyond = c[0] === home[0] + sx && c[1] === home[1] + sy;
+      // (via: the corner the step went round, when it went through the gap.)
+      if (inHome || inBeyond) return { pos, moved: Math.hypot(pos[0] - from[0], pos[1] - from[1]), hit: null, via: inBeyond ? [cx, cy] : null };
+    }
+  }
   // Along it: the bigger part of the step first. When the way along it is the
   // way you are mostly facing (a corridor you face a little off its line), the
   // step glides a whole step down it (web 4.1.2). Otherwise, only the part of the

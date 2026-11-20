@@ -12,18 +12,16 @@
 //     greeting: [line], callback: [line], gift: [line], story: [line] } }
 //   line = { id, text, phonemes, hint }
 //
-// The voices: Kokoro (js/bella.js's one engine and worker, the one Bella and the
-// guide use), a small style file per character (voices/<id>.bin, fetched and kept
-// only when that character is first needed), each line made straight from its own
-// phonemes. Lines are made ahead while you walk and kept within a modest budget.
+// The voices (web 6.1.0): every line is a recording in the character's own Kokoro
+// voice, made once in Claude's workspace from the line's phonemes and shipped in the
+// voice-cast sound packs (js/voice.js CastVoices plays them). Nothing is made on the
+// player's device.
 
-import { KOKORO_BASE, shape } from '../../bella.js';
+import { CastVoices } from '../../voice.js';
+export { CastVoices };
 
 export const CAST_URL = 'js/data/safe-zone-cast.json';
 export const LINES_URL = 'js/data/story-lines.json';
-export const CHAR_RMS = 0.11;                 // each line's loudness, as the guide's (bella.js GUIDE_RMS)
-export const KEEP_BYTES = 6e6;                // lines kept made, about a minute of speech
-export const KOKORO_RATE = 24000;
 
 // Russell's eight groups (19 Nov), by name as the data may give them.
 export const GROUPS = ['spooky', 'towns', 'kitchens', 'fire', 'holy', 'water', 'wild', 'cold'];
@@ -111,102 +109,6 @@ export function loadCast() {
 
 export function castFor(stem) { return byStem.get(stem) || null; }
 export function castList() { return cast; }
-
-// ------------------------------------------------------------------ the voices
-// Made through Bella's engine (one model), or null when that cannot be: no engine,
-// the engine not ready, or this character's voice not loadable by it.
-export class CastVoices {
-  constructor(getEngine) {
-    this.getEngine = getEngine;
-    this.kept = new Map();          // `${voice}|${line.id}` -> { buffer, bytes } (or { pending })
-    this.bytes = 0;
-    this.voices = new Map();        // voice -> 'ready' | 'loading' | 'failed'
-    this.listening = null;
-  }
-
-  get engine() { try { return this.getEngine(); } catch (e) { return null; } }
-
-  // Whether this voice can be heard now, or will be (false: the device's voice).
-  usable(voice) {
-    const e = this.engine;
-    if (!e || !voice || e.state === 'failed' || !e.ready) return false;
-    return this._voice(voice) !== 'failed';
-  }
-
-  // The engine's worker loads its voices when it starts; a character's own voice is
-  // asked for when first needed ({ type: 'voice', name, url }, answered with
-  // { type: 'voice', name, ok }). A worker that never answers leaves it 'failed'
-  // after a while, and the character speaks with the device's voice.
-  _voice(voice) {
-    const e = this.engine;
-    const st = this.voices.get(voice);
-    if (st) return st;
-    if (e.voiceLoaded && e.voiceLoaded(voice)) { this.voices.set(voice, 'ready'); return 'ready'; }
-    if (e.loadVoice) {
-      this.voices.set(voice, 'loading');
-      Promise.resolve(e.loadVoice(voice)).then((ok) => this.voices.set(voice, ok === false ? 'failed' : 'ready'), () => this.voices.set(voice, 'failed'));
-      return 'loading';
-    }
-    const w = e.worker;
-    if (!w || !w.postMessage) { this.voices.set(voice, 'failed'); return 'failed'; }
-    if (!this.listening) {
-      this.listening = (ev) => { const m = ev.data || {}; if (m.type === 'voice' && m.name) this.voices.set(m.name, m.ok === false ? 'failed' : 'ready'); };
-      try { w.addEventListener('message', this.listening); } catch (err) { /* old worker */ }
-    }
-    this.voices.set(voice, 'loading');
-    try { w.postMessage({ type: 'voice', name: voice, url: `${KOKORO_BASE}voices/${voice}.bin` }); } catch (err) { this.voices.set(voice, 'failed'); }
-    setTimeout(() => { if (this.voices.get(voice) === 'loading') this.voices.set(voice, 'failed'); }, 20000);
-    return 'loading';
-  }
-
-  // A line's sound if it is made, else null (and it is made now, ahead).
-  peek(voice, ln, ctx) {
-    const k = `${voice}|${ln.id}`;
-    const got = this.kept.get(k);
-    if (got && got.buffer) { this.kept.delete(k); this.kept.set(k, got); return got.buffer; }
-    if (!got) this.make(voice, ln, ctx);
-    return null;
-  }
-
-  make(voice, ln, ctx, now = false) {
-    const k = `${voice}|${ln.id}`;
-    if (this.kept.has(k) || !ln.phonemes || !this.usable(voice) || this._voice(voice) !== 'ready') return;
-    const e = this.engine;
-    // Sentence by sentence: a long story line made in one piece would hold the voice
-    // engine for many seconds on a phone, and the game's own lines would wait behind
-    // it. The sentences are joined again with a breath between them.
-    const parts = String(ln.phonemes).split(/(?<=[.!?…])\s+/).filter((p) => p.trim());
-    const jobs = (parts.length ? parts : [ln.phonemes]).map((p) => e.synth(p, voice, { now }));
-    const entry = { pending: true };
-    this.kept.set(k, entry);
-    Promise.all(jobs.map((j) => j.promise)).then((rs) => {
-      let y = null;
-      if (rs.every((r) => r && r.samples)) {
-        const made = rs.map((r) => shape(r.samples, CHAR_RMS)).filter((x) => x);
-        const gap = Math.round(0.18 * KOKORO_RATE);
-        const n = made.reduce((s, m) => s + m.length, 0) + gap * Math.max(0, made.length - 1);
-        if (made.length) {
-          y = new Float32Array(n);
-          let at = 0;
-          for (const m of made) { y.set(m, at); at += m.length + gap; }
-        }
-      }
-      if (!y) { this.kept.delete(k); return; }
-      let buf;
-      try { buf = new AudioBuffer({ length: y.length, numberOfChannels: 1, sampleRate: KOKORO_RATE }); } catch (err) { buf = ctx.createBuffer(1, y.length, KOKORO_RATE); }
-      buf.getChannelData(0).set(y);
-      entry.pending = false; entry.buffer = buf; entry.bytes = y.length * 4;
-      this.bytes += entry.bytes;
-      for (const [kk, v] of this.kept) {
-        if (this.bytes <= KEEP_BYTES) break;
-        if (kk === k || !v.buffer) continue;
-        this.kept.delete(kk); this.bytes -= v.bytes;
-      }
-    });
-  }
-
-  release() { this.kept.clear(); this.bytes = 0; }
-}
 
 // ------------------------------------------------------------------ the mystery: lines heard
 // Which story lines a player has heard, kept between runs in the game's own saved

@@ -1,25 +1,24 @@
 // Find the Voice (web 6.0.0): the guide's calls.
 //
-// The guide speaks with Kokoro's Heart voice (af_heart), her calling phrases
-// rendered ahead into one-channel AudioBuffers by the voice module (agent
-// "voice": js/bella*.js and the shared guide phrases file). This file is the one
-// place the mode asks for a call, so the voice module is wired in here and
+// The guide speaks with Kokoro's Heart voice (af_heart): since web 6.1.0 her calling
+// phrases are recordings (js/voice.js GuideVoice, from js/data/guide_phrases.json,
+// the same files as the Windows game's), decoded a few at a time ahead. This file is
+// the one place the mode asks for a call, so the voice module is wired in here and
 // nowhere else:
 //
 //   setGuideSource(source)
 //
-// The source is the voice module's GuideVoice (js/bella.js: its `available`,
-// next(), prepare() and release() are used as they are), or anything with
-// ready() and next() -> { buffer, text, id }. next() hands over the next call,
-// never one just heard (the source keeps its own order). Until a
-// source is set, or while it is not ready (still downloading, offline, or the
-// device struggling), getGuideCall() gives { buffer: null, text } from the
+// The source is the voice module's GuideVoice (its `available`, next(), prepare()
+// and release() are used as they are), or anything with ready() and next() ->
+// { buffer, text, id }. next() hands over the next call, never one just heard (the
+// source keeps its own order). Until a source is set, or if it has no recordings
+// (the sounds not loaded), getGuideCall() gives { buffer: null, text } from the
 // phrases below, and the mode speaks the text with the device's own voice (not
 // placed) and plays a placed beacon at her spot, so she can still be found.
 
-// A few of the guide's calling phrases, for the device's voice while Heart is not
-// available. (The full list of 300 and more lives in the shared guide phrases file;
-// the voice module reads it.)
+// A few of the guide's calling phrases, for the device's voice when her recordings
+// are not there. (The full list of 300 and more lives in the shared guide phrases
+// file; the voice module reads it.)
 export const FALLBACK_PHRASES = [
   'Over here.', 'This way.', 'Follow my voice.', 'I am over here.', 'Come to me.', 'Keep coming.',
   'You are close.', 'Can you hear me?', 'Here!', 'Over this way.', 'Find me.', 'I am waiting for you.',
@@ -44,20 +43,7 @@ export function guideVoiceReady() {
   } catch (e) { return false; }
 }
 
-// (6.0.1) Whether Heart can speak but her next call is not made yet and is being
-// made: the mode waits a moment for it instead of going straight to the device's
-// voice. (A source that cannot say how many it has ready is never waited for.)
-export function guideStock() {
-  try {
-    if (!guideVoiceReady() || typeof source.stock !== 'function') return Infinity;
-    return source.stock();
-  } catch (e) { return Infinity; }
-}
-export function guideMaking() {
-  try { return guideVoiceReady() && typeof source.stock === 'function' && !!source.busy; } catch (e) { return false; }
-}
-
-// A run begins (Heart's calls made ahead, a dozen at a time) or ends (let go).
+// A run begins (her calls decoded ahead, a few at a time) or ends.
 export function guideRunStarts() { try { if (source && source.prepare) source.prepare(12); } catch (e) { /* the device's voice */ } }
 export function guideRunEnds() { try { if (source && source.release) source.release(); } catch (e) { /* nothing held */ } }
 
@@ -83,8 +69,8 @@ export function getGuideCall() {
 }
 
 // A line you find your way by (the guide's call, a safe zone character's greeting
-// or call-back) said by the device's own voice, when its Kokoro voice is not
-// available. Russell (19 Nov): anything located by voice is ALWAYS heard, whatever
+// or call-back) said by the device's own voice, when its recording cannot be
+// played. Russell (19 Nov): anything located by voice is ALWAYS heard, whatever
 // the Speech setting, so with the voice silenced for Braille it is said here,
 // straight through the browser's speech; otherwise it joins the game's own queue,
 // after whatever is being said, on the device's voice (never Bella's).

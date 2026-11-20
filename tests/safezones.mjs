@@ -2,8 +2,9 @@
 // browser engine. Run: serve the site folder, then
 //   node --import ./tests/github-stub.mjs tests/safezones.mjs http://localhost:8790
 // A cast of the test's own is used (the real one is js/data's, checked by its own
-// tool), and a stand-in for the Kokoro engine, so both ways a character is heard are
-// tried: their own voice placed in 3D, and the device's voice with a beacon.
+// tool), and a stand-in for the voice packs' recordings (web 6.1.0: js/voice.js
+// VoiceLibrary), so both ways a character is heard are tried: their own recorded voice
+// placed in 3D, and the device's voice with a beacon where a recording is missing.
 // Checked: where they stand, greetings in their zone, the story line within two
 // steps, the gift after it (and waiting, with call-backs, when you walk away), one
 // gift a world, the eight groups' gifts, the rare gifts (two minutes, a chest you
@@ -51,10 +52,20 @@ await page.evaluate(async () => {
   const cast = { characters: [...Array(8).keys()].map((k) => ({ id: `c${k + 1}`, name: `C${k + 1}`, voice: `v${k + 1}`, group: k + 1, backgrounds: stems.filter((_, i) => i % 8 === k) })) };
   const lines = { lines: Object.fromEntries(cast.characters.map((c) => [c.id, { greetings: mk(c.id, 'greet', 3), callbacks: mk(c.id, 'back', 2), gifts: mk(c.id, 'gift', 2), stories: [...mk(c.id, 'story', 2), ...mk(c.id, 'hint', 2, true)] }])) };
   C.setCast(C.normaliseCast(cast, lines));
-  // A stand-in for Kokoro: ready, every voice, a short tone for every line.
+  // A stand-in for the voice packs: a recording for every line, a short tone, decoded
+  // the first time it is asked for (null that frame, as a real decode is a moment).
   window.__fake = {
-    state: 'ready', ready: true, voiceLoaded: () => true, made: 0,
-    synth(ph, voice) { this.made += 1; const s = new Float32Array(24000 * 0.6); for (let i = 0; i < s.length; i++) s[i] = Math.sin(i / 7) * 0.3; return { id: this.made, promise: Promise.resolve({ samples: s }) }; },
+    failed: new Set(), kept: new Map(), made: 0,
+    has: (name) => name.startsWith('vc_'),
+    peek(name) {
+      if (this.kept.has(name)) return this.kept.get(name);
+      this.made += 1;
+      const b = a.ctx.createBuffer(1, 24000 * 0.6, 24000); const d = b.getChannelData(0);
+      for (let i = 0; i < d.length; i++) d[i] = Math.sin(i / 7) * 0.3;
+      this.kept.set(name, b);
+      return null;
+    },
+    release() {},
   };
   const t = window.__t = { said: [], device: [], played: [], C, U };
   const speak = g.tts.speak.bind(g.tts);
@@ -65,7 +76,7 @@ await page.evaluate(async () => {
   t.start = (engine) => {
     if (g.state !== 'menu') { g._stopRunSounds(); g.runId += 1; g.state = 'menu'; g._refreshMenu(); }
     g.castVoices = null;
-    g._utCastVoices().getEngine = () => engine;
+    g._utCastVoices().library = engine;
     g.scores.settings.turnTold = true;
     g.menuIndex = g.menuKeys.indexOf('ultimate'); g.input('enter'); g.frame(1 / 30);
     const u = g.ut;
@@ -266,7 +277,7 @@ const r6 = await page.evaluate(async () => {
   out.mutedHeard = spoken.length;
   return out;
 });
-check(r6.device >= 1 && r6.beacon, 'without their Kokoro voice the device\'s voice says their lines, and a shimmering beacon marks where they stand');
+check(r6.device >= 1 && r6.beacon, 'without their recordings the device\'s voice says their lines, and a shimmering beacon marks where they stand');
 check(r6.mutedHeard >= 1, 'and they are heard even with the Speech setting off (Braille only)');
 
 // ------------------------------------------------------------------ a chaos world stage: the two minutes add to the chaos clock too

@@ -332,10 +332,22 @@ const walls = await page.evaluate(async () => {
   // From off the middle of a cell, squared up: still cell to cell, however far off.
   out.offCentre = go(room, [9 + 1.2, 6 - 1.1], 90);
   out.offCentreWall = go(room, [15 + 1.2, 6], 90);
-  // Never between two walls that meet at a corner.
+  // Between two walls that meet at a corner (web 6.1.0, Russell: in Ultimate Mode's
+  // worlds you fit through; until then you never did, and the Standard labyrinth's
+  // own walk, js/turning.js without `squeeze`, still never does).
   const pinch = ['####', '#.##', '##.#', '####'];
   out.pinch = go(pinch, [3, 3], 135);
   out.pinchSmall = go(pinch, [3 + 1.3, 3 + 1.3], 135, 1);
+  out.pinchNick = go(pinch, [3 + 0.9, 3 + 0.2], 135);       // the straight line would nick the east wall: through the gap all the same
+  out.pinch30 = go(pinch, [3, 3], 120);                     // a quick turn's slant
+  out.pinchWall = go(pinch, [3, 3], 95);                    // facing the east wall, not the gap: a wall
+  out.pinchFar = go(pinch, [3 - 1.4, 3 - 1.4], 135, 1);     // too far from the gap for this step: toward it, still this side
+  {
+    const Tn = await import('./js/turning.js');
+    const cellOf3 = (p) => [Math.round(p[0] / 3), Math.round(p[1] / 3)]; const posOf3 = (x, y) => [x * 3, y * 3];
+    const r = Tn.walkStep([3, 3], dirOf(135), 3, floorOf(pinch), cellOf3, posOf3);
+    out.pinchStandard = { moved: r.moved, hit: !!r.hit };
+  }
   // Round an outside corner: the step that would clip it goes along one side instead.
   const ell = ['#####', '#...#', '#.#.#', '#...#', '#####'];
   out.clip = go(ell, [3, 6], 55);          // from the west side, more east than north: the middle block's corner is in the way
@@ -367,7 +379,10 @@ check([walls.corridor30, walls.corridor330].every((r) => r.dx === 0 && r.dy === 
   'a corridor faced 30 degrees off its line is walked a whole step at a time, from the middle or the side of it; faced 60 degrees off, a shorter step: ' + JSON.stringify([walls.corridor30, walls.corridor330, walls.corridor60]));
 check(walls.corner.moved === 0 && walls.corner.hit && walls.cornerAlong.hit && walls.cornerAlong.dy === 0 && walls.cornerAlong.dx < -2, 'in a corner you stop; turned along one wall, you slide out along it: ' + JSON.stringify([walls.corner, walls.cornerAlong]));
 check(walls.offCentre.dx === 3 && walls.offCentre.dy === 0 && !walls.offCentre.hit && walls.offCentreWall.moved === 0 && walls.offCentreWall.hit, 'off the middle of a square and squared up, a step is still square to square, and a wall still a wall');
-check(walls.pinch.moved === 0 && walls.pinchSmall.moved === 0, 'you never pass between two walls that meet at a corner: ' + JSON.stringify([walls.pinch, walls.pinchSmall]));
+check(walls.pinch.moved === 3 && !walls.pinch.hit && walls.pinchSmall.moved === 1 && walls.pinchNick.moved > 2 && walls.pinchNick.dx > 0 && walls.pinchNick.dy > 0 && walls.pinch30.moved > 2 && walls.pinch30.dx > 1.5 && walls.pinch30.dy > 1.5,
+  'in these worlds you fit between two walls that meet at a corner, when you face the gap: ' + JSON.stringify([walls.pinch, walls.pinchSmall, walls.pinchNick, walls.pinch30]));
+check(walls.pinchWall.moved === 0 && walls.pinchWall.hit && walls.pinchFar.moved > 0.9 && walls.pinchFar.dx > 0 && walls.pinchFar.dx < 1.5 && walls.pinchStandard.moved === 0 && walls.pinchStandard.hit,
+  'facing one of the two walls is still a wall; from too far off, the step goes toward the gap; and the Standard labyrinth\'s walk still never passes a corner: ' + JSON.stringify([walls.pinchWall, walls.pinchFar, walls.pinchStandard]));
 check(walls.clip.hit && walls.clip.moved > 1.5 && walls.clip.dx === 0 && walls.clip.dy < -1.5 && walls.graze.moved === 3 && !walls.graze.hit, 'a step that would clip an outside corner goes along one side of it instead; one that only passes the corner\'s point goes through: ' + JSON.stringify([walls.clip, walls.graze]));
 check(walls.outOfWall.moved === 3 && walls.outOfWall.dy === 3 && walls.outOfWallSlant.moved === 3 && walls.deeperIntoWall.moved === 0 && walls.deeperIntoWall.hit,
   'were you ever inside a wall, a step would take you out onto the floor, and never further in: ' + JSON.stringify([walls.outOfWall, walls.outOfWallSlant, walls.deeperIntoWall]));
@@ -406,10 +421,16 @@ const fuzz = await page.evaluate(() => {
     const d = Math.hypot(r.pos[0] - pos[0], r.pos[1] - pos[1]);
     if (d > 3 + 1e-9 || Math.abs(d - r.moved) > 1e-9) out.tooFar += 1;
     let run = 0; let worst = 0;
-    const n = Math.ceil(d / 0.05);
-    for (let k = 1; k < n; k++) {
-      const p = [pos[0] + (r.pos[0] - pos[0]) * k / n, pos[1] + (r.pos[1] - pos[1]) * k / n];
-      if (open(p)) run = 0; else { run += d / n; worst = Math.max(worst, run); }
+    // (A step through a gap between two corners goes by the corner: looked at along its two legs.)
+    const legs = r.via ? [[pos, r.via], [r.via, r.pos]] : [[pos, r.pos]];
+    if (r.via) out.squeezed = (out.squeezed || 0) + 1;
+    for (const [p0, p1] of legs) {
+      const dl = Math.hypot(p1[0] - p0[0], p1[1] - p0[1]);
+      const n = Math.ceil(dl / 0.05);
+      for (let k = 1; k < n; k++) {
+        const p = [p0[0] + (p1[0] - p0[0]) * k / n, p0[1] + (p1[1] - p0[1]) * k / n];
+        if (open(p)) run = 0; else { run += dl / n; worst = Math.max(worst, run); }
+      }
     }
     out.worst = Math.max(out.worst, worst);
     if (worst > 0.3) out.through += 1;

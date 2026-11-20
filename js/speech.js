@@ -6,15 +6,15 @@
 // sentence, so an interrupt stops the voice at once. Everything said is also put
 // on the screen.
 //
-// Web 6.0.0: during a run, a line goes to Bella (js/bella.js, Kokoro's af_bella, heard
-// in the room's echo) when Bella is ready and has every word of it in the game's own
-// dictionary; any other line, and every line outside a run (menus, help, settings,
-// the Events menu, event descriptions, Game Over and the final score), is said by the
-// device's voice, as before. `inRun()` says whether a run is being played (set by the
-// game: playing and not paused); speak(text, { device: true }) keeps a line on the
-// device's voice whatever the moment. When the Speech setting has silenced the voice
-// (Braille only), Bella is silent too. Bella keeps one speed of her own: the Speech
-// Rate setting is the device voice's only.
+// During a run, a line is said by Bella's recordings (js/voice.js, web 6.1.0: made
+// once with Kokoro's af_bella, heard in the room's echo) when the recordings can say
+// the whole of it; any other line, and every line outside a run (menus, help,
+// settings, the Events menu, event descriptions, Game Over and the final score), is
+// said by the device's voice, as before. `inRun()` says whether a run is being played
+// (set by the game: playing and not paused); speak(text, { device: true }) keeps a
+// line on the device's voice whatever the moment. When the Speech setting has
+// silenced the voice (Braille only), Bella is silent too. Bella keeps one speed of her
+// own: the Speech Rate setting is the device voice's only.
 
 export const RATES = [0.7, 0.85, 1.0, 1.15, 1.3, 1.5, 1.7, 2.0];
 export const DEFAULT_RATE = 3;   // 1-based: 1.0, the voice's own speed
@@ -23,7 +23,7 @@ export class Speech {
   constructor({ show = () => {}, rateLevel = DEFAULT_RATE, words = null, muted = () => false, bella = null, inRun = () => false } = {}) {
     this.words = words;   // on a computer: gestures turned into keys (keywords.js)
     this.muted = muted;   // Windows, Braille only: the voice is silent, the text still shows (js/braille.js)
-    this.bella = bella;   // web 6.0.0: the voice of a run (js/bella.js), or null
+    this.bella = bella;   // the voice of a run (js/voice.js GameVoice), or null
     this.inRun = inRun;   // web 6.0.0: whether a run is being played now
     this.bellaLines = 0;  // lines Bella said (for the tests)
     this.deviceLines = 0; // lines the device voice said
@@ -107,8 +107,8 @@ export class Speech {
     // The voice silenced for Braille: the line is on the screen and the display;
     // what follows it (a help demo) comes after a reading pause. Bella is silent too.
     if (this.muted()) { setTimeout(done, Math.min(2500, 300 + item.text.length * 20)); return; }
-    // During a run: Bella, if she can say the whole line. What she cannot say in
-    // time (the line, or the rest of it) goes to the device voice.
+    // During a run: Bella, if her recordings can say the whole line. Anything she
+    // cannot say (a recording that will not play) goes to the device voice.
     if (this._forBella(item)) {
       this.bellaLines += 1;
       this.bella.say(item.text, { isCurrent: () => item.gen === this.gen }).then((r) => {

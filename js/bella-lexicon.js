@@ -636,6 +636,10 @@ export const LEXICON = Object.freeze({
   "zones": "zˈOnz",
   // Web 6.0.0 (agent help): words of the 6.0.0 help text (said by the device's voice, kept here so every word of the game is covered).
   "american": "əmˈɛɹəkən", "bella": "bˈɛlə", "brine": "bɹˈIn", "captain": "kˈæptən", "characters": "kˈɛɹəktəɹz", "chef": "ʃˈɛf", "commander": "kəmˈændəɹ", "deal": "dˈil", "gasps": "ɡˈæsps", "gift": "ɡˈɪft", "greet": "ɡɹˈit", "greets": "ɡɹˈits", "groans": "ɡɹˈOnz", "hazel": "hˈAzᵊl", "hearth": "hˈɑɹθ", "hint": "hˈɪnt", "holy": "hˈOli", "kitchens": "kˈɪʧənz", "kokoro": "kəkˈɔɹO", "living": "lˈɪvɪŋ", "lowers": "lˈOəɹz", "lucky": "lˈʌki", "meal": "mˈil", "mystery": "mˈɪstəɹi", "natural": "nˈæʧəɹəl", "nature": "nˈAʧəɹ", "people": "pˈipᵊl", "rarer": "ɹˈɛɹəɹ", "rosalind": "ɹˈɑzəlɪnd", "rumour": "ɹˈuməɹ", "talk": "tˈɔk", "talking": "tˈɔkɪŋ", "talks": "tˈɔks", "towns": "tˈWnz", "travel": "tɹˈævᵊl", "vega": "vˈAɡə",
+  // Web 6.1.0: the game itself makes a creature's name plural by adding s ("3 wolfs about"), and the recordings say what the game says.
+  "wolfs": "wˈʊlfs",
+  // Web 6.1.0 (the Fable review): Music Box Menders' creatures, "2 clockwork toys about".
+  "toys": "tˈYz", "giants": "ʤˈIənts", "imps": "ˈɪmps",
 });
 
 // Words said differently by what comes next (see bella-words.js): "the" and "to"

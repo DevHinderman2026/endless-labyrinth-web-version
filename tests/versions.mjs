@@ -46,7 +46,7 @@ const errors = [];
 // onVersion answers the page's question for version.json; it can be changed later
 // through the returned `answer` holder (null: the real file).
 async function freshPage(onVersion) {
-  const ctx = await browser.newContext({ serviceWorkers: 'block' });   // (6.0.1: the service worker's own single reload is tested in tests/isolate.mjs)
+  const ctx = await browser.newContext({ serviceWorkers: 'block' });   // (6.1.0: the old service worker only takes itself away: tests/voice.mjs)
   await stub(ctx);
   const answer = { now: onVersion };
   await ctx.route('**/version.json*', (route) => (answer.now ? answer.now(route) : route.continue()));

@@ -45,12 +45,17 @@ await page.evaluate(() => {
     const fv = g.fv;
     fv.glass.clear();
     if (fv.guide.phase !== 'calling') { fv.pause = 0; if (fv.chime) fv.chime.stop(); fv.chime = null; g.updateFindVoice(1 / 30); }
-    g.playerPos = [fv.guide.pos[0], fv.guide.pos[1] + 7.5]; g._turnStop(); g._face(0, true);
+    // (From the side the room's middle is on: from beyond her when she stands near the
+    // south edge, the step would begin outside the room and be stopped by its boundary,
+    // and the find never came. The Fable review, 6.1.0: this failed one run in five.)
+    const south = fv.guide.pos[1] <= 0;
+    g.playerPos = [fv.guide.pos[0], fv.guide.pos[1] + (south ? 7.5 : -7.5)]; g._turnStop(); g._face(south ? 0 : Math.PI, true);
     g.input('up');
   };
   t.reachExit = () => {
     const ex = g.fv.exit;
-    g.playerPos = [ex.pos[0], ex.pos[1] + 4.5]; g._turnStop(); g._face(0, true);
+    const south = ex.pos[1] <= 0;
+    g.playerPos = [ex.pos[0], ex.pos[1] + (south ? 4.5 : -4.5)]; g._turnStop(); g._face(south ? 0 : Math.PI, true);
     g.input('up');
   };
 });
