@@ -60,10 +60,10 @@ const setup = await page.evaluate(async () => {
     stats: Object.keys(g.scores.stats.time),
   };
 });
-// Web 6.0.0: Find the Voice, then Ultimate Mode, then Chaos Mode, the last mode.
-check(setup.menu.indexOf('Ultimate Mode') === setup.menu.indexOf('Find the Voice') + 1 && setup.menu.indexOf('Chaos Mode') === setup.menu.indexOf('Ultimate Mode') + 1, 'main menu: Ultimate Mode between Find the Voice and Chaos: ' + setup.menu.join(', '));
-check(setup.names.indexOf('Ultimate Mode') === setup.names.indexOf('Find the Voice') + 1 && setup.names.indexOf('Chaos Mode') === setup.names.indexOf('Ultimate Mode') + 1
-  && setup.names.indexOf('Demos, Ultimate Mode') === setup.names.indexOf('Demos, Find the Voice') + 1 && setup.names.indexOf('Demos, Chaos Mode') === setup.names.indexOf('Demos, Ultimate Mode') + 1, 'help sections in order: ' + setup.names.join(' | '));
+// Web 6.0.0: Find the Voice, then Ultimate Mode, then Chaos Mode, the last mode (6.2.0: The Abyss after Find the Voice).
+check(setup.menu.indexOf('Ultimate Mode') === setup.menu.indexOf('The Abyss') + 1 && setup.menu.indexOf('Chaos Mode') === setup.menu.indexOf('Ultimate Mode') + 1, 'main menu: Ultimate Mode between The Abyss and Chaos: ' + setup.menu.join(', '));
+check(setup.names.indexOf('Ultimate Mode') === setup.names.indexOf('The Abyss') + 1 && setup.names.indexOf('Chaos Mode') === setup.names.indexOf('Ultimate Mode') + 1
+  && setup.names.indexOf('Demos, Ultimate Mode') === setup.names.indexOf('Demos, The Abyss') + 1 && setup.names.indexOf('Demos, Chaos Mode') === setup.names.indexOf('Demos, Ultimate Mode') + 1, 'help sections in order: ' + setup.names.join(' | '));
 check(setup.topics === 20 && setup.demos === 25, `help: ${setup.topics} topics, ${setup.demos} demos`);
 check(setup.silentBeforeRun.length === 0, 'every demo plays before any run' + (setup.silentBeforeRun.length ? ': silent ' + setup.silentBeforeRun.join(', ') : ''));
 check(setup.missingBeforeRun.length === 0, 'every demo sound exists before any run, for Help from the main menu' + (setup.missingBeforeRun.length ? ': missing ' + setup.missingBeforeRun.join(', ') : ''));

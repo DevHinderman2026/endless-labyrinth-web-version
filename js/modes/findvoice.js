@@ -12,8 +12,9 @@
 // creature lives in the room, one a level: blind, like you, it hunts by sound.
 // Step on glass and it charges you, growling, a footstep for every step it runs,
 // heard from where it is; it keeps charging for as long as you are on glass, and
-// stops about a second after you are back on concrete, where it then stands,
-// breathing. Glass never lies near it, so there is always time to turn and get
+// for 3 seconds after you are back on concrete, and every charge lasts at least
+// 5 seconds, even after a single step on glass (web 6.1.1); then it stops and
+// stands where it is, breathing. Glass never lies near it, so there is always time to turn and get
 // off. Sometimes the guide calls from a spot that can be reached only across
 // glass. A catch costs one of three lives and the creature is thrown back to a
 // far-off spot; there is no clock, and the run ends with the third catch. The
@@ -66,7 +67,10 @@ export const FV_BEACON_LEVEL = 0.7;
 export const FV_CHARGE_SPM = 220;
 export const FV_CHARGE_RISE = 5;
 export const FV_CHARGE_CAP = 260;
-export const FV_CHARGE_TAIL = 1.0;              // seconds it runs on after you are back on concrete
+// (Web 6.1.1, Russell, 20 November 2026: it gave up far too soon, about a second
+// after you left the glass, so one quick step on and off was barely a charge.)
+export const FV_CHARGE_TAIL = 3.0;              // seconds it runs on after you are back on concrete (was 1)
+export const FV_CHARGE_MIN = 5.0;               // seconds every charge lasts at least, from its first step
 export const FV_CATCH = 1.5;                    // units: this near while charging, it has you
 export const FV_THROW_FAR = 30.0;               // thrown back at least this far from you after a catch
 export const FV_GLASS_CLEAR = 24.0;             // units (eight steps): no glass this near where it rests
@@ -236,7 +240,7 @@ const mixin = {
       run: this.runId, chaos, level, quota, lives, finds: 0, completed: 0,
       guide: { pos: null, voice: null, beacon: null, wait: FV_FIRST_CALL, until: 0, phase: 'calling', calls: 0 },
       chime: null, pause: 0, caughtAt: null,
-      creature: { x: 0, y: 0, state: 'rest', tail: 0, knock: 0, voice: null, note: null, speed: 0 },
+      creature: { x: 0, y: 0, state: 'rest', tail: 0, since: 0, knock: 0, voice: null, note: null, speed: 0 },
       glass: new Set(), moat: new Set(), amb: null, exit: null, steps: [],
     };
     this._fvBackground(background || (chaos ? this._fvNextBackground() : FV_FIRST_BACKGROUND), 0.4, adopt);
@@ -255,7 +259,7 @@ const mixin = {
     fv.finds = 0;
     fv.caughtAt = null;
     fv.exit = null;
-    const c = fv.creature = { x: 0, y: 0, state: 'rest', tail: 0, knock: 0, voice: null, note: null,
+    const c = fv.creature = { x: 0, y: 0, state: 'rest', tail: 0, since: 0, knock: 0, voice: null, note: null,
       speed: chargeStepsPerMinute(fv.level) / 60 * FV_STEP };
     [c.x, c.y] = this._fvSpot(FV_GLASS_CLEAR + 4.0, FV_ARENA * 1.4);
     this._fvCreatureSound(false);
@@ -519,8 +523,10 @@ const mixin = {
   },
 
   // Every frame: at rest it breathes and waits. You on glass: it charges, for as long
-  // as you are and about a second after; then it stops where it is. After a catch it
-  // waits for a new step onto glass, not the square you were caught on.
+  // as you are and FV_CHARGE_TAIL seconds after, and never less than FV_CHARGE_MIN
+  // seconds in all; then it stops where it is. After a catch it waits for a new step
+  // onto glass, not the square you were caught on. (Chaos's Find the Voice stages
+  // use this same creature.)
   _fvUpdateCreature(dt) {
     const fv = this.fv; const c = fv.creature;
     if (c.state === 'gone') return;
@@ -530,16 +536,17 @@ const mixin = {
       else fv.caughtAt = null;
     }
     if (onGlass) {
-      if (c.state !== 'charge') { c.knock = FV_STEP; this._fvCreatureSound(true); }   // its first footstep lands as the charge begins
+      if (c.state !== 'charge') { c.knock = FV_STEP; c.since = 0; this._fvCreatureSound(true); }   // its first footstep lands as the charge begins
       c.tail = FV_CHARGE_TAIL;
     } else if (c.state === 'charge') {
       c.tail -= dt;
-      if (c.tail <= 0) {
+      if (c.tail <= 0 && c.since >= FV_CHARGE_MIN) {
         this._fvCreatureSound(false);                   // it stops where it is
         this._fvClearGlassNear([c.x, c.y]);
       }
     }
     if (c.state === 'charge') {
+      c.since += dt;
       const ox = c.x; const oy = c.y;
       const dx = this.playerPos[0] - c.x; const dy = this.playerPos[1] - c.y;
       const d = Math.hypot(dx, dy);
@@ -706,7 +713,7 @@ const HELP_SECTIONS = [
   ['Find the Voice', [
     { title: 'Find the Voice', sound: null, desc: "Find the Voice is a mode of its own, new in 6.0.0. A woman's voice, the guide, calls to you from somewhere in a dark room: over here, this way, follow me, and hundreds more. Find her. Turn until her voice is centred between your ears and bright, then walk to her. You turn and walk as in every walking mode (see General Turning). When you are within two steps of her you hear a chime, always the same one; after half a second of quiet she calls again from somewhere new. Five finds complete a level, and the next level begins at once. You are not alone in the room, and there is no clock. Double tap for the level, how many you have found, your lives and the way you are facing." },
     { title: 'Find the Voice The Guide', sound: null, desc: "The guide's voice is Heart, a natural American voice made by Kokoro and recorded for the game, as Bella's is (see The Game's Voice), and you hear her from where she stands: as loud as the game's voice up close, and fainter the farther away she is, but never so faint that you lose her. She never says the same thing twice in a row. On each new level she stands farther away. With the Speech setting turned Off no voice is heard for her: a soft shimmering beacon plays where she stands in place of her voice, and you follow that. Everything else in this mode is said by the game's voice." },
-    { title: 'Find the Voice The Creature', sound: null, desc: 'One creature shares each level with you. Creatures are blind, just like you, and they hunt by sound. At rest it breathes calmly and does not move. Step on glass and it hears you: it charges, with a constant aggressive growl and a footstep for every step it runs, heard from where it is. It keeps coming for as long as you are on glass, and about a second after you are back on concrete; then it stops where it is and breathes calmly again. It runs a little slower than you can run, so when it charges, get off the glass and run. It keeps charging through the chime, too. If it catches you, you lose a life, and it is thrown back far away, still breathing, at rest.' },
+    { title: 'Find the Voice The Creature', sound: null, desc: 'One creature shares each level with you. Creatures are blind, just like you, and they hunt by sound. At rest it breathes calmly and does not move. Step on glass and it hears you: it charges, with a constant aggressive growl and a footstep for every step it runs, heard from where it is. It keeps coming for as long as you are on glass, and for 3 seconds after you are back on concrete, and every charge lasts at least 5 seconds, even if you step straight off the glass; then it stops where it is and breathes calmly again. It runs a little slower than you can run, so when it charges, get off the glass and run. It keeps charging through the chime, too. If it catches you, you lose a life, and it is thrown back far away, still breathing, at rest.' },
     { title: 'Find the Voice Glass', sound: null, desc: 'The floor is concrete, with patches of broken glass, and your footsteps tell you which you are on. Glass is never laid close to where the creature rests, so when you step on it there is always time to turn and get away. Sometimes the guide stands where only glass will take you to her: then you must decide when to cross, and be ready to run.' },
     { title: 'Find the Voice Levels, Lives and Score', sound: null, desc: 'You have three lives and there is no clock: a run lasts until the creature has caught you three times. Each level, the guide stands farther away and the creature runs five steps a minute faster, up to a limit that stays below your run. Each level has new air: the first is always the witch\'s, and after that a different event background each level, never repeated until you have heard them all. Your score is the number of levels you complete, and Find the Voice has its own high score board.' },
     { title: 'Find the Voice in Chaos Mode', sound: null, desc: 'Chaos Mode has Find the Voice levels too, about as often as islands. There the guide must be found a set number of times: three or four the first time in a run, and one more each time after, at most eight. When you have found her enough, everything else goes silent and only an exit is heard, the battle exit\'s Morse signal; the chaos clock waits until you walk through it. Find the Voice levels have three lives of their own for the whole chaos run, and losing all three ends the run. There, double tap for how many you have found and your lives, then the clock and the points.' },

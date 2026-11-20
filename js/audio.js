@@ -77,6 +77,29 @@ const CULL_FADE_MS = 40;
 // already is kept the browser's audio thread busy for nothing, frame after
 // frame, for every sound at once.
 const PLACE_SAME = Math.cos(0.5 * Math.PI / 180);
+// (Web 6.2.0, Russell, 20 November 2026: on an iPhone, in any mode, a slight static
+// crept onto the edges of every sound the longer he played; pausing cleared it, and
+// after resuming it stayed clear for a while, then came back.) A panner's place and
+// the listener's facing were glided with setTargetAtTime, a glide that never ends:
+// it only ever creeps closer to where it is going. While any glide is open, the
+// browser works out that panner's direction afresh for every single sample instead
+// of once per slice of sound, the costliest thing an HRTF panner can do; and an
+// open glide on the listener does that to every panner at once. Each sound that had
+// moved once, and the listener after the first turn, stayed that way for good, so
+// the phone's audio thread fell further behind until it began to crackle. Only an
+// instant placement closed the glides: resuming from a pause puts the held beacons
+// down at once, which is why the static cleared then. Now each move is a short
+// straight glide that ends (the same sweep, without a zip), after which the panner
+// is back to its cheap, once-a-slice work until it moves again.
+const PLACE_GLIDE = 0.06;        // seconds: a placed sound's move (was a 0.02 time constant, about the same sweep)
+const FACE_GLIDE = 0.045;        // seconds: the listener's turn (was a 0.015 time constant)
+
+// A glide that ends: from where the parameter is now, straight to v.
+function glideTo(p, v, now, secs) {
+  p.cancelScheduledValues(now);
+  p.setValueAtTime(p.value, now);
+  p.linearRampToValueAtTime(v, now + secs);
+}
 
 function clamp(v, lo, hi) { return Math.min(hi, Math.max(lo, v)); }
 
@@ -767,7 +790,7 @@ export class AudioEngine {
       if (l.forwardX) {
         const now = this.ctx.currentTime;
         for (const [p, v] of [[l.forwardX, fx], [l.forwardY, 0], [l.forwardZ, fz]]) {
-          if (instant) { p.cancelScheduledValues(now); p.setValueAtTime(v, now); } else p.setTargetAtTime(v, now, 0.015);
+          if (instant) { p.cancelScheduledValues(now); p.setValueAtTime(v, now); } else glideTo(p, v, now, FACE_GLIDE);
         }
       } else if (l.setOrientation) l.setOrientation(fx, 0, fz, 0, 1, 0);   // (browsers without the listener's own parameters)
     } catch (e) { /* the listener stays as it was */ }
@@ -1162,7 +1185,7 @@ export class Voice {
     }
     if (panner.positionX) {
       for (const [p, v] of [[panner.positionX, x], [panner.positionY, y], [panner.positionZ, z]]) {
-        if (instant) { p.cancelScheduledValues(now); p.setValueAtTime(v, now); } else p.setTargetAtTime(v, now, 0.02);
+        if (instant) { p.cancelScheduledValues(now); p.setValueAtTime(v, now); } else glideTo(p, v, now, PLACE_GLIDE);
       }
     } else panner.setPosition(x, y, z);
   }

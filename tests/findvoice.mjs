@@ -50,8 +50,8 @@ const setup = await page.evaluate(async () => {
     demos: (HELP.find(([n]) => n === 'Demos, Find the Voice') || [0, []])[1].map((i) => i.sound) };
 });
 const mi = (k) => setup.keys.indexOf(k);
-check(mi('findvoice') === mi('island') + 1 && mi('ultimate') === mi('findvoice') + 1 && mi('chaos') === mi('ultimate') + 1 && mi('events') === mi('chaos') + 1 && mi('event_score') === mi('chaos') + 2 && mi('scores') === mi('chaos') + 3,
-  'the main menu ends its modes with Find the Voice, Ultimate Mode, then Chaos Mode: ' + setup.menu.join(', '));
+check(mi('findvoice') === mi('island') + 1 && mi('abyss') === mi('findvoice') + 1 && mi('ultimate') === mi('abyss') + 1 && mi('chaos') === mi('ultimate') + 1 && mi('events') === mi('chaos') + 1 && mi('event_score') === mi('chaos') + 2 && mi('scores') === mi('chaos') + 3,
+  'the main menu ends its modes with Find the Voice, The Abyss (6.2.0), Ultimate Mode, then Chaos Mode: ' + setup.menu.join(', '));
 check(setup.lines.some((l) => /^Find the Voice: No score yet$/.test(l)), 'Find the Voice has its own high score board');
 check(setup.names.includes('Find the Voice') && setup.names.includes('Demos, Find the Voice'), 'help has a Find the Voice section and its demos');
 const demoOk = await page.evaluate(async (sounds) => {
@@ -133,7 +133,7 @@ const glass = await page.evaluate(() => {
   const L = T.heard();
   fv.guide.pos = [-60, -60];
   g.playerPos = [0, 0]; g._face(0, true);
-  fv.creature.x = 0; fv.creature.y = 34; g._fvCreatureSound(false);
+  fv.creature.x = 0; fv.creature.y = 90; g._fvCreatureSound(false);   // (6.1.1: far enough off that a longer charge cannot reach you)
   fv.glass.clear(); fv.glass.add('0,-1'); fv.glass.add('0,-2');
   g.input('up');                                    // onto glass
   T.frames(1 / 30);
@@ -147,7 +147,8 @@ const glass = await page.evaluate(() => {
   g.input('down');                                  // back on concrete
   out.stepStone = L.names.slice(-3).some((n) => /^step_stone_/.test(n));
   T.frames(0.5); out.half = fv.creature.state;
-  T.frames(0.7); out.after = fv.creature.state === 'rest' ? 'idle' : fv.creature.state;
+  T.frames(2.3); out.nearTail = fv.creature.state;                  // 2.8 s off the glass: still coming
+  T.frames(1.4); out.after = fv.creature.state === 'rest' ? 'idle' : fv.creature.state;   // 4.2 s off, 5.2 s in all
   out.breath = fv.creature.voice && fv.creature.voice.name;
   out.cy = fv.creature.y;
   let near = 0;
@@ -158,8 +159,39 @@ const glass = await page.evaluate(() => {
 });
 check(glass.stepGlass && glass.charge === 'charge' && /evt_monster_growl/.test(glass.growl), 'a step on glass crunches and the creature charges, growling: ' + glass.growl);
 check(glass.stillOnGlass === 'charge' && glass.feet >= 3, 'it keeps charging while you stand on glass, a footstep for every step it runs, from where it is: ' + JSON.stringify([glass.feet, glass.feetWhere]));
-check(glass.stepStone && glass.half !== 'idle' && glass.after === 'idle' && /evt_beast_breathing/.test(glass.breath), 'back on concrete it runs on about a second, then stops and breathes: ' + JSON.stringify([glass.half, glass.after]));
+check(glass.stepStone && glass.half === 'charge' && glass.nearTail === 'charge' && glass.after === 'idle' && /evt_beast_breathing/.test(glass.breath), 'back on concrete it runs on 3 seconds (and 5 in all at least), then stops and breathes: ' + JSON.stringify([glass.half, glass.nearTail, glass.after]));
 check(glass.near === 0, 'and no glass is left near where it stopped');
+
+// 6.1.1 (Russell, 20 November 2026): one step on glass and straight off again still
+// gives a charge of at least 5 seconds.
+const quick = await page.evaluate(async () => {
+  const g = window.__el.game; const fv = g.fv; const T = window.T;
+  const fvMod = await import('./js/modes/findvoice.js');
+  const out = { tail: fvMod.FV_CHARGE_TAIL, min: fvMod.FV_CHARGE_MIN };
+  fv.guide.pos = [-60, -60];
+  g.playerPos = [0, 0]; g._face(0, true); fv.caughtAt = null;
+  fv.creature.x = 0; fv.creature.y = 90; g._fvCreatureSound(false);
+  fv.glass.clear(); fv.glass.add('0,-1');
+  g.input('up'); T.frames(1 / 30);                  // onto glass
+  out.on = fv.creature.state;
+  g.input('down'); T.frames(1 / 30);                // straight back onto concrete
+  T.frames(3.5); out.at35 = fv.creature.state;      // past the 3 seconds off the glass
+  T.frames(1.0); out.at45 = fv.creature.state;      // still inside the 5 seconds
+  T.frames(0.8); out.at53 = fv.creature.state;      // past 5 seconds: it stops
+  // A fresh step onto glass during a charge keeps it going.
+  fv.creature.x = 0; fv.creature.y = 90; g._fvCreatureSound(false);
+  fv.glass.clear(); fv.glass.add('0,-1');
+  g.playerPos = [0, 0];
+  g.input('up'); T.frames(1 / 30); g.input('down'); T.frames(4.0);
+  g.input('up'); T.frames(1 / 30); g.input('down'); T.frames(2.5);
+  out.again = fv.creature.state;                    // 6.5 s in, 2.5 s off the glass: still coming
+  T.frames(1.0); out.againAfter = fv.creature.state;
+  fv.glass.clear(); g._fvCreatureSound(false);
+  return out;
+});
+check(quick.tail === 3 && quick.min === 5 && quick.on === 'charge' && quick.at35 === 'charge' && quick.at45 === 'charge' && quick.at53 === 'rest',
+  'one step on glass and straight off: it charges for at least 5 seconds, then stops: ' + JSON.stringify(quick));
+check(quick.again === 'charge' && quick.againAfter === 'rest', 'a fresh step onto glass during a charge keeps it coming 3 more seconds: ' + JSON.stringify([quick.again, quick.againAfter]));
 
 // ------------------------------------------------------------------ layouts: glass never near it, rings round her
 const layouts = await page.evaluate(() => {

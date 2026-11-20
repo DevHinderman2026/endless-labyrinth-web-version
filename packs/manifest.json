@@ -67,6 +67,10 @@
   "voice-cast4": {
    "file": "voice-cast4-bbc3279a26.elpack",
    "bytes": 8728794
+  },
+  "abyss": {
+   "file": "abyss-c67d46d427.elpack",
+   "bytes": 390819
   }
  }
 }

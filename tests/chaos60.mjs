@@ -71,8 +71,8 @@ const weights = await page.evaluate(async () => {
   return { n, w: CHAOS_STAGE_WEIGHTS, noWorld };
 });
 const share = (k) => weights.n[k] / 40000;
-check(Object.keys(weights.n).length === 7 && Math.abs(share('findvoice') - share('island')) < 0.02 && share('ultimate') < share('island') * 0.65 && share('ultimate') > 0.04,
-  'every kind comes up; Find the Voice as often as an island, a world the rarest: ' + JSON.stringify(weights.n));
+check(Object.keys(weights.n).length === 8 && Math.abs(share('abyss') - share('island')) < 0.02 && Math.abs(share('findvoice') - share('island')) < 0.02 && share('ultimate') < share('island') * 0.65 && share('ultimate') > 0.04,
+  'every kind comes up; Find the Voice and The Abyss as often as an island, a world the rarest: ' + JSON.stringify(weights.n));
 check(weights.noWorld === 0, 'a kind can be kept from coming next (no world straight after an island\'s ride up)');
 
 // ------------------------------------------------------------------ a Find the Voice stage
@@ -88,6 +88,14 @@ const fv1 = await page.evaluate(async () => {
   fv.creature.x = 0; fv.creature.y = -6; fv.caughtAt = null;
   for (let i = 0; i < 30 && fv.lives === 3; i++) g.updateFindVoice(1 / 30);
   out.afterCatch = [fv.lives, g.chaosFvLives];
+  // 6.1.1: the same longer charge in Chaos: one step on glass and off again, at least 5 seconds.
+  fv.caughtAt = null; fv.glass.clear(); fv.glass.add('0,-1');
+  g.playerPos = [0, 0]; g._turnStop(); g._face(0, true);
+  fv.creature.x = 0; fv.creature.y = 90; g._fvCreatureSound(false);
+  g.input('up'); t.frames(1 / 30); g.input('down'); t.frames(1 / 30);
+  t.frames(4.4); out.chaosAt45 = fv.creature.state;
+  t.frames(0.9); out.chaosAt53 = fv.creature.state;
+  fv.glass.clear();
   for (let k = 0; k < fv.quota; k++) t.find();
   out.exit = !!fv.exit;
   out.loops = t.loops();
@@ -105,6 +113,7 @@ check(fv1.bg === 'evt_amb_witch', 'the first Find the Voice stage of a chaos run
 check(!fv1.said.some((s) => /Level/.test(s)) && /^evt_amb_/.test(fv1.bg) && fv1.ticks > 0.9, 'nothing says which stage it is; an event background; the chaos clock runs: ' + JSON.stringify([fv1.bg, fv1.ticks]));
 check(/^0 of [34] found\. 3 lives left\. Clock \d+ seconds\. 0 points total\. Facing north\.$/.test(fv1.report), 'its report: ' + fv1.report);
 check(fv1.afterCatch[0] === 2 && fv1.afterCatch[1] === 2, 'a catch costs one of the stage\'s lives');
+check(fv1.chaosAt45 === 'charge' && fv1.chaosAt53 === 'rest', 'in Chaos too, one step on glass gives a charge of at least 5 seconds (6.1.1): ' + JSON.stringify([fv1.chaosAt45, fv1.chaosAt53]));
 check(fv1.exit && fv1.loops.length === 1 && fv1.loops[0] === 'exit_morse' && fv1.creature === 'gone', 'the quota found, the exit appears and everything else goes: ' + fv1.loops.join(', '));
 check(fv1.waits, 'the chaos clock waits until you go through the exit');
 check(fv1.gap === 'chaos_gap' && fv1.points === 10, 'through the exit: ten points, and the next stage: ' + JSON.stringify([fv1.gap, fv1.points]));
