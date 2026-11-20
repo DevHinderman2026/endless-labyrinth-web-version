@@ -64,6 +64,13 @@ const std = await page.evaluate(() => {
   out.wall = { pos: [...g.playerPos], wall: L.names.includes('wall'), step: L.names.some((n) => n.startsWith('step_')) };
   L.names.length = 0; g._face(Math.PI / 3, true); g.input('up');
   out.slide = { pos: g.playerPos.map((x) => +x.toFixed(3)), wall: L.names.includes('wall'), step: L.names.some((n) => n.startsWith('step_')) };
+  // Two walls touching only at their corners, floor beyond (6.2.0): faced at a slant,
+  // you fit through; faced at one of the two walls, it is a wall.
+  g.grid.clear(); g.grid.add('1,0'); g.grid.add('0,1'); g.playerPos = [0, 0]; g._face(Math.PI * 3 / 4, true);
+  L.names.length = 0; g.input('up');
+  out.pinch = { cell: g.playerPos.map((x) => Math.round(x)), wall: L.names.includes('wall') };
+  g.playerPos = [0, 0]; g._face(Math.PI * 95 / 180, true); L.names.length = 0; g.input('up');
+  out.pinchWall = { pos: g.playerPos.map((x) => +x.toFixed(3)), wall: L.names.includes('wall') };
   // The exit's beep is placed where the exit is; the report ends with the facing.
   g.grid.clear(); g.playerPos = [0, 0]; g.exitPos = [0, 8]; g._face(0, true); g.lastBeepTime = 0;
   g.frame(1 / 30);
@@ -88,6 +95,8 @@ check(std.north1[0] === 0 && std.north1[1] === -1 && std.back1[1] === 0, 'a swip
 check(Math.abs(std.slant[0] - 0.5) < 0.01 && Math.abs(std.slant[1] + 0.866) < 0.01, `facing 30 degrees east of north, a step goes exactly that way: ${std.slant}`);
 check(std.wall.wall && !std.wall.step && std.wall.pos[1] === 0, 'a wall straight ahead stops you, with its sound');
 check(!std.slide.wall && std.slide.step && std.slide.pos[0] > 0.8 && Math.abs(std.slide.pos[1]) < 1e-6, `met at a slant, you slide along the wall in silence: ${std.slide.pos}`);
+check(std.pinch.cell[0] === 1 && std.pinch.cell[1] === 1 && !std.pinch.wall, `between two walls that touch only at their corners, faced at a slant, you fit through: ${JSON.stringify(std.pinch)}`);
+check(std.pinchWall.wall && std.pinchWall.pos[0] === 0 && std.pinchWall.pos[1] === 0, `facing one of the two walls instead, it is a wall: ${JSON.stringify(std.pinchWall)}`);
 check(std.beep && std.beep.panner && std.beep.dir[0] === 0 && std.beep.dir[1] === 1 && std.beep.equal && std.beep.behind === 1, `the exit's beep goes through a panner placed where the exit is (south: behind you, dull): ${JSON.stringify(std.beep)}`);
 check(std.beepFacing && std.beepFacing.dir[1] === 1 && std.beepFacing.behind === 0, 'turn to face it and it is no longer behind you: the place in the world is the same, the dullness is gone');
 check(/^\d+ seconds? left\. Facing south\.$/.test(std.report), 'the report ends with the way you face: ' + std.report);

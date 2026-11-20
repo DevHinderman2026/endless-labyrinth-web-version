@@ -170,8 +170,9 @@ export function updateTurn(h, dt, on) {
 // square beyond them is floor. In Ultimate Mode's labyrinth areas the walls are
 // scattered squares, and facing such a gap at a slant, with the safe zone or a
 // voice heard straight through it and a wall to your left and your right, you
-// were stopped as if by a wall. There you now walk through. (The Standard
-// labyrinth keeps the rule: its walls are a maze, and its corners stay shut.)
+// were stopped as if by a wall. There you now walk through. (From 6.2.0 the
+// Standard labyrinth, and Chaos's labyrinths, do the same: their walls are
+// scattered squares too. Battle, tower, island and the rest have no squares.)
 export function walkStep(from, dir, len, open, cellOf, posOf, unit = 1, squeeze = false) {
   // The square you stand in never stops you leaving it. You are always on floor,
   // so this changes nothing; but if a fault ever put you inside a wall, you could

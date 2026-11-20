@@ -1613,11 +1613,14 @@ export class Game {
     this.playerFacing = f;
     if (this.state === S.STANDARD) {
       // A labyrinth: squares one step wide. A wall stops you; met at a slant, you
-      // slide along it, in silence (as in Ultimate Mode since 4.1.2).
+      // slide along it, in silence (as in Ultimate Mode since 4.1.2). Two walls
+      // that touch only at their corners, with floor beyond: faced at a slant, you
+      // fit through the gap (as in Ultimate Mode since 6.1.0; here from 6.2.0,
+      // Russell, 20 November 2026: the walls are scattered squares, as there).
       const gs = this.gridSize;
       const cell = (p) => [Math.round(p[0]), Math.round(p[1])];
       const open = (p) => { const [cx, cy] = cell(p); return !(gs && (Math.abs(cx) > gs || Math.abs(cy) > gs)) && !this.grid.has(key(cx, cy)); };
-      const w = walkStep([...this.playerPos], dir, LAB_STEP, open, cell, (cx, cy) => [cx, cy], LAB_STEP / 3);
+      const w = walkStep([...this.playerPos], dir, LAB_STEP, open, cell, (cx, cy) => [cx, cy], LAB_STEP / 3, true);
       if (w.moved <= 0) {
         // (The wall is heard where it stands: the middle of the square in your way.)
         this.audio.play('wall', { at: w.hit ? cell(w.hit) : [this.playerPos[0] + dir[0], this.playerPos[1] + dir[1]] });
