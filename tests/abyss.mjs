@@ -148,6 +148,10 @@ const storm = await page.evaluate(async () => {
   ab.nextStrike = 0; g.updateAbyss(1 / 30);
   const out = { cover: ab.cover, strike: ab.strike, d: Math.hypot(ab.strike[0], ab.strike[1]) };
   out.thunder = t.at.filter(([n]) => /thunder/.test(n)).map(([, p]) => p);
+  out.ducked = g._abDuckFactor();
+  out.pinned = [1, 2, 3, 4].every((k) => [...window.__el.audio.pins.values()].includes(`dry:event_sfx_file_ab_thunder_${k}`));
+  const names = []; for (let k = 0; k < 12; k++) { ab.nextStrike = 0; g.updateAbyss(1 / 30); names.push(ab.lastThunder); }
+  out.varied = new Set(names).size >= 3 && names.every((x, i) => i === 0 || x !== names[i - 1]);
   out.storm = [a.storm > 0, b.storm > 0, c.storm > 0];
   const da = Math.hypot(a.x - ab.strike[0], a.y - ab.strike[1]);
   t.frames(1.0);
@@ -164,6 +168,7 @@ const storm = await page.evaluate(async () => {
 });
 check(storm.cover === 5 && storm.d >= 24.9 && storm.d <= 45.1, 'lightning strikes 25 to 45 units off, and covers your steps for five seconds: ' + storm.d.toFixed(1));
 check(storm.thunder.length === 1 && Math.hypot(storm.thunder[0][0] - storm.strike[0], storm.thunder[0][1] - storm.strike[1]) < 0.01, 'the thunder is heard from where it strikes');
+check(storm.ducked < 0.5 && storm.pinned && storm.varied, 'each strike is one of four thunderclaps, never the same twice running; the wind and hums dip under it; the claps are held in memory: ' + JSON.stringify([storm.ducked, storm.pinned, storm.varied]));
 check(storm.storm[0] && storm.storm[1] && !storm.storm[2] && storm.toward, 'creatures near the strike run toward it; one far off does not: ' + JSON.stringify(storm.storm));
 check(storm.coveredStep, 'a step during the cover is not heard');
 check(storm.coverAfter === 0 && storm.heardAgain, 'once the five seconds are over, your steps are heard again');

@@ -41,6 +41,7 @@
 // to a seamless loop (Developer Tools/Web Packs/web-only/abyss.json).
 
 import { aliasRecording } from './events/sounds.js';
+import { RULES } from '../sound-rules.js';
 import {
   CASE_SOUND, CASE_CHIME, CASE_SMASH, CASE_GAIN, CASE_REACH, CASE_REARM, CASE_LINED, CASE_UNLINED,
   CASE_KNOCK, CASE_KNOCK_RANGE, CASE_KNOCK_EVERY, CASE_KNOCK_LEVEL, AMBIENCE_LEVEL, BACKGROUND_SEND,
@@ -107,11 +108,23 @@ export const AB_EXIT_RANGE = [15.0, 30.0];
 export const AB_EXIT_REACH = 3.0;
 // Sounds.
 export const AB_BACKGROUND = 'evt_amb_howling_wind';   // the abyss's air (no thunder of its own in it)
-export const AB_THUNDER = 'evt_thunder_clap';
+// Four real thunderclaps (Pixabay, web-only, in the abyss pack), one at random each
+// strike, never the same twice running.
+export const AB_THUNDERS = ['ab_thunder_1', 'ab_thunder_2', 'ab_thunder_3', 'ab_thunder_4'];
+export const AB_THUNDER = AB_THUNDERS[0];
 export const AB_IDLE = 'ab_creature_still';     // a wandering creature: sniffing, deep breathing
 export const AB_GROWL = 'ab_creature_hunt';     // a hunting creature: a hungry growl
 export const AB_STEPS_GLASS = ['ut_glass_step_1', 'ut_glass_step_2', 'ut_glass_step_3', 'ut_glass_step_4'];
 export const AB_ROOM = 'battle';                // the echo (as Find the Voice's)
+// (6.2.0 fix, Russell, 20 November 2026: "I can't even hear lightning at all"; "they
+// have to be thunderclaps".) The events' thunder recording was a ten-second rumble
+// that swelled in after a moment, lost under the wind, the cases' hum and the
+// creatures, and being long it was let go from memory between strikes and came late.
+// Now each strike is a real thunderclap, cut to its loud moment at full level, the
+// background and the cases' hum dip under it for a moment, and the recordings the
+// mode needs are held in memory for the whole run.
+export const AB_DUCK = [1.2, 0.8];              // seconds held down, then seconds coming back
+export const AB_DUCK_TO = 0.35;                 // the background and the hums, under a strike
 
 // ------------------------------------------------------------------ helpers
 const rand = Math.random;
@@ -165,14 +178,16 @@ const mixin = {
   // A run, or a chaos stage (quota: the cases wanted; 0 for a run of its own).
   _abBegin({ chaos, quota, lives, adopt = null }) {
     this.abNames = new Map(this._abNames());
-    for (const name of this.abNames.values()) if (name) this.audio.prepare(name);
+    // Held in memory for the whole run (unpinned in _abStopAll), so no strike or
+    // creature waits for its recording to be decoded again.
+    for (const [stem, name] of this.abNames) if (name) this.audio.prepare(name, stem === AB_BACKGROUND ? null : `abyss:${stem}`);
     this.playerPos = [0.0, 0.0];
     this.arenaLimit = 1e9;
     this.stride = null;
     const ab = this.ab = {
       run: this.runId, chaos, quota, lives, smashed: 0,
       creatures: [], cases: [], steps: [],
-      cover: 0, grace: 0, strike: null,
+      cover: 0, grace: 0, strike: null, duck: 0,
       nextStrike: uniform(...strikeGap(0)),
       amb: null, exit: null, done: false,
     };
@@ -189,7 +204,7 @@ const mixin = {
     const a = this.audio;
     return [
       [AB_BACKGROUND, aliasRecording(a, AB_BACKGROUND, `event_amb_file_${AB_BACKGROUND}`)],
-      [AB_THUNDER, aliasRecording(a, AB_THUNDER, `event_sfx_file_${AB_THUNDER}`)],
+      ...AB_THUNDERS.map((t) => [t, aliasRecording(a, t, `event_sfx_file_${t}`)]),
       [AB_IDLE, aliasRecording(a, AB_IDLE, `event_beacon_hazard_file_${AB_IDLE}`)],
       [AB_GROWL, aliasRecording(a, AB_GROWL, `event_beacon_hazard_file_${AB_GROWL}`)],
     ];
@@ -403,13 +418,31 @@ const mixin = {
     const p = this._abStrikeSpot();
     ab.strike = p;
     ab.cover = AB_COVER;
-    const name = this._abName(AB_THUNDER);
+    ab.duck = AB_DUCK[0] + AB_DUCK[1];
+    const pool = AB_THUNDERS.filter((t) => t !== ab.lastThunder && this._abName(t));
+    const pick = pool.length ? choice(pool) : null;
+    ab.lastThunder = pick;
+    const name = pick && this._abName(pick);
     if (name) this.audio.play(name, { at: p, volume: 1.0, keep: true });
+    this._abDuck();
     for (const c of ab.creatures) {
       if (dist2([c.x, c.y], p) > AB_STRIKE_PULL) continue;
       c.storm = AB_COVER; c.charge = 0; c.move = 0;
     }
     ab.nextStrike = uniform(...strikeGap(ab.smashed));
+  },
+
+  // Under a strike the background and the cases' hum dip, then come back.
+  _abDuckFactor() {
+    const ab = this.ab;
+    if (!ab || ab.duck <= 0) return 1;
+    if (ab.duck > AB_DUCK[1]) return AB_DUCK_TO;
+    return AB_DUCK_TO + (1 - AB_DUCK_TO) * (1 - ab.duck / AB_DUCK[1]);
+  },
+
+  _abDuck() {
+    const ab = this.ab;
+    if (ab.amb && ab.amb.voice) ab.amb.voice.setVolume(AMBIENCE_LEVEL * this._abDuckFactor());
   },
 
   // ---------------------------------------------------------------- the cases
@@ -457,7 +490,7 @@ const mixin = {
   _abUpdateCases(dt) {
     for (const c of this.ab.cases) {
       if (c.smashed) continue;
-      const [l, r, d] = this._abLevels([c.x, c.y], CASE_GAIN, AB_CASE_RANGE);
+      const [l, r, d] = this._abLevels([c.x, c.y], CASE_GAIN * this._abDuckFactor(), AB_CASE_RANGE);
       if (!c.voice && d < AB_CASE_RANGE && this.audio.has(CASE_SOUND)) c.voice = this.audio.play(CASE_SOUND, { loops: -1, volume: 0.0, fadeMs: 300 });
       else if (c.voice && d > AB_CASE_RANGE + 5) { c.voice.fadeout(300); c.voice = null; }
       if (c.voice) c.voice.setVolume(l, r, this._behind([c.x, c.y]));
@@ -548,6 +581,7 @@ const mixin = {
     }
     ab.cover = Math.max(0, ab.cover - dt);
     ab.grace = Math.max(0, ab.grace - dt);
+    if (ab.duck > 0) { ab.duck = Math.max(0, ab.duck - dt); this._abDuck(); }
     ab.nextStrike -= dt;
     if (ab.nextStrike <= 0) this._abStrike();
     this._abUpdateCreatures(dt);
@@ -607,6 +641,7 @@ const mixin = {
     if (ab.exit && ab.exit.voice) ab.exit.voice.stop();
     ab.exit = null;
     ab.stopped = true;
+    for (const stem of [...AB_THUNDERS, AB_IDLE, AB_GROWL]) this.audio.pins.delete(`abyss:${stem}`);
   },
 };
 
@@ -615,7 +650,7 @@ const HELP_SECTIONS = [
   ['The Abyss', [
     { title: 'The Abyss', sound: null, desc: 'The Abyss is a mode of its own, new in 6.2.0. You are in a huge, endless abyss, with no walls and no edge, and the whole floor is broken glass: every step you take can be heard. Creatures live all through it. Your goal is to smash as many glass cases as you can before the clock runs out. You turn and walk as in every walking mode (see General Turning). Double tap for the cases you have smashed, your lives, the seconds left and the way you are facing.' },
     { title: 'The Abyss The Creatures', sound: null, desc: 'The creatures are blind, just like you, and they hunt by sound, so they come for you only while you move. Walk, and the ones within about ten steps creep toward the sound of your steps. Run, and the ones within about twenty steps charge you, a little slower than you can run. Stop, and they stop hunting you: each one goes back to wandering the abyss very slowly, in no particular direction, never toward you, and it always turns away before it comes within three steps of you, so a creature that has not heard you can never stumble into you. Standing still never gets you away from them; it only holds them off, while the clock runs on. A wandering creature makes a quieter sound and faint footsteps; a hunting one growls, with a footstep on the glass for every step it takes. You cannot shoot them. If one catches you, you lose a life, and it is thrown far away.' },
-    { title: 'The Abyss Lightning', sound: null, desc: 'Lightning is your cover. Every few seconds it strikes somewhere in the abyss, really loud, and the creatures near it run toward the strike. For five seconds after a strike your steps are not heard, so that is the moment to move. At first it strikes every six to ten seconds; as you smash more cases it comes less often, but never more than twenty seconds apart.' },
+    { title: 'The Abyss Lightning', sound: null, desc: 'Lightning is your cover. Every few seconds it strikes somewhere in the abyss, really loud: a thunderclap from where it strikes, while the wind and the hum of the cases dip under it. The creatures near it run toward the strike. For five seconds after a strike your steps are not heard, so that is the moment to move. At first it strikes every six to ten seconds; as you smash more cases it comes less often, but never more than twenty seconds apart.' },
     { title: 'The Abyss Glass Cases', sound: null, desc: 'A glass case hums where it stands, and from about fifteen steps away it knocks too, faster and louder as you close in, so you can turn until the knocking is centred between your ears. When you are beside a case and facing it, a bell rings: tap with two fingers to smash it, or press the spacebar. Smashing glass is loud: every creature that hears it charges you for about three seconds, unless the five seconds after a lightning strike have not yet run out, so a case is best smashed just after the lightning. Each case gives you time: usually ten seconds, sometimes twenty or thirty, and very rarely sixty. About one case in six also holds lightning: as it breaks, lightning strikes somewhere in the abyss and the creatures run to it instead of to you.' },
     { title: 'The Abyss Clock, Lives and Score', sound: null, desc: 'The clock starts at sixty seconds, and only glass cases add to it. You have three lives: when the clock runs out, or a creature catches you for the third time, the run is over. Every three cases you smash, one more creature wakes in the abyss, and the lightning comes a little less often. Your score is the number of cases you smash, and The Abyss has its own high score board.' },
     { title: 'The Abyss in Chaos Mode', sound: null, desc: 'Chaos Mode has Abyss levels too. You know you are in one at once: lightning strikes the moment you arrive, so move. There you must smash a set number of cases: three or four the first time in a run, and one more each time after, at most eight. Each case adds its time to the chaos clock. When you have smashed enough, everything else goes silent, the creatures included, and only an exit is heard, the battle exit\'s Morse signal; the chaos clock waits until you walk through it. Abyss levels have three lives of their own for the whole chaos run, and losing all three ends the run. There, double tap for the cases smashed and your lives, then the clock and the points.' },
@@ -625,7 +660,7 @@ const HELP_SECTIONS = [
 const HELP_DEMOS = [
   ['Demos, The Abyss', [
     { title: 'The Abyss Demos', sound: null, desc: 'The sounds of The Abyss.' },
-    { title: 'Lightning', sound: AB_THUNDER, desc: 'A lightning strike. For five seconds after it, the creatures cannot hear your steps.' },
+    { title: 'Lightning', sound: AB_THUNDER, desc: 'A lightning strike: one of four thunderclaps. For five seconds after a strike, the creatures cannot hear your steps.' },
     { title: 'Creature, Wandering', sound: AB_IDLE, desc: 'A creature wandering the abyss. It has not heard you, but it is listening.' },
     { title: 'Creature, Hunting', sound: AB_GROWL, desc: 'A creature hunting you: it growls while it moves.' },
     { title: 'Footstep on Glass', sound: AB_STEPS_GLASS[0], desc: 'A step on the broken glass that covers the whole abyss.' },
