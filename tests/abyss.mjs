@@ -71,6 +71,7 @@ const start = await page.evaluate(async () => {
   const out = { state: g.state, time: g.timeLeft, lives: ab.lives, creatures: ab.creatures.length, cases: ab.cases.length,
     turns: g._turnsNow(), said: t.said.slice(), next: ab.nextStrike };
   out.creatureD = ab.creatures.map((c) => Math.hypot(c.x - g.playerPos[0], c.y - g.playerPos[1]));
+  out.creatureGap = Math.min(...ab.creatures.flatMap((c, i) => ab.creatures.slice(i + 1).map((o) => Math.hypot(c.x - o.x, c.y - o.y))));
   out.caseD = ab.cases.map((c) => Math.hypot(c.x - g.playerPos[0], c.y - g.playerPos[1]));
   t.played.length = 0;
   g.input('up'); g.frame(1 / 30);
@@ -79,7 +80,8 @@ const start = await page.evaluate(async () => {
   return out;
 });
 check(start.state === 'abyss' && Math.abs(start.time - 60) < 0.1 && start.lives === 3, 'a run begins with sixty seconds and three lives: ' + JSON.stringify([start.time, start.lives]));
-check(start.creatures === 3 && start.creatureD.every((d) => d >= 29.9 && d <= 60.1), 'three creatures, 30 to 60 units away: ' + start.creatureD.map((d) => d.toFixed(0)).join(', '));
+check(start.creatures === 3 && start.creatureD.every((d) => d >= 44.9 && d <= 75.1), 'three creatures, 45 to 75 units (15 to 25 steps) away: ' + start.creatureD.map((d) => d.toFixed(0)).join(', '));
+check(start.creatureGap >= 14.9, 'none woke right beside another (five steps or more apart): ' + start.creatureGap.toFixed(1));
 check(start.cases === 3 && start.caseD.every((d) => d >= 24.9 && d <= 55.1), 'three glass cases, 25 to 55 units away');
 check(start.turns && start.next >= 5.9 && start.next <= 10, 'it turns with you, and the first lightning comes 6 to 10 seconds in: ' + start.next.toFixed(1));
 check(start.step === 1 && /howling_wind/.test(start.bg), 'every step is on glass; the air is a howling wind: ' + start.bg);
@@ -137,13 +139,26 @@ const keep = await page.evaluate(() => {
 });
 check(keep.nearest >= 9 - 1e-6 && keep.lives === 3, 'a wandering creature turns away before it comes within three steps of you, so it never catches you while you are still: nearest ' + keep.nearest.toFixed(2));
 
+// ------------------------------------------------------------------ apart (6.3.1)
+const apart = await page.evaluate(() => {
+  const g = window.__el.game; const t = window.__t; const ab = g.ab;
+  t.calm(); g.playerPos = [0, 0];
+  const cs = ab.creatures;
+  // All of them charging you from the same spot: they spread out on the way.
+  for (const c of cs) { t.put(c, 0, 40); c.charge = 2; }
+  let worst = 1e9;
+  for (let f = 0; f < 30; f++) { ab.grace = 1; g.updateAbyss(1 / 30); for (let i = 0; i < cs.length; i++) for (let j = i + 1; j < cs.length; j++) worst = Math.min(worst, Math.hypot(cs[i].x - cs[j].x, cs[i].y - cs[j].y)); }
+  return { worst, n: cs.length };
+});
+check(apart.n >= 3 && apart.worst >= 8.9, 'creatures keep three steps apart, even charging from one spot: ' + apart.worst.toFixed(2));
+
 // ------------------------------------------------------------------ lightning
 const storm = await page.evaluate(async () => {
   const g = window.__el.game; const t = window.__t; const ab = g.ab;
   const mod = await import('./js/modes/abyss.js');
   t.calm(); g.playerPos = [0, 0];
   const [a, b, c] = ab.creatures;
-  t.put(a, 0, 20); t.put(b, 30, 0); t.put(c, -150, 0);
+  t.put(a, 0, 20); t.put(b, 30, 0); t.put(c, -300, 0);
   t.at.length = 0;
   ab.nextStrike = 0; g.updateAbyss(1 / 30);
   const out = { cover: ab.cover, strike: ab.strike, d: Math.hypot(ab.strike[0], ab.strike[1]) };
@@ -153,6 +168,7 @@ const storm = await page.evaluate(async () => {
   const names = []; for (let k = 0; k < 12; k++) { ab.nextStrike = 0; g.updateAbyss(1 / 30); names.push(ab.lastThunder); }
   out.varied = new Set(names).size >= 3 && names.every((x, i) => i === 0 || x !== names[i - 1]);
   out.storm = [a.storm > 0, b.storm > 0, c.storm > 0];
+  out.spots = a.stormSpot && b.stormSpot ? [Math.hypot(a.stormSpot[0] - b.stormSpot[0], a.stormSpot[1] - b.stormSpot[1]), Math.hypot(a.stormSpot[0] - ab.strike[0], a.stormSpot[1] - ab.strike[1])] : null;
   const da = Math.hypot(a.x - ab.strike[0], a.y - ab.strike[1]);
   t.frames(1.0);
   out.toward = Math.hypot(a.x - ab.strike[0], a.y - ab.strike[1]) < da;
@@ -166,13 +182,14 @@ const storm = await page.evaluate(async () => {
   out.next = ab.nextStrike;
   return out;
 });
-check(storm.cover === 5 && storm.d >= 24.9 && storm.d <= 45.1, 'lightning strikes 25 to 45 units off, and covers your steps for five seconds: ' + storm.d.toFixed(1));
+check(storm.cover === 5 && storm.d >= 44.9 && storm.d <= 75.1, 'lightning strikes 45 to 75 units (15 to 25 steps) off, and covers your steps for five seconds: ' + storm.d.toFixed(1));
+check(storm.spots && storm.spots[0] >= 8.9 && storm.spots[1] >= 5.9 && storm.spots[1] <= 18.1, 'each creature runs to its own spot around the strike, three steps or more from the others: ' + JSON.stringify(storm.spots));
 check(storm.thunder.length === 1 && Math.hypot(storm.thunder[0][0] - storm.strike[0], storm.thunder[0][1] - storm.strike[1]) < 0.01, 'the thunder is heard from where it strikes');
 check(storm.ducked < 0.5 && storm.pinned && storm.varied, 'each strike is one of four thunderclaps, never the same twice running; the wind and hums dip under it; the claps are held in memory: ' + JSON.stringify([storm.ducked, storm.pinned, storm.varied]));
 check(storm.storm[0] && storm.storm[1] && !storm.storm[2] && storm.toward, 'creatures near the strike run toward it; one far off does not: ' + JSON.stringify(storm.storm));
 check(storm.coveredStep, 'a step during the cover is not heard');
 check(storm.coverAfter === 0 && storm.heardAgain, 'once the five seconds are over, your steps are heard again');
-check(JSON.stringify(storm.gaps) === JSON.stringify([[6, 10], [7, 12], [9, 16], [16, 20], [20, 20]]), 'strikes every 6 to 10 seconds, less often every three cases, never more than 20 apart: ' + JSON.stringify(storm.gaps));
+check(JSON.stringify(storm.gaps) === JSON.stringify([[6, 10], [6, 10], [6, 10], [6, 10], [6, 10]]), 'strikes every 6 to 10 seconds, however many cases are smashed (6.3.1): ' + JSON.stringify(storm.gaps));
 
 // ------------------------------------------------------------------ glass cases
 const cases = await page.evaluate(async () => {
@@ -247,7 +264,7 @@ const far = await page.evaluate(async () => {
   t.played.length = 0;
   for (let i = 0; i < 80; i++) { ab.grace = 1; g.input('up'); g.frame(1 / 30); }
   const out = { y: g.playerPos[1], boundary: t.played.includes('boundary') };
-  out.creaturesNear = ab.creatures.every((c) => Math.hypot(c.x - g.playerPos[0], c.y - g.playerPos[1]) < 85);
+  out.creaturesNear = ab.creatures.every((c) => Math.hypot(c.x - g.playerPos[0], c.y - g.playerPos[1]) < 110);
   out.casesNear = ab.cases.filter((c) => !c.smashed).every((c) => Math.hypot(c.x - g.playerPos[0], c.y - g.playerPos[1]) < 110);
   t.said.length = 0; g.input('enter'); out.report = t.said[t.said.length - 1];
   out.canSay = window.__el.speech.bella ? window.__el.speech.bella.canSay(out.report) : null;
@@ -265,15 +282,19 @@ const end = await page.evaluate(() => {
   const out = {};
   t.calm();
   const c = ab.creatures[0];
+  // (The others well apart, so the three steps they keep from one another move no one: 6.3.1.)
+  ab.creatures.forEach((x, i) => t.put(x, g.playerPos[0] + 30 * (i + 1), g.playerPos[1] + 40));
   t.put(c, g.playerPos[0], g.playerPos[1] + 1); t.said.length = 0;
   g.updateAbyss(1 / 30);
   out.first = [ab.lives, t.said.slice(), Math.hypot(c.x - g.playerPos[0], c.y - g.playerPos[1])];
   out.allStill = ab.creatures.every((x) => x.charge === 0 && x.storm === 0 && x.move === 0);
   // The grace: no second catch at once.
+  for (const x of ab.creatures) if (x !== ab.creatures[1]) t.put(x, x.x + 60, x.y + 60);
   t.put(ab.creatures[1], g.playerPos[0], g.playerPos[1] + 1); g.updateAbyss(1 / 30);
   out.grace = ab.lives;
   ab.grace = 0; g.updateAbyss(1 / 30); out.second = ab.lives;
-  ab.grace = 0; t.put(ab.creatures[2], g.playerPos[0], g.playerPos[1] + 1); g.updateAbyss(1 / 30);
+  ab.grace = 0; for (const x of ab.creatures) if (x !== ab.creatures[2]) t.put(x, x.x + 60, x.y - 60);
+  t.put(ab.creatures[2], g.playerPos[0], g.playerPos[1] + 1); g.updateAbyss(1 / 30);
   out.state = g.state; out.over = t.said.slice(-1)[0];
   out.loops = t.loops();
   return out;

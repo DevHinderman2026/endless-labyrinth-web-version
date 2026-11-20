@@ -8,7 +8,7 @@
   <link rel="icon" href="icons/icon-192.png">
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
   <meta name="theme-color" content="#0c0f14">
-  <link rel="stylesheet" href="css/site.css?v=6.3.0">
+  <link rel="stylesheet" href="css/site.css?v=6.3.1">
 </head>
 <body data-update-alert="history">
   <header class="site">
@@ -19,6 +19,26 @@
   <main class="page">
     <p>This page lists the web version. For the Windows version, see its <a href="https://github.com/DevHinderman2026/Endless-Labyrinth/blob/main/Credits%20and%20Version%20History/CHANGELOG.md">changelog</a> on GitHub.</p>
     <p>The game updates by itself: the next time you open it, you have the latest version. Only a sound pack that has changed is downloaded again, and your high scores are kept. Events are not listed here: they appear in the Events menu as they open.</p>
+
+    <h2>6.3.1 (20 November 2026)</h2>
+    <p>The popping in the labyrinths and the static on the islands of the worlds, both fixed; lightning in The Abyss every six to ten seconds all the way through, with the creatures spread out; and every background now turns with you.</p>
+    <h3>Fixed: popping in the labyrinths</h3>
+    <ul>
+      <li>In Standard mode, and in Chaos mode's labyrinths, the sound could pop every few seconds, between the exit's beeps. It came from 6.3.0's fix for the static: each finished sound was unplugged from the game's mix a few seconds after it ended, and some devices can be heard to pop whenever that happens. A finished sound's part in the mix is now handed on to the next sound instead, so nothing is unplugged as you play, and nothing piles up either.</li>
+    </ul>
+    <h3>Fixed: static on the islands of the worlds</h3>
+    <ul>
+      <li>In Ultimate Mode and in Chaos mode's worlds, an island, the elevator ride and the seabed were far louder than the rest of the world, the seabed most of all, so the game's own volume limiter was holding everything down the whole time you were there, and a limiter working that hard is heard as crackle. The elevator's hum, which was the loudest thing on the seabed, is now quieter, as are the ride, the island's own sound and the water, so they sit at the level of the rest of the world.</li>
+    </ul>
+    <h3>Changed: lightning and the creatures in The Abyss</h3>
+    <ul>
+      <li>Lightning now strikes every six to ten seconds for the whole run, in The Abyss and in Chaos mode's Abyss levels, instead of coming less often as you smash more cases.</li>
+      <li>The creatures no longer crowd together. Lightning lands further off, fifteen to twenty-five steps away, every creature runs to it, and each makes for its own spot around the strike instead of all piling onto the same one. The creatures always keep about three steps apart from one another, and a creature that wakes does so fifteen to twenty-five steps from you, never right beside another.</li>
+    </ul>
+    <h3>Changed: every background turns with you</h3>
+    <ul>
+      <li>In every mode that turns with you, the background turns too. Four backgrounds were recorded with both their sides the same, so there was nothing to turn and they sounded the same whichever way you faced; three of them are labyrinth backgrounds, so about one Standard level in four seemed not to turn. Each of them is now given a second side of its own as it loads, so it turns like the rest. The same in Windows version 4.0.0.</li>
+    </ul>
 
     <h2>6.3.0 (20 November 2026)</h2>
     <p>One health bar for the whole of a Chaos run; time on the Chaos clock for everything you score in a Chaos world; footsteps that match the ground in outdoor safe zones; gaps between wall corners you can walk through in every labyrinth; and the static that could still creep into the sound the longer you played, found and fixed for good.</p>
@@ -648,65 +668,65 @@
   <script type="importmap">
   {
     "imports": {
-      "./js/accessibility.js": "./js/accessibility.js?v=6.3.0",
-      "./js/audio.js": "./js/audio.js?v=6.3.0",
-      "./js/backup.js": "./js/backup.js?v=6.3.0",
-      "./js/backups-page.js": "./js/backups-page.js?v=6.3.0",
-      "./js/bella-lexicon.js": "./js/bella-lexicon.js?v=6.3.0",
-      "./js/bella-words.js": "./js/bella-words.js?v=6.3.0",
-      "./js/braille.js": "./js/braille.js?v=6.3.0",
-      "./js/calendar.js": "./js/calendar.js?v=6.3.0",
-      "./js/device.js": "./js/device.js?v=6.3.0",
-      "./js/display.js": "./js/display.js?v=6.3.0",
-      "./js/game.js": "./js/game.js?v=6.3.0",
-      "./js/gestures.js": "./js/gestures.js?v=6.3.0",
-      "./js/help-data.js": "./js/help-data.js?v=6.3.0",
-      "./js/help-page.js": "./js/help-page.js?v=6.3.0",
-      "./js/keywords.js": "./js/keywords.js?v=6.3.0",
-      "./js/main.js": "./js/main.js?v=6.3.0",
-      "./js/modes/abyss.js": "./js/modes/abyss.js?v=6.3.0",
-      "./js/modes/chaos.js": "./js/modes/chaos.js?v=6.3.0",
-      "./js/modes/driving.js": "./js/modes/driving.js?v=6.3.0",
-      "./js/modes/events/blocks.js": "./js/modes/events/blocks.js?v=6.3.0",
-      "./js/modes/events/engine.js": "./js/modes/events/engine.js?v=6.3.0",
-      "./js/modes/events/feed.js": "./js/modes/events/feed.js?v=6.3.0",
-      "./js/modes/events/help.js": "./js/modes/events/help.js?v=6.3.0",
-      "./js/modes/events/missions.js": "./js/modes/events/missions.js?v=6.3.0",
-      "./js/modes/events/more-spec.js": "./js/modes/events/more-spec.js?v=6.3.0",
-      "./js/modes/events/more.js": "./js/modes/events/more.js?v=6.3.0",
-      "./js/modes/events/py.js": "./js/modes/events/py.js?v=6.3.0",
-      "./js/modes/events/schema.js": "./js/modes/events/schema.js?v=6.3.0",
-      "./js/modes/events/sign.js": "./js/modes/events/sign.js?v=6.3.0",
-      "./js/modes/events/sounds.js": "./js/modes/events/sounds.js?v=6.3.0",
-      "./js/modes/events/tunes.js": "./js/modes/events/tunes.js?v=6.3.0",
-      "./js/modes/events/wording.js": "./js/modes/events/wording.js?v=6.3.0",
-      "./js/modes/events.js": "./js/modes/events.js?v=6.3.0",
-      "./js/modes/findvoice-guide.js": "./js/modes/findvoice-guide.js?v=6.3.0",
-      "./js/modes/findvoice.js": "./js/modes/findvoice.js?v=6.3.0",
-      "./js/modes/index.js": "./js/modes/index.js?v=6.3.0",
-      "./js/modes/island.js": "./js/modes/island.js?v=6.3.0",
-      "./js/modes/tower.js": "./js/modes/tower.js?v=6.3.0",
-      "./js/modes/ultimate/cast.js": "./js/modes/ultimate/cast.js?v=6.3.0",
-      "./js/modes/ultimate/help.js": "./js/modes/ultimate/help.js?v=6.3.0",
-      "./js/modes/ultimate/world.js": "./js/modes/ultimate/world.js?v=6.3.0",
-      "./js/modes/ultimate.js": "./js/modes/ultimate.js?v=6.3.0",
-      "./js/packs.js": "./js/packs.js?v=6.3.0",
-      "./js/site.js": "./js/site.js?v=6.3.0",
-      "./js/sound-rules.js": "./js/sound-rules.js?v=6.3.0",
-      "./js/speech.js": "./js/speech.js?v=6.3.0",
-      "./js/stats.js": "./js/stats.js?v=6.3.0",
-      "./js/storage.js": "./js/storage.js?v=6.3.0",
-      "./js/turning.js": "./js/turning.js?v=6.3.0",
-      "./js/update-alert.js": "./js/update-alert.js?v=6.3.0",
-      "./js/version.js": "./js/version.js?v=6.3.0",
-      "./js/voice-text.js": "./js/voice-text.js?v=6.3.0",
-      "./js/voice.js": "./js/voice.js?v=6.3.0",
-      "./js/wetworker.js": "./js/wetworker.js?v=6.3.0"
+      "./js/accessibility.js": "./js/accessibility.js?v=6.3.1",
+      "./js/audio.js": "./js/audio.js?v=6.3.1",
+      "./js/backup.js": "./js/backup.js?v=6.3.1",
+      "./js/backups-page.js": "./js/backups-page.js?v=6.3.1",
+      "./js/bella-lexicon.js": "./js/bella-lexicon.js?v=6.3.1",
+      "./js/bella-words.js": "./js/bella-words.js?v=6.3.1",
+      "./js/braille.js": "./js/braille.js?v=6.3.1",
+      "./js/calendar.js": "./js/calendar.js?v=6.3.1",
+      "./js/device.js": "./js/device.js?v=6.3.1",
+      "./js/display.js": "./js/display.js?v=6.3.1",
+      "./js/game.js": "./js/game.js?v=6.3.1",
+      "./js/gestures.js": "./js/gestures.js?v=6.3.1",
+      "./js/help-data.js": "./js/help-data.js?v=6.3.1",
+      "./js/help-page.js": "./js/help-page.js?v=6.3.1",
+      "./js/keywords.js": "./js/keywords.js?v=6.3.1",
+      "./js/main.js": "./js/main.js?v=6.3.1",
+      "./js/modes/abyss.js": "./js/modes/abyss.js?v=6.3.1",
+      "./js/modes/chaos.js": "./js/modes/chaos.js?v=6.3.1",
+      "./js/modes/driving.js": "./js/modes/driving.js?v=6.3.1",
+      "./js/modes/events/blocks.js": "./js/modes/events/blocks.js?v=6.3.1",
+      "./js/modes/events/engine.js": "./js/modes/events/engine.js?v=6.3.1",
+      "./js/modes/events/feed.js": "./js/modes/events/feed.js?v=6.3.1",
+      "./js/modes/events/help.js": "./js/modes/events/help.js?v=6.3.1",
+      "./js/modes/events/missions.js": "./js/modes/events/missions.js?v=6.3.1",
+      "./js/modes/events/more-spec.js": "./js/modes/events/more-spec.js?v=6.3.1",
+      "./js/modes/events/more.js": "./js/modes/events/more.js?v=6.3.1",
+      "./js/modes/events/py.js": "./js/modes/events/py.js?v=6.3.1",
+      "./js/modes/events/schema.js": "./js/modes/events/schema.js?v=6.3.1",
+      "./js/modes/events/sign.js": "./js/modes/events/sign.js?v=6.3.1",
+      "./js/modes/events/sounds.js": "./js/modes/events/sounds.js?v=6.3.1",
+      "./js/modes/events/tunes.js": "./js/modes/events/tunes.js?v=6.3.1",
+      "./js/modes/events/wording.js": "./js/modes/events/wording.js?v=6.3.1",
+      "./js/modes/events.js": "./js/modes/events.js?v=6.3.1",
+      "./js/modes/findvoice-guide.js": "./js/modes/findvoice-guide.js?v=6.3.1",
+      "./js/modes/findvoice.js": "./js/modes/findvoice.js?v=6.3.1",
+      "./js/modes/index.js": "./js/modes/index.js?v=6.3.1",
+      "./js/modes/island.js": "./js/modes/island.js?v=6.3.1",
+      "./js/modes/tower.js": "./js/modes/tower.js?v=6.3.1",
+      "./js/modes/ultimate/cast.js": "./js/modes/ultimate/cast.js?v=6.3.1",
+      "./js/modes/ultimate/help.js": "./js/modes/ultimate/help.js?v=6.3.1",
+      "./js/modes/ultimate/world.js": "./js/modes/ultimate/world.js?v=6.3.1",
+      "./js/modes/ultimate.js": "./js/modes/ultimate.js?v=6.3.1",
+      "./js/packs.js": "./js/packs.js?v=6.3.1",
+      "./js/site.js": "./js/site.js?v=6.3.1",
+      "./js/sound-rules.js": "./js/sound-rules.js?v=6.3.1",
+      "./js/speech.js": "./js/speech.js?v=6.3.1",
+      "./js/stats.js": "./js/stats.js?v=6.3.1",
+      "./js/storage.js": "./js/storage.js?v=6.3.1",
+      "./js/turning.js": "./js/turning.js?v=6.3.1",
+      "./js/update-alert.js": "./js/update-alert.js?v=6.3.1",
+      "./js/version.js": "./js/version.js?v=6.3.1",
+      "./js/voice-text.js": "./js/voice-text.js?v=6.3.1",
+      "./js/voice.js": "./js/voice.js?v=6.3.1",
+      "./js/wetworker.js": "./js/wetworker.js?v=6.3.1"
     }
   }
   </script>
   <!-- end of versions -->
-  <script type="module" src="js/site.js?v=6.3.0"></script>
-  <script type="module" src="js/update-alert.js?v=6.3.0"></script>
+  <script type="module" src="js/site.js?v=6.3.1"></script>
+  <script type="module" src="js/update-alert.js?v=6.3.1"></script>
 </body>
 </html>

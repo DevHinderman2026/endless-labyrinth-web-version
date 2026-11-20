@@ -122,6 +122,23 @@ export const MULTIPLIER_STEP = 0.5;             // times 1, 1.5, 2 ... by world
 export const HEAR_RANGE = 70.0;                 // enemies and pickups fade to nothing by here, inside their area
 export const AMBIENCE_RANGE = 15.0;             // a neighbouring area's air, and its pickups, reach this far past its border or doorway (was 45)
 export const AMBIENCE_LEVEL = 0.8;
+// (Web 6.3.1, Russell, 20 November 2026: static on an island, during the elevator
+// ride and after it.) Measured at the end of the chain, an island area stood about
+// twice as loud as any other area (its shores are recorded hot, and play with no
+// echo to soften them), with peaks over full scale, and the seabed's water half as
+// loud again: so on an island, on the seabed and in the car between, the limiter
+// was holding the whole game down by several decibels all the time, and a limiter
+// worked that hard is heard as crackle. The island's air and the seabed's water
+// are brought down to the level of the rest of the world.
+export const ISLAND_AIR_TRIM = 0.5;
+export const SEABED_WATER_TRIM = 0.46;     // (as Island Mode's underwater, WIDE_TRIM)
+// The lift's hum was the loudest thing of all on the seabed (you arrive standing at
+// the lift, and it played at full there): it alone took the seabed from about the
+// level of the world to half as loud again, over full scale. Now well under half.
+export const HUM_LEVEL = 0.4;
+// And the ride itself: its recording alone came close to full scale, so with the
+// island's air and the hum still above you the car went over it. A little lower.
+export const RIDE_LEVEL = 0.7;
 export const DOOR_LEAK = 0.85;                  // through a doorway, against an open border
 export const KEEP_SLOTS = 2;                    // an area's air keeps running while within this many slots of yours
 export const PARK_BELOW = 0.0005;               // an area's air quieter than this is unheard ...
@@ -2026,7 +2043,7 @@ const mixin = {
     this._utTurnStop();
     // (Island Mode: a recording far longer than a ride should be is capped and
     // eased out over its last second.)
-    u.ride = { dir, t: 0, len, area: a, chimed: false, capped: len < own - 0.05, faded: false, voice: this.audio.play('elevator_ride', { direct: false, keep: true }) };
+    u.ride = { dir, t: 0, len, area: a, chimed: false, capped: len < own - 0.05, faded: false, voice: this.audio.play('elevator_ride', { direct: false, keep: true, volume: RIDE_LEVEL }) };
     if (dir === 'down') {
       // The seabed lies straight under the island's elevator, in the world's own
       // coordinates: its cell (0, 0) is the elevator's cell, so every position in
@@ -2162,6 +2179,7 @@ const mixin = {
   _utPlaceWater(level, height) {
     const s = this.ut.seabed;
     const around = s.underWide ? Math.max(0, 1 - Math.abs(height) / 6) : 0;
+    level *= SEABED_WATER_TRIM;
     if (s.under) s.under.setSpatial(level * (1 - around), 0, -0.05, 0, height);
     if (s.underWide) s.underWide.setVolume(level * around, level * around);
   },
@@ -2192,7 +2210,7 @@ const mixin = {
       this._utPlay('elevator_arrive_1', lp, { volume: seaLevel(d) });
     }
     if (!s.hum) s.hum = this._utPlay('elevator_hum', lp, { loops: -1, volume: 0.0 });
-    this._utFollow(s.hum, lp, seaLevel(d));
+    this._utFollow(s.hum, lp, seaLevel(d) * HUM_LEVEL);
     // Your own bubbles now and then, as on Island Mode's seabed.
     s.bubbleTimer -= dt;
     if (s.bubbleTimer <= 0) {
@@ -2342,7 +2360,7 @@ const mixin = {
           }
           if (wide) { wide.setVolume(level * gain * inside, level * gain * inside, dull); wide.setAreaMix(mixHere); }
         };
-        pair(s.amb, s.ambIn, 1);
+        pair(s.amb, s.ambIn, a.kind === 'island' ? ISLAND_AIR_TRIM : 1);
         pair(s.drums, s.drumsIn, 0.85);
         pair(s.crowd, s.crowdIn, CROWD_LEVEL);
       }
@@ -2355,7 +2373,7 @@ const mixin = {
         const hl = onWorld && u.area === a ? levelAt(dist2(lp, this.playerPos)) : 0;
         s.humQuiet = hl > PARK_BELOW ? 0 : (s.humQuiet || 0) + dt;
         if (s.humQuiet > PARK_AFTER) s.hum.pause();
-        else { s.hum.resume(); this._utFollow(s.hum, lp, hl, aboveHeight); }
+        else { s.hum.resume(); this._utFollow(s.hum, lp, hl * HUM_LEVEL, aboveHeight); }
       }
     }
     // Enemies: heard only in the area you are in (a neighbour's wait, unheard,

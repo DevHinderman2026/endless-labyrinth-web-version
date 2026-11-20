@@ -7,8 +7,8 @@
 //   and nothing in Ultimate Mode itself, which has no chaos clock.
 // - Footsteps in the open air: a safe zone's ground follows its sound (grass, snow,
 //   mud, sand; stone everywhere else), and the grass steps are loaded.
-// - The sound engine: a finished sound lets go of every panner it had, so none pile
-//   up; a level too little different to hear is not sent again, a small change
+// - The sound engine: a finished sound's panners are handed to the next sound (6.3.1),
+//   so none pile up; a level too little different to hear is not sent again, a small change
 //   waits a thirtieth of a second, and a big one goes at once.
 
 import { chromium } from 'playwright';
@@ -164,7 +164,16 @@ await page.evaluate(() => {
 const during = await page.evaluate(() => window.__panners.size);
 await page.waitForTimeout(6000);
 const after = await page.evaluate(() => window.__panners.size);
-check(during > before && after <= before, `thirty placed sounds make their panners, and let go of every one when they are done: ${before} before, ${during} while playing, ${after} after`);
+// (6.3.1: a finished sound's panner is no longer unplugged, it is handed to the next
+// sound: so thirty more make no more panners, and none ever piles up past the most
+// played at once.)
+await page.evaluate(() => {
+  const a = window.__el.audio;
+  for (let i = 0; i < 30; i++) a.play('step_stone_' + (1 + (i % 4)), { at: [2 + (i % 5), -3 + (i % 7)] });
+});
+const again = await page.evaluate(() => window.__panners.size);
+await page.waitForTimeout(6000);
+check(during > before && after <= during && again <= after, `thirty placed sounds make their panners, and thirty more reuse them rather than making more: ${before} before, ${during} while playing, ${after} after, ${again} with thirty more`);
 
 const levels = await page.evaluate(async () => {
   const a = window.__el.audio; const s = window.__sent; const out = {};

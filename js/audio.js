@@ -198,6 +198,31 @@ export const monoStats = { made: 0 };
 // Recordings with sound on one side only (found in the 6.0.0 mono audit): played
 // from a centred one-channel copy everywhere, so both ears hear them.
 export const CENTRE_COPY = new Set(['ut_crowd_roar_4', 'ut_crowd_roar_5']);
+// (Web 6.3.1, Russell, 20 November 2026: "if the world turns with you, then the
+// ambience has to turn".) Every background turns with you in a mode that turns,
+// its left side in the world's west and its right side in the east; but these four
+// were recorded with their two sides the same, so there was nothing to turn: they
+// sounded the same whichever way you faced (three of Standard's eleven labyrinth
+// backgrounds among them). Each is given a second side when it is decoded: the same
+// recording, a little over a third of the way further on, so the two sides are no
+// longer alike and it turns like the rest. (Each is a loop, so starting its second
+// side partway through leaves no seam; the files themselves are not changed. The
+// Windows game does the same: TWO_SIDED there.)
+export const TWO_SIDED = new Set(['lab_01_cavewind', 'lab_08_waterflow_2', 'lab_09_waterflow_1', 'island_06_wind_and_waves']);
+export const TWO_SIDED_SHIFT = 0.37;    // of the recording's length: how far on its second side starts
+export function twoSidedCopy(ctx, buf) {
+  if (!buf || buf.numberOfChannels !== 1) return buf;
+  const n = buf.length;
+  const out = ctx.createBuffer(2, n, buf.sampleRate);
+  const x = buf.getChannelData(0);
+  out.copyToChannel(x, 0);
+  const k = Math.floor(n * TWO_SIDED_SHIFT);
+  const r = new Float32Array(n);
+  r.set(x.subarray(k), 0);
+  r.set(x.subarray(0, k), n - k);
+  out.copyToChannel(r, 1);
+  return out;
+}
 
 function sameSides(buf, frames) {
   if (buf.numberOfChannels < 2) return true;
@@ -234,6 +259,7 @@ function newContext() {
 function outChain(ctx, level) {
   const out = ctx.createGain();
   out.gain.value = level;
+  fixedStereo(out);
   let lim = null;
   try {
     lim = ctx.createDynamicsCompressor();
@@ -250,10 +276,27 @@ function outChain(ctx, level) {
   return { out, lim };
 }
 
+// (6.3.1) A mix always two channels, whatever is plugged into it at the moment, so
+// a sound joining or leaving it never changes the shape of everything after it.
+function fixedStereo(node) {
+  try { node.channelCount = 2; node.channelCountMode = 'explicit'; node.channelInterpretation = 'speakers'; } catch (e) { /* as it was */ }
+  return node;
+}
+
 // Remembered targets of the gains and panners, and when they were sent, so an
 // unchanged or barely changed value is not sent to the audio thread again (see
 // Voice._set, _place).
 const SENT = new WeakMap();
+// (Web 6.3.1, Russell, 20 November 2026: in a Standard labyrinth the sound popped
+// every few seconds, between the exit's beeps.) 6.3.0 let go of a finished sound's
+// panner by unplugging it from the mix, a few seconds after the sound ended; with a
+// beep every second or so that meant the mix's inputs changing all the time, and on
+// some devices every such change can be heard as a pop. Now a finished sound's
+// panner stays plugged in, silent, and is handed to the next sound that needs one:
+// the mix's inputs hardly ever change, and their number never grows past the most
+// sounds placed at once (PANNER_POOL per mix, beyond which one is let go).
+const PANNERS = new WeakMap();     // mix (a GainNode) -> panners plugged into it, silent, free to take
+const PANNER_POOL = 64;
 
 export class AudioEngine {
   constructor() {
@@ -488,7 +531,9 @@ export class AudioEngine {
       // A recording with sound on one side only is heard in both ears from a
       // centred copy made here (the file itself is never changed: Russell, 19 Nov).
       // (6.0.0 review fix: the key is 'dry:<name>'; asked by the whole key, the copy was never made.)
-      const buf = CENTRE_COPY.has(key.slice(key.indexOf(':') + 1)) ? monoCopy(this.ctx, buf0) : buf0;
+      const bare = key.slice(key.indexOf(':') + 1);
+      let buf = CENTRE_COPY.has(bare) ? monoCopy(this.ctx, buf0) : buf0;
+      if (TWO_SIDED.has(bare.replace(/_muffled$/, ''))) buf = twoSidedCopy(this.ctx, buf);
       this.buffers.set(key, buf);
       this.pending.delete(key);
       if (e.frames > BIG_FRAMES) this._noteBig(key);
@@ -766,7 +811,7 @@ export class AudioEngine {
     this._master(MASTER_LEVEL_3D);
     if (this.worldIn) return;
     const ctx = this.ctx;
-    this.worldIn = ctx.createGain();
+    this.worldIn = fixedStereo(ctx.createGain());
     this.worldFilter = ctx.createBiquadFilter();
     this.worldFilter.type = 'lowpass';
     this.worldFilter.Q.value = 0.5;
@@ -851,6 +896,38 @@ export class AudioEngine {
 
   // Where a Voice's branches go: the world chain in 3D, the output otherwise.
   get bus() { return this.spatial && this.worldIn ? this.worldIn : this.out; }
+
+  // An HRTF panner plugged into the mix, placed at (x, y, z): a free one if there
+  // is one (see PANNERS), else a new one.
+  takePanner(x, y, z) {
+    const bus = this.bus; const ctx = this.ctx;
+    const free = PANNERS.get(bus);
+    let p = free && free.pop();
+    if (!p) {
+      p = ctx.createPanner();
+      p.panningModel = 'HRTF';
+      p.distanceModel = 'linear';
+      p.refDistance = 1;
+      p.maxDistance = 10000;
+      p.rolloffFactor = 0;
+      p.connect(bus);
+    }
+    p.__bus = bus;
+    SENT.delete(p);                 // (what was last sent was for the sound before)
+    Voice._place(p, x, y, z, ctx.currentTime, true);
+    return p;
+  }
+
+  // A panner whose sound is done, its input already cut: kept plugged in for the
+  // next sound, or let go if enough are kept already.
+  givePanner(p) {
+    if (!p) return;
+    const bus = p.__bus;
+    let free = bus && PANNERS.get(bus);
+    if (bus && !free) { free = []; PANNERS.set(bus, free); }
+    if (free && free.length < PANNER_POOL && bus.context === this.ctx && this.ctx.state !== 'closed') { if (!free.includes(p)) free.push(p); return; }
+    try { p.disconnect(); } catch (e) { /* already */ }
+  }
 
   // The world's level (a regeneration fades it out and in) and its muffling (the
   // compass): both glide over `seconds`.
@@ -1171,16 +1248,9 @@ export class Voice {
     if (this.placed || this.binPlaced) {
       // The HRTF panner places the sound; the game still sets its loudness by
       // distance itself, so the panner's own distance rolloff is turned off.
-      panner = ctx.createPanner();
-      panner.panningModel = 'HRTF';
-      panner.distanceModel = 'linear';
-      panner.refDistance = 1;
-      panner.maxDistance = 10000;
-      panner.rolloffFactor = 0;
       const [x, y, z] = this.placed ? this.pos3 : [this.dir[0], 0, this.dir[1]];
-      Voice._place(panner, x, y, z, ctx.currentTime, true);
+      panner = this.audio.takePanner(x, y, z);
       merge.connect(panner);
-      panner.connect(this.audio.bus);
     } else {
       merge.connect(this.direct ? this.audio.out : this.audio.bus);
     }
@@ -1412,8 +1482,9 @@ export class Voice {
       if (!br) continue;
       try { br.merge.disconnect(); } catch (e) { /* already */ }
       // (6.3.0: the panner too. Left connected to the mix, it stayed in the audio
-      // graph for good, one for every placed sound ever played.)
-      if (br.panner) { try { br.panner.disconnect(); } catch (e) { /* already */ } }
+      // graph for good, one for every placed sound ever played. 6.3.1: handed on to
+      // the next sound instead of unplugged, see PANNERS.)
+      if (br.panner) { this.audio.givePanner(br.panner); br.panner = null; }
       if (br.wide) {
         for (const n of [br.wide.west, br.wide.east, br.wide.lift]) { try { n.disconnect(); } catch (e) { /* already */ } }
       }
@@ -1421,7 +1492,8 @@ export class Voice {
     if (this.wet) {
       try { this.wet.merge.disconnect(); } catch (e) { /* already */ }
       const w = this.wet;
-      for (const n of [w.panner, ...(w.wide ? [w.wide.west, w.wide.east, w.wide.lift] : [])]) { if (n) { try { n.disconnect(); } catch (e) { /* already */ } } }
+      if (w.panner) { this.audio.givePanner(w.panner); w.panner = null; }
+      for (const n of (w.wide ? [w.wide.west, w.wide.east, w.wide.lift] : [])) { try { n.disconnect(); } catch (e) { /* already */ } }
       for (const tap of (this.wet.taps || new Map()).values()) { try { tap.disconnect(); } catch (e) { /* already */ } }
     }
   }
@@ -1465,15 +1537,8 @@ export class Voice {
   // gets its panner the first time the mode gives the sound a direction.
   _binPanner(br) {
     if (br.panner) return br.panner;
-    const ctx = this.ctx;
     this._toMono(br);
-    const p = ctx.createPanner();
-    p.panningModel = 'HRTF';
-    p.distanceModel = 'linear';
-    p.refDistance = 1;
-    p.maxDistance = 10000;
-    p.rolloffFactor = 0;
-    Voice._place(p, this.dir[0], 0, this.dir[1], ctx.currentTime, true);
+    const p = this.audio.takePanner(this.dir[0], 0, this.dir[1]);
     if (br.wide) {
       try { br.gl.disconnect(br.wide.west); br.gr.disconnect(br.wide.east); } catch (e) { /* already */ }
       // (6.3.0: the wide pair's own panners go too, not only their way out.)
@@ -1483,7 +1548,6 @@ export class Voice {
       try { br.merge.disconnect(); } catch (e) { /* already */ }
     }
     br.merge.connect(p);
-    p.connect(this.audio.bus);
     br.panner = p;
     return p;
   }
