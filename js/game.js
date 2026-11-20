@@ -570,7 +570,7 @@ export class Game {
 
   // (6.1.0, Russell) No groan or gasp from the crowd when an enemy reaches you in a
   // battle: one hit ends it there. (Ultimate Mode keeps its reactions.) But in chaos's
-  // battles a hit now costs health instead of the run (web 6.2.0), so there the crowd
+  // battles a hit now costs health instead of the run (web 6.3.0), so there the crowd
   // groans, gasps or boos again, just after the hit, never the same twice running.
   _battleGroan() {
     const name = this._battleCrowdPick(HIT_REACTIONS, 'battleLastReact');
@@ -1097,7 +1097,7 @@ export class Game {
       const [l, r] = this._battleLevels([o.x, o.y]);
       if (o.channel) o.channel.setVolume(l, r, this._behind([o.x, o.y]));
       if (dist < 0.8) {
-        // In chaos (web 6.2.0): it costs health instead of the run, and the enemy that
+        // In chaos (web 6.3.0): it costs health instead of the run, and the enemy that
         // reached you is gone (counted as one of the level's), so it cannot hit twice.
         if (this.chaosMode) {
           if (this.chaosHitGrace > 0) continue;
@@ -1615,7 +1615,7 @@ export class Game {
       // A labyrinth: squares one step wide. A wall stops you; met at a slant, you
       // slide along it, in silence (as in Ultimate Mode since 4.1.2). Two walls
       // that touch only at their corners, with floor beyond: faced at a slant, you
-      // fit through the gap (as in Ultimate Mode since 6.1.0; here from 6.2.0,
+      // fit through the gap (as in Ultimate Mode since 6.1.0; here from 6.3.0,
       // Russell, 20 November 2026: the walls are scattered squares, as there).
       const gs = this.gridSize;
       const cell = (p) => [Math.round(p[0]), Math.round(p[1])];
@@ -1663,7 +1663,7 @@ export class Game {
   // Enter's report (the desktop's _report). In chaos mode every report ends with the
   // run's points, since that is the score the run is played for.
   _report(text, clock = false) {
-    // Chaos's one health bar (web 6.2.0), in every level that does not already say it.
+    // Chaos's one health bar (web 6.3.0), in every level that does not already say it.
     if (this.chaosMode && this.state !== S.TOWER && this.state !== 'ultimate') text = text.trimEnd() + ` ${this.towerHp} health.`;
     if (clock) text = text.trimEnd() + this._clockTail();
     if (this.chaosMode) text = text.trimEnd() + ` ${(this.chaosPoints || 0) + (this.islandPoints || 0)} points total.`;

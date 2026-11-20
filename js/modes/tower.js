@@ -571,7 +571,7 @@ const mixin = {
             return;
           }
           const low = Math.max(35, 2 * this._towerHitDamage());
-          // In chaos the run's one health bar warns with the voice too (web 6.2.0).
+          // In chaos the run's one health bar warns with the voice too (web 6.3.0).
           if (this.chaosMode) this._chaosLowCheck(low);
           else if (this.towerHp <= low && !this.towerLowWarned) {
             this.towerLowWarned = true;
@@ -603,7 +603,7 @@ const mixin = {
       const [left, right, dist] = this._towerBeaconLevels([this.towerPotion.x, this.towerPotion.y]);
       if (this.towerPotion.channel) this.towerPotion.channel.setVolume(left, right, this._behind([this.towerPotion.x, this.towerPotion.y]));
       if (dist < 3.0) {
-        // In chaos (web 6.2.0) health has no cap: a potion brings it back to 100 if it
+        // In chaos (web 6.3.0) health has no cap: a potion brings it back to 100 if it
         // is below, and does nothing above.
         this.towerHp = this.chaosMode ? Math.max(this.towerHp, this.towerMaxHp) : this.towerMaxHp;
         this.towerLowWarned = false;

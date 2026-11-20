@@ -573,7 +573,7 @@ const mixin = {
     const fv = this.fv;
     this.audio.play('player_hit', { keep: true });
     this.stride = null;
-    // In chaos (web 6.2.0) a catch costs 25 of the run's one health bar, not a life.
+    // In chaos (web 6.3.0) a catch costs 25 of the run's one health bar, not a life.
     if (fv.chaos) {
       if (this._chaosHurt(this._chaosCatchDamage(), 'catch')) { fv.lost = true; return; }
     } else {

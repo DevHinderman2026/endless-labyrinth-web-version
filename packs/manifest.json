@@ -71,6 +71,10 @@
   "abyss": {
    "file": "abyss-a1c0f68d43.elpack",
    "bytes": 708597
+  },
+  "outdoor": {
+   "file": "outdoor-f296a2476b.elpack",
+   "bytes": 31877
   }
  }
 }

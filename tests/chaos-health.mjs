@@ -1,4 +1,4 @@
-// Chaos's one health bar (web 6.2.0, Russell, 20 November 2026), played by script.
+// Chaos's one health bar (web 6.3.0, Russell, 20 November 2026), played by script.
 // Run: serve the site folder, then
 //   node --import ./tests/github-stub.mjs tests/chaos-health.mjs http://localhost:8790
 // What is checked: a run starts at 100; every finished level gives 10, with no cap;

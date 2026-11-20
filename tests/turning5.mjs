@@ -64,7 +64,7 @@ const std = await page.evaluate(() => {
   out.wall = { pos: [...g.playerPos], wall: L.names.includes('wall'), step: L.names.some((n) => n.startsWith('step_')) };
   L.names.length = 0; g._face(Math.PI / 3, true); g.input('up');
   out.slide = { pos: g.playerPos.map((x) => +x.toFixed(3)), wall: L.names.includes('wall'), step: L.names.some((n) => n.startsWith('step_')) };
-  // Two walls touching only at their corners, floor beyond (6.2.0): faced at a slant,
+  // Two walls touching only at their corners, floor beyond (6.3.0): faced at a slant,
   // you fit through; faced at one of the two walls, it is a wall.
   g.grid.clear(); g.grid.add('1,0'); g.grid.add('0,1'); g.playerPos = [0, 0]; g._face(Math.PI * 3 / 4, true);
   L.names.length = 0; g.input('up');
@@ -279,7 +279,7 @@ check(!rest.drive.turns && rest.drive.facing === 0 && !rest.drive.hold, 'Driving
     && !/fr[eo]z/i.test(during.r.text),
     'for thirty days the Update History opens with a region named Alert: turning, and compatibility between Windows and the web');
   check(before.r === null && after.r === null, 'it is not there before 5.0.0 came out, and it is gone after thirty days');
-  check(/^6\.2\.0 \(20 November 2026\)/.test(during.top), 'the Update History begins with the newest version, 6.2.0: ' + during.top);
+  check(/^6\.3\.0 \(20 November 2026\)/.test(during.top), 'the Update History begins with the newest version, 6.3.0: ' + during.top);
   await page.goto(base + '/help.html');
   const faq = await page.evaluate(() => ['faq-turning', 'faq-turning-lost', 'faq-turning-aim', 'faq-turning-walls', 'faq-turning-which', 'faq-turning-slide'].map((id) => { const h = document.getElementById(id); return h ? h.textContent : null; }));
   check(faq.every(Boolean), 'the frequently asked questions have six questions about turning: ' + faq.join(' | '));

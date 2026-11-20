@@ -983,7 +983,7 @@ const mixin = {
       }
       if (obs.channel) obs.channel.setVolume(left * fade, right * fade, this._behind([obs.x, obs.y]));
       if (dist < reach && this.islandGrace <= 0) {
-        // In chaos (web 6.2.0, Russell, 20 November 2026) an enemy reaching you costs
+        // In chaos (web 6.3.0, Russell, 20 November 2026) an enemy reaching you costs
         // health, and it is gone (counted as one of the island's); the guardian
         // stays, and pushes on after a moment's grace. But a guardian that reaches
         // you while you are out of shots, hunting you since you can get no more,

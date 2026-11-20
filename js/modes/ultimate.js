@@ -307,6 +307,21 @@ export const BACKGROUND_SEND = 0.15;
 export const SAFE_WALL_SEND = 0.05;
 const STEPS_STONE = ['step_stone_1', 'step_stone_2', 'step_stone_3', 'step_stone_4'];
 const STEPS_SAND = ['step_sand_1', 'step_sand_2', 'step_sand_3', 'step_sand_4'];
+// Footsteps in the open air (web 6.3.0, Russell, 20 November 2026): a safe zone
+// out of doors is walked on what its sound says it is, in Ultimate Mode and in a
+// chaos world stage alike. Any other safe zone, and every other area but an
+// island, is stone. (A surface whose recordings are missing falls back to stone.)
+const STEPS_GRASS = ['step_grass_1', 'step_grass_2', 'step_grass_3'];   // (three recordings, in the outdoor pack)
+const STEPS_SNOW = ['step_snow_1', 'step_snow_2', 'step_snow_3', 'step_snow_4'];
+const STEPS_MUD = ['step_mud_1', 'step_mud_2', 'step_mud_3', 'step_mud_4'];
+export const SAFE_ZONE_STEPS = {
+  evt_amb_bees: STEPS_GRASS, evt_amb_cicadas: STEPS_GRASS, evt_amb_crickets: STEPS_GRASS, evt_amb_forest_night: STEPS_GRASS,
+  evt_amb_jungle: STEPS_GRASS, evt_amb_morning_birds: STEPS_GRASS, evt_amb_spring_birds: STEPS_GRASS, evt_amb_summer: STEPS_GRASS,
+  evt_amb_wind_trees: STEPS_GRASS, evt_amb_campfire: STEPS_GRASS, evt_amb_graveyard: STEPS_GRASS,
+  evt_amb_blizzard: STEPS_SNOW, evt_amb_winter_wind: STEPS_SNOW,
+  evt_amb_marsh_frogs: STEPS_MUD, evt_amb_rain: STEPS_MUD, evt_amb_storm: STEPS_MUD, evt_amb_river: STEPS_MUD,
+  evt_amb_desert: STEPS_SAND, evt_amb_ocean_night: STEPS_SAND,
+};
 // ---- the pool at the foot of a water slide (web 4.1.0; Russell, 11 November
 // 2026): you splash down in the middle of a pool and have to get out of it, a few
 // steps whichever way you go. A step in it is a wading step; a run in it is
@@ -379,6 +394,13 @@ export const CHAOS_WORLD_ENEMIES = true;
 export const CHAOS_WORLD_BUSES = true;
 export const CHAOS_CREDIT_VALUES = [40, 50, 60];   // seconds, as every chaos credit
 export const CHAOS_SLIDE_TIME = 30;
+// (Web 6.3.0, Russell, 20 November 2026: the time in a chaos world stage was not fair
+// beside the rest of chaos, where most things you do earn time.) Everything that
+// scores points in a chaos world stage now puts time on the chaos clock as well:
+// only when it scores (not in a safe zone, not with the compass on), as the points.
+export const CHAOS_KILL_TIME = { chaser: 20, thrower: 30 };   // seconds a kill
+export const CHAOS_PICKUP_TIME = 10;            // seconds: ammo or a potion picked up
+export const CHAOS_CHEST_TIME = 30;             // seconds: a chest's points
 // The safe zones' characters (web 6.0.0, Russell, 19 Nov; the cast and their lines
 // in js/data, see ultimate/cast.js). Each safe zone has its character standing
 // somewhere in it. While you are in the zone they greet you now and then, from
@@ -621,7 +643,7 @@ const mixin = {
     this.ut = this._utRunState({
       chaos: true, face: this.tn ? this.tn.face : 0,
       worlds: c.worlds || 0, elapsed: c.elapsed || 0,
-      // Chaos's one health bar (web 6.2.0): the world starts from it, not from 100.
+      // Chaos's one health bar (web 6.3.0): the world starts from it, not from 100.
       hp: this.towerHp, lowWarned: !!this.towerLowWarned,
       ...(c.ammo !== undefined ? { ammo: c.ammo } : {}), ...(c.items !== undefined ? { items: c.items } : {}),
       speedBonus: c.speedBonus || 1.0,
@@ -922,13 +944,17 @@ const mixin = {
   },
 
   // Points earned now: nothing in a safe zone, nothing while the compass is on.
-  _utScore(base, { safeOk = false } = {}) {
+  // In a chaos world stage, `time` seconds go on the chaos clock with the points.
+  _utScore(base, { safeOk = false, time = 0 } = {}) {
     const u = this.ut;
     if (u.compass.on || (this._utInSafeZone() && !safeOk)) return;
     const got = Math.round(base * this._utMultiplier());
     u.points += got;
     u.worldPoints += base;
-    if (u.chaos) this.chaosPoints = (this.chaosPoints || 0) + got;
+    if (u.chaos) {
+      this.chaosPoints = (this.chaosPoints || 0) + got;
+      if (time > 0) this._utChaosTime(time);
+    }
   },
 
   _utInSafeZone() {
@@ -980,6 +1006,8 @@ const mixin = {
         a.stretch *= uniform(0.95, 1.08);
         if (WATER_PARK.test(stem)) a.waterPark = true;
         a.stem = stem;
+        const ground = (SAFE_ZONE_STEPS[stem] || []).filter((n) => this.audio.has(n));
+        if (ground.length) a.steps = ground;
       }
     }
     // Dropped in silently, somewhere at random.
@@ -1303,7 +1331,7 @@ const mixin = {
     if (e.voice) { e.voice.stop(); u.voices.delete(e.voice); e.voice = null; }
     u.enemies.splice(u.enemies.indexOf(e), 1);
     u.kills += 1;
-    this._utScore(POINTS[e.kind]);
+    this._utScore(POINTS[e.kind], { time: CHAOS_KILL_TIME[e.kind] || CHAOS_KILL_TIME.chaser });
     const d = dist2(pos, this.playerPos);
     const bang = Math.min(0.5, d * 0.015);
     this._utLater(bang, 'explosion', pos);
@@ -1410,7 +1438,7 @@ const mixin = {
     if (p.kind === 'ammo') {
       u.ammo += p.shots;
       this.audio.play('ammo');
-      if (!safe) this._utScore(POINTS.ammo);
+      if (!safe) this._utScore(POINTS.ammo, { time: CHAOS_PICKUP_TIME });
       if (p.safe) u.timers.push({ at: SAFE_AMMO_EVERY, kind: 'ammo', area: p.area, safe: true });
       else u.timers.push({ at: uniform(RESPAWN_PICKUP[0], RESPAWN_PICKUP[1]), kind: 'ammo' });
     } else if (p.kind === 'chest') {
@@ -1426,7 +1454,7 @@ const mixin = {
       u.hp = Math.max(u.hp, START_HP);
       u.lowWarned = false;
       this.audio.play('potion_drink');
-      if (!safe) this._utScore(POINTS.potion);
+      if (!safe) this._utScore(POINTS.potion, { time: CHAOS_PICKUP_TIME });
       u.potionDue.set(p.area.id, POTION_REFILL);   // this zone's next, if health is low again by then
     }
   },
@@ -2146,7 +2174,7 @@ const mixin = {
       if (dist2(p.pos, this.playerPos) < PICKUP_REACH) {
         if (p.voice) { p.voice.stop(); u.voices.delete(p.voice); }
         s.pickups.splice(s.pickups.indexOf(p), 1);
-        if (p.kind === 'ammo') { u.ammo += p.shots; this.audio.play('ammo'); this._utScore(POINTS.ammo); }
+        if (p.kind === 'ammo') { u.ammo += p.shots; this.audio.play('ammo'); this._utScore(POINTS.ammo, { time: CHAOS_PICKUP_TIME }); }
         else if (p.kind === 'chest') this._utOpenChest();
         else { this.audio.play('credit_chaos'); this._utScore(p.value); }
       }
@@ -2189,7 +2217,7 @@ const mixin = {
       else if (kind === 'points') {
         const got = Math.round(CHEST_POINTS * this._utMultiplier());
         u.points += got; u.worldPoints += CHEST_POINTS;
-        if (u.chaos) this.chaosPoints = (this.chaosPoints || 0) + got;
+        if (u.chaos) { this.chaosPoints = (this.chaosPoints || 0) + got; this._utChaosTime(CHAOS_CHEST_TIME); }
         words.push(`${got} points`);
       } else if (kind === 'items') { const got = randint(CHEST_ITEMS[0], CHEST_ITEMS[1]); u.items += got; words.push(`${got} tower items`); }
       else if (kind === 'health') {

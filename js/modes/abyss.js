@@ -29,7 +29,7 @@
 //
 // Chaos Mode has Abyss stages too (js/modes/chaos.js): lightning strikes the moment
 // you arrive, a quota of cases (3 or 4, growing each visit), then everything else
-// goes and only an exit is heard; a catch costs 25 of the chaos run's one health bar (6.2.0) for the whole
+// goes and only an exit is heard; a catch costs 25 of the chaos run's one health bar (6.3.0) for the whole
 // chaos run, and its cases give chaos time.
 //
 // (The abyss is endless, but phones are not: creatures and cases appear around you
@@ -382,7 +382,7 @@ const mixin = {
     const ab = this.ab;
     this.audio.play('player_hit', { keep: true });
     this.stride = null;
-    // In chaos (web 6.2.0) a catch costs 25 of the run's one health bar, not a life.
+    // In chaos (web 6.3.0) a catch costs 25 of the run's one health bar, not a life.
     if (ab.chaos) {
       if (this._chaosHurt(this._chaosCatchDamage(), 'catch')) { ab.lost = true; return; }
     } else {

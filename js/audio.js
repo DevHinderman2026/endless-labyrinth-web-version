@@ -77,6 +77,7 @@ const CULL_FADE_MS = 40;
 // already is kept the browser's audio thread busy for nothing, frame after
 // frame, for every sound at once.
 const PLACE_SAME = Math.cos(0.5 * Math.PI / 180);
+const PLACE_SOON = Math.cos(3 * Math.PI / 180);   // (a turn of the direction smaller than this waits for SEND_GAP)
 // (Web 6.2.0, Russell, 20 November 2026: on an iPhone, in any mode, a slight static
 // crept onto the edges of every sound the longer he played; pausing cleared it, and
 // after resuming it stayed clear for a while, then came back.) A panner's place and
@@ -93,6 +94,22 @@ const PLACE_SAME = Math.cos(0.5 * Math.PI / 180);
 // is back to its cheap, once-a-slice work until it moves again.
 const PLACE_GLIDE = 0.06;        // seconds: a placed sound's move (was a 0.02 time constant, about the same sweep)
 const FACE_GLIDE = 0.045;        // seconds: the listener's turn (was a 0.015 time constant)
+// (Web 6.3.0, Russell, 20 November 2026: the static still came back the longer he
+// played, in Chaos mode especially, and pausing the game made it vanish.) Two causes.
+// First, a sound's panner was never let go: when a sound ended, the nodes feeding
+// its panner were disconnected, but the panner itself stayed connected to the mix,
+// so every placed sound ever played stayed in the audio graph for good; a five
+// minute Chaos run left about 1,300 of them for the audio thread to visit in every
+// slice of sound. A finished sound now lets go of all of it. Second, every sound's
+// levels, and in the 3D worlds its place, were sent to the audio thread in every
+// frame, sixty times a second: about 8,000 changes a second in a world, each one
+// taken under a lock the audio thread also needs. Pausing stopped the frames, which
+// is why the static vanished then. A change too small to hear (LEVEL_SAME) is now
+// not sent, and a small one waits until a thirtieth of a second has passed since the
+// last (SEND_GAP), in every mode, the worlds included.
+const LEVEL_SAME = 0.005;        // of a level: a change smaller than this is not sent (about 0.04 decibels)
+const SEND_GAP = 1 / 30;         // seconds: the least time between two small changes to one gain or panner
+const SEND_BIG = 0.05;           // of a level: a change at least this big is sent at once
 
 // A glide that ends: from where the parameter is now, straight to v.
 function glideTo(p, v, now, secs) {
@@ -233,8 +250,9 @@ function outChain(ctx, level) {
   return { out, lim };
 }
 
-// Remembered targets of the gains and panners outside Ultimate Mode, so an
-// unchanged value is not sent to the audio thread again (see Voice._set, _place).
+// Remembered targets of the gains and panners, and when they were sent, so an
+// unchanged or barely changed value is not sent to the audio thread again (see
+// Voice._set, _place).
 const SENT = new WeakMap();
 
 export class AudioEngine {
@@ -1174,14 +1192,18 @@ export class Voice {
     // undefined there. A thing underfoot is a step ahead, centred.
     if (Math.hypot(x, y, z) < 0.05) { x = 0; z = -0.05; }
     if (same) {
-      // Outside Ultimate Mode (web 5.1.0): a direction no different from the
-      // last one sent is not sent again.
+      // A direction no different from the last one sent is not sent again (web
+      // 5.1.0; in the 3D worlds too from 6.3.0, with the panners' distance roll-off
+      // turned off only the direction is heard); and a small turn of it waits a
+      // thirtieth of a second from the last (SEND_GAP).
       const was = SENT.get(panner);
       if (!instant && was) {
         const m = Math.hypot(x, y, z) * Math.hypot(was[0], was[1], was[2]);
-        if (m > 0 && (x * was[0] + y * was[1] + z * was[2]) / m >= PLACE_SAME) return;
+        const cos = m > 0 ? (x * was[0] + y * was[1] + z * was[2]) / m : 1;
+        if (cos >= PLACE_SAME) return;
+        if (now - was[3] < SEND_GAP && cos >= PLACE_SOON) return;
       }
-      SENT.set(panner, [x, y, z]);
+      SENT.set(panner, [x, y, z, now]);
     }
     if (panner.positionX) {
       for (const [p, v] of [[panner.positionX, x], [panner.positionY, y], [panner.positionZ, z]]) {
@@ -1199,7 +1221,7 @@ export class Voice {
     // at once: the player may have come a long way while it was silent.
     const jump = !!this.jump;
     this.jump = false;
-    for (const br of [this.dry, this.dull]) if (br && br.panner) Voice._place(br.panner, x, y, z, now, jump);
+    for (const br of [this.dry, this.dull]) if (br && br.panner) Voice._place(br.panner, x, y, z, now, jump, true);
   }
 
   // Which areas' echoes a placed sound rings in (3D): { areaId: weight }.
@@ -1210,7 +1232,8 @@ export class Voice {
     const a = this.audio;
     const now = this.ctx.currentTime;
     // Areas no longer in the mix fade out of it.
-    for (const [id, tap] of w.taps) if (!(this.areaMix && this.areaMix[id])) tap.gain.setTargetAtTime(0, now, 0.05);
+    // (6.3.0: a tap's level is sent only when it changes, not in every frame.)
+    for (const [id, tap] of w.taps) if (!(this.areaMix && this.areaMix[id]) && tap.want !== 0) { tap.want = 0; tap.gain.setTargetAtTime(0, now, 0.05); }
     for (const [key, want] of Object.entries(this.areaMix || {})) {
       // (The mix's keys are strings, as every object key is; the buses are kept
       // by the areas' numbers.)
@@ -1233,7 +1256,10 @@ export class Voice {
       const OS = RULES.ONCE_SCALE || {};
       let scale = bus.conv ? ((OS[bus.conv.key] || {})[this.name] || 1) : 1;
       if (this.family === 'beacon' && bus.stretch > 1) scale /= bus.stretch;
-      tap.gain.setTargetAtTime(clamp(want, 0, 1) * scale, now, 0.05);
+      const level = clamp(want, 0, 1) * scale;
+      if (tap.want !== undefined && Math.abs(tap.want - level) < 1e-3) continue;
+      tap.want = level;
+      tap.gain.setTargetAtTime(level, now, 0.05);
     }
   }
 
@@ -1283,7 +1309,7 @@ export class Voice {
       if (this.areaMix) this.setAreaMix(this.areaMix);
     } else if (loopWet) {
       const br = this._branch(loopWet, true);
-      this.wet = { buffer: loopWet, fade: br.fade, split: br.split, wl: br.gl, wr: br.gr, merge: br.merge };
+      this.wet = { buffer: loopWet, fade: br.fade, split: br.split, wl: br.gl, wr: br.gr, merge: br.merge, panner: br.panner, wide: br.wide };
     } else if (a.room && this.send > 0 && (rooms.includes(a.room) || (this.sendSet && !a.spatial))) {
       const takes = RULES.TAKES[this.name] || 1;
       const once = !this.loop && (this.pair.dry.loop || reverbIsLoop(this.name));
@@ -1385,23 +1411,39 @@ export class Voice {
     for (const br of [this.dry, this.dull]) {
       if (!br) continue;
       try { br.merge.disconnect(); } catch (e) { /* already */ }
-      if (br.wide) { try { br.wide.lift.disconnect(); } catch (e) { /* already */ } }
+      // (6.3.0: the panner too. Left connected to the mix, it stayed in the audio
+      // graph for good, one for every placed sound ever played.)
+      if (br.panner) { try { br.panner.disconnect(); } catch (e) { /* already */ } }
+      if (br.wide) {
+        for (const n of [br.wide.west, br.wide.east, br.wide.lift]) { try { n.disconnect(); } catch (e) { /* already */ } }
+      }
     }
     if (this.wet) {
       try { this.wet.merge.disconnect(); } catch (e) { /* already */ }
+      const w = this.wet;
+      for (const n of [w.panner, ...(w.wide ? [w.wide.west, w.wide.east, w.wide.lift] : [])]) { if (n) { try { n.disconnect(); } catch (e) { /* already */ } } }
       for (const tap of (this.wet.taps || new Map()).values()) { try { tap.disconnect(); } catch (e) { /* already */ } }
     }
   }
 
   _set(param, v, instant) {
     const now = this.ctx.currentTime;
-    if (!this.audio.spatial) {
-      // Outside Ultimate Mode (web 5.1.0): a level no different from the last one
-      // sent is not sent again (every sound's levels are set every frame).
-      const was = SENT.get(param);
-      if (!instant && now > this.begunAt && was !== undefined && Math.abs(was - v) < 1e-4) return;
-      SENT.set(param, v);
+    // A level no different from the last one sent is not sent again (every sound's
+    // levels are set every frame; web 5.1.0, and in the 3D worlds too from 6.3.0);
+    // nor one too little different to hear (LEVEL_SAME); and a small change waits a
+    // thirtieth of a second from the last (SEND_GAP). A level going to or from
+    // nothing is always sent.
+    const was = SENT.get(param);
+    if (!instant && now > this.begunAt && was !== undefined) {
+      const d = Math.abs(was[0] - v);
+      const top = Math.max(was[0], v);
+      if (d < 1e-4) return;
+      if (v > 0 && was[0] > 0) {
+        if (d < LEVEL_SAME * top) return;
+        if (now - was[1] < SEND_GAP && d < SEND_BIG * top) return;
+      }
     }
+    SENT.set(param, [v, now]);
     if (instant || now <= this.begunAt) { param.cancelScheduledValues(now); param.setValueAtTime(v, now); }
     else param.setTargetAtTime(v, now, 0.008);
   }
@@ -1433,7 +1475,9 @@ export class Voice {
     p.rolloffFactor = 0;
     Voice._place(p, this.dir[0], 0, this.dir[1], ctx.currentTime, true);
     if (br.wide) {
-      try { br.gl.disconnect(br.wide.west); br.gr.disconnect(br.wide.east); br.wide.lift.disconnect(); } catch (e) { /* already */ }
+      try { br.gl.disconnect(br.wide.west); br.gr.disconnect(br.wide.east); } catch (e) { /* already */ }
+      // (6.3.0: the wide pair's own panners go too, not only their way out.)
+      for (const n of [br.wide.west, br.wide.east, br.wide.lift]) { try { n.disconnect(); } catch (e) { /* already */ } }
       br.wide = null;
     } else {
       try { br.merge.disconnect(); } catch (e) { /* already */ }
