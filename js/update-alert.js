@@ -25,6 +25,7 @@
 // RELEASE_ALERT, below, for Windows 3.0.1.)
 
 import { el } from './site.js';
+import { SCORES_RESET_AT } from './storage.js';
 
 export const RELEASE_API = 'https://api.github.com/repos/DevHinderman2026/Endless-Labyrinth/releases/latest';
 export const RELEASE_PAGE = 'https://github.com/DevHinderman2026/Endless-Labyrinth/releases/latest';
@@ -176,8 +177,44 @@ export function buildComingAlert(a = COMING_ALERT) {
   ]);
 }
 
+// ------------------------------------------------------------------ the high scores reset (web 6.3.5)
+// Russell, 21 November 2026: every mode's high score board was set back to 0 for all
+// players (see SCORES_RESET_AT in storage.js; not the Event High Scores). The home page
+// says so in a region named Alert, above the Windows alert, for six hours from the
+// reset, judged by internet time, and then it goes by itself. It is a plain region,
+// not spoken over the screen reader.
+export const SCORES_ALERT = {
+  from: SCORES_RESET_AT / 1000,
+  hours: 6,
+  heading: 'High scores reset: ',
+  text: 'with so much refined in the game over the last few updates, every high score board on the website has been '
+    + 'set back to zero for all players, so everyone starts fresh. Event High Scores, play time and runs are not affected.',
+};
+
+export function scoresAlertDue(now, a = SCORES_ALERT) {
+  return now !== null && now >= a.from && now < a.from + a.hours * 3600;
+}
+
+export function buildScoresAlert(a = SCORES_ALERT) {
+  return el('section', { role: 'region', 'aria-label': 'Alert', class: 'site-alert', id: 'scores-reset-alert' }, [
+    el('p', {}, [el('strong', { text: a.heading }), a.text]),
+  ]);
+}
+
+// A Windows alert goes just below the high scores alert, if that is showing.
+function placeAlert(alert) {
+  const first = document.getElementById('scores-reset-alert');
+  if (first) { first.after(alert); return; }
+  const header = document.querySelector('header.site');
+  if (header) header.before(alert); else document.body.prepend(alert);
+}
+
 export async function showUpdateAlert() {
   const [now, release] = await Promise.all([siteTime(), latestRelease()]);
+  if (scoresAlertDue(now)) {
+    const header = document.querySelector('header.site');
+    if (header) header.before(buildScoresAlert()); else document.body.prepend(buildScoresAlert());
+  }
   const special = RELEASE_ALERT;
   // The release's own alert: only once GitHub says that very release is out, for its
   // days from the day it was published there (web 5.2.0). So it never announces a
@@ -186,8 +223,7 @@ export async function showUpdateAlert() {
   if (release && release.version === special.version) {
     if (!alertDue(release.published, now, special.days)) return false;   // its days are over
     const alert = buildReleaseAlert(special, release.url);
-    const header = document.querySelector('header.site');
-    if (header) header.before(alert); else document.body.prepend(alert);
+    placeAlert(alert);
     announce(releaseAlertText(special));
     return true;
   }
@@ -195,16 +231,14 @@ export async function showUpdateAlert() {
   // yet, and the latest version can be played here meanwhile.
   if (release && isNewerVersion(special.version, release.version)) {
     const alert = buildComingAlert();
-    const header = document.querySelector('header.site');
-    if (header) header.before(alert); else document.body.prepend(alert);
+    placeAlert(alert);
     announce(comingAlertText());
     return true;
   }
   if (!release || !alertDue(release.published, now)) return false;
   if (!isNewerVersion(release.version, special.version)) return false;
   const alert = buildAlert(release);
-  const header = document.querySelector('header.site');
-  if (header) header.before(alert); else document.body.prepend(alert);
+  placeAlert(alert);
   return true;
 }
 

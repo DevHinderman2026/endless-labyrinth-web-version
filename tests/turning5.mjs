@@ -239,7 +239,7 @@ const rest = await page.evaluate(async () => {
   T.start('drive'); out.drive = { turns: g._turnsNow(), facing: a.facing, hold: g.gestures.turnHold };
   return out;
 });
-check(rest.tower.turns && rest.tower.race !== null && Math.abs(rest.tower.race - 7.5) < 0.25 && rest.tower.raceStart === 7.5, `a tower floor turns, and in tower one its rival races just over a walk, 7.5 units a second (web 5.1.2): ${JSON.stringify(rest.tower)}`);
+check(rest.tower.turns && rest.tower.race !== null && Math.abs(rest.tower.race - 6.5) < 0.25 && rest.tower.raceStart === 6.5, `a tower floor turns, and in tower one its rival races a little over a walk, 6.5 units a second (web 6.3.5): ${JSON.stringify(rest.tower)}`);
 check(rest.tower.step[0] === 3 && rest.tower.step[1] === 0 && rest.tower.turned === 60, 'facing east, a step goes three units east; a flick left turns you 30 degrees');
 check(rest.tower.hitBehind === 1 && rest.tower.hitSide === 1, 'a throw takes the rival centred ahead or directly behind, by the way you face, and misses one to the side');
 check(/Facing [a-z-]+\.$/.test(rest.tower.report), 'the tower report ends with the way you face: ' + rest.tower.report);
@@ -279,7 +279,7 @@ check(!rest.drive.turns && rest.drive.facing === 0 && !rest.drive.hold, 'Driving
     && !/fr[eo]z/i.test(during.r.text),
     'for thirty days the Update History opens with a region named Alert: turning, and compatibility between Windows and the web');
   check(before.r === null && after.r === null, 'it is not there before 5.0.0 came out, and it is gone after thirty days');
-  check(/^6\.3\.4 \(21 November 2026\)/.test(during.top), 'the Update History begins with the newest version, 6.3.4: ' + during.top);
+  check(/^6\.3\.5 \(21 November 2026\)/.test(during.top), 'the Update History begins with the newest version, 6.3.5: ' + during.top);
   await page.goto(base + '/help.html');
   const faq = await page.evaluate(() => ['faq-turning', 'faq-turning-lost', 'faq-turning-aim', 'faq-turning-walls', 'faq-turning-which', 'faq-turning-slide'].map((id) => { const h = document.getElementById(id); return h ? h.textContent : null; }));
   check(faq.every(Boolean), 'the frequently asked questions have six questions about turning: ' + faq.join(' | '));

@@ -32,7 +32,7 @@ async function open(path, release, { github = true } = {}) {
       liveAlerts: document.querySelectorAll('[role="alert"]').length, tag: a.tagName,
       id: a.id, text: a.textContent.trim(),
       // The first thing a screen reader meets (the empty live region before it is never reached).
-      first: [...document.body.children].find((c) => c.id !== 'site-announcer') === a,
+      first: [...document.body.children].find((c) => c.id !== 'site-announcer' && c.id !== 'scores-reset-alert') === a,
       link: a.querySelector('a') ? a.querySelector('a').getAttribute('href') : null,
       buttons: a.querySelectorAll('button').length,
     };
@@ -163,6 +163,35 @@ for (const path of ['/about.html', '/play.html', '/help.html', '/events.html']) 
   const shown = await page.evaluate(() => !!document.getElementById('windows-update-alert'));
   check(shown, 'a device clock a year ahead does not hide a fresh release (internet time decides)');
   await page.close();
+}
+
+// ------------------------------------------------------------------ the high scores reset alert (web 6.3.5)
+{
+  const RESET = Date.UTC(2026, 10, 21, 19, 0, 0);
+  const at = async (ms) => {
+    const page = await browser.newPage();
+    await page.route('https://api.github.com/**', (route) => route.fulfill({ status: 200, headers: { 'Access-Control-Allow-Origin': '*' }, contentType: 'application/json', body: JSON.stringify(fresh) }));
+    await page.route('**/packs/manifest.json', async (route) => {
+      const res = await route.fetch();
+      await route.fulfill({ response: res, headers: { ...res.headers(), date: new Date(ms).toUTCString() } });
+    });
+    await page.goto(base + '/index.html');
+    await page.waitForTimeout(1200);
+    const r = await page.evaluate(() => {
+      const kids = [...document.body.children].filter((c) => c.id !== 'site-announcer');
+      const s = document.getElementById('scores-reset-alert');
+      return { shown: !!s, first: kids[0] === s, windowsNext: !!s && !!s.nextElementSibling && /windows/.test(s.nextElementSibling.id),
+        role: s && s.getAttribute('role'), label: s && s.getAttribute('aria-label'), text: s ? s.textContent : '' };
+    });
+    await page.close();
+    return r;
+  };
+  const during = await at(RESET + 2 * 3600 * 1000);
+  check(during.shown && during.first && during.windowsNext && during.role === 'region' && during.label === 'Alert' && /set back to zero/.test(during.text) && /Event High Scores/.test(during.text),
+    'two hours after the reset, the high scores alert is the first region on the home page, named Alert, with the Windows alert right below it: ' + JSON.stringify(during));
+  const after = await at(RESET + 6 * 3600 * 1000 + 60000);
+  const before = await at(RESET - 60000);
+  check(!after.shown && !before.shown, 'it is gone six hours after the reset, and was not there before it');
 }
 
 await browser.close();

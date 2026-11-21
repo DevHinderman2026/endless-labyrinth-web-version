@@ -800,8 +800,17 @@ export class Game {
     const now = performance.now() / 1000;
     if (now - this.lastBeepTime > interval) {
       const pitch = Math.max(0, Math.min(19, 19 - Math.trunc(dist)));
-      const ch = this.audio.play('prox_' + pitch);
-      if (ch) ch.setVolume(l * 0.4, r * 0.4, this._behind(this.exitPos));
+      // (6.3.5, Russell: the exit's beeping was "not in one position".) Played at the
+      // exit's own place, as the glass cases' knocks and every other placed sound are, so
+      // its direction is known before it starts: before, it began as a sound straight
+      // ahead and was moved to the exit's side only after it had started.
+      if (this.audio.binaural) {
+        const level = Math.max(l, r);
+        if (level > 0) this.audio.play('prox_' + pitch, { at: this.exitPos, volume: level * 0.4 });
+      } else {
+        const ch = this.audio.play('prox_' + pitch);
+        if (ch) ch.setVolume(l * 0.4, r * 0.4, this._behind(this.exitPos));
+      }
       this.lastBeepTime = now;
     }
   }

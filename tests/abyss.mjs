@@ -108,30 +108,21 @@ const moves = await page.evaluate(() => {
   const a0 = [a.x, a.y]; const b0 = [b.x, b.y];
   t.frames(0.3); out.aMoving = a.moving; out.creep = Math.hypot(a.x - a0[0], a.y - a0[1]) / 0.3;
   out.bStayed = !b.moving;
-  // (6.3.4) Stopping is no longer a free pause: it creeps on to the spot where it heard
-  // you and gives up there. Here you slip away sideways unheard, so it finds nothing.
-  ab.nextStrike = 999;
-  const heardAt = [...g.playerPos];
-  g.playerPos = [heardAt[0] + 40, heardAt[1]];
-  t.frames(0.6); out.aStillComing = a.moving;
-  let nearest = 1e9;
-  for (let k = 0; k < 70; k++) { t.frames(0.1); nearest = Math.min(nearest, Math.hypot(a.x - heardAt[0], a.y - heardAt[1])); }
-  out.aArrived = nearest < 1.0;
-  out.aGaveUp = !a.moving && a.move <= 0;
-  t.put(a, 0, 24); g.playerPos = [...heardAt];
+  t.frames(0.5); const a1 = [a.x, a.y]; t.frames(1.0);
+  out.aFrozen = !a.moving && Math.hypot(a.x - a1[0], a.y - a1[1]) <= 1.5 + 1e-6;
   // A run's step (as the game marks one): b hears it now, and charges.
   g.strideStepping = 'up'; g.input('up'); g.strideStepping = null;
   const b1 = [b.x, b.y]; t.frames(0.2);
   out.charge = Math.hypot(b.x - b1[0], b.y - b1[1]) / 0.2;
-  t.frames(0.8); out.bStillComing = b.moving;
-  b.move = 0; t.put(b, 0, -45);
+  t.frames(0.5); const b2 = [b.x, b.y]; t.frames(1.0);
+  out.bFrozen = !b.moving && Math.hypot(b.x - b2[0], b.y - b2[1]) <= 1.5 + 1e-6;
   out.replaced = !ab.creatures.includes(c) && ab.creatures.length === 3;
   out.footsteps = t.at.filter(([n]) => /^ut_glass_step_/.test(n)).length;
   return out;
 });
 check(moves.wanderSpeed > 0.5 && moves.wanderSpeed <= 1.5 + 1e-6 && moves.neverCloser && moves.notHunting, 'while you stand still they only wander, 30 steps a minute, never toward you: ' + moves.wanderSpeed.toFixed(2));
 check(moves.aMoving && Math.abs(moves.creep - 4.5) < 0.3 && moves.bStayed, 'a walking step: creatures within ten steps creep toward it (90 steps a minute); one further off does not hear it: ' + moves.creep.toFixed(2));
-check(moves.aStillComing && moves.aArrived && moves.aGaveUp && moves.bStillComing, 'when you stop, a creature that heard you keeps coming to the spot where it heard you, then gives up there and wanders (6.3.4): ' + JSON.stringify([moves.aStillComing, moves.aArrived, moves.aGaveUp, moves.bStillComing]));
+check(moves.aFrozen && moves.bFrozen, 'then they stop hunting, and only wander, until they hear you again (6.3.5: back as before 6.3.4)');
 check(Math.abs(moves.charge - 11) < 0.3, 'a running step is heard from twenty steps, and they charge, 220 steps a minute (your run is 280): ' + moves.charge.toFixed(2));
 check(moves.footsteps >= 2, 'a moving creature makes a footstep on the glass from where it is');
 check(moves.replaced, 'a creature far behind is gone, and another appears nearer');

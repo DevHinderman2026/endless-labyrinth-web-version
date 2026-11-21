@@ -54,7 +54,9 @@ export const TOWER_RUN = 14.0;               // a run: 280 steps a minute, 3 uni
 // Web 5.1.1 (Russell, 12 November 2026): 5.1.0's rival (a third of a walk, 10% a
 // tower) could always be beaten by running; 5.1.1's (9, two thirds of a run) was too
 // fast. Web 5.1.2: just over a walk.
-export const RIVAL_RACE_START = 7.5;         // the rival racing for an item in tower one: just over a walk (6), well under a run (14)
+// Web 6.3.5 (Russell, 21 November 2026): "in the beginning they're way too fast ... slow them
+// down a little bit but not too much like last time": 6.5, a little over a walk.
+export const RIVAL_RACE_START = 6.5;         // the rival racing for an item in tower one: a little over a walk (6), well under a run (14)
 export const RIVAL_RACE_GROWTH = 1.05;       // 5% faster every tower, no limit (outruns a running player around tower 14)
 export const RIVAL_LUNGE = 2.2;              // how much faster it races than it circles (as before)
 export const PICKUP_BOOST = 1.03;            // each item you take on a floor: 3% faster, and 3% more often throwing...

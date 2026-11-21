@@ -97,10 +97,13 @@ const time = await page.evaluate(() => {
   out.safe = zone ? gain(() => g._utKillEnemy(t.enemy('chaser', zone))) : null;
   // With the compass holding the world frozen, the same (6.3.3: once you step, the
   // world moves again with the guide on, and scores as usual).
-  t.standIn('battle'); u.compass.on = true; u.compass.frozen = true;
-  out.compass = gain(() => g._utKillEnemy(t.enemy('chaser', area)));
+  // (Stood in a battle area, or else one that isn't a safe zone, so a random world
+  // can't leave you in a safe zone, where nothing scores anyway.)
+  const ca = t.standIn('battle') || t.standIn('labyrinth') || t.standIn('island') || t.standIn('tower') || area;
+  u.compass.on = true; u.compass.frozen = true;
+  out.compass = gain(() => g._utKillEnemy(t.enemy('chaser', ca)));
   u.compass.frozen = false;
-  out.compassMoving = gain(() => g._utKillEnemy(t.enemy('chaser', area)));
+  out.compassMoving = gain(() => g._utKillEnemy(t.enemy('chaser', ca)));
   u.compass.on = false;
   // Ultimate Mode itself has no chaos clock: nothing changes.
   t.ultimate();

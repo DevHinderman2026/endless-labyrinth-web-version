@@ -8,7 +8,7 @@
   <link rel="icon" href="icons/icon-192.png">
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
   <meta name="theme-color" content="#0c0f14">
-  <link rel="stylesheet" href="css/site.css?v=6.3.4">
+  <link rel="stylesheet" href="css/site.css?v=6.3.5">
 </head>
 <body data-update-alert="history">
   <header class="site">
@@ -19,6 +19,26 @@
   <main class="page">
     <p>This page lists the web version. For the Windows version, see its <a href="https://github.com/DevHinderman2026/Endless-Labyrinth/blob/main/Credits%20and%20Version%20History/CHANGELOG.md">changelog</a> on GitHub.</p>
     <p>The game updates by itself: the next time you open it, you have the latest version. Only a sound pack that has changed is downloaded again, and your high scores are kept. Events are not listed here: they appear in the Events menu as they open.</p>
+
+    <h2>6.3.5 (21 November 2026), web only</h2>
+    <p>Every high score starts fresh; the labyrinth beeps and the popping, put back the way they were in 6.3.2; a slower rival in the towers; and The Abyss's creatures stop when you stop again.</p>
+    <p><em>Sometimes the best fix is the one from yesterday.</em></p>
+    <h3>Changed: every high score starts fresh</h3>
+    <ul>
+      <li>With so much refined over the last few updates, every mode's high score board has been set back to zero for all players, the first time you open 6.3.5, so everyone starts fresh. A backup made before this version does not bring the old scores back. Event High Scores, play time and runs are not affected.</li>
+    </ul>
+    <h3>Fixed: the beeps and the popping in the labyrinths</h3>
+    <ul>
+      <li>In Standard mode and in Chaos mode's labyrinths, the exit's beeping is now heard from the exit's own place from the very start of every beep, as the glass cases' knocking is. Before, each beep began straight ahead of you and was moved to the exit's side only once it had started, so it never seemed to sit in one place. Placed sounds also once again use the sound engine the way they did in 6.3.2, which had no popping. The game no longer makes new sound channels while a free one is there to use; each sound takes the free channel already pointing nearest its place. Only chimes and spoken voices keep 6.3.3's care to start exactly from their own place.</li>
+    </ul>
+    <h3>Changed: Tower mode's rival</h3>
+    <ul>
+      <li>The rival racing you for items is slower at the start, a little over a walking pace instead of well over it, in Tower mode and on Chaos mode's tower floors. It still gets a little faster every tower, so the climb still ends in the end.</li>
+    </ul>
+    <h3>Changed: The Abyss's creatures</h3>
+    <ul>
+      <li>The creatures stop hunting you when you stop again, as before 6.3.4, in The Abyss and in Chaos mode's Abyss levels. In 6.3.4 they kept coming to where they last heard you, and since they heard every step you took, you could not get away from them, walking or running. The harder clock, the rarer extra life and lightning up to twenty seconds apart stay.</li>
+    </ul>
 
     <h2>6.3.4 (21 November 2026), web only</h2>
     <p>The Abyss is harder again, and the popping in the labyrinths is gone again.</p>
@@ -738,65 +758,65 @@
   <script type="importmap">
   {
     "imports": {
-      "./js/accessibility.js": "./js/accessibility.js?v=6.3.4",
-      "./js/audio.js": "./js/audio.js?v=6.3.4",
-      "./js/backup.js": "./js/backup.js?v=6.3.4",
-      "./js/backups-page.js": "./js/backups-page.js?v=6.3.4",
-      "./js/bella-lexicon.js": "./js/bella-lexicon.js?v=6.3.4",
-      "./js/bella-words.js": "./js/bella-words.js?v=6.3.4",
-      "./js/braille.js": "./js/braille.js?v=6.3.4",
-      "./js/calendar.js": "./js/calendar.js?v=6.3.4",
-      "./js/device.js": "./js/device.js?v=6.3.4",
-      "./js/display.js": "./js/display.js?v=6.3.4",
-      "./js/game.js": "./js/game.js?v=6.3.4",
-      "./js/gestures.js": "./js/gestures.js?v=6.3.4",
-      "./js/help-data.js": "./js/help-data.js?v=6.3.4",
-      "./js/help-page.js": "./js/help-page.js?v=6.3.4",
-      "./js/keywords.js": "./js/keywords.js?v=6.3.4",
-      "./js/main.js": "./js/main.js?v=6.3.4",
-      "./js/modes/abyss.js": "./js/modes/abyss.js?v=6.3.4",
-      "./js/modes/chaos.js": "./js/modes/chaos.js?v=6.3.4",
-      "./js/modes/driving.js": "./js/modes/driving.js?v=6.3.4",
-      "./js/modes/events/blocks.js": "./js/modes/events/blocks.js?v=6.3.4",
-      "./js/modes/events/engine.js": "./js/modes/events/engine.js?v=6.3.4",
-      "./js/modes/events/feed.js": "./js/modes/events/feed.js?v=6.3.4",
-      "./js/modes/events/help.js": "./js/modes/events/help.js?v=6.3.4",
-      "./js/modes/events/missions.js": "./js/modes/events/missions.js?v=6.3.4",
-      "./js/modes/events/more-spec.js": "./js/modes/events/more-spec.js?v=6.3.4",
-      "./js/modes/events/more.js": "./js/modes/events/more.js?v=6.3.4",
-      "./js/modes/events/py.js": "./js/modes/events/py.js?v=6.3.4",
-      "./js/modes/events/schema.js": "./js/modes/events/schema.js?v=6.3.4",
-      "./js/modes/events/sign.js": "./js/modes/events/sign.js?v=6.3.4",
-      "./js/modes/events/sounds.js": "./js/modes/events/sounds.js?v=6.3.4",
-      "./js/modes/events/tunes.js": "./js/modes/events/tunes.js?v=6.3.4",
-      "./js/modes/events/wording.js": "./js/modes/events/wording.js?v=6.3.4",
-      "./js/modes/events.js": "./js/modes/events.js?v=6.3.4",
-      "./js/modes/findvoice-guide.js": "./js/modes/findvoice-guide.js?v=6.3.4",
-      "./js/modes/findvoice.js": "./js/modes/findvoice.js?v=6.3.4",
-      "./js/modes/index.js": "./js/modes/index.js?v=6.3.4",
-      "./js/modes/island.js": "./js/modes/island.js?v=6.3.4",
-      "./js/modes/tower.js": "./js/modes/tower.js?v=6.3.4",
-      "./js/modes/ultimate/cast.js": "./js/modes/ultimate/cast.js?v=6.3.4",
-      "./js/modes/ultimate/help.js": "./js/modes/ultimate/help.js?v=6.3.4",
-      "./js/modes/ultimate/world.js": "./js/modes/ultimate/world.js?v=6.3.4",
-      "./js/modes/ultimate.js": "./js/modes/ultimate.js?v=6.3.4",
-      "./js/packs.js": "./js/packs.js?v=6.3.4",
-      "./js/site.js": "./js/site.js?v=6.3.4",
-      "./js/sound-rules.js": "./js/sound-rules.js?v=6.3.4",
-      "./js/speech.js": "./js/speech.js?v=6.3.4",
-      "./js/stats.js": "./js/stats.js?v=6.3.4",
-      "./js/storage.js": "./js/storage.js?v=6.3.4",
-      "./js/turning.js": "./js/turning.js?v=6.3.4",
-      "./js/update-alert.js": "./js/update-alert.js?v=6.3.4",
-      "./js/version.js": "./js/version.js?v=6.3.4",
-      "./js/voice-text.js": "./js/voice-text.js?v=6.3.4",
-      "./js/voice.js": "./js/voice.js?v=6.3.4",
-      "./js/wetworker.js": "./js/wetworker.js?v=6.3.4"
+      "./js/accessibility.js": "./js/accessibility.js?v=6.3.5",
+      "./js/audio.js": "./js/audio.js?v=6.3.5",
+      "./js/backup.js": "./js/backup.js?v=6.3.5",
+      "./js/backups-page.js": "./js/backups-page.js?v=6.3.5",
+      "./js/bella-lexicon.js": "./js/bella-lexicon.js?v=6.3.5",
+      "./js/bella-words.js": "./js/bella-words.js?v=6.3.5",
+      "./js/braille.js": "./js/braille.js?v=6.3.5",
+      "./js/calendar.js": "./js/calendar.js?v=6.3.5",
+      "./js/device.js": "./js/device.js?v=6.3.5",
+      "./js/display.js": "./js/display.js?v=6.3.5",
+      "./js/game.js": "./js/game.js?v=6.3.5",
+      "./js/gestures.js": "./js/gestures.js?v=6.3.5",
+      "./js/help-data.js": "./js/help-data.js?v=6.3.5",
+      "./js/help-page.js": "./js/help-page.js?v=6.3.5",
+      "./js/keywords.js": "./js/keywords.js?v=6.3.5",
+      "./js/main.js": "./js/main.js?v=6.3.5",
+      "./js/modes/abyss.js": "./js/modes/abyss.js?v=6.3.5",
+      "./js/modes/chaos.js": "./js/modes/chaos.js?v=6.3.5",
+      "./js/modes/driving.js": "./js/modes/driving.js?v=6.3.5",
+      "./js/modes/events/blocks.js": "./js/modes/events/blocks.js?v=6.3.5",
+      "./js/modes/events/engine.js": "./js/modes/events/engine.js?v=6.3.5",
+      "./js/modes/events/feed.js": "./js/modes/events/feed.js?v=6.3.5",
+      "./js/modes/events/help.js": "./js/modes/events/help.js?v=6.3.5",
+      "./js/modes/events/missions.js": "./js/modes/events/missions.js?v=6.3.5",
+      "./js/modes/events/more-spec.js": "./js/modes/events/more-spec.js?v=6.3.5",
+      "./js/modes/events/more.js": "./js/modes/events/more.js?v=6.3.5",
+      "./js/modes/events/py.js": "./js/modes/events/py.js?v=6.3.5",
+      "./js/modes/events/schema.js": "./js/modes/events/schema.js?v=6.3.5",
+      "./js/modes/events/sign.js": "./js/modes/events/sign.js?v=6.3.5",
+      "./js/modes/events/sounds.js": "./js/modes/events/sounds.js?v=6.3.5",
+      "./js/modes/events/tunes.js": "./js/modes/events/tunes.js?v=6.3.5",
+      "./js/modes/events/wording.js": "./js/modes/events/wording.js?v=6.3.5",
+      "./js/modes/events.js": "./js/modes/events.js?v=6.3.5",
+      "./js/modes/findvoice-guide.js": "./js/modes/findvoice-guide.js?v=6.3.5",
+      "./js/modes/findvoice.js": "./js/modes/findvoice.js?v=6.3.5",
+      "./js/modes/index.js": "./js/modes/index.js?v=6.3.5",
+      "./js/modes/island.js": "./js/modes/island.js?v=6.3.5",
+      "./js/modes/tower.js": "./js/modes/tower.js?v=6.3.5",
+      "./js/modes/ultimate/cast.js": "./js/modes/ultimate/cast.js?v=6.3.5",
+      "./js/modes/ultimate/help.js": "./js/modes/ultimate/help.js?v=6.3.5",
+      "./js/modes/ultimate/world.js": "./js/modes/ultimate/world.js?v=6.3.5",
+      "./js/modes/ultimate.js": "./js/modes/ultimate.js?v=6.3.5",
+      "./js/packs.js": "./js/packs.js?v=6.3.5",
+      "./js/site.js": "./js/site.js?v=6.3.5",
+      "./js/sound-rules.js": "./js/sound-rules.js?v=6.3.5",
+      "./js/speech.js": "./js/speech.js?v=6.3.5",
+      "./js/stats.js": "./js/stats.js?v=6.3.5",
+      "./js/storage.js": "./js/storage.js?v=6.3.5",
+      "./js/turning.js": "./js/turning.js?v=6.3.5",
+      "./js/update-alert.js": "./js/update-alert.js?v=6.3.5",
+      "./js/version.js": "./js/version.js?v=6.3.5",
+      "./js/voice-text.js": "./js/voice-text.js?v=6.3.5",
+      "./js/voice.js": "./js/voice.js?v=6.3.5",
+      "./js/wetworker.js": "./js/wetworker.js?v=6.3.5"
     }
   }
   </script>
   <!-- end of versions -->
-  <script type="module" src="js/site.js?v=6.3.4"></script>
-  <script type="module" src="js/update-alert.js?v=6.3.4"></script>
+  <script type="module" src="js/site.js?v=6.3.5"></script>
+  <script type="module" src="js/update-alert.js?v=6.3.5"></script>
 </body>
 </html>

@@ -12,7 +12,7 @@
 // larger total of every stat, the better of every event run; this device's
 // settings kept) or replace (the file as it is, settings included), or cancel.
 
-import { KEY, FORMAT, readStats, mergeStats } from './storage.js';
+import { KEY, FORMAT, readStats, mergeStats, SCORES_RESET_AT } from './storage.js';
 import { EVENT_SCORES_KEY } from './modes/events/feed.js';
 
 export const BACKUP_FORMAT = 1;
@@ -94,8 +94,10 @@ function num(v) { return typeof v === 'number' && isFinite(v) ? v : 0; }
 // This browser's play and a backup as one: the better of everything, with this
 // device's settings kept.
 export function combine(mine, backup) {
-  const game = { format: FORMAT, scores: {}, settings: { ...((mine.game && mine.game.settings) || backup.game.settings || {}) }, resetAt: num(mine.game && mine.game.resetAt), stats: null };
-  const a = (mine.game && mine.game.scores) || {}; const b = backup.game.scores || {};
+  const game = { format: FORMAT, scores: {}, settings: { ...((mine.game && mine.game.settings) || backup.game.settings || {}) }, resetAt: Math.max(num(mine.game && mine.game.resetAt), SCORES_RESET_AT), stats: null };
+  // (6.3.5) Scores from before the site-wide reset are not brought back by a backup.
+  const fresh = (g) => (g && num(g.resetAt) >= SCORES_RESET_AT ? (g.scores || {}) : {});
+  const a = fresh(mine.game); const b = fresh(backup.game);
   for (const k of new Set([...Object.keys(a), ...Object.keys(b)])) game.scores[k] = Math.max(0, Math.floor(Math.max(num(a[k]), num(b[k]))));
   game.stats = mergeStats(readStats(mine.game), readStats(backup.game));
   const events = { total: Math.max(num(mine.events && mine.events.total), num(backup.events.total)), events: {} };
@@ -124,6 +126,7 @@ export function combine(mine, backup) {
 // open copy of the game takes these scores instead of putting its own back.
 export function replacement(backup) {
   const game = { ...backup.game, format: FORMAT, resetAt: Date.now() };
+  if (num(backup.game && backup.game.resetAt) < SCORES_RESET_AT) game.scores = {};   // (6.3.5) from before the reset
   return { game, events: { total: num(backup.events.total), events: { ...(backup.events.events || {}) } } };
 }
 

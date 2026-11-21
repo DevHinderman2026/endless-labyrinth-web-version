@@ -5,13 +5,13 @@
 // every step you take can be heard. Creatures live all through it. They are blind,
 // like you, and hunt by sound, and they move only while you move: walk, and the
 // ones that hear you creep toward the sound; run, and they charge (a little slower
-// than your run) and hear you from twice as far. A creature that has heard you goes
-// on to the spot where it last heard you, even if you stop (6.3.4, Russell, 21
-// November 2026: the Abyss had become too easy, and stopping was a free pause), and
-// gives up there; then it wanders, very slowly and aimlessly, never toward you, and
-// always veering off before it comes within three steps of you (Russell, 20
+// than your run) and hear you from twice as far. Stop, and they stop hunting you
+// and go back to wandering, very slowly and aimlessly, never toward you, and
+// always veering off before they come within three steps of you (Russell, 20
 // November 2026: they hunt by sound, so one that has not heard you cannot stumble
-// into you). You get away by moving out of its hearing, or under the lightning.
+// into you). Standing still never gets you away; it only holds them off. (6.3.4 had
+// them go on to where they last heard you; 6.3.5 takes that back, Russell, 21
+// November 2026: you could not outrun them, walking or running.)
 //
 // Lightning is your cover. Every few seconds it strikes somewhere in the abyss,
 // really loud, and the creatures run toward the strike; for five seconds after it
@@ -103,10 +103,6 @@ export const AB_WALK_HEAR = 30.0;               // units (ten steps): how far a 
 export const AB_RUN_HEAR = 60.0;                // units (twenty steps): a running step
 export const AB_WALK_MOVE = 0.6;                // seconds a creature creeps after each walking step it hears
 export const AB_RUN_MOVE = 0.3;                 // seconds it charges after each running step (they come every 0.21)
-// (6.3.4) A creature that hears you keeps going to the spot where it heard you, even after
-// you stop, and gives up when it gets there; at most this many seconds (from ten steps, a
-// creep takes under seven).
-export const AB_HUNT_MAX = 8.0;
 // Wandering (6.2.0, Russell, 20 November 2026): a creature that is not hunting drifts
 // very slowly in a direction of its own, changing it now and then, never toward you,
 // and turns away before it comes within three steps of you.
@@ -345,7 +341,7 @@ const mixin = {
     for (const c of ab.creatures) {
       if (c.storm > 0 || c.charge > 0) continue;
       if (dist2([c.x, c.y], this.playerPos) > range) continue;
-      c.move = AB_HUNT_MAX;
+      c.move = running ? AB_RUN_MOVE : AB_WALK_MOVE;
       c.moveSpeed = stepsPerSecond(running ? AB_CHARGE_SPM : AB_CREEP_SPM);
       c.target = [...this.playerPos];
     }
@@ -382,17 +378,14 @@ const mixin = {
       let target = null; let speed = 0;
       if (c.charge > 0) { c.charge -= dt; target = this.playerPos; speed = stepsPerSecond(AB_CHARGE_SPM); }
       else if (c.storm > 0) { c.storm -= dt; target = c.stormSpot || ab.strike; speed = stepsPerSecond(AB_CHARGE_SPM); }
-      else if (c.move > 0) { c.move -= dt; target = c.target; speed = c.moveSpeed; c.hunting = true; }
+      else if (c.move > 0) { c.move -= dt; target = c.target; speed = c.moveSpeed; }
       let moved = 0;
       if (target) {
         const dx = target[0] - c.x; const dy = target[1] - c.y;
         const d = Math.hypot(dx, dy);
         const step = Math.min(d, speed * dt);
         if (d > 1e-6 && step > 0) { c.x += dx / d * step; c.y += dy / d * step; moved = step; }
-        // (6.3.4) At the spot where it heard you: nothing there, so it gives up.
-        if (c.hunting && d - step < 0.3) c.move = 0;
       }
-      c.hunting = false;
       c.moving = moved > 0;
       c.wandering = false;
       if (!target) { moved = this._abWander(c, dt); c.wandering = moved > 0; }
@@ -780,7 +773,7 @@ const mixin = {
 const HELP_SECTIONS = [
   ['The Abyss', [
     { title: 'The Abyss', sound: null, desc: 'The Abyss is a mode of its own, new in 6.2.0. You are in a huge, endless abyss, with no walls and no edge, and the whole floor is broken glass: every step you take can be heard. Creatures live all through it. Your goal is to smash as many glass cases as you can before the clock runs out. You turn and walk as in every walking mode (see General Turning). Double tap for the cases you have smashed, your lives, the seconds left and the way you are facing.' },
-    { title: 'The Abyss The Creatures', sound: null, desc: 'The creatures are blind, just like you, and they hunt by sound, so they come for you only while you move. Walk, and the ones within about ten steps creep toward the sound of your steps. Run, and the ones within about twenty steps charge you, a little slower than you can run. A creature that has heard you keeps going to the spot where it last heard you, even if you stop, so standing still where it heard you is not safe: it will reach you. Get away by walking or running out of its hearing, since it is slower than you, or by moving while the lightning covers your steps. When it reaches the spot and finds nothing there, it gives up and goes back to wandering the abyss very slowly, in no particular direction, never toward you, and it always turns away before it comes within three steps of you, so a creature that has not heard you can never stumble into you. A wandering creature makes a quieter sound and faint footsteps; a hunting one growls, with a footstep on the glass for every step it takes. The creatures always keep about three steps apart from one another, and a creature that wakes does so fifteen to twenty-five steps from you, never right beside another. You cannot shoot them. If one catches you, you lose a life, and it is thrown far away.' },
+    { title: 'The Abyss The Creatures', sound: null, desc: 'The creatures are blind, just like you, and they hunt by sound, so they come for you only while you move. Walk, and the ones within about ten steps creep toward the sound of your steps. Run, and the ones within about twenty steps charge you, a little slower than you can run. Stop, and they stop hunting you: each one goes back to wandering the abyss very slowly, in no particular direction, never toward you, and it always turns away before it comes within three steps of you, so a creature that has not heard you can never stumble into you. Standing still never gets you away from them; it only holds them off, while the clock runs on. A wandering creature makes a quieter sound and faint footsteps; a hunting one growls, with a footstep on the glass for every step it takes. The creatures always keep about three steps apart from one another, and a creature that wakes does so fifteen to twenty-five steps from you, never right beside another. You cannot shoot them. If one catches you, you lose a life, and it is thrown far away.' },
     { title: 'The Abyss Lightning', sound: null, desc: 'Lightning is your cover. Every few seconds it strikes somewhere in the abyss, really loud: a thunderclap from where it strikes, while the wind and the hum of the cases dip under it. It lands fifteen to twenty-five steps from you, and every creature in the abyss runs toward it, each to its own spot around the strike, so they spread out instead of crowding into one pack. For five seconds after a strike your steps are not heard, so that is the moment to move. At first it strikes every six to ten seconds; as you smash more cases it comes less often, but never more than twenty seconds apart.' },
     { title: 'The Abyss Glass Cases', sound: null, desc: 'A glass case hums where it stands. Three stand around you at a time, but only one knocks: the nearest, from about fifteen steps away, faster and louder as you close in, so you can turn until the knocking is centred between your ears. The others only hum, more softly, and the knocking moves to another case only when you smash this one or come two steps nearer to another. When you are beside a case and facing it, a bell rings: tap with two fingers to smash it, or press the spacebar. Smashing glass is loud: every creature that hears it charges you for about three seconds, unless the five seconds after a lightning strike have not yet run out, so a case is best smashed just after the lightning. Each case gives you time: usually ten seconds, sometimes twenty. About one case in four also holds lightning: as it breaks, lightning strikes somewhere in the abyss and the creatures run to it instead of to you. And about one case in twenty also holds an extra life: you hear the heart, and the voice says it with your lives, such as 10 more seconds. Extra life, 4 lives. There is no limit to how many lives you can have. (Not in Chaos Mode, where the run has its one health bar.)' },
     { title: 'The Abyss Clock, Lives and Score', sound: null, desc: 'The clock starts at forty-five seconds, and only glass cases add to it. You start with three lives, and a rare case gives you another, with no limit: when the clock runs out, or a creature catches you when you have one life left, the run is over. Every three cases you smash, one more creature wakes in the abyss, up to seven, and the lightning comes a little less often, never more than twenty seconds apart. Your score is the number of cases you smash, and The Abyss has its own high score board.' },

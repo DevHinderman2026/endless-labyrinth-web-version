@@ -8,7 +8,7 @@
 // decision). Which events are still published is checked with the same feed the
 // game uses; if GitHub cannot be reached, nothing is labelled.
 
-import { KEY, readStats, STAT_MODES } from './storage.js';
+import { KEY, readStats, STAT_MODES, SCORES_RESET_AT } from './storage.js';
 import { EventFeed, EVENT_SCORES_KEY } from './modes/events/feed.js';
 import { count } from './calendar.js';
 
@@ -68,7 +68,9 @@ export function readPlay() {
   const events = readJson(EVENT_SCORES_KEY);
   const stats = readStats(main.data);
   const scores = {};
-  for (const [k, v] of Object.entries((main.data && main.data.scores) || {})) if (typeof v === 'number' && isFinite(v)) scores[k] = Math.max(0, Math.floor(v));
+  // (6.3.5) Scores from before the site-wide reset show as none, even before the game is opened.
+  const fresh = main.data && (Number(main.data.resetAt) || 0) >= SCORES_RESET_AT;
+  for (const [k, v] of Object.entries((fresh && main.data.scores) || {})) if (typeof v === 'number' && isFinite(v)) scores[k] = Math.max(0, Math.floor(v));
   const evs = {};
   for (const [id, r] of Object.entries((events.data && events.data.events) || {})) {
     if (!r || typeof r !== 'object') continue;

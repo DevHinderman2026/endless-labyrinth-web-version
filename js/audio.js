@@ -962,7 +962,7 @@ export class AudioEngine {
   // is one (see PANNERS), else a new one.
   // (`to`, web 6.3.3: the mix to plug it into, if not the usual one: the output itself
   // for a placed sound heard clear of the 3D world's muffle and fade, the compass's guide.)
-  takePanner(x, y, z, to = null) {
+  takePanner(x, y, z, to = null, exact = false) {
     const bus = to || this.bus; const ctx = this.ctx;
     const free = PANNERS.get(bus);
     let p = null;
@@ -976,8 +976,12 @@ export class AudioEngine {
         const c = d ? ux * d[0] + uy * d[1] + uz * d[2] : -1.5;
         if (c > bestCos) { bestCos = c; best = i; }
       }
-      // Near enough, or the mix already has its full number of panners: take it.
-      if (best >= 0 && (bestCos >= PANNER_REUSE_COS || (PANNER_COUNT.get(bus) || 0) >= PANNER_POOL)) {
+      // (6.3.5, Russell: the labyrinth beeps were "not in one position" and the popping was
+      // back.) Most sounds take the free panner pointing nearest their place, as 6.3.2 took
+      // any free one, so no new panners are made while one is free. Only a chime or a voice
+      // (exact: whose very first moment must come from its place) waits for a panner within
+      // PANNER_REUSE_DEG, or a new one, until the mix has its full number.
+      if (best >= 0 && (!exact || bestCos >= PANNER_REUSE_COS || (PANNER_COUNT.get(bus) || 0) >= PANNER_POOL)) {
         p = free[best]; free.splice(best, 1); pannerStats.reused += 1;
       }
     }
@@ -1240,6 +1244,8 @@ export class Voice {
     this.audio = audio;
     this.ctx = audio.ctx;
     this.name = name;
+    // (6.3.5) A chime or a spoken line: its onset must come from its place (see takePanner).
+    this.exact = centred(name) || /^v[bgc]_/.test(name);
     this.pair = pair;
     this.loop = loop;
     this.l = this.r = clamp(volume, 0, 1);
@@ -1346,7 +1352,7 @@ export class Voice {
       // The HRTF panner places the sound; the game still sets its loudness by
       // distance itself, so the panner's own distance rolloff is turned off.
       const [x, y, z] = this.placed ? this.pos3 : [this.dir[0], 0, this.dir[1]];
-      panner = this.audio.takePanner(x, y, z, this.clear && this.placed ? this.audio.out : null);
+      panner = this.audio.takePanner(x, y, z, this.clear && this.placed ? this.audio.out : null, this.exact);
       merge.connect(panner);
     } else {
       merge.connect(this.direct ? this.audio.out : this.audio.bus);
@@ -1455,7 +1461,7 @@ export class Voice {
     if (buf && this.pair.dry.frames > BIG_FRAMES) a._noteBig(dryKey);
     this.dry = this._branch(buf);
     const dullBuf = this.pair.dull ? a.buffers.get('dull:' + this.name) : null;
-    if (dullBuf && a.room !== 'tunnel') this.dull = this._branch(dullBuf, false, this.dry.panner || null);
+    if (dullBuf && a.room !== 'tunnel') this.dull = this._branch(dullBuf, false, a.spatial ? (this.dry.panner || null) : null);
     // The echo. A looping sound gets its own (see AudioEngine._loopWet), played in
     // step with it, so it stops, pauses and fades with it as the desktop's does.
     // Anything else sends into the room's convolver; a loop sound played once gets
@@ -1641,8 +1647,8 @@ export class Voice {
   _binPanner(br) {
     if (br.panner) return br.panner;
     this._toMono(br);
-    const share = br === this.dull && this.dry && this.dry.panner ? this.dry.panner : null;
-    const p = share || this.audio.takePanner(this.dir[0], 0, this.dir[1]);
+    const share = this.audio.spatial && br === this.dull && this.dry && this.dry.panner ? this.dry.panner : null;
+    const p = share || this.audio.takePanner(this.dir[0], 0, this.dir[1], null, this.exact);
     if (share) br.shared = true;
     if (br.wide) {
       try { br.gl.disconnect(br.wide.west); br.gr.disconnect(br.wide.east); } catch (e) { /* already */ }
@@ -1833,7 +1839,7 @@ export class Voice {
         const was = br.panner.__bus || null;
         try { br.merge.disconnect(br.panner); } catch (e) { /* already */ }
         this.audio.givePanner(br.panner);
-        br.panner = this.audio.takePanner(at[0], at[1], at[2], was);
+        br.panner = this.audio.takePanner(at[0], at[1], at[2], was, this.exact);
         br.merge.connect(br.panner);
       } else Voice._place(br.panner, at[0], at[1], at[2], now, true);
     }

@@ -149,7 +149,7 @@ const again = await page.evaluate(async () => {
   window.__c.restore();
   return { made: mod.pannerStats.made - s0.made, reused: mod.pannerStats.reused - s0.reused };
 });
-check(again.made + again.reused <= 10 && again.made <= 5 && again.reused >= 5, `a chime ringing ten times from one place reuses its panners, one to a ring (its muffled copy shares it): ${again.made} made, ${again.reused} reused`);
+check(again.made + again.reused <= 20 && again.made <= 8 && again.reused >= 10, `a chime ringing ten times from one place reuses its panners (6.3.5: in the modes heard in 3D its muffled copy has its own again): ${again.made} made, ${again.reused} reused`);
 
 // ------------------------------------------------------------------ 4. a labyrinth: no panner unplugged, few made
 await page.evaluate(() => {
@@ -336,9 +336,9 @@ const share = await page.evaluate(async () => {
   window.__c.restore();
   return out;
 });
-check(share.binaural.dull && share.binaural.shared && share.binaural.took === 1
+check(share.binaural.dull && !share.binaural.shared && share.binaural.took === 2
   && (!share.spatial.dull || share.spatial.shared) && share.spatial.took === 1,
-  `a sound's muffled copy plays through its clean copy's panner, one HRTF panner for the two: ${JSON.stringify(share)}`);
+  `in Ultimate's world a sound's muffled copy plays through its clean copy's panner, one HRTF panner for the two; in the other 3D modes each has its own, as before 6.3.3 (6.3.5): ${JSON.stringify(share)}`);
 
 check(errors.length === 0, 'no page errors: ' + errors.slice(0, 3).join(' | '));
 await browser.close();

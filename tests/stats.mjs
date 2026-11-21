@@ -25,7 +25,7 @@ await page.goto(base + '/index.html');
     const { Store, FORMAT, mergeStats, readStats } = await import('./js/storage.js');
     localStorage.clear();
     // A format 1 save from before 1.1.0.
-    localStorage.setItem('endless-labyrinth-web', JSON.stringify({ format: 1, scores: { standard: 4, battle: 22 }, settings: { speechRate: 2 }, resetAt: 0 }));
+    localStorage.setItem('endless-labyrinth-web', JSON.stringify({ format: 1, scores: { standard: 4, battle: 22 }, settings: { speechRate: 2 }, resetAt: 1795287600000 }));
     const s = new Store();
     const kept = { scores: { ...s.scores }, rate: s.settings.speechRate, time: s.stats.time.tower, runs: s.stats.runs.tower };
     s.runStarted('tower');

@@ -19,7 +19,7 @@ page.on('pageerror', (e) => errors.push(String(e)));
 page.on('console', (m) => { if (m.type() === 'error' && !/Failed to load resource/.test(m.text())) errors.push(m.text()); });
 
 const MINE = {
-  game: { format: 2, scores: { standard: 4, battle: 22, tower: 3 }, settings: { speechRate: 2, practiced: true }, resetAt: 0,
+  game: { format: 2, scores: { standard: 4, battle: 22, tower: 3 }, settings: { speechRate: 2, practiced: true }, resetAt: 1795287600000,
     stats: { time: { standard: 100, battle: 50, drive: 0, tower: 10, island: 0, chaos: 0, event: 0 }, runs: { standard: 2, battle: 1, drive: 0, tower: 1, island: 0, chaos: 0, event: 0 } } },
   events: { total: 0, events: {
     'pumpkin-hunt-2026': { name: 'Pumpkin Hunt', best: 40, runs: 3, unit: 'point', medal: 'silver', best_when: '2026-11-02' },
@@ -27,7 +27,7 @@ const MINE = {
   } },
 };
 const OTHER = {
-  game: { format: 2, scores: { standard: 6, battle: 10, chaos: 300 }, settings: { speechRate: 4 }, resetAt: 0,
+  game: { format: 2, scores: { standard: 6, battle: 10, chaos: 300 }, settings: { speechRate: 4 }, resetAt: 1795287600000,
     stats: { time: { standard: 40, battle: 90, drive: 0, tower: 0, island: 0, chaos: 500, event: 0 }, runs: { standard: 5, battle: 1, drive: 0, tower: 0, island: 0, chaos: 2, event: 0 } } },
   events: { total: 0, events: {
     'pumpkin-hunt-2026': { name: 'Pumpkin Hunt', best: 55, runs: 1, unit: 'point', medal: 'bronze', best_when: '2026-11-03' },

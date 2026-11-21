@@ -11,6 +11,12 @@ export const KEY = 'endless-labyrinth-web';
 // format 1 save is read as it is; its stats start at nothing.
 export const FORMAT = 2;
 const DEFAULT_SCORES = { standard: 0, battle: 0 };
+// Web 6.3.5 (Russell, 21 November 2026: "have every single score on the website reset
+// back to 0 for all players, since there has been so much refinement"; "Not events").
+// Every mode's high score board saved before this moment is set back to 0 the first
+// time the game or the site is opened on 6.3.5, on every device, once. Event High
+// Scores are kept elsewhere and are not touched; nor are play time and runs (stats).
+export const SCORES_RESET_AT = Date.UTC(2026, 10, 21, 19, 0, 0);   // 21 November 2026, 2 PM Eastern
 // The modes stats are kept for, by the key the Game Stats page shows them under.
 export const STAT_MODES = ['standard', 'battle', 'drive', 'tower', 'island', 'chaos', 'findvoice', 'abyss', 'ultimate', 'event'];
 const STATS_FLUSH_SECONDS = 15;   // play time is written this often, and at the end of a run
@@ -50,7 +56,7 @@ export class Store {
     this.scores = { ...DEFAULT_SCORES };
     this.settings = { speechRate: 3, practiced: false, homeTipSaid: false, turnTold: false };   // (turnTold, web 4.0.0: Ultimate Mode has said once that the world now turns with you)
     this.readFailed = false;   // the save is there but could not be read: never overwrite it
-    this.resetAt = 0;          // when the boards were last reset, in any copy of the game
+    this.resetAt = SCORES_RESET_AT;   // when the boards were last reset, in any copy of the game (6.3.5: a new save starts after the site-wide reset)
     this.stats = emptyStats();  // seconds played and runs started, per mode (web 1.1.0)
     this._statsUnsaved = 0;     // seconds of play not yet written
     this.load();
@@ -80,6 +86,12 @@ export class Store {
     this.resetAt = Number(data.resetAt) || 0;
     this.stats = readStats(data);
     this._seen = { ...this.settings };
+    // (6.3.5) The boards from before the site-wide reset go back to 0, once.
+    if (this.resetAt < SCORES_RESET_AT) {
+      for (const k of Object.keys(this.scores)) this.scores[k] = 0;
+      this.resetAt = SCORES_RESET_AT;
+      this._write();
+    }
   }
 
   // What another copy of the game has saved since: the higher score on every
