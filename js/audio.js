@@ -348,10 +348,37 @@ const PANNER_POOL = 64;
 // free panner pointing nearest its place, even if not within PANNER_REUSE_DEG (with that
 // many pointing every way, the nearest is close). Only when every panner is busy is
 // another made, and it is kept too.
+// (Web 6.3.6, Russell, 21 November 2026: "when you're facing the exit, the beeping can
+// still sound like it's on your left or your right ... like the beeping is reflecting off
+// of something invisible, instead of coming from one central spot".) Two things a browser
+// does with a panner that nothing is playing through, both measured at the game's output
+// (tests/web636.mjs: in a Standard labyrinth, facing the exit after a turn, each beep began
+// 3 to 6 decibels to one side; in a Chaos labyrinth, 4 to 7 to the other):
+// 1. It stops working the panner, and a panner not being worked misses every turn of the
+//    listener made meanwhile. Put again in the very same place in the world (you stood
+//    still and turned), it is seen not to have moved, and the direction worked out before
+//    your turn is used again: the beep comes from where the exit was, relative to your
+//    head, the last time that panner played.
+// 2. Given a place that is different, it works the direction out afresh, but slides to it
+//    from the old one over about 45 milliseconds (6.3.3's finding), a third of a beep.
+// The pool's panners last played at different times, facing different ways, so one beep
+// came from the left, the next from the middle, the next from the right. Choosing the free
+// panner pointing nearest (6.3.3 to 6.3.5) could not help: it compared places in the world,
+// and what was stale was the direction from your head. Now a panner is woken whenever it
+// is about to play again after a silence (taken from the pool, carried on after being held,
+// or heard again after its level was nothing):
+// - its HRTF state is made new (the panning model set away and back, which every engine
+//   answers with a fresh panner inside the same node: it starts exactly where it is put,
+//   as a new panner does, with nothing plugged or unplugged);
+// - its place is sent at a different distance from the one before (PANNER_NEAR or
+//   PANNER_FAR: the distance is not heard, the roll-off is off), so the place is never
+//   "the same as last time" and the direction is always worked out afresh.
+// So any free panner is as good as a new one: none is made while one is free, for a chime
+// or a voice either, and the pool stays small.
 const PANNER_COUNT = new WeakMap(); // mix -> how many panners have been made for it
-const PANNER_REUSE_DEG = 8;
-const PANNER_REUSE_COS = Math.cos(PANNER_REUSE_DEG * Math.PI / 180);
-export const pannerStats = { made: 0, reused: 0, dropped: 0 };
+const PANNER_NEAR = 1; const PANNER_FAR = 1.5;
+const START_LEAD = 0.009;          // seconds: three slices of sound
+export const pannerStats = { made: 0, reused: 0, dropped: 0, woken: 0 };
 
 // The way a place lies, as a unit vector (a point underfoot is a step ahead, as _place has it).
 function unitDir(x, y, z) {
@@ -962,29 +989,12 @@ export class AudioEngine {
   // is one (see PANNERS), else a new one.
   // (`to`, web 6.3.3: the mix to plug it into, if not the usual one: the output itself
   // for a placed sound heard clear of the 3D world's muffle and fade, the compass's guide.)
-  takePanner(x, y, z, to = null, exact = false) {
+  takePanner(x, y, z, to = null) {
     const bus = to || this.bus; const ctx = this.ctx;
     const free = PANNERS.get(bus);
     let p = null;
-    if (free && free.length) {
-      // The free panner that last played nearest this place, if one is near enough
-      // (see PANNER_REUSE_COS): a panner pointing elsewhere would start the sound there.
-      const [ux, uy, uz] = unitDir(x, y, z);
-      let best = -1; let bestCos = -2;
-      for (let i = free.length - 1; i >= 0; i--) {
-        const d = free[i].__dir;
-        const c = d ? ux * d[0] + uy * d[1] + uz * d[2] : -1.5;
-        if (c > bestCos) { bestCos = c; best = i; }
-      }
-      // (6.3.5, Russell: the labyrinth beeps were "not in one position" and the popping was
-      // back.) Most sounds take the free panner pointing nearest their place, as 6.3.2 took
-      // any free one, so no new panners are made while one is free. Only a chime or a voice
-      // (exact: whose very first moment must come from its place) waits for a panner within
-      // PANNER_REUSE_DEG, or a new one, until the mix has its full number.
-      if (best >= 0 && (!exact || bestCos >= PANNER_REUSE_COS || (PANNER_COUNT.get(bus) || 0) >= PANNER_POOL)) {
-        p = free[best]; free.splice(best, 1); pannerStats.reused += 1;
-      }
-    }
+    // (6.3.6) Any free panner will do, since it is woken: the one let go of longest ago.
+    if (free && free.length) { p = free.shift(); pannerStats.reused += 1; this.wakePanner(p); }
     if (!p) {
       pannerStats.made += 1;
       PANNER_COUNT.set(bus, (PANNER_COUNT.get(bus) || 0) + 1);
@@ -1000,6 +1010,17 @@ export class AudioEngine {
     SENT.delete(p);                 // (what was last sent was for the sound before)
     Voice._place(p, x, y, z, ctx.currentTime, true);
     return p;
+  }
+
+  // (6.3.6, see PANNER_NEAR.) A panner about to play again after a silence: made new
+  // inside, and its next place sure to be taken as a new one. Only ever done to a panner
+  // nothing is sounding through, so nothing is cut short.
+  wakePanner(p) {
+    if (!p) return;
+    try { p.panningModel = 'equalpower'; p.panningModel = 'HRTF'; } catch (e) { /* as it was */ }
+    p.__r = p.__r === PANNER_FAR ? PANNER_NEAR : PANNER_FAR;
+    SENT.delete(p);
+    pannerStats.woken += 1;
   }
 
   // A panner whose sound is done, its input already cut: kept plugged in for the
@@ -1244,8 +1265,6 @@ export class Voice {
     this.audio = audio;
     this.ctx = audio.ctx;
     this.name = name;
-    // (6.3.5) A chime or a spoken line: its onset must come from its place (see takePanner).
-    this.exact = centred(name) || /^v[bgc]_/.test(name);
     this.pair = pair;
     this.loop = loop;
     this.l = this.r = clamp(volume, 0, 1);
@@ -1352,7 +1371,7 @@ export class Voice {
       // The HRTF panner places the sound; the game still sets its loudness by
       // distance itself, so the panner's own distance rolloff is turned off.
       const [x, y, z] = this.placed ? this.pos3 : [this.dir[0], 0, this.dir[1]];
-      panner = this.audio.takePanner(x, y, z, this.clear && this.placed ? this.audio.out : null, this.exact);
+      panner = this.audio.takePanner(x, y, z, this.clear && this.placed ? this.audio.out : null);
       merge.connect(panner);
     } else {
       merge.connect(this.direct ? this.audio.out : this.audio.bus);
@@ -1378,7 +1397,10 @@ export class Voice {
       }
       SENT.set(panner, [x, y, z, now]);
     }
-    panner.__dir = unitDir(x, y, z);     // (where it points now: see PANNER_REUSE_COS)
+    panner.__dir = unitDir(x, y, z);     // (where it points now)
+    // (6.3.6: the same direction, at this panner's distance of the moment: see wakePanner.)
+    const k = panner.__r || 1;
+    if (k !== 1) { x *= k; y *= k; z *= k; }
     if (panner.positionX) {
       for (const [p, v] of [[panner.positionX, x], [panner.positionY, y], [panner.positionZ, z]]) {
         if (instant) { p.cancelScheduledValues(now); p.setValueAtTime(v, now); } else glideTo(p, v, now, PLACE_GLIDE);
@@ -1558,6 +1580,9 @@ export class Voice {
   _startSources(offset, now = this.ctx.currentTime) {
     this.sources = [];
     let first = null;
+    // (6.3.6) A placed one-shot starts a few milliseconds on (START_LEAD), so that its
+    // panner's new place has surely reached the sound's own thread before its first sample.
+    if (!this.loop && this.dry && this.dry.panner) now += START_LEAD;
     for (const br of [this.dry, this.dull, this.wet && this.wet.buffer ? this.wet : null]) {
       if (!br) continue;
       const s = this.ctx.createBufferSource();
@@ -1648,7 +1673,7 @@ export class Voice {
     if (br.panner) return br.panner;
     this._toMono(br);
     const share = this.audio.spatial && br === this.dull && this.dry && this.dry.panner ? this.dry.panner : null;
-    const p = share || this.audio.takePanner(this.dir[0], 0, this.dir[1], null, this.exact);
+    const p = share || this.audio.takePanner(this.dir[0], 0, this.dir[1], null);
     if (share) br.shared = true;
     if (br.wide) {
       try { br.gl.disconnect(br.wide.west); br.gr.disconnect(br.wide.east); } catch (e) { /* already */ }
@@ -1694,6 +1719,21 @@ export class Voice {
   apply(instant = false) {
     if (!this.dry) return;
     let b = this.behind; let l = this.l; let r = this.r;
+    // (6.3.6) A placed sound heard again after its level was nothing (a beacon you walked
+    // out of earshot of, and back): nothing went through its panners meanwhile, so they
+    // are woken, as a panner from the pool is (see AudioEngine.wakePanner).
+    const quiet = Math.max(l, r) <= 0;
+    const again = this.quiet === true && !quiet && !this.paused && !this.ended && !this.stopped;
+    this.quiet = quiet;
+    if (again && (this.placed || this.binPlaced)) {
+      const at = this.placed ? this.pos3 : null;
+      for (const br of [this.dry, this.dull]) {
+        if (!br || !br.panner || br.shared) continue;
+        this.audio.wakePanner(br.panner);
+        if (at) Voice._place(br.panner, at[0], at[1], at[2], this.ctx.currentTime, true);
+      }
+      instant = true;
+    }
     if (this.binPlaced) {
       // The way the thing lies in the world, from the levels the mode worked out:
       // one side is full and the other lowered by how far to the side it is (the
@@ -1714,7 +1754,7 @@ export class Voice {
         // (6.3.3: an ended or held sound's panner stays where it last played from, as in setPosition.)
         if (this.ended || this.stopped || (had && this.paused)) continue;
         const p = this._binPanner(br);
-        if (!br.shared) Voice._place(p, this.dir[0], 0, this.dir[1], now, instant || !had, true);
+        if (!br.shared) Voice._place(p, this.dir[0], 0, this.dir[1], now, instant || !had || again, true);
       }
       if (first) instant = true;
       // How far behind you it is heard: by the way you face now.
@@ -1815,14 +1855,14 @@ export class Voice {
   }
 
   // (6.3.3) Before a held sound plays again: each of its panners is put where the sound
-  // is now, and one that last played far from there (PANNER_REUSE_COS) is swapped for one
-  // that did not, so the sound does not start from where it was when it was held.
+  // is now. (6.3.6: and woken, see AudioEngine.wakePanner, so it starts exactly there even
+  // if you turned while it was held; until now a panner that last played far from there
+  // was swapped for another, which had the same fault.)
   _reaim(now) {
     let at = null;
     if (this.placed && this.pos3) at = this.pos3;
     else if (this.binPlaced) at = [this.dir[0], 0, this.dir[1]];
     if (!at) return;
-    const [ux, uy, uz] = unitDir(at[0], at[1], at[2]);
     for (const br of [this.dry, this.dull]) {
       if (!br || !br.panner) continue;
       if (br.shared) {
@@ -1834,14 +1874,8 @@ export class Voice {
         }
         continue;
       }
-      const d = br.panner.__dir;
-      if (d && ux * d[0] + uy * d[1] + uz * d[2] < PANNER_REUSE_COS) {
-        const was = br.panner.__bus || null;
-        try { br.merge.disconnect(br.panner); } catch (e) { /* already */ }
-        this.audio.givePanner(br.panner);
-        br.panner = this.audio.takePanner(at[0], at[1], at[2], was, this.exact);
-        br.merge.connect(br.panner);
-      } else Voice._place(br.panner, at[0], at[1], at[2], now, true);
+      this.audio.wakePanner(br.panner);
+      Voice._place(br.panner, at[0], at[1], at[2], now, true);
     }
     this.jump = false;
   }
