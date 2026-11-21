@@ -758,7 +758,7 @@ check(bus.pulling && bus.pulling.stage === 'coming' && bus.pulling.sound && bus.
 check(bus.came && bus.chime && bus.outsideSafe && bus.near >= 10 && bus.near <= 40, `when a safe zone is far (${bus.realSteps} steps here, told 100) a bus pulls up near you with its chime: ` + JSON.stringify({ near: bus.near && bus.near.toFixed(1), ride: bus.ride }));
 check(bus.ride && Math.abs(bus.ride - (15 + 15 * (100 - 45) / 105)) < 0.01, `the ride's length follows the walk it saves (${bus.ride && bus.ride.toFixed(1)} s for 100 steps)`);
 check(bus.engine && bus.engine.name === 'ut_bus_idle' && bus.engine.placed && bus.engine.level > 0.3, 'its engine idles where it stands: ' + JSON.stringify(bus.engine));
-check(bus.legTowardBus && /^Compass on\. You are (in|on) .*\. The bus is \d+ steps? away, starting (north|east|south|west), [a-z0-9 ]+\. /.test(bus.compassSaid), 'the compass points to the waiting bus and says so: ' + bus.compassSaid + ' ' + JSON.stringify(bus.routeDbg));
+check(bus.legTowardBus && /^Compass on\. The bus, \d+ steps?\.$/.test(bus.compassSaid), 'the compass leads to the waiting bus and says so (6.3.3: the goal and how far, nothing more): ' + bus.compassSaid + ' ' + JSON.stringify(bus.routeDbg));
 check(bus.boarded && bus.heldStill, 'stepping up to the bus boards it; on the bus nothing answers');
 check(bus.inOrder && bus.steps >= 5 && bus.rideVoice && bus.rideVoice.loop, 'doors open, steps, doors close, the ride from your seat, doors open, steps, doors close, and it drives off: ' + JSON.stringify({ steps: bus.steps, ride: bus.rideVoice }));
 check(bus.landedSafe && bus.gone && bus.idleLeft === 0, 'you are left on the floor of the nearest safe zone, the bus gone and its engine with it');
@@ -942,22 +942,22 @@ const survey = await page.evaluate(async () => {
     out.wanted.push(want);
     if (w !== want) out.ok = false;
   }
-  // Compass on, for real, facing north: the briefing, then the way ahead. The way
-  // to start is counted from the way you face.
+  // Compass on, for real, facing north, and a double tap while the world is frozen
+  // (6.3.3): the briefing, then the way ahead. The way to start is counted from the way you face.
   T.face('north');
-  g.input('hold'); out.said = document.getElementById('said').textContent;
+  g.input('hold'); g.input('enter'); out.said = document.getElementById('said').textContent;
   out.startNorth = (/ away, starting ((?:north|east|south|west), [a-z ]+)\./.exec(out.said) || [])[1];
   out.wantNorth = legAt < 0 ? undefined : `${ways[legAt]}, ${['straight ahead', 'to your right', 'behind you', 'to your left'][legAt]}`;
   g.input('hold');
   // Facing east, the same leg starts a quarter turn further round to the left.
   T.face('east');
-  g.input('hold'); out.startEast = (/ away, starting ((?:north|east|south|west), [a-z ]+)\./.exec(document.getElementById('said').textContent) || [])[1]; g.input('hold');
+  g.input('hold'); g.input('enter'); out.startEast = (/ away, starting ((?:north|east|south|west), [a-z ]+)\./.exec(document.getElementById('said').textContent) || [])[1]; g.input('hold');
   out.wantEast = legAt < 0 ? undefined : `${ways[legAt]}, ${['straight ahead', 'to your right', 'behind you', 'to your left'][(legAt - 1 + 4) % 4]}`;
   T.face('north');
   return out;
 });
 check(survey.ok && survey.route === 1, 'facing each main direction, the compass names it and says how far it is open, what stops you, what lies beyond and where the way is, and one of them is the way to go, with the walk and its turn: ' + JSON.stringify(survey.words) + (survey.ok ? '' : ' wanted ' + JSON.stringify(survey.wanted)));
-check(/^Compass on\. You are (in|on) (a labyrinth|an island|a tower area|a battle area|a safe zone)\. (The safe zone|The bus|The way out) is \d+ steps? away, starting (north|east|south|west), (straight ahead|to your right|behind you|to your left)\. (Nearby: [^.]*(steps? away, starting (north|east|south|west), [a-z ]+|right here)[^.]*\.|Nothing to pick up nearby\.) (North\. (Open|A wall|The island's edge)|North, the way)[ ,;.].*$/.test(survey.said) && !/This way,/.test(survey.said), 'turning the compass on gives the briefing, then the way ahead: ' + survey.said);
+check(/^You are (in|on) (a labyrinth|an island|a tower area|a battle area|a safe zone)\. (The safe zone|The bus|The way out) is \d+ steps? away, starting (north|east|south|west), (straight ahead|to your right|behind you|to your left)\. (Nearby: [^.]*(steps? away, starting (north|east|south|west), [a-z ]+|right here)[^.]*\.|Nothing to pick up nearby\.) (North\. (Open|A wall|The island's edge)|North, the way)[ ,;.].*$/.test(survey.said) && !/This way,/.test(survey.said), 'a double tap with the compass on (the world frozen) gives the briefing, then the way ahead: ' + survey.said);
 check(survey.startNorth === survey.wantNorth && survey.startEast === survey.wantEast, `the way to start is named, and placed from the way you face: facing north "starting ${survey.startNorth}", facing east "starting ${survey.startEast}"`);
 
 // --------------------------------------------------------------- 13. regeneration under a pile of sounds (Russell, 8 Nov: roars carried over; a crash)

@@ -522,6 +522,10 @@ check(/^\d+ health\. \d+ points?\. \d+ shots?\. \d+ items?\. Facing east\.$/.tes
 check(/ Facing east\.$/.test(report.line), 'the line on the screen says it too: ' + report.line);
 
 // --------------------------------------------------------------- 8. the compass turns you for real
+// Web 6.3.3 (Russell, 21 November 2026): the compass is a guide. It comes on with the world
+// frozen, says only the goal and how far, and a beep from the next turn of the route leads
+// you, highest when you face it; turning says nothing; a double tap while frozen describes
+// the world; the first step lets the world move, and the guide carries on.
 const compass = await page.evaluate(async () => {
   const g = window.__el.game; const u = g.ut; const T = window.__t; const W = T.world;
   const { COMPASS_BEEP_EVERY, COMPASS_BEEP_TURNING } = T.mod;
@@ -540,26 +544,21 @@ const compass = await page.evaluate(async () => {
   T.face(legAt * 90);
   T.spoken.length = 0;
   g.input('hold');
-  out.on = u.compass.on; out.briefing = T.spoken[T.spoken.length - 1];
+  out.on = u.compass.on && u.compass.frozen; out.briefing = T.spoken[T.spoken.length - 1];
   out.toward = beepsOver(1.0);
-  // A quick turn is a real turn: it lands, says where the way is now, and the beep drops.
+  // A quick turn is a real turn: it lands, says nothing, and the beep drops.
   const at = [...g.playerPos];
   T.spoken.length = 0;
   g.input('right'); T.land();
-  out.oneRight = { face: T.deg(u.face), said: T.spoken[T.spoken.length - 1], stood: g.playerPos[0] === at[0] && g.playerPos[1] === at[1] };
+  out.oneRight = { face: T.deg(u.face), said: T.spoken.length, stood: g.playerPos[0] === at[0] && g.playerPos[1] === at[1] };
   out.oneStep = beepsOver(1.0);
-  // Two more make the quarter turn: a main direction, described, and where the way is.
+  // Two more make the quarter turn: across the way, the beep halfway.
   g.input('right'); T.land(); g.input('right'); T.land();
-  out.afterRight = { face: T.deg(u.face), said: T.spoken[T.spoken.length - 1], stood: g.playerPos[0] === at[0] && g.playerPos[1] === at[1] };
+  out.afterRight = { face: T.deg(u.face), said: T.spoken.length, stood: g.playerPos[0] === at[0] && g.playerPos[1] === at[1] };
   out.across = beepsOver(1.0);
   for (let i = 0; i < 3; i++) { g.input('right'); T.land(); }
-  out.awayFace = T.deg(u.face); out.awaySaid = T.spoken[T.spoken.length - 1];
+  out.awayFace = T.deg(u.face); out.awaySaid = T.spoken.length;
   out.away = beepsOver(1.0);
-  // No walking and no shot while it is on; a swipe up says the way ahead again.
-  const ammo = u.ammo;
-  T.spoken.length = 0;
-  g.input('up'); g.input('down'); g.input('space');
-  out.frozen = g.playerPos[0] === at[0] && g.playerPos[1] === at[1] && u.ammo === ammo; out.again = T.spoken[T.spoken.length - 1];
   // A held turn with the compass on: the beeps come quicker and their pitch follows the turn.
   T.played.length = 0;
   g.input('turn_right_start'); T.frames(1.2);
@@ -567,20 +566,21 @@ const compass = await page.evaluate(async () => {
   g.input('turn_end');
   out.turning = { beeps: turning.length, distinct: new Set(turning).size, slant: u.face % (Math.PI / 2) !== 0 };
   out.every = [COMPASS_BEEP_EVERY, COMPASS_BEEP_TURNING];
-  // At a slant, a swipe up says the way you face and where the way to go is.
-  T.face(legAt * 90 + 45); T.spoken.length = 0; g.input('up'); out.slantSaid = T.spoken[T.spoken.length - 1];
-  // Turn to the way to go by ear, turn the compass off, and you are facing it: walk.
-  T.face(((legAt + 3) % 4) * 90);
-  for (let i = 0; i < 3; i++) { g.input('right'); T.land(); }
-  out.homeSaid = T.spoken[T.spoken.length - 1];
-  g.input('hold');
-  out.off = !u.compass.on; out.facingWay = T.deg(u.face) === legAt * 90;
-  const p0 = [...g.playerPos];
+  // At a slant, a double tap while frozen describes the world, the way to start in degrees.
+  T.face(legAt * 90 + 45); T.spoken.length = 0; g.input('enter'); out.slantSaid = T.spoken[T.spoken.length - 1];
+  // Frozen: no shot; the first step walks, and the world moves again with the guide on.
+  T.face(legAt * 90);
+  const ammo = u.ammo;
+  g.input('space');
+  out.noShot = u.ammo === ammo && u.compass.frozen && g.playerPos[0] === at[0] && g.playerPos[1] === at[1];
   g.input('up');
-  out.walked = [g.playerPos[0] - p0[0], g.playerPos[1] - p0[1]]; out.legDir = leg.dir;
-  // The briefing counts the way to start from the way you face.
-  const start = (deg) => { T.face(deg); T.spoken.length = 0; g.input('hold'); const s = T.spoken[T.spoken.length - 1]; g.input('hold'); out.lastBriefing = s; return (/ away, starting ((?:north|east|south|west), [a-z0-9 ]+)\./.exec(s) || [])[1]; };
-  g.playerPos = p0;
+  out.walked = [g.playerPos[0] - at[0], g.playerPos[1] - at[1]]; out.legDir = leg.dir;
+  out.thawed = u.compass.on && !u.compass.frozen;
+  g.input('hold');
+  out.off = !u.compass.on;
+  // The description counts the way to start from the way you face.
+  const start = (deg) => { T.face(deg); g.input('hold'); T.spoken.length = 0; g.input('enter'); const s = T.spoken[T.spoken.length - 1]; g.input('hold'); out.lastBriefing = s; return (/ away, starting ((?:north|east|south|west), [a-z0-9 ]+)\./.exec(s || '') || [])[1]; };
+  g.playerPos = at;
   out.legName = ['north', 'east', 'south', 'west'][legAt];
   out.starts = [0, 1, 2, 3].map((k) => start(((legAt + 4 - k) % 4) * 90));
   out.acrossBriefing = (start(((legAt + 3) % 4) * 90), out.lastBriefing);
@@ -591,28 +591,19 @@ const compass = await page.evaluate(async () => {
 });
 if (compass.skipped) console.log('SKIP no way to go from the place chosen');
 else {
-  const WAYNAME = '(the way to the safe zone|the way to the bus|the way out)';
-  const DIR = '(north|east|south|west)';
-  const WAYCAP = '(The way to the safe zone|The way to the bus|The way out)';
-  const DIRCAP = '(North|East|South|West)';
-  const WALK = `Walk \\d+ steps? this way(, and you are there|, then turn (right|left), to face ${DIR})\\.`;
-  check(compass.on && new RegExp(`^Compass on\\. You are .* \\d+ steps? away, starting ${compass.legName}, straight ahead\\. .*${compass.legName[0].toUpperCase() + compass.legName.slice(1)}, ${WAYNAME}\\. .*${WALK}$`).test(compass.briefing),
-    'facing the way to go, the compass comes on with the briefing, then names the way you face, says it is the way, describes it and gives the walk: ' + compass.briefing);
-  check(!/This way/.test(compass.briefing + compass.afterRight.said + compass.awaySaid + compass.homeSaid + compass.oneRight.said), 'nowhere does it say only "This way"');
-  check(compass.toward.length >= 2 && compass.toward.every((s) => s === 8), 'the beep is at its highest when you face the way to go: ' + compass.toward.join(' '));
-  check(compass.oneRight.face === (compass.legAt * 90 + 30) % 360 && compass.oneRight.stood && new RegExp(`^Facing [a-z-]+\\. ${WAYCAP} is ${compass.legName}, 30 degrees to your left\\.$`).test(compass.oneRight.said) && compass.oneStep.every((s) => s < 8 && s > 4),
-    `one swipe right with the compass on turns you thirty degrees where you stand, and it says the way you face and where the way to go now is: ${compass.oneRight.said} (beeps ${compass.oneStep.join(' ')})`);
-  check(compass.afterRight.face === ((compass.legAt + 1) % 4) * 90 && compass.afterRight.stood && new RegExp(`^${DIRCAP}\\. .*${WAYCAP} is ${compass.legName}, to your left\\.$`).test(compass.afterRight.said),
-    'two more make the quarter turn: it names the direction, describes what lies that way, and says the way to go is now to your left, by name: ' + compass.afterRight.said);
-  check(compass.across.every((s) => s === 4) && compass.away.every((s) => s === 0) && new RegExp(` is ${compass.legName}, behind you\\.$`).test(compass.awaySaid), `the beep drops as you turn away: across the way ${compass.across.join(' ')}, with your back to it ${compass.away.join(' ')} ("${compass.awaySaid}")`);
-  check(compass.frozen && compass.again === compass.awaySaid, 'with the compass on you cannot walk or shoot; a swipe up says the way ahead again');
+  check(compass.on && /^Compass on\. (Safe zone|The bus|The way out), \d+ steps?\.$/.test(compass.briefing), 'the compass comes on with the world frozen and says only the goal and how far: ' + compass.briefing);
+  check(compass.toward.length >= 2 && compass.toward.every((s) => s === 8), 'the beep is at its highest when you face the next turn of the way: ' + compass.toward.join(' '));
+  check(compass.oneRight.face === (compass.legAt * 90 + 30) % 360 && compass.oneRight.stood && compass.oneRight.said === 0 && compass.oneStep.every((s) => s < 8 && s > 4),
+    `one swipe right with the compass on turns you thirty degrees where you stand, saying nothing, and the beep drops a little (beeps ${compass.oneStep.join(' ')})`);
+  check(compass.afterRight.face === ((compass.legAt + 1) % 4) * 90 && compass.afterRight.stood && compass.afterRight.said === 0, 'two more make the quarter turn, still in silence');
+  check(compass.across.every((s) => s === 4) && compass.away.every((s) => s === 0) && compass.awaySaid === 0, `the beep drops as you turn away: across the way ${compass.across.join(' ')}, with your back to it ${compass.away.join(' ')}`);
   check(compass.turning.beeps >= 5 && compass.turning.distinct >= 3 && compass.turning.slant && compass.every[1] < compass.every[0], `while you hold a turn the beeps come quicker and their pitch follows the turn (${compass.turning.beeps} beeps, ${compass.turning.distinct} pitches in 1.2 seconds)`);
-  check(new RegExp(`^Facing [a-z-]+\\. ${WAYCAP} is ${compass.legName}, 45 degrees to your left\\.$`).test(compass.slantSaid), 'at a slant a swipe up says the way you face and where the way to go is, in degrees: ' + compass.slantSaid);
-  check(new RegExp(`^${compass.legName[0].toUpperCase() + compass.legName.slice(1)}, ${WAYNAME}\\. .*${WALK}$`).test(compass.homeSaid) && compass.off && compass.facingWay && compass.walked[0] === compass.legDir[0] * 3 && compass.walked[1] === compass.legDir[1] * 3, 'turned to the way to go, the compass turned off, you are facing it: the next step is along the way (' + compass.homeSaid + ')');
+  check(new RegExp(`^You are .* \\d+ steps? away, starting ${compass.legName}, 45 degrees to your left\\. .*Facing [a-z-]+\\.$`).test(compass.slantSaid || ''), 'at a slant a double tap describes the world, the way to start in degrees: ' + compass.slantSaid);
+  check(compass.noShot && compass.thawed && compass.walked[0] === compass.legDir[0] * 3 && compass.walked[1] === compass.legDir[1] * 3 && compass.off, 'frozen, nothing fires; facing the way, the first step goes along it and the world moves again, the guide on; holding again turns it off');
   const n = compass.legName;
   check(compass.starts.join('; ') === `${n}, straight ahead; ${n}, to your right; ${n}, behind you; ${n}, to your left` && compass.startSlant === `${n}, 30 degrees to your left` && compass.startFree === `${n}, 70 degrees to your right`,
-    'the briefing names the way to start and says where it is from the way you face: ' + compass.starts.join('; ') + '; at a slant in degrees (' + compass.startSlant + '; ' + compass.startFree + ')');
-  check(!/The way (to|out)[^.]* is /.test(compass.acrossBriefing) && / away, starting /.test(compass.acrossBriefing), 'coming on, it says where the way is once, in the briefing, not twice: ' + compass.acrossBriefing);
+    'the description names the way to start and says where it is from the way you face: ' + compass.starts.join('; ') + '; at a slant in degrees (' + compass.startSlant + '; ' + compass.startFree + ')');
+  check(!/The way (to|out)[^.]* is /.test(compass.acrossBriefing) && / away, starting /.test(compass.acrossBriefing), 'the description says where the way is once, not twice: ' + compass.acrossBriefing);
 }
 
 // --------------------------------------------------------------- 9. the throw, the bus at the door, the lift's square

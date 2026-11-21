@@ -95,9 +95,12 @@ const time = await page.evaluate(() => {
   // In a safe zone nothing scores, so nothing goes on the clock.
   const zone = t.standIn('event');
   out.safe = zone ? gain(() => g._utKillEnemy(t.enemy('chaser', zone))) : null;
-  // With the compass on, the same.
-  t.standIn('battle'); u.compass.on = true;
+  // With the compass holding the world frozen, the same (6.3.3: once you step, the
+  // world moves again with the guide on, and scores as usual).
+  t.standIn('battle'); u.compass.on = true; u.compass.frozen = true;
   out.compass = gain(() => g._utKillEnemy(t.enemy('chaser', area)));
+  u.compass.frozen = false;
+  out.compassMoving = gain(() => g._utKillEnemy(t.enemy('chaser', area)));
   u.compass.on = false;
   // Ultimate Mode itself has no chaos clock: nothing changes.
   t.ultimate();
@@ -115,7 +118,8 @@ check(time.thrower === 30, `a thrower, 30 seconds: ${time.thrower}`);
 check(time.ammo === 10 && time.potion === 10, `ammo or a potion picked up, 10 seconds: ${time.ammo}, ${time.potion}`);
 check(time.chests.length > 0 && time.chests.every((d) => d >= 30), `a chest's points, 30 seconds with them: ${JSON.stringify(time.chests)}`);
 check(time.safe === 0, `in a safe zone nothing scores, and nothing goes on the clock: ${time.safe}`);
-check(time.compass === 0, `nor with the compass on: ${time.compass}`);
+check(time.compass === 0, `nor while the compass holds the world frozen: ${time.compass}`);
+check(time.compassMoving === 20, `but with the world moving again and the compass guiding, a chaser shot down puts its 20 seconds on: ${time.compassMoving}`);
 check(time.ultimate === true, 'Ultimate Mode itself has no chaos clock to add to');
 
 // ------------------------------------------------------------------ 2. Footsteps in the open air

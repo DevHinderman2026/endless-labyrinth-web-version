@@ -259,9 +259,14 @@ if (!hit.skipped) {
 }
 
 // --------------------------------------------------------------- the compass
+// Web 6.3.3 (Russell, 21 November 2026): the compass is a guide. It comes on with the
+// world frozen and says only the goal and how far; a beep from the next turn of the
+// route leads you; a double tap while frozen describes the world; the first step lets
+// the world move, and the guide carries on; arrived, it says so and goes off.
 const compass = await page.evaluate(async () => {
   const g = window.__el.game; const u = g.ut; const a = window.__el.audio; const T = window.__t;
   const W = await import('./js/modes/ultimate/world.js');
+  const said = () => document.getElementById('said').textContent;
   // Stand somewhere outside a safe zone, facing north.
   const away = u.world.areas.find((x) => x.kind !== 'event');
   const cell = away.floorCells[0];
@@ -270,66 +275,90 @@ const compass = await page.evaluate(async () => {
   const pos0 = [...g.playerPos];
   const f0 = a.worldFilter.frequency.value;
   g.input('hold');
-  const on = u.compass.on;
-  const saidOn = document.getElementById('said').textContent;
-  g.input('up'); const stillThere = g.playerPos[0] === pos0[0] && g.playerPos[1] === pos0[1];
-  const saidAgain = document.getElementById('said').textContent;
-  // A swipe right with the compass on is a real turn of thirty degrees: it says the
-  // way you face and where the way to go is. Two more and you face east, and it
-  // says what lies ahead now.
-  T.turn('right'); const saidStep = document.getElementById('said').textContent;
+  const on = u.compass.on; const frozen = u.compass.frozen;
+  const saidOn = said();
+  // Turning says nothing now: the guide beeps.
+  T.turn('right'); const saidStep = said();
   const facedStep = Math.abs(u.face - Math.PI / 6) < 1e-9;
-  T.turn('right'); T.turn('right'); const saidRight = document.getElementById('said').textContent;
+  T.turn('right'); T.turn('right'); const saidRight = said();
   const facedEast = u.face === Math.PI / 2 && g.playerPos[0] === pos0[0] && g.playerPos[1] === pos0[1];
+  // A double tap while frozen: the world described.
+  g.input('enter'); const saidDescribe = said();
   const played = [];
   const orig = a.play.bind(a);
   a.play = (name, opts) => { played.push([name, opts]); return orig(name, opts); };
   for (let i = 0; i < 60; i++) g.updateUltimateMode(1 / 30);   // two seconds: beeps
   a.play = orig;
+  const gp = g._utGuidePoint();
+  const rel = gp ? [gp[0] - g.playerPos[0], gp[1] - g.playerPos[1]] : null;
   await new Promise((r) => setTimeout(r, 600));
   const fOn = a.worldFilter.frequency.value;
   const ammo0 = u.ammo; g.input('space'); const ammoAfter = u.ammo;
+  const stillFrozen = u.compass.frozen && g.playerPos[0] === pos0[0] && g.playerPos[1] === pos0[1];
   const route = g._utRouteStep();
-  g.input('compass');
-  const off = u.compass.on;
+  // The first step (the way the route starts, so it is open): the world moves again,
+  // the guide stays on, and the weapon fires.
+  if (route) { g._utTurnStop(); g._utFace(Math.atan2(route[0], -route[1]), true); }
+  const before = [...g.playerPos];
+  g.input('up');
+  const moved = g.playerPos[0] !== before[0] || g.playerPos[1] !== before[1];
+  const thawed = !u.compass.frozen && u.compass.on;
   await new Promise((r) => setTimeout(r, 600));
-  const fOff = a.worldFilter.frequency.value;
+  const fThaw = a.worldFilter.frequency.value;
+  u.ammo = Math.max(u.ammo, 3); const ammoT = u.ammo; g.input('space'); const firedThawed = u.ammo === ammoT - 1;
+  g.input('compass');
+  const off = u.compass.on; const saidOff = said();
   // In a safe zone it works, and leads to the way out (Russell, 8 Nov; it used to refuse).
   const safe = u.world.areas.find((x) => x.kind === 'event');
   const sc = safe.floorCells[Math.floor(safe.floorCells.length / 2)];
   g.playerPos = [sc[0] * 3, sc[1] * 3]; u.area = safe;
   T.face('north');
   g.input('hold');
-  const saidSafe = document.getElementById('said').textContent;
+  const saidSafe = said();
   const onInSafe = u.compass.on;
   const outRoute = g._utRoute();
   const outLands = outRoute.path ? W.areaAt(u.world, W.posOf(...outRoute.path[outRoute.path.length - 1])) !== safe : null;
+  // Out of it: arrived, it says so and goes off.
+  g.playerPos = [cell[0] * 3, cell[1] * 3]; u.area = away;
+  g.updateUltimateMode(1 / 30);
+  const saidOut = said(); const offOut = !u.compass.on;
+  // And into the safe zone from outside: arrived there.
   g.input('hold');
+  const goalIn = u.compass.goal;
+  g.playerPos = [sc[0] * 3, sc[1] * 3]; u.area = safe;
+  g.updateUltimateMode(1 / 30);
+  const saidIn = said(); const offIn = !u.compass.on;
+  await new Promise((r) => setTimeout(r, 600));
+  const fEnd = a.worldFilter.frequency.value;
   const beeps = played.filter(([n]) => /^ut_compass_\d$/.test(n));
-  return { on, saidOn, stillThere, saidAgain, facedEast, saidRight, saidStep, facedStep, beeps: beeps.length, direct: beeps.every(([, o]) => o && o.direct), f0, fOn, fOff, ammo0, ammoAfter, route, off, saidSafe, onInSafe, outTarget: outRoute.target.name, outLands };
+  const lastBeep = beeps.length ? beeps[beeps.length - 1][1] : null;
+  return { on, frozen, saidOn, saidStep, facedStep, saidRight, facedEast, saidDescribe, beeps: beeps.length,
+    clear: beeps.every(([, o]) => o && o.clear && Array.isArray(o.pos) && !o.direct), lastPos: lastBeep && lastBeep.pos, rel,
+    f0, fOn, fThaw, fEnd, ammo0, ammoAfter, stillFrozen, route, moved, thawed, firedThawed, off, saidOff,
+    saidSafe, onInSafe, outTarget: outRoute.target.name, outLands, saidOut, offOut, goalIn, saidIn, offIn };
 });
-check(compass.on && /Compass on/.test(compass.saidOn), 'a held finger turns the compass on: ' + compass.saidOn);
-// What it says for a main direction (web 4.1.0: it names the direction and
-// describes, where it said only "This way"): the direction that is the way to go,
-// or any other, which ends with where the way is, by name.
+check(compass.on && compass.frozen && /^Compass on\. (Safe zone|The bus), \d+ steps?\.$/.test(compass.saidOn), 'a held finger turns the compass on, with the world frozen, and it says only the goal and how far: ' + compass.saidOn);
+check(compass.facedStep && compass.saidStep === compass.saidOn && compass.saidRight === compass.saidOn, 'with the compass on, a swipe right is a real turn of thirty degrees, and turning says nothing (the guide beeps)');
+check(compass.facedEast, 'two more, and you face east, where you stood');
+// What the double tap describes (the briefing and the way you face, as the compass used to say coming on).
 const LIES = String.raw`(A wall|The island's edge|Open for \d+ steps?, then (a wall|the island's edge)|Open to the border, \d+ steps?, into .*)[.;].*`;
 const WAYNAME = String.raw`(the way to the safe zone|the way to the bus|the way out)`;
 const THEWAY = String.raw`(North|East|South|West), ${WAYNAME}\. ${LIES}Walk \d+ steps? this way(, and you are there|, then turn (right|left), to face (north|east|south|west))\.`;
 const OTHER = String.raw`(North|East|South|West)\. ${LIES}`;
-const WHERE = String.raw`(The way to the safe zone|The way to the bus|The way out) is (north|east|south|west), (to your right|to your left|behind you)\.`;
-const WAY = `(${THEWAY}|${OTHER}${WHERE})`;
-check(compass.stillThere && new RegExp('^' + WAY + '$').test(compass.saidAgain), 'while the compass is on, a swipe up says the way ahead again and the player does not move: ' + compass.saidAgain);
-check(compass.facedStep && new RegExp(String.raw`^Facing north-north-east\. (The way to the safe zone|The way to the bus|The way out) is (north|east|south|west), (30|60|120|150) degrees to your (left|right)\.$`).test(compass.saidStep),
-  'with the compass on, a swipe right is a real turn of thirty degrees, and it says the way you face and where the way to go is: ' + compass.saidStep);
-check(compass.facedEast, 'two more, and you face east, where you stood');
-check(new RegExp('^' + WAY + '$').test(compass.saidRight) && /^East/.test(compass.saidRight) && !/This way,/.test(compass.saidRight + compass.saidAgain + compass.saidOn), 'landing on a main direction names it and describes what lies that way: the walk when it is the way to go, else how far it is open, what lies beyond, and where the way is: ' + compass.saidRight);
-check(compass.beeps >= 3 && compass.direct, `the compass beeps (${compass.beeps} in two seconds), played direct (never muffled)`);
-check(compass.f0 >= 19000 && compass.fOn < 2000 && compass.fOff >= 19000, `the world is muffled while the compass is on (${Math.round(compass.f0)} Hz, ${Math.round(compass.fOn)}, ${Math.round(compass.fOff)})`);
-check(compass.ammo0 === compass.ammoAfter, 'the weapon does not fire while the compass is on');
+const tail = (compass.saidDescribe.match(/(?:Nearby: [^.]*\.|Nothing to pick up nearby\.) (.*)$/) || [])[1] || '';
+check(new RegExp(String.raw`^You are (in|on) (a labyrinth|an island|a tower area|a battle area|a safe zone)\. (The safe zone|The bus|The way out) is \d+ steps? away, starting (north|east|south|west), (straight ahead|to your right|to your left|behind you)\. (Nearby: .*|Nothing to pick up nearby\.) ` + `(${THEWAY}|${OTHER})` + '$').test(compass.saidDescribe) && /^East/.test(tail),
+  'a double tap while frozen describes the world: where you are, the goal and the way to start, what is nearby, then the way you face (east): ' + compass.saidDescribe);
+check(compass.beeps >= 3 && compass.clear, `the guide beeps (${compass.beeps} in two seconds), placed, and heard clear of the muffle`);
+check(compass.rel && compass.lastPos && Math.abs(compass.lastPos[0] - compass.rel[0]) < 1e-6 && Math.abs(compass.lastPos[1] - compass.rel[1]) < 1e-6, `the beep comes from the end of the route's first leg: ${JSON.stringify(compass.lastPos)} ${JSON.stringify(compass.rel)}`);
+check(compass.f0 >= 19000 && compass.fOn < 2000, `the world is muffled while the compass has it frozen (${Math.round(compass.f0)} Hz, ${Math.round(compass.fOn)})`);
+check(compass.ammo0 === compass.ammoAfter && compass.stillFrozen, 'the weapon does not fire while the world is frozen, and nothing moves you');
 check(Array.isArray(compass.route) && compass.route.length === 2, 'the route to the nearest safe zone has a first step: ' + JSON.stringify(compass.route));
-check(!compass.off, 'C turns the compass off');
-check(compass.onInSafe && compass.outTarget === 'the way out' && compass.outLands === true && /^Compass on\. You are in a safe zone\. The way out is \d+ steps? away, starting (north|east|south|west), (straight ahead|to your right|to your left|behind you)\. /.test(compass.saidSafe), 'in a safe zone the compass works and leads out of it, to a cell of another area: ' + compass.saidSafe);
-check(new RegExp(String.raw`^Compass on\. You are (in|on) (a labyrinth|an island|a tower area|a battle area|a safe zone)\. (The safe zone|The bus|The way out) is \d+ steps? away, starting (north|east|south|west), (straight ahead|to your right|to your left|behind you)\. (Nearby: .*|Nothing to pick up nearby\.) ` + `(${THEWAY}|${OTHER})` + '$').test(compass.saidOn), 'turning the compass on gives the briefing: where you are, the goal and the way to start, what is nearby, then the way ahead: ' + compass.saidOn);
+check(compass.moved && compass.thawed && compass.fThaw >= 19000, `the first step moves you and lets the world move again, unmuffled (${Math.round(compass.fThaw)} Hz), the guide still on`);
+check(compass.firedThawed, 'with the world moving again, the weapon fires, the compass still on');
+check(!compass.off && compass.saidOff === 'Compass off.', 'C turns the compass off');
+check(compass.onInSafe && compass.outTarget === 'the way out' && compass.outLands === true && /^Compass on\. The way out, \d+ steps?\.$/.test(compass.saidSafe), 'in a safe zone the compass works and leads out of it, to a cell of another area: ' + compass.saidSafe);
+check(compass.offOut && compass.saidOut === 'Out of the safe zone. Compass off.', 'out of the safe zone, it says so and goes off: ' + compass.saidOut);
+check(compass.goalIn === 'the safe zone' && compass.offIn && compass.saidIn === 'You are in the safe zone. Compass off.' && compass.fEnd >= 19000, 'into the safe zone from outside, it says so and goes off, the world open again: ' + compass.saidIn);
 
 // --------------------------------------------------------------- the island elevator and the seabed
 const island = await page.evaluate(async () => {
@@ -362,6 +391,13 @@ const island = await page.evaluate(async () => {
   g.input('up'); g.input('up');
   g.updateUltimateMode(1 / 30);
   const route2 = g._utRouteStep();
+  // (6.3.3) The compass on the seabed: the way up, its beep from the elevator itself.
+  g.input('hold');
+  const seabedSaid = document.getElementById('said').textContent;
+  const gpSea = g._utGuidePoint();
+  const liftPos = [u.seabed.origin[0] * 3, u.seabed.origin[1] * 3];
+  const guideAtLift = !!gpSea && Math.abs(gpSea[0] - liftPos[0]) < 1e-6 && Math.abs(gpSea[1] - liftPos[1]) < 1e-6;
+  g.input('hold');
   g.input('down'); g.input('down');
   g.updateUltimateMode(1 / 30);
   const upRide = u.place;
@@ -370,7 +406,7 @@ const island = await page.evaluate(async () => {
     if (i % 30 === 0) await new Promise((r) => setTimeout(r, 20));
   }
   const atCell = [Math.round(g.playerPos[0] / 3), Math.round(g.playerPos[1] / 3)];
-  return { skipped: false, riding, blocked, held, place, under, pickups, routeSeabed, route2, upRide, back: u.place, area: u.area.kind, at: g.playerPos, lift: isl.elevator.map((c) => c * 3), steps: Math.hypot(atCell[0] - isl.elevator[0], atCell[1] - isl.elevator[1]), onSand: isl.floorCells.some(([x, y]) => x === atCell[0] && y === atCell[1]), armed: u.liftArmed, buses: a.areaBuses.size };
+  return { skipped: false, riding, blocked, held, place, under, pickups, routeSeabed, route2, seabedSaid, guideAtLift, upRide, back: u.place, area: u.area.kind, at: g.playerPos, lift: isl.elevator.map((c) => c * 3), steps: Math.hypot(atCell[0] - isl.elevator[0], atCell[1] - isl.elevator[1]), onSand: isl.floorCells.some(([x, y]) => x === atCell[0] && y === atCell[1]), armed: u.liftArmed, buses: a.areaBuses.size };
 });
 if (island.skipped) console.log('SKIP no island in this world');
 else {
@@ -378,6 +414,7 @@ else {
   check(island.place === 'seabed' && island.under === 'underwater', 'the ride arrives on the seabed, with the water');
   check(island.pickups.filter((k) => k === 'ammo').length >= 1, 'the seabed holds ammo: ' + island.pickups.join(', '));
   check(island.routeSeabed === null && JSON.stringify(island.route2) === JSON.stringify([0, 1]), 'on the seabed the compass points to the elevator');
+  check(/^Compass on\. The way up, \d+ steps?\.$/.test(island.seabedSaid) && island.guideAtLift, 'on the seabed the compass says the way up and its beep comes from the elevator: ' + island.seabedSaid);
   check(island.upRide === 'ride' && island.back === 'world' && island.area === 'island' && island.onSand && island.steps >= 4 && island.steps <= 6, `the elevator up brings you back onto the island, on the sand a few steps from the lift, as in Island Mode (${island.steps.toFixed(1)} steps)`);
 }
 

@@ -67,8 +67,20 @@ const LOOP_WET_KEEP = 32e6;
 // - LIMITER: a compressor set as a soft limiter, only peaks near the top are
 //   held down; below its threshold it does nothing at all.
 const MASTER_LEVEL = 0.85;
-const MASTER_LEVEL_3D = 1.0;
+// (Web 6.3.3, Russell, 21 November 2026: the iPhone static, still there after 6.3.1.)
+// Measured at the output in a world of Ultimate Mode and Chaos: before the limiter the
+// peaks reached 1.4 to 2.2 of full scale, and the limiter was holding the whole game down
+// by 4 to 8 decibels much of the time, and still let a few samples out over full scale,
+// which clip: a limiter that hard at work crackles on the edges of every sound. And the
+// browser's compressor quietly adds a makeup gain of its own (1.1475, about 1.2 decibels,
+// measured: the spec's DynamicsCompressor does it), so "below its threshold it does nothing
+// at all" was never true: everything came out louder, and nearer the top. Now the makeup
+// gain is undone after it (LIMITER_TRIM), and Ultimate Mode's level comes down to every
+// other mode's: the game is about 1 decibel quieter, Ultimate and Chaos's worlds about 2.5,
+// and the limiter seldom has anything to do (Russell chose this, knowing it is quieter).
+const MASTER_LEVEL_3D = 0.85;                     // (was 1.0)
 const LIMITER = { threshold: -3, knee: 3, ratio: 20, attack: 0.002, release: 0.15 };
+const LIMITER_TRIM = 1 / 1.1475;                  // undoes the compressor's own makeup gain
 // Outside Ultimate Mode, a one-shot stopped to make room for a newer one is faded
 // out over this many milliseconds instead of being cut, which clicked.
 const CULL_FADE_MS = 40;
@@ -271,7 +283,7 @@ function newContext() {
 }
 
 // The end of the chain: the master gain, then the limiter, then the speakers.
-function outChain(ctx, level) {
+export function outChain(ctx, level) {
   const out = ctx.createGain();
   out.gain.value = level;
   fixedStereo(out);
@@ -284,7 +296,11 @@ function outChain(ctx, level) {
     lim.attack.value = LIMITER.attack;
     lim.release.value = LIMITER.release;
     out.connect(lim);
-    lim.connect(ctx.destination);
+    const trim = ctx.createGain();
+    trim.gain.value = LIMITER_TRIM;
+    fixedStereo(trim);
+    lim.connect(trim);
+    trim.connect(ctx.destination);
   } catch (e) {
     out.connect(ctx.destination);   // (a browser without one: as before)
   }
@@ -312,6 +328,27 @@ const SENT = new WeakMap();
 // sounds placed at once (PANNER_POOL per mix, beyond which one is let go).
 const PANNERS = new WeakMap();     // mix (a GainNode) -> panners plugged into it, silent, free to take
 const PANNER_POOL = 64;
+// (Web 6.3.3, Russell, 21 November 2026: the elevator's chime was "stereo spread instead of
+// at one central point", and sometimes the characters' voices were lopsided too.) An HRTF
+// panner that is moved does not jump to its new place: it crossfades from where it last
+// played to where it is now, over about 45 milliseconds (Chromium's HRTFPanner and Safari's
+// alike). A panner handed on from the pool (6.3.1) still pointed wherever its last sound had
+// been, so the first 45 milliseconds of the next sound, its onset, the very part the ear
+// places a sound by, came from that old place and swept across: a chime on your right began
+// on your left (measured in Chromium: the first 10 ms 5.5 dB louder in the wrong ear), a
+// voice ahead of you began behind you. Now a sound is given a panner from the pool only if
+// that panner last played within PANNER_REUSE_DEG of where the new sound is; otherwise a new
+// panner, which starts exactly where it is put. When the pool is full, the panner that goes
+// is the one pointing nearest another in the pool, so the pool keeps panners pointing every way.
+const PANNER_REUSE_DEG = 8;
+const PANNER_REUSE_COS = Math.cos(PANNER_REUSE_DEG * Math.PI / 180);
+export const pannerStats = { made: 0, reused: 0, dropped: 0 };
+
+// The way a place lies, as a unit vector (a point underfoot is a step ahead, as _place has it).
+function unitDir(x, y, z) {
+  const m = Math.hypot(x, y, z);
+  return m < 0.05 ? [0, 0, -1] : [x / m, y / m, z / m];
+}
 
 export class AudioEngine {
   constructor() {
@@ -914,11 +951,27 @@ export class AudioEngine {
 
   // An HRTF panner plugged into the mix, placed at (x, y, z): a free one if there
   // is one (see PANNERS), else a new one.
-  takePanner(x, y, z) {
-    const bus = this.bus; const ctx = this.ctx;
+  // (`to`, web 6.3.3: the mix to plug it into, if not the usual one: the output itself
+  // for a placed sound heard clear of the 3D world's muffle and fade, the compass's guide.)
+  takePanner(x, y, z, to = null) {
+    const bus = to || this.bus; const ctx = this.ctx;
     const free = PANNERS.get(bus);
-    let p = free && free.pop();
+    let p = null;
+    if (free && free.length) {
+      // The free panner that last played nearest this place, if one is near enough
+      // (see PANNER_REUSE_COS): a panner pointing elsewhere would start the sound there.
+      const [ux, uy, uz] = unitDir(x, y, z);
+      let best = -1; let bestCos = PANNER_REUSE_COS;
+      for (let i = free.length - 1; i >= 0; i--) {
+        const d = free[i].__dir;
+        if (!d) continue;
+        const c = ux * d[0] + uy * d[1] + uz * d[2];
+        if (c >= bestCos) { bestCos = c; best = i; }
+      }
+      if (best >= 0) { p = free[best]; free.splice(best, 1); pannerStats.reused += 1; }
+    }
     if (!p) {
+      pannerStats.made += 1;
       p = ctx.createPanner();
       p.panningModel = 'HRTF';
       p.distanceModel = 'linear';
@@ -940,8 +993,31 @@ export class AudioEngine {
     const bus = p.__bus;
     let free = bus && PANNERS.get(bus);
     if (bus && !free) { free = []; PANNERS.set(bus, free); }
-    if (free && free.length < PANNER_POOL && bus.context === this.ctx && this.ctx.state !== 'closed') { if (!free.includes(p)) free.push(p); return; }
-    try { p.disconnect(); } catch (e) { /* already */ }
+    if (!free || bus.context !== this.ctx || this.ctx.state === 'closed') {
+      try { p.disconnect(); } catch (e) { /* already */ }
+      return;
+    }
+    if (free.includes(p)) return;
+    free.push(p);
+    if (free.length <= PANNER_POOL) return;
+    // Full: the panner least needed goes, the one pointing nearest another in the pool
+    // (6.3.3), so those left still point every way and the next sound finds one near it.
+    let worst = 0; let worstCos = -2;
+    for (let i = 0; i < free.length; i++) {
+      const a = free[i].__dir;
+      if (!a) { worst = i; break; }
+      let near = -2;
+      for (let j = 0; j < free.length; j++) {
+        const b = free[j].__dir;
+        if (j === i || !b) continue;
+        const c = a[0] * b[0] + a[1] * b[1] + a[2] * b[2];
+        if (c > near) near = c;
+      }
+      if (near > worstCos) { worstCos = near; worst = i; }
+    }
+    const [gone] = free.splice(worst, 1);
+    try { gone.disconnect(); } catch (e) { /* already */ }
+    pannerStats.dropped += 1;
   }
 
   // The world's level (a regeneration fades it out and in) and its muffling (the
@@ -1050,7 +1126,9 @@ export class AudioEngine {
   // `offset` (web 6.1.0): seconds into the recording to start from (a loop carries on
   // round from there): Battle's crowd plays a second copy of its recording half a
   // loop on (game.js BATTLE_CROWD_COPY).
-  play(name, { loops = 0, volume = 1.0, fadeMs = 0, at = null, pos = null, height = 0, areaMix = null, direct = false, send = null, keep = false, wide = false, offset = 0 } = {}) {
+  // `clear` (3D only, web 6.3.3): placed, but heard past the world's filter and fade, as
+  // a 'direct' sound is: the compass's guide, which must stand out of the frozen world's muffle.
+  play(name, { loops = 0, volume = 1.0, fadeMs = 0, at = null, pos = null, height = 0, areaMix = null, direct = false, send = null, keep = false, wide = false, offset = 0, clear = false } = {}) {
     const pair = this.entries.get(name);
     if (!pair || !pair.dry) return null;
     if (loops === -1) {
@@ -1094,7 +1172,7 @@ export class AudioEngine {
     v.keep = !!keep;
     if (this.spatial) {
       v.direct = !!direct;
-      if (pos) v.pos3 = [pos[0], height, pos[1]];
+      if (pos) { v.pos3 = [pos[0], height, pos[1]]; v.clear = !!clear && !direct; }
       else v.wide = !!wide && !direct;
       const mix = areaMix || (direct ? null : this.listenerMix);
       if (mix) v.areaMix = { ...mix };
@@ -1105,6 +1183,7 @@ export class AudioEngine {
     if (!this.spatial && this.binaural) {
       // A sound played at a place is heard from that place.
       if (at && this.relOf) { try { v.atRel = this.relOf(at) || null; } catch (e) { v.atRel = null; } }
+      if (v.atRel) v.dir = v.atRel;    // (6.3.3: so its panner is chosen for that place from the start)
       // A background in a mode that turns: it turns with the world (see _branch).
       v.wide = loops === -1 && !v.atRel && !!(this.turnsNow ? this.turnsNow() : this.turns);
       if (v.atRel && loops !== -1) {
@@ -1191,6 +1270,7 @@ export class Voice {
     this.direct = false;
     this.wide = false;        // a recording with no place that still turns with the world (AudioEngine.play, _branch)
     this.keep = false;        // a cue that is never stopped to make room for a newer one-shot (AudioEngine.play)
+    this.clear = false;       // placed, but past the 3D world's filter and fade (AudioEngine.play, web 6.3.3)
     this.jump = false;        // its next place is set at once, not glided to (see resume)
     // Web 6.0.0: sounds that go with this one (Battle Mode's crowd goes with its
     // drums): they stop when it stops and fade when it fades, and a stopAllLoops
@@ -1209,7 +1289,11 @@ export class Voice {
   // Whether this voice is placed by the panner: the world is 3D and it has a place.
   get placed() { return this.audio.spatial && !!this.pos3 && !this.direct; }
 
-  _branch(buffer, echo = false) {
+  // (`share`, web 6.3.3: the panner of this voice's clean branch, which its dull branch
+  // plays through too. The two are always at the same place, and a panner is linear, so one
+  // panner heard both exactly as two did, at half the work for the phone: an HRTF panner is
+  // the costliest thing in the game's sound, and a thing behind you kept two of them busy.)
+  _branch(buffer, echo = false, share = null) {
     const ctx = this.ctx;
     // A sound heard from a place plays its one-channel copy (web 6.0.0, see monoCopy).
     // (A wide recording is not placed: its two sides are its west and its east.)
@@ -1260,11 +1344,15 @@ export class Voice {
       wide = { west, east, lift };
       return { buffer, fade, split, gl, gr, merge, panner, wide };
     }
+    if ((this.placed || this.binPlaced) && share) {
+      merge.connect(share);
+      return { buffer, fade, split, gl, gr, merge, panner: share, wide, shared: true };
+    }
     if (this.placed || this.binPlaced) {
       // The HRTF panner places the sound; the game still sets its loudness by
       // distance itself, so the panner's own distance rolloff is turned off.
       const [x, y, z] = this.placed ? this.pos3 : [this.dir[0], 0, this.dir[1]];
-      panner = this.audio.takePanner(x, y, z);
+      panner = this.audio.takePanner(x, y, z, this.clear && this.placed ? this.audio.out : null);
       merge.connect(panner);
     } else {
       merge.connect(this.direct ? this.audio.out : this.audio.bus);
@@ -1290,6 +1378,7 @@ export class Voice {
       }
       SENT.set(panner, [x, y, z, now]);
     }
+    panner.__dir = unitDir(x, y, z);     // (where it points now: see PANNER_REUSE_COS)
     if (panner.positionX) {
       for (const [p, v] of [[panner.positionX, x], [panner.positionY, y], [panner.positionZ, z]]) {
         if (instant) { p.cancelScheduledValues(now); p.setValueAtTime(v, now); } else glideTo(p, v, now, PLACE_GLIDE);
@@ -1301,12 +1390,16 @@ export class Voice {
   setPosition(x, z, y = 0) {
     this.pos3 = [x, y, z];
     if (!this.dry || !this.audio.spatial) return;
+    // (6.3.3) A sound that has ended, or is held, keeps its panner where it last played
+    // from: a silent panner does not move inside, whatever it is told, so it is told
+    // nothing until it plays again (resume puts it where the sound is then).
+    if (this.ended || this.stopped || this.paused) return;
     const now = this.ctx.currentTime;
     // One just carried on after being held (see resume) is put where it now is
     // at once: the player may have come a long way while it was silent.
     const jump = !!this.jump;
     this.jump = false;
-    for (const br of [this.dry, this.dull]) if (br && br.panner) Voice._place(br.panner, x, y, z, now, jump, true);
+    for (const br of [this.dry, this.dull]) if (br && br.panner && !br.shared) Voice._place(br.panner, x, y, z, now, jump, true);
   }
 
   // Which areas' echoes a placed sound rings in (3D): { areaId: weight }.
@@ -1368,7 +1461,7 @@ export class Voice {
     if (buf && this.pair.dry.frames > BIG_FRAMES) a._noteBig(dryKey);
     this.dry = this._branch(buf);
     const dullBuf = this.pair.dull ? a.buffers.get('dull:' + this.name) : null;
-    if (dullBuf && a.room !== 'tunnel') this.dull = this._branch(dullBuf);
+    if (dullBuf && a.room !== 'tunnel') this.dull = this._branch(dullBuf, false, this.dry.panner || null);
     // The echo. A looping sound gets its own (see AudioEngine._loopWet), played in
     // step with it, so it stops, pauses and fades with it as the desktop's does.
     // Anything else sends into the room's convolver; a loop sound played once gets
@@ -1499,7 +1592,8 @@ export class Voice {
       // (6.3.0: the panner too. Left connected to the mix, it stayed in the audio
       // graph for good, one for every placed sound ever played. 6.3.1: handed on to
       // the next sound instead of unplugged, see PANNERS.)
-      if (br.panner) { this.audio.givePanner(br.panner); br.panner = null; }
+      if (br.panner && !br.shared) this.audio.givePanner(br.panner);
+      br.panner = null;
       if (br.wide) {
         for (const n of [br.wide.west, br.wide.east, br.wide.lift]) { try { n.disconnect(); } catch (e) { /* already */ } }
       }
@@ -1553,7 +1647,9 @@ export class Voice {
   _binPanner(br) {
     if (br.panner) return br.panner;
     this._toMono(br);
-    const p = this.audio.takePanner(this.dir[0], 0, this.dir[1]);
+    const share = br === this.dull && this.dry && this.dry.panner ? this.dry.panner : null;
+    const p = share || this.audio.takePanner(this.dir[0], 0, this.dir[1]);
+    if (share) br.shared = true;
     if (br.wide) {
       try { br.gl.disconnect(br.wide.west); br.gr.disconnect(br.wide.east); } catch (e) { /* already */ }
       // (6.3.0: the wide pair's own panners go too, not only their way out.)
@@ -1615,7 +1711,10 @@ export class Voice {
       for (const br of [this.dry, this.dull]) {
         if (!br) continue;
         const had = !!br.panner;
-        Voice._place(this._binPanner(br), this.dir[0], 0, this.dir[1], now, instant || !had, true);
+        // (6.3.3: an ended or held sound's panner stays where it last played from, as in setPosition.)
+        if (this.ended || this.stopped || (had && this.paused)) continue;
+        const p = this._binPanner(br);
+        if (!br.shared) Voice._place(p, this.dir[0], 0, this.dir[1], now, instant || !had, true);
       }
       if (first) instant = true;
       // How far behind you it is heard: by the way you face now.
@@ -1711,6 +1810,39 @@ export class Voice {
     if (!this.paused || this.stopped) return;
     this.paused = false;
     this.jump = true;
+    this._reaim(now);
     this._startSources(this.offset, now);
+  }
+
+  // (6.3.3) Before a held sound plays again: each of its panners is put where the sound
+  // is now, and one that last played far from there (PANNER_REUSE_COS) is swapped for one
+  // that did not, so the sound does not start from where it was when it was held.
+  _reaim(now) {
+    let at = null;
+    if (this.placed && this.pos3) at = this.pos3;
+    else if (this.binPlaced) at = [this.dir[0], 0, this.dir[1]];
+    if (!at) return;
+    const [ux, uy, uz] = unitDir(at[0], at[1], at[2]);
+    for (const br of [this.dry, this.dull]) {
+      if (!br || !br.panner) continue;
+      if (br.shared) {
+        // (It plays through the clean branch's panner: follow it if that one was swapped.)
+        if (this.dry && this.dry.panner && br.panner !== this.dry.panner) {
+          try { br.merge.disconnect(br.panner); } catch (e) { /* already */ }
+          br.panner = this.dry.panner;
+          br.merge.connect(br.panner);
+        }
+        continue;
+      }
+      const d = br.panner.__dir;
+      if (d && ux * d[0] + uy * d[1] + uz * d[2] < PANNER_REUSE_COS) {
+        const was = br.panner.__bus || null;
+        try { br.merge.disconnect(br.panner); } catch (e) { /* already */ }
+        this.audio.givePanner(br.panner);
+        br.panner = this.audio.takePanner(at[0], at[1], at[2], was);
+        br.merge.connect(br.panner);
+      } else Voice._place(br.panner, at[0], at[1], at[2], now, true);
+    }
+    this.jump = false;
   }
 }

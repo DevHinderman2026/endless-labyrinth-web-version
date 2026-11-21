@@ -164,9 +164,10 @@ const storm = await page.evaluate(async () => {
   const out = { cover: ab.cover, strike: ab.strike, d: Math.hypot(ab.strike[0], ab.strike[1]) };
   out.thunder = t.at.filter(([n]) => /thunder/.test(n)).map(([, p]) => p);
   out.ducked = g._abDuckFactor();
-  out.pinned = [1, 2, 3, 4].every((k) => [...window.__el.audio.pins.values()].includes(`dry:event_sfx_file_ab_thunder_${k}`));
-  const names = []; for (let k = 0; k < 12; k++) { ab.nextStrike = 0; g.updateAbyss(1 / 30); names.push(ab.lastThunder); }
-  out.varied = new Set(names).size >= 3 && names.every((x, i) => i === 0 || x !== names[i - 1]);
+  out.pinned = [1, 3, 4].every((k) => [...window.__el.audio.pins.values()].includes(`dry:event_sfx_file_ab_thunder_${k}`))
+    && ![...window.__el.audio.pins.values()].some((v) => v.includes('ab_thunder_2'));
+  const names = []; for (let k = 0; k < 30; k++) { ab.nextStrike = 0; g.updateAbyss(1 / 30); names.push(ab.lastThunder); }
+  out.varied = new Set(names).size === 3 && !names.includes('ab_thunder_2') && names.every((x, i) => i === 0 || x !== names[i - 1]);
   out.storm = [a.storm > 0, b.storm > 0, c.storm > 0];
   out.spots = a.stormSpot && b.stormSpot ? [Math.hypot(a.stormSpot[0] - b.stormSpot[0], a.stormSpot[1] - b.stormSpot[1]), Math.hypot(a.stormSpot[0] - ab.strike[0], a.stormSpot[1] - ab.strike[1])] : null;
   const da = Math.hypot(a.x - ab.strike[0], a.y - ab.strike[1]);
@@ -185,11 +186,11 @@ const storm = await page.evaluate(async () => {
 check(storm.cover === 5 && storm.d >= 44.9 && storm.d <= 75.1, 'lightning strikes 45 to 75 units (15 to 25 steps) off, and covers your steps for five seconds: ' + storm.d.toFixed(1));
 check(storm.spots && storm.spots[0] >= 8.9 && storm.spots[1] >= 5.9 && storm.spots[1] <= 18.1, 'each creature runs to its own spot around the strike, three steps or more from the others: ' + JSON.stringify(storm.spots));
 check(storm.thunder.length === 1 && Math.hypot(storm.thunder[0][0] - storm.strike[0], storm.thunder[0][1] - storm.strike[1]) < 0.01, 'the thunder is heard from where it strikes');
-check(storm.ducked < 0.5 && storm.pinned && storm.varied, 'each strike is one of four thunderclaps, never the same twice running; the wind and hums dip under it; the claps are held in memory: ' + JSON.stringify([storm.ducked, storm.pinned, storm.varied]));
+check(storm.ducked < 0.5 && storm.pinned && storm.varied, 'each strike is one of three thunderclaps (the dry one gone, 6.3.3), never the same twice running; the wind and hums dip under it; the claps are held in memory: ' + JSON.stringify([storm.ducked, storm.pinned, storm.varied]));
 check(storm.storm[0] && storm.storm[1] && !storm.storm[2] && storm.toward, 'creatures near the strike run toward it; one far off does not: ' + JSON.stringify(storm.storm));
 check(storm.coveredStep, 'a step during the cover is not heard');
 check(storm.coverAfter === 0 && storm.heardAgain, 'once the five seconds are over, your steps are heard again');
-check(JSON.stringify(storm.gaps) === JSON.stringify([[6, 10], [7, 12], [9, 16], [16, 20], [20, 20]]), 'strikes every 6 to 10 seconds, less often every three cases, never more than 20 apart (back in 6.3.2): ' + JSON.stringify(storm.gaps));
+check(JSON.stringify(storm.gaps) === JSON.stringify([[6, 10], [7, 12], [9, 15], [15, 15], [15, 15]]), 'strikes every 6 to 10 seconds, less often every three cases, never more than 15 apart (6.3.3): ' + JSON.stringify(storm.gaps));
 
 // ------------------------------------------------------------------ glass cases
 const cases = await page.evaluate(async () => {
@@ -199,7 +200,7 @@ const cases = await page.evaluate(async () => {
   t.calm();
   g.playerPos = [0, 0];
   const c = ab.cases[0];
-  c.x = 0; c.y = -40; c.near = false; c.value = 20; c.lightning = false;
+  c.x = 0; c.y = -40; c.near = false; c.value = 20; c.lightning = false; c.life = false;
   for (const x of ab.creatures) t.put(x, 500, 500);
   g.updateAbyss(1 / 30);
   out.hum = !!(c.voice && c.voice.busy);
@@ -225,12 +226,12 @@ const cases = await page.evaluate(async () => {
   out.closer = Math.hypot(a.x - g.playerPos[0], a.y - g.playerPos[1]) < a0 - 9;
   t.frames(2.5); out.chargeOver = a.charge <= 0;
   // A smash under the lightning's cover: no charge.
-  const d = ab.cases.find((x) => !x.smashed); d.value = 10; d.lightning = false;
+  const d = ab.cases.find((x) => !x.smashed); d.value = 10; d.lightning = false; d.life = false;
   t.put(a, d.x + 20, d.y); ab.cover = 3; ab.grace = 1;
   t.lineUp(d); ab.cover = 3; g.input('space');
   out.coveredSmash = a.charge === 0;
   // A lightning case: a strike instead of a charge.
-  const e = ab.cases.find((x) => !x.smashed); e.value = 10; e.lightning = true;
+  const e = ab.cases.find((x) => !x.smashed); e.value = 10; e.lightning = true; e.life = false;
   ab.cover = 0; t.put(a, e.x + 20, e.y); t.lineUp(e);
   t.played.length = 0; ab.grace = 1; g.input('space');
   out.lightningCase = t.played.some((n) => /thunder/.test(n)) && a.charge === 0 && a.storm > 0;

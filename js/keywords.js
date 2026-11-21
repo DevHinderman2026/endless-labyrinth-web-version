@@ -86,6 +86,9 @@ const SENTENCES = [
   // Ultimate Mode (web 2.0.0): the compass is C on a keyboard.
   [/To turn it on, put one finger on the screen and hold it still for about one second; hold again to turn it off\. This works in Ultimate Mode only: in every other mode a still finger does nothing\./g,
     'To turn it on, press C; press C again to turn it off. This works in Ultimate Mode only.'],
+  // Web 6.3.3: the compass as the guide.
+  [/To turn it on, put one finger on the screen and hold it still for about one second, or press C on a keyboard; do it again to turn it off\. In every other mode a still finger does nothing\./g,
+    'To turn it on, press C; press C again to turn it off. This works in Ultimate Mode only.'],
   // Web 4.0.0: the world turns with you. On a computer the left and right arrows
   // turn, a press for a quick turn and a hold to turn freely; the up and down
   // arrows step, and held they run and walk back, which a keyboard does in no
@@ -167,6 +170,7 @@ const PHRASES = [
   [/\ba double tap starts one\b/g, 'Enter starts one'],
   [/\bso a double tap starts the run\b/g, 'so Enter starts the run'],
   [/\bA double tap on an island tells you\b/g, 'Enter on an island tells you'],
+  [/\ba double tap describes the world\b/g, 'Enter describes the world'],
   [/\bA double tap tells you\b/g, 'Enter tells you'],
   [/\ba double tap tells you\b/g, 'Enter tells you'],
   [/\bdouble tap on the island\b/g, 'press Enter on the island'],

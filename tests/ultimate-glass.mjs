@@ -399,7 +399,8 @@ const many = await page.evaluate(async () => {
     const c = { area, pos: [c0.pos[0], c0.pos[1]], voice: null, near: true, smashed: false };
     u.cases = [c];
     const full = i % 3 === 0; const compass = i % 5 === 0;
-    u.hp = full ? START_HP : 40 + (i % 50); u.compass.on = compass; u.ammo = 3; u.items = 1;
+    // (6.3.3: no points while the compass has the world frozen; the guide alone does not stop them.)
+    u.hp = full ? START_HP : 40 + (i % 50); u.compass.on = compass; u.compass.frozen = compass; u.ammo = 3; u.items = 1;
     const b = { ammo: u.ammo, hp: u.hp, items: u.items, points: u.points, wp: u.worldPoints, time: u.worldTime };
     L.spoken.length = 0;
     g._utAttack();
@@ -418,7 +419,7 @@ const many = await page.evaluate(async () => {
     if (k === 'health' && !(only('hp') && d.hp === CASE_HEALTH && said === `${d.hp} health.`)) out.bad.push('health ' + JSON.stringify(d) + said);
     if (/\b(enem|chaser|hunter)/i.test(said)) out.bad.push('said who comes');
   }
-  u.compass.on = false;
+  u.compass.on = false; u.compass.frozen = false;
   L.stop();
   out.words = [...out.words]; out.shares = CASE_HUNTERS;
   // Away from here before the next section: a clean world.

@@ -91,6 +91,12 @@ await page.evaluate(async () => {
     g.playerPos = [p[0], p[1]]; u.area = area; u.place = 'world';
     g._utRefreshRooms(); g._utListenerMix();
   };
+  // (6.3.3) Exactly `d` units from them (they stand with room all round: clearance 6).
+  t.goAt = (area, d) => {
+    const u = g.ut; const w = area.who;
+    g.playerPos = [w.pos[0] + d, w.pos[1]]; u.area = area; u.place = 'world';
+    g._utRefreshRooms(); g._utListenerMix();
+  };
 });
 
 // ------------------------------------------------------------------ where they stand, and greetings
@@ -125,11 +131,16 @@ check(r1.greets >= 2 && r1.placed && r1.state === 'greet' && r1.device === 0, 'i
 // ------------------------------------------------------------------ the story, then the gift
 const r2 = await page.evaluate(async () => {
   const g = window.__el.game; const t = window.__t; const u = g.ut; const a = t.zone; const w = a.who;
-  t.goTo(a, 4.5);
+  // (Web 6.3.3, Russell: the story and the gift begin when you step onto their square or
+  // the one beside it, not two steps away.) Two steps off, they only greet.
+  t.goAt(a, 5.0);
+  for (let i = 0; i < 30; i++) { t.frames(0.1); await new Promise((r) => setTimeout(r, 10)); }
+  const twoSteps = w.state;
+  t.goAt(a, 2.5);
   t.played.length = 0; t.said.length = 0;
   const ammo = u.ammo; const hp = u.hp; const items = u.items;
   for (let i = 0; i < 200 && w.state !== 'done'; i++) { t.frames(0.1); await new Promise((r) => setTimeout(r, 30)); }
-  const out = { state: w.state, story: t.played.some((n) => /^ut_cast_.*-(story|hint)-/.test(n)), giftLine: t.played.some((n) => /^ut_cast_.*-gift-/.test(n)),
+  const out = { twoSteps, state: w.state, story: t.played.some((n) => /^ut_cast_.*-(story|hint)-/.test(n)), giftLine: t.played.some((n) => /^ut_cast_.*-gift-/.test(n)),
     words: u.lastGift && u.lastGift.words, said: t.said.slice(), group: w.ch.group, dAmmo: u.ammo - ammo, dHp: u.hp - hp, dItems: u.items - items,
     heard: (g.scores.settings.storyHeard || []).includes(w.told.id) };
   // A second visit: nothing more this world.
@@ -138,7 +149,8 @@ const r2 = await page.evaluate(async () => {
   out.after = t.played.filter((n) => /^ut_cast_/.test(n)).length;
   return out;
 });
-check(r2.story && r2.giftLine && r2.state === 'done', 'within two steps they tell a story line, then give a gift with a line of their own: ' + JSON.stringify([r2.story, r2.giftLine, r2.state]));
+check(r2.twoSteps === 'greet', 'two steps away they only greet: the story waits until you are with them (' + r2.twoSteps + ')');
+check(r2.story && r2.giftLine && r2.state === 'done', 'on their square or the one beside it they tell a story line, then give a gift with a line of their own: ' + JSON.stringify([r2.story, r2.giftLine, r2.state]));
 check(/^You've just received /.test(r2.words || '') && r2.said.includes(r2.words), 'the in-run voice says what you received: ' + r2.words);
 check(r2.heard, 'the story line is remembered as heard (saved with the settings)');
 check(r2.after === 0, 'one gift a character, each world: afterwards they are quiet');
@@ -150,7 +162,7 @@ const r3 = await page.evaluate(async () => {
   let a = zones[0];
   if (!a) { t.start(window.__fake); a = g.ut.world.areas.find((x) => x.who); }
   const uu = g.ut; const w = a.who;
-  t.goTo(a, 4.5);
+  t.goAt(a, 2.5);
   for (let i = 0; i < 60 && w.state === 'greet'; i++) { t.frames(0.1); await new Promise((r) => setTimeout(r, 20)); }
   const out = { telling: w.state };
   // Walk off, to the far side of the zone.
@@ -162,7 +174,7 @@ const r3 = await page.evaluate(async () => {
   for (let i = 0; i < 24; i++) { t.frames(0.5); await new Promise((r) => setTimeout(r, 20)); }
   out.callbacks = t.played.filter((n) => /^ut_cast_.*-back-/.test(n)).length;
   out.stillWaiting = w.state;
-  t.goTo(a, 4.5);
+  t.goAt(a, 2.5);
   for (let i = 0; i < 100 && w.state !== 'done'; i++) { t.frames(0.1); await new Promise((r) => setTimeout(r, 20)); }
   out.gave = w.state;
   return out;

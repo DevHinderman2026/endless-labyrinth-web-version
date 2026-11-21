@@ -192,7 +192,7 @@ for (const floor of ['snow', 'water', 'ice', 'mud', 'glass']) {
   r = await inGame(`return { step: G.bStepSound(), has: G.audio.has(G.bStepSound()), smash: G.bSnd.smash, knock: G.audio.has('event_case_knock') };`);
   check(new RegExp('step_' + floor + '_[1-4]').test(r.step) && r.has, `a ${floor} floor's footsteps are its own recordings: ${r.step}`);
 }
-check(/evt_glass_smash/.test(r.smash) && r.knock, 'a smash is the glass recording, and the knock is in the packs: ' + r.smash);
+check(r.smash === 'ut_glass_smash' && r.knock, 'a smash is the new glass recording (6.3.3: Broken Glass Impact, in the ultimate pack), and the knock is in the packs: ' + r.smash);
 
 // ------------------------------------------------------------ kinds of creature
 await start(await baseEvent('collect', { 'hazards.count': 1, 'hazards.behavior': 'statue', 'hazards.speed': 2.0, 'hazards.on_touch': 'lose_points',

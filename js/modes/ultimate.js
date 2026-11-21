@@ -100,6 +100,15 @@ export const WELL_DAMAGE = 25;                  // ...with no more damage than t
 export const CHASER_SPEED = 2.2;                // units a second at the start (was 2.6; the player's run is about 14)
 export const CHASER_TOUCH = 1.6;
 export const CHASER_PUSH = 15.0;                // a chaser that struck is set back this far
+// Web 6.3.3 (Russell, 21 November 2026: late in a run, "there's so many enemies, I can't
+// even get around them, I'm always stuck at a wall"). With up to ENEMIES_MAX chasers
+// in an area all coming straight at you, they closed in from every side and pinned you.
+// Now at most CHASERS_AT_ONCE of an area's chasers come for you at once (hunters woken
+// by glass count among them), the nearest waiting ones first; the rest wait their turn,
+// wandering their area at least CHASER_KEEP_OFF from you, and never strike. Shoot one
+// and the next comes, as Battle Mode's waves do. They still get faster and hit harder.
+export const CHASERS_AT_ONCE = 3;
+export const CHASER_KEEP_OFF = 12.0;            // units: four steps
 export const HIT_COOLDOWN = 2.0;                // between strikes (was 1.0)
 export const RESPAWN_ENEMY = [8, 15];           // seconds after a kill
 export const RESPAWN_PICKUP = [10, 20];         // ammo and credits, out in the world
@@ -161,6 +170,17 @@ export const COMPASS_BEEP_TURNING = 0.16;       // while you turn with the compa
 // with it off does.
 export const COMPASS_MAX_ON = 30;
 export const COMPASS_REST = 15;
+// Web 6.3.3 (Russell, 21 November 2026: the compass's descriptions were "way too long"
+// to get you to the safe zone; "there needs to be a better direct way"). The compass is
+// a guide now: a soft beep from the next turn of the walking route, which you walk to;
+// reach that turn and it beeps from the one after, until you are there. It comes on
+// with the world frozen, as it always has, for COMPASS_MAX_ON seconds of freezing at
+// most (then COMPASS_REST seconds before it can freeze again): you turn and listen, and
+// a double tap describes the world as the compass used to. Your first step lets the
+// world move again, and the guide carries on while you play. It says only the goal and
+// how many steps: "Compass on. Safe zone, 23 steps."
+export const GUIDE_LEVEL = 0.6;                 // the guide's beep (the compass beep's old level)
+const GOAL_WORDS = { 'the safe zone': 'Safe zone', 'the way out': 'The way out', 'the bus': 'The bus', 'the way up': 'The way up' };
 // ---- turning (web 4.0.0; shared with every mode that turns since 5.0.0: js/turning.js).
 // The facing is an angle, clockwise from north.
 export const AIM_HALF = 30.5 * DEG;              // the aim: this far either side of straight ahead (web 4.1.0: 30 degrees, and the half over so that one exactly on the line is in; it was 45.5, the front quarter. A quick turn's steps are 30 degrees, so some step always has an enemy within 15)
@@ -414,7 +434,8 @@ export const CHAOS_SLIDE_TIME = 30;
 // (Web 6.3.0, Russell, 20 November 2026: the time in a chaos world stage was not fair
 // beside the rest of chaos, where most things you do earn time.) Everything that
 // scores points in a chaos world stage now puts time on the chaos clock as well:
-// only when it scores (not in a safe zone, not with the compass on), as the points.
+// only when it scores (not in a safe zone, not while the compass holds the world
+// frozen), as the points.
 export const CHAOS_KILL_TIME = { chaser: 20, thrower: 30 };   // seconds a kill
 export const CHAOS_PICKUP_TIME = 10;            // seconds: ammo or a potion picked up
 export const CHAOS_CHEST_TIME = 30;             // seconds: a chest's points
@@ -426,7 +447,10 @@ export const CHAOS_CHEST_TIME = 30;             // seconds: a chest's points
 // away while they talk and they talk on; the gift waits for you, and they call you
 // back now and then. One gift a character, each world. Their lines are always
 // heard, whatever the Speech setting: they are found by ear.
-export const CAST_REACH = 6.0;                  // two steps
+// Web 6.3.3 (Russell, 21 November 2026): a character begins their story and gives the
+// gift when you step onto their square or the one beside it, as you pick up an item
+// (PICKUP_REACH). Until then it was two steps away (6.0), so you never stood with them.
+export const CAST_REACH = 3.2;
 export const CAST_GREET_EVERY = [4.0, 7.0];     // seconds between greetings
 export const CAST_CALLBACK_EVERY = [5.0, 8.0];  // between call-backs, while the gift waits
 export const CAST_LEVEL = 1.0;                  // beside them: the in-run voice's level
@@ -635,7 +659,7 @@ const mixin = {
       world: null, area: null, areaSounds: new Map(), enemies: [], projectiles: [], towerItems: new Map(),
       pickups: [], timers: [], respawn: new Map(), potionDue: new Map(), hitCooldown: 0, lowWarned: false,
       place: 'world', ride: null, seabed: null, lift: null, liftArmed: false, dingTimer: 0,
-      compass: { on: false, t: 0, used: 0, rest: 0, lock: 0 }, prox: 0, steps: [],
+      compass: { on: false, t: 0, used: 0, rest: 0, lock: 0, frozen: false, goal: null }, prox: 0, steps: [],
       face: 0, turn: null, turnWas: null,   // the way you face (radians clockwise from north), the turn in progress, if any, and a held turn only just let go (_utTurnEnd)
       voices: new Set(), shots: new Set(),
       chaos: false,
@@ -691,7 +715,7 @@ const mixin = {
     u.shots.clear();
     if (u.ride && u.ride.voice) u.ride.voice.stop();
     if (u.bus && u.bus.pullVoice) u.bus.pullVoice.stop();
-    if (u.compass.on) { u.compass.on = false; this.audio.setMuffle(false, 0.01); }
+    if (u.compass.on) { u.compass.on = false; u.compass.frozen = false; this.audio.setMuffle(false, 0.01); }
     this.audio.listenerMix = null;
     if (this.audio.spatial) this.audio.spatialOff({ now: true });
     if (this.audio.trimBig) this.audio.trimBig();
@@ -960,11 +984,12 @@ const mixin = {
     return randint(AMMO_SHOTS[0], AMMO_SHOTS[1]);
   },
 
-  // Points earned now: nothing in a safe zone, nothing while the compass is on.
+  // Points earned now: nothing in a safe zone, nothing while the compass has the world
+  // frozen (web 6.3.3: with the world moving again, the guide on, points are earned).
   // In a chaos world stage, `time` seconds go on the chaos clock with the points.
   _utScore(base, { safeOk = false, time = 0 } = {}) {
     const u = this.ut;
-    if (u.compass.on || (this._utInSafeZone() && !safeOk)) return;
+    if (u.compass.frozen || (this._utInSafeZone() && !safeOk)) return;
     const got = Math.round(base * this._utMultiplier());
     u.points += got;
     u.worldPoints += base;
@@ -1144,10 +1169,11 @@ const mixin = {
   // (`keep`: a cue that is never stopped to make room for newer one-shots; see
   // AudioEngine.play.)
   // (`wide`: a recording with no place that still turns with the world as you turn.)
-  _utPlay(name, pos, { loops = 0, volume = 1.0, fadeMs = 0, height = 0, direct = false, send = null, keep = false, wide = false } = {}) {
+  // (`clear`, web 6.3.3: placed, but heard past the world's muffle and fade: the compass's guide.)
+  _utPlay(name, pos, { loops = 0, volume = 1.0, fadeMs = 0, height = 0, direct = false, send = null, keep = false, wide = false, clear = false } = {}) {
     const u = this.ut;
     const rel = this._utRel(pos);
-    const v = this.audio.play(name, { loops, volume: 0.0, fadeMs, pos: pos ? rel : null, height, areaMix: pos ? this._utMixAt(pos) : null, direct, send, keep, wide });
+    const v = this.audio.play(name, { loops, volume: 0.0, fadeMs, pos: pos ? rel : null, height, areaMix: pos && !clear ? this._utMixAt(pos) : null, direct, send, keep, wide, clear });
     if (!v) return null;
     if (pos) v.setSpatial(volume, rel[0], rel[1], this._behind(pos), height); else v.setVolume(volume, volume);
     if (loops === -1) u.voices.add(v); else u.shots.add(v);
@@ -1264,11 +1290,12 @@ const mixin = {
       face: (a, instant) => this._utFace(a, instant),
       tick: (k) => this._utTick(k),
       click: () => this._utClick(),
-      // Landed on its step: with the compass on, what lies ahead.
-      landed: (k) => {
+      // Landed on its step: with the compass on, the guide beeps at once for the new way.
+      // (Until web 6.3.3 every landing also described what lay that way: Russell, "the
+      // descriptions are way too long". A double tap with the world frozen says it now.)
+      landed: () => {
         if (!u.compass.on) return;
-        u.compass.t = COMPASS_BEEP_EVERY;   // a beep at once, for the new way
-        this.tts.speak(this._utCompassWords(k), { interrupt: true });
+        u.compass.t = COMPASS_BEEP_EVERY;
       },
     });
   },
@@ -1381,7 +1408,7 @@ const mixin = {
   // Struck: the damage of the moment, never over the cap; the run ends at zero.
   _utHurt(by) {
     const u = this.ut;
-    if (u.safe > 0 || u.hitCooldown > 0 || u.compass.on) return;
+    if (u.safe > 0 || u.hitCooldown > 0 || u.compass.frozen) return;
     if (u.place === 'bus' || u.place === 'slide') return;   // aboard the bus or on the slide, nothing reaches you
     const dmg = this._utDamage();
     u.hp = Math.max(0, u.hp - dmg);
@@ -1564,11 +1591,13 @@ const mixin = {
       return;
     }
     this._utUpdateTurn(dt);
-    if (u.compass.on) {
-      this._utCompassTick(dt);
+    if (u.compass.on && u.compass.frozen) {
+      this._utGuideTick(dt);
       this._utUpdateSounds(dt);   // the world keeps breathing under the muffle
       return;
     }
+    // (Web 6.3.3) With the world moving again, the guide carries on while you play.
+    if (u.compass.on) this._utGuideTick(dt);
     if (u.place === 'ride') { this._utUpdateRide(dt); return; }
     if (u.place === 'slide') {
       // On the water slide: the world goes on around you, you cannot act.
@@ -1619,9 +1648,15 @@ const mixin = {
       let area = t.area;
       if (!area) {
         let pool = t.danger ? w.areas.filter((a) => a.kind !== 'event') : w.areas.filter((a) => a.kind !== 'event' || t.kind !== 'ammo');
-        // A cartridge comes back in an area without one, while there is such an area.
-        if (t.kind === 'ammo') { const empty = pool.filter((a) => !u.pickups.some((p) => p.kind === 'ammo' && p.area === a)); if (empty.length) pool = empty; }
-        area = choice(pool.length ? pool : w.areas);
+        // A cartridge comes back in an area without one, while there is such an area;
+        // first of all the battle or island area you are fighting in, if it has none
+        // (web 6.3.3, Russell, 21 November 2026: late in a run he "couldn't even find a
+        // single shot of ammo" there). It still lies away from you, as every cartridge does.
+        const yours = u.place === 'world' ? u.area : null;
+        const none = (a) => !u.pickups.some((p) => p.kind === 'ammo' && p.area === a);
+        if (t.kind === 'ammo' && yours && (yours.kind === 'battle' || yours.kind === 'island') && none(yours)) area = yours;
+        else if (t.kind === 'ammo') { const empty = pool.filter(none); if (empty.length) pool = empty; }
+        if (!area) area = choice(pool.length ? pool : w.areas);
       }
       // No spot found this time (a crowded area): tried again in a moment.
       if (!this._utSpawnPickup(t.kind, area, { safe: !!t.safe })) { t.at = 2.0; u.timers.push(t); }
@@ -1640,6 +1675,22 @@ const mixin = {
   },
 
   // ---------------------------------------------------------------- enemies, every frame
+  // Which of your area's chasers come for you now (6.3.3, see CHASERS_AT_ONCE): those
+  // already coming, and hunters, and while there is room, the nearest of those waiting.
+  _utPickComing(a) {
+    const u = this.ut;
+    const mine = u.enemies.filter((e) => e.kind !== 'thrower' && e.area === a);
+    let n = mine.filter((e) => e.hunter || e.coming).length;
+    if (n >= CHASERS_AT_ONCE) return;
+    const waiting = mine.filter((e) => !e.hunter && !e.coming)
+      .sort((p, q) => dist2([p.x, p.y], this.playerPos) - dist2([q.x, q.y], this.playerPos));
+    for (const e of waiting) {
+      if (n >= CHASERS_AT_ONCE) break;
+      e.coming = true;
+      n += 1;
+    }
+  },
+
   _utUpdateEnemies(dt) {
     const u = this.ut;
     const steps = u.steps; u.steps = [];
@@ -1647,16 +1698,37 @@ const mixin = {
     // a thrower only races for items, a chaser wanders (Russell, 8 Nov: on the bus
     // the throwers kept throwing).
     const here = u.place === 'world' ? u.area : null;
+    if (here) this._utPickComing(here);
     for (const e of [...u.enemies]) {
       if (e.kind === 'thrower') { this._utUpdateThrower(e, dt, e.area === here); continue; }
       const a = e.area;
       const was = [e.x, e.y];
+      if (a !== here) e.coming = false;     // (you left: it waits its turn again)
       // A chaser woken by breaking glass hunts you only while you are on the ground
       // in its area: get out of the area (or onto a bus, or down the lift) and it
       // gives up and is gone.
       if (e.hunter && a !== here) { this._utDropHunter(e); continue; }
       if (e.hunter) e.age += dt;
-      if (a === here) {
+      if (a === here && !e.hunter && !e.coming) {
+        // Waiting its turn (6.3.3): it wanders its area, never toward you, and backs
+        // away if you come within CHASER_KEEP_OFF of it.
+        const ax = e.x - this.playerPos[0]; const ay = e.y - this.playerPos[1];
+        const ad = Math.hypot(ax, ay);
+        if (ad < CHASER_KEEP_OFF && ad > 1e-6) {
+          const go = e.speed * 0.6 * dt;
+          e.x += ax / ad * go; e.y += ay / ad * go;
+          e.goal = null;
+        } else {
+          e.goalTimer -= dt;
+          if (!e.goal || e.goalTimer <= 0 || dist2(e.goal, this.playerPos) < CHASER_KEEP_OFF) {
+            e.goal = randomFloor(u.world, a, rand, { from: this.playerPos, minDist: CHASER_KEEP_OFF + 3.0 }) || [e.x, e.y];
+            e.goalTimer = uniform(4, 9);
+          }
+          const dx = e.goal[0] - e.x; const dy = e.goal[1] - e.y;
+          const d = Math.hypot(dx, dy);
+          if (d > 0.5) { e.x += dx / d * e.speed * 0.4 * dt; e.y += dy / d * e.speed * 0.4 * dt; }
+        }
+      } else if (a === here) {
         // Straight at you; but in a labyrinth a hunter cannot come through the
         // walls, so it follows the corridors, square by square, the shortest way.
         let to = this.playerPos;
@@ -1685,6 +1757,7 @@ const mixin = {
       e.x = Math.max(a.x0 * CELL, Math.min(a.x1 * CELL, e.x));
       e.y = Math.max(a.y0 * CELL, Math.min(a.y1 * CELL, e.y));
       if (a !== here) continue;
+      if (!e.hunter && !e.coming) continue;   // (6.3.3: one waiting its turn never strikes)
       let d = dist2([e.x, e.y], this.playerPos);
       for (const [p, q] of steps) d = Math.min(d, pointToSegment(was[0], was[1], p, q));
       if (d < CHASER_TOUCH && u.safe <= 0 && u.hitCooldown <= 0) {
@@ -2573,10 +2646,10 @@ const mixin = {
       return;
     }
     // The reward, one of five (web 6.0.0: health whatever you have, on top, even over 100).
-    // (No points while the compass is on, as everywhere; so then it is not points.
-    // As things stand the compass takes the attack away altogether, so this is only a guard.)
+    // (No points while the compass holds the world frozen, as everywhere; so then it is
+    // not points. A frozen world takes the attack away altogether, so this is only a guard.)
     const kinds = ['shots', 'time', 'items'];
-    if (!u.compass.on) kinds.push('points');
+    if (!u.compass.frozen) kinds.push('points');
     kinds.push('health');
     const kind = choice(kinds);
     let words;
@@ -2760,42 +2833,57 @@ const mixin = {
   // facing the way you chose. (Until then it had a pointer of its own with four
   // positions, and the world never turned.)
   _utCompassToggle() {
-    const u = this.ut;
-    if (u.compass.on) { this._utCompassOff(); return; }
+    const u = this.ut; const c = u.compass;
+    if (c.on) { this._utCompassOff(); return; }
     if (u.place === 'ride') { this.tts.speak('Compass not available in the elevator.', { interrupt: true }); return; }
     if (u.place === 'slide') { this.tts.speak('Compass not available on the slide.', { interrupt: true }); return; }
     if (u.place === 'bus') { this.tts.speak('Compass not available on the bus.', { interrupt: true }); return; }
-    // (Resting: how long until it can come on again, in whole seconds rounded up. Russell, 19 Nov.)
-    if ((u.compass.lock || 0) > 0) { const n = Math.max(1, Math.ceil(u.compass.lock - 1e-6)); this.tts.speak(`Compass ready in ${n} ${plural(n, 'second')}.`, { interrupt: true }); return; }
-    // (Off for COMPASS_REST seconds or more: a fresh half minute.)
-    if ((u.compass.rest || 0) >= COMPASS_REST) u.compass.used = 0;
-    u.compass.on = true;
-    u.compass.t = 0;
-    this.stride = null;
-    this.audio.setMuffle(true, 0.4);
-    // The briefing, which says where the way to go is, then what lies ahead of you.
-    this.tts.speak(`Compass on. ${this._utCompassBriefing()} ${this._utCompassWords(mainIndex(u.face), true)}`, { interrupt: true });
+    // (Unfrozen for COMPASS_REST seconds or more: a fresh half minute of freezing.)
+    if ((c.rest || 0) >= COMPASS_REST) c.used = 0;
+    c.on = true;
+    c.t = 0;
+    // Web 6.3.3: it comes on with the world frozen, while there is freezing to spare
+    // (COMPASS_MAX_ON seconds in all, until it has been unfrozen COMPASS_REST seconds:
+    // see _utCompassClock). Without it, the guide simply comes on with the world moving.
+    c.frozen = !((c.lock || 0) > 0);
+    if (c.frozen) { this.stride = null; this.audio.setMuffle(true, 0.4); }
+    // The goal and how far, and nothing more (Russell, 21 Nov: "Goal and steps only").
+    const goal = this._utCompassGoal();
+    c.goal = goal.name;
+    this.tts.speak(`Compass on. ${goal.words}`, { interrupt: true });
   },
 
   _utCompassOff(quiet = false) {
     const u = this.ut;
     if (!u.compass.on) return;
+    this._utCompassThaw();
     u.compass.on = false;
-    u.compass.rest = 0;
-    this.audio.setMuffle(false, 0.4);
+    u.compass.goal = null;
     if (!quiet) this.tts.speak('Compass off.', { interrupt: true });
   },
 
-  // The compass's time limit (web 6.0.0), every frame of play: on for
-  // COMPASS_MAX_ON seconds in all, it goes off silently (only the world opening up
-  // again says so) and rests for COMPASS_REST seconds, when it cannot come on.
+  // The world moves again (web 6.3.3): your first step with the compass on, the
+  // freezing time used up, or the compass off. The guide carries on if it is on.
+  _utCompassThaw() {
+    const c = this.ut.compass;
+    if (!c.frozen) return;
+    c.frozen = false;
+    c.rest = 0;
+    this.audio.setMuffle(false, 0.4);
+  },
+
+  // The compass's time limit (web 6.0.0), every frame of play. Since 6.3.3 it limits
+  // the freezing alone: frozen for COMPASS_MAX_ON seconds in all, the world moves again
+  // without a word (only the world opening up says so), the guide carrying on, and it
+  // cannot freeze again for COMPASS_REST seconds. Unfreezing and freezing again does
+  // not start the half minute afresh: only COMPASS_REST seconds unfrozen does.
   _utCompassClock(dt) {
     const c = this.ut.compass;
     if (c.lock > 0) c.lock = Math.max(0, c.lock - dt);
-    if (c.on) {
+    if (c.on && c.frozen) {
       c.used = (c.used || 0) + dt;
       if (c.used >= COMPASS_MAX_ON) {
-        this._utCompassOff(true);
+        this._utCompassThaw();
         c.used = 0;
         c.lock = COMPASS_REST;
         c.timeouts = (c.timeouts || 0) + 1;
@@ -2804,6 +2892,94 @@ const mixin = {
       c.rest = (c.rest || 0) + dt;
       if (c.rest >= COMPASS_REST) c.used = 0;
     }
+  },
+
+  // What the compass says as it comes on (web 6.3.3): the goal and how many steps away
+  // by the walking route, "Safe zone, 23 steps." Returns { name, words }.
+  _utCompassGoal() {
+    const u = this.ut;
+    const { target, path, leg } = this._utRoute();
+    const label = GOAL_WORDS[target.name] || (target.name[0].toUpperCase() + target.name.slice(1));
+    if (u.place === 'seabed') {
+      const [sx, sy] = this._utSeabedCell(this.playerPos);
+      if (!sx && !sy) return { name: target.name, words: `${label} is here.` };
+      // (Open water, no walls: the guide leads straight there, so the steps are straight there.)
+      const n = Math.max(1, Math.round(Math.hypot(sx, sy)));
+      return { name: target.name, words: `${label}, ${n} ${plural(n, 'step')}.` };
+    }
+    if (leg && path) return { name: target.name, words: `${label}, ${path.length} ${plural(path.length, 'step')}.` };
+    const from = cellOf(this.playerPos);
+    const a = u.area;
+    const here = target.goalCell ? (target.goalCell[0] === from[0] && target.goalCell[1] === from[1]) : (a && target.isGoal && target.isGoal(a));
+    return { name: target.name, words: here ? `${label} is here.` : `No way to ${target.name} from here.` };
+  },
+
+  // Where the guide beeps from (web 6.3.3): the end of the route's first leg, which is
+  // the next turn, or the goal itself on the last leg; on the seabed the way up itself
+  // (open water: straight there). null when there is no way, or you are there.
+  _utGuidePoint() {
+    const u = this.ut;
+    if (u.place === 'seabed') {
+      const [sx, sy] = this._utSeabedCell(this.playerPos);
+      if (!sx && !sy) return null;
+      return posOf(u.seabed.origin[0], u.seabed.origin[1]);
+    }
+    if (u.place !== 'world') return null;
+    const { leg } = this._utRoute();
+    if (!leg) return null;
+    const [cx, cy] = cellOf(this.playerPos);
+    return posOf(cx + leg.dir[0] * leg.steps, cy + leg.dir[1] * leg.steps);
+  },
+
+  // Whether the guide has brought you to the safe zone, or out of it. (A bus and the
+  // way up end with their rides: the compass goes off as you board.)
+  _utGuideArrived() {
+    const c = this.ut.compass;
+    if (c.goal === 'the safe zone') return this._utInSafeZone();
+    if (c.goal === 'the way out') return !this._utInSafeZone();
+    return false;
+  },
+
+  // The guide, every frame while the compass is on (web 6.3.3): the compass beep from
+  // the next turn of the route, its pitch highest when you face it, lowest with your
+  // back to it, and quicker while you turn. Arrived, it says so and goes off.
+  _utGuideTick(dt) {
+    const u = this.ut; const c = u.compass;
+    if (u.place === 'ride' || u.place === 'slide' || u.place === 'bus') { this._utCompassOff(true); return; }
+    if (this._utGuideArrived()) {
+      this.tts.speak(c.goal === 'the way out' ? 'Out of the safe zone. Compass off.' : 'You are in the safe zone. Compass off.', { interrupt: true });
+      this._utCompassOff(true);
+      return;
+    }
+    // The goal can change on the way: a bus pulls up for you, or leaves.
+    if (u.place === 'world') {
+      const now = this._utRouteTarget().name;
+      if (now !== c.goal) {
+        c.goal = now;
+        this.tts.speak(this._utCompassGoal().words, { interrupt: true });
+      }
+    }
+    c.t += dt;
+    if (c.t < (u.turn ? COMPASS_BEEP_TURNING : COMPASS_BEEP_EVERY)) return;
+    c.t = 0;
+    const pos = this._utGuidePoint();
+    if (!pos) return;
+    const f = this._utForward();
+    const dx = pos[0] - this.playerPos[0]; const dy = pos[1] - this.playerPos[1];
+    const d = Math.hypot(dx, dy);
+    const dot = d > 1e-6 ? (f[0] * dx + f[1] * dy) / d : 1;   // 1 toward it, 0 across, -1 away
+    const step = Math.round((dot + 1) / 2 * 8);
+    // Placed where the turn is, and heard clear of the frozen world's muffle; no echo,
+    // and never crowded out by the world's one-shots.
+    this._utPlay(compassName(step), pos, { volume: GUIDE_LEVEL, send: 0, keep: true, clear: true });
+  },
+
+  // A double tap with the world frozen (web 6.3.3): the world described, as the compass
+  // used to say it coming on: where you are, the goal and the way to start, the nearest
+  // things worth walking to, and what lies the way you face.
+  _utCompassDescribe() {
+    const u = this.ut;
+    this.tts.speak(`${this._utCompassBriefing()} ${this._utCompassWords(mainIndex(u.face), true)}`.trim(), { interrupt: true });
   },
 
   // Where the compass leads: a waiting bus; from inside a safe zone, the way out
@@ -2982,30 +3158,6 @@ const mixin = {
     return open ? `open for ${steps(open)}, then ${blocker}. ${beyondWords}` : `${blocker}. ${beyondWords}`;
   },
 
-  // Swipe up with the compass on: what lies ahead, said again.
-  _utCompassAgain() {
-    const u = this.ut;
-    u.compass.t = COMPASS_BEEP_EVERY;   // and a beep at once
-    this.tts.speak(this._utCompassWords(mainIndex(u.face)), { interrupt: true });
-  },
-
-  // The beep: highest when you face the way to go, lowest with your back to it,
-  // and quicker while you turn, so the pitch follows the turn.
-  _utCompassTick(dt) {
-    const u = this.ut;
-    u.compass.t += dt;
-    if (u.compass.t < (u.turn ? COMPASS_BEEP_TURNING : COMPASS_BEEP_EVERY)) return;
-    u.compass.t = 0;
-    const route = this._utRouteStep();
-    let step = 0;
-    if (route) {
-      const f = this._utForward();
-      const dot = f[0] * route[0] + f[1] * route[1];   // 1 toward, 0 across, -1 away
-      step = Math.round((dot + 1) / 2 * 8);
-    }
-    this.audio.play(compassName(step), { direct: true, volume: 0.6 });
-  },
-
   // ---------------------------------------------------------------- the end
   _utGameOver() {
     this._utStopWorld();
@@ -3037,7 +3189,7 @@ function reset(game) {
     game.ut.voices.clear();
     for (const v of [...game.ut.shots]) v.stop();
     game.ut.shots.clear();
-    if (game.ut.compass.on) game.audio.setMuffle(false, 0.01);
+    if (game.ut.compass.on) { game.ut.compass.frozen = false; game.audio.setMuffle(false, 0.01); }
   }
   if (game.audio && game.audio.spatial) game.audio.spatialOff();
   game.ut = null;
@@ -3054,7 +3206,7 @@ function stopAll(game) {
     u.shots.clear();
     if (u.ride && u.ride.voice) u.ride.voice.stop();
     if (u.bus && u.bus.pullVoice) u.bus.pullVoice.stop();
-    if (u.compass.on) { u.compass.on = false; game.audio.setMuffle(false, 0.01); }
+    if (u.compass.on) { u.compass.on = false; u.compass.frozen = false; game.audio.setMuffle(false, 0.01); }
     // The finished run's world is let go of at once, not kept until the next
     // run replaces it (Russell, 8 Nov: the game crashed after three games). Every
     // placed sound of a world holds two HRTF panners and the areas' sounds held
@@ -3081,11 +3233,12 @@ function input(game, g) {
   // A swipe left or right, or one press of an arrow: a quick turn (the compass
   // on or off; a held turn arrives through turnInput, below).
   if (g === 'left' || g === 'right') { game._utTurnQuick(g === 'right' ? 1 : -1); return; }
-  if (u.compass.on) {
-    // You turn, and nothing else moves.
-    if (g === 'up') game._utCompassAgain();
-    else if (g === 'enter') game._utReport();
-    else if (g === 'space') game.audio.play('empty_click');
+  if (u.compass.on && u.compass.frozen) {
+    // Frozen (web 6.3.3): you turn and listen to the guide; a double tap describes the
+    // world; nothing fires; your first step lets the world move, and you walk.
+    if (g === 'enter') { game._utCompassDescribe(); return; }
+    if (g === 'space') { game.audio.play('empty_click'); return; }
+    if (g === 'up' || g === 'down') { game._utCompassThaw(); game._utStep(g); }
     return;
   }
   if (g === 'enter') { game._utReport(); return; }
@@ -3154,9 +3307,9 @@ export default {
     else a.setWorldLevel(0, Math.max(0.05, u.worldTime));
   },
   // A run or a backward walk never carries across a regeneration or a ride, and
-  // never happens while the compass is on, on a ride, or between worlds.
+  // never happens while the compass has the world frozen, on a ride, or between worlds.
   strideSig(game) { return game.ut ? `${game.ut.worldNo}|${game.ut.place}` : ''; },
-  blockStride(game) { const u = game.ut; return !u || u.compass.on || u.place === 'ride' || u.place === 'slide' || u.place === 'bus' || u.phase === 'silence'; },
+  blockStride(game) { const u = game.ut; return !u || u.compass.frozen || u.place === 'ride' || u.place === 'slide' || u.place === 'bus' || u.phase === 'silence'; },
   finish(game) {
     const u = game.ut || { points: 0, elapsed: 0, worlds: 0 };
     const worlds = u.worlds;

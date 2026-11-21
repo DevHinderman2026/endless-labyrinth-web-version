@@ -164,7 +164,11 @@ export const BlocksMixin = {
     this.bSnd = {
       hum: this._bRec(d.case_hum, 'beacon') || 'event_beacon_gem',
       bell: this._bRec(d.case_bell, 'pickup') || 'event_checkpoint',
-      smash: this._bRec(d.case_smash, 'pickup') || (has('ut_glass_smash') ? 'ut_glass_smash' : 'explosion'),
+      // (Web 6.3.3, Russell, 21 November 2026: the glass "sounds like an item being
+      // crushed".) A case breaks with Broken Glass Impact, ut_glass_smash in the ultimate
+      // pack; the event library's evt_glass_smash is still the old Glass Shatter there,
+      // so it is only the stand-in. (The Windows game's evt_glass_smash.ogg is the new glass.)
+      smash: has('ut_glass_smash') ? 'ut_glass_smash' : (this._bRec(d.case_smash, 'pickup') || 'explosion'),
       trap: pick(ev.traps.sound, d.trap, 'event_bomb_tick'),
       safe: pick(ev.safe_spots.sound, d.safe_spot, 'event_beacon_shimmer'),
       port: pick(ev.teleports.sound, d.teleport, 'event_beacon_star'),

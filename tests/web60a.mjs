@@ -7,7 +7,7 @@
 //   the drums (handed on when the drums change, fading with them when a chaos
 //   battle ends), a roar for every enemy shot down and a reaction when one reaches
 //   you, all ringing in the arena's echo, no announcer;
-// - Ultimate Mode's compass: thirty seconds at most, then off without a word, and
+// - Ultimate Mode's compass (6.3.3: its freezing): thirty seconds at most, then the world moves without a word, and
 //   not again for fifteen seconds;
 // - Ultimate Mode's worlds last two to five minutes, with the five countdown beeps;
 // - health: a potion fills to 100 and never lowers more, a chest's or a glass
@@ -273,40 +273,44 @@ const ult = await page.evaluate(async () => {
   const placed = [...u.voices].filter((v) => v.placed && v.dry);
   out.placedStereo = placed.filter((v) => v.dry.buffer.numberOfChannels !== 1).map((v) => v.name);
   out.placedCount = placed.length;
-  // ---- the compass
+  // ---- the compass (web 6.3.3: the half minute limits the freezing; the guide stays on)
   const L = window.__t.listen();
   calm(); u.worldTime = 1000;
   g.input('compass');
-  out.on = u.compass.on;
+  out.on = u.compass.on && u.compass.frozen;
   let t = 0;
-  while (u.compass.on && t < 40) { g.updateUltimateMode(0.1); t += 0.1; u.worldTime = 1000; u.safe = 999; }
-  out.offAfter = +t.toFixed(1);
+  while (u.compass.frozen && t < 40) { g.updateUltimateMode(0.1); t += 0.1; u.worldTime = 1000; u.safe = 999; }
+  out.thawAfter = +t.toFixed(1);
+  out.guideOn = u.compass.on;
   out.spokeOff = L.spoken.some((x) => /Compass off/.test(x));
-  out.muffleOpen = a.worldFilter ? a.worldFilter.frequency.value > 5000 || true : true;
+  g.input('compass');   // off
   L.spoken.length = 0;
-  g.input('compass');
-  out.refused = { on: u.compass.on, said: L.spoken.slice() };
+  g.input('compass');   // on at once: a guide, the world not frozen
+  out.noFreeze = { on: u.compass.on, frozen: u.compass.frozen, said: L.spoken.slice() };
+  g.input('compass');   // off
   for (let i = 0; i < 140; i++) { g.updateUltimateMode(0.1); u.worldTime = 1000; u.safe = 999; }
-  L.spoken.length = 0;
-  g.input('compass');
-  out.stillLocked = { on: u.compass.on, said: L.spoken.slice() };
+  g.input('compass');   // 14 seconds on: still no freezing
+  out.stillNone = { on: u.compass.on, frozen: u.compass.frozen };
+  g.input('compass');   // off
   for (let i = 0; i < 15; i++) { g.updateUltimateMode(0.1); u.worldTime = 1000; u.safe = 999; }
   g.input('compass');
-  out.backOn = u.compass.on;
-  // Off and on again quickly: the same half minute carries on.
+  out.backFrozen = u.compass.on && u.compass.frozen;
+  // Off and on again quickly: the same half minute of freezing carries on.
   for (let i = 0; i < 200; i++) { g.updateUltimateMode(0.1); u.worldTime = 1000; u.safe = 999; }
-  g.input('compass');   // off, at 20 seconds
+  g.input('compass');   // off, at 20 seconds frozen
   for (let i = 0; i < 20; i++) { g.updateUltimateMode(0.1); u.worldTime = 1000; u.safe = 999; }
   g.input('compass');   // on again 2 seconds later
   let t2 = 0;
-  while (u.compass.on && t2 < 40) { g.updateUltimateMode(0.1); t2 += 0.1; u.worldTime = 1000; u.safe = 999; }
+  while (u.compass.frozen && t2 < 40) { g.updateUltimateMode(0.1); t2 += 0.1; u.worldTime = 1000; u.safe = 999; }
   out.carried = +t2.toFixed(1);
-  // After resting 15 seconds a fresh half minute.
+  g.input('compass');   // off
+  // After the world has moved for 15 seconds, a fresh half minute.
   for (let i = 0; i < 160; i++) { g.updateUltimateMode(0.1); u.worldTime = 1000; u.safe = 999; }
   g.input('compass');
   let t3 = 0;
-  while (u.compass.on && t3 < 40) { g.updateUltimateMode(0.1); t3 += 0.1; u.worldTime = 1000; u.safe = 999; }
+  while (u.compass.frozen && t3 < 40) { g.updateUltimateMode(0.1); t3 += 0.1; u.worldTime = 1000; u.safe = 999; }
   out.fresh = +t3.toFixed(1);
+  g.input('compass');   // off
   for (let i = 0; i < 160; i++) { g.updateUltimateMode(0.1); u.worldTime = 1000; u.safe = 999; }
   // ---- the world's length, and the countdown
   const lens = [];
@@ -367,10 +371,10 @@ check(String(ult.WORLD_SECONDS) === '120,300' && ult.lens.min >= 120 && ult.lens
 check(ult.beeps === 5 && ult.regenerated, `the five countdown beeps before a new world: ${ult.beeps}`);
 check(ult.air && ult.air.placed === 1 && (ult.air.orig === 1 || ult.air.wide === 2), 'an area\'s air: the placed copy is one channel, the wide copy inside keeps both: ' + JSON.stringify(ult.air));
 check(ult.placedCount > 0 && ult.placedStereo.length === 0, `every placed sound in the world plays one channel (${ult.placedCount} placed): ` + JSON.stringify(ult.placedStereo));
-check(ult.on && ult.offAfter >= 29.9 && ult.offAfter <= 30.2 && !ult.spokeOff, `the compass turns itself off after thirty seconds, silently (${ult.offAfter} s)`);
-check(!ult.refused.on && ult.refused.said.some((x) => /^Compass ready in 15 seconds\.$/.test(x)) && !ult.stillLocked.on && ult.stillLocked.said.some((x) => /^Compass ready in 1 second\.$/.test(x)) && ult.backOn, 'it cannot come on again for fifteen seconds, and can after: ' + JSON.stringify([ult.refused, ult.stillLocked, ult.backOn]));
-check(ult.carried >= 9.8 && ult.carried <= 10.2, `turning it off and on again within fifteen seconds keeps the same half minute (${ult.carried} s left)`);
-check(ult.fresh >= 29.9 && ult.fresh <= 30.2, `after fifteen seconds off, a fresh half minute (${ult.fresh} s)`);
+check(ult.on && ult.thawAfter >= 29.9 && ult.thawAfter <= 30.2 && ult.guideOn && !ult.spokeOff, `the compass freezes the world for thirty seconds at most, then lets it move without a word, the guide still on (${ult.thawAfter} s)`);
+check(ult.noFreeze.on && !ult.noFreeze.frozen && ult.noFreeze.said.some((x) => /^Compass on\. /.test(x)) && !ult.noFreeze.said.some((x) => /ready in/.test(x)) && ult.stillNone.on && !ult.stillNone.frozen && ult.backFrozen, 'for fifteen seconds after, it comes on as a guide without freezing the world, and then freezes it again: ' + JSON.stringify([ult.noFreeze, ult.stillNone, ult.backFrozen]));
+check(ult.carried >= 9.8 && ult.carried <= 10.2, `turning it off and on again within fifteen seconds keeps the same half minute of freezing (${ult.carried} s left)`);
+check(ult.fresh >= 29.9 && ult.fresh <= 30.2, `after the world has moved for fifteen seconds, a fresh half minute (${ult.fresh} s)`);
 check(ult.potion.from60 === 100 && ult.potion.from130 === 130 && ult.potion.from100 === 100, 'a potion fills to 100 and never lowers health over 100: ' + JSON.stringify(ult.potion));
 check(ult.chest100 && ult.chest100.hp === 140 && /40 health/.test(ult.chest100.said) && ult.chest130 && ult.chest130.hp === 170, 'a chest\'s health goes on top, even at 100 and over: ' + JSON.stringify([ult.chest100, ult.chest130]));
 check(ult.chestFrom30.every((h) => h === 70 || h === 100) && ult.chestFrom30.includes(70), 'from low health a chest gives 40, or now and then a full heal to 100: ' + JSON.stringify(ult.chestFrom30));
