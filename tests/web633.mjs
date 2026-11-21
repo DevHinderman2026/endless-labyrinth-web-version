@@ -166,11 +166,18 @@ await page.evaluate(async () => {
   const g = window.__el.game; const { sleep } = window.__c;
   for (let i = 0; i < 40; i++) { g._face((i % 12) * Math.PI / 6, true); await sleep(250); }
 });
+// (6.3.4, Russell: "the popping is back in standard mode".) Walk about for forty seconds
+// too: the exit's beep keeps coming from new directions, and still nothing is unplugged
+// (6.3.3 unplugged 42 panners in a minute's walk, dropping them from a full pool).
+await page.evaluate(async () => {
+  const g = window.__el.game; const { sleep } = window.__c;
+  for (let i = 0; i < 160; i++) { const k = i % 7; g.input(k < 4 ? 'up' : (k < 6 ? 'left' : 'right')); await sleep(250); }
+});
 const l1 = await page.evaluate(async () => { const mod = await import('./js/audio.js'); return { ...window.__m, ...mod.pannerStats }; });
-check(l1.cut - l0.cut === 0, `standing and turning in a labyrinth, no panner is unplugged from the mix: ${l1.cut - l0.cut}`);
+check(l1.cut - l0.cut === 0, `standing, turning and walking in a labyrinth, no panner is unplugged from the mix: ${l1.cut - l0.cut}`);
 check(l1.dropped - l0.dropped === 0, `nor dropped from a full pool: ${l1.dropped - l0.dropped}`);
 check(l1.reused - l0.reused >= 20, `the exit's beeps are placed, each on panners from the pool or new ones: ${l1.reused - l0.reused} reused`);
-check(l1.made - l0.made <= 30, `the beeps find panners already pointing their way, most of the time: ${l1.made - l0.made} made, ${l1.reused - l0.reused} reused`);
+check(l1.made - l0.made <= 64, `walking about, no more panners are made than the pool holds (64), and after that they are reused (6.3.4): ${l1.made - l0.made} made, ${l1.reused - l0.reused} reused`);
 await page.evaluate(() => { clearInterval(window.__keep); const g = window.__el.game; g._stopRunSounds(); g.runId += 1; g.state = 'menu'; g._refreshMenu(); });
 
 // ------------------------------------------------------------------ 5. Ultimate: three chasers at once
@@ -285,8 +292,8 @@ const abyss = await page.evaluate(async () => {
   g._stopRunSounds(); g.runId += 1; g.state = 'menu'; g._refreshMenu();
   return { odds, chaosOdds, first: [...first], stays: [...stays], moved: [...moved], firstAt: `${px + 20},${py}`, secondAt: `${px - 26},${py}`, lives, said, heart: played.includes(AB.AB_LIFE_SOUND), consts: [AB.AB_LIGHTNING_CASE, AB.AB_LIFE_CASE] };
 });
-check(abyss.consts[0] === 0.25 && abyss.consts[1] === 0.1, 'The Abyss: lightning in one case in four, an extra life in one in ten');
-check(Math.abs(abyss.odds.l - 0.25) < 0.03 && Math.abs(abyss.odds.life - 0.1) < 0.02, `over 4000 cases: lightning ${abyss.odds.l.toFixed(3)}, extra lives ${abyss.odds.life.toFixed(3)}`);
+check(abyss.consts[0] === 0.25 && abyss.consts[1] === 0.05, 'The Abyss: lightning in one case in four, an extra life in one in twenty (6.3.4)');
+check(Math.abs(abyss.odds.l - 0.25) < 0.03 && Math.abs(abyss.odds.life - 0.05) < 0.015, `over 4000 cases: lightning ${abyss.odds.l.toFixed(3)}, extra lives ${abyss.odds.life.toFixed(3)}`);
 check(Math.abs(abyss.chaosOdds.l - 0.25) < 0.03 && abyss.chaosOdds.life === 0, `in Chaos's Abyss: lightning ${abyss.chaosOdds.l.toFixed(3)} as well, and no extra lives`);
 check(abyss.first.length === 1 && abyss.first[0] === abyss.firstAt, 'of three cases in range, only the nearest knocks: ' + JSON.stringify(abyss.first));
 check(abyss.stays.length === 1 && abyss.stays[0] === abyss.firstAt, 'another case a little nearer does not take the knocking over: ' + JSON.stringify(abyss.stays));

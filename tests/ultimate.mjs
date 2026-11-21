@@ -267,9 +267,13 @@ const compass = await page.evaluate(async () => {
   const g = window.__el.game; const u = g.ut; const a = window.__el.audio; const T = window.__t;
   const W = await import('./js/modes/ultimate/world.js');
   const said = () => document.getElementById('said').textContent;
-  // Stand somewhere outside a safe zone, facing north.
-  const away = u.world.areas.find((x) => x.kind !== 'event');
-  const cell = away.floorCells[0];
+  // Stand somewhere outside a safe zone, facing north: in a labyrinth area if there is
+  // one (no enemies there, and the attack is the laser), else a battle area, on the floor
+  // cell farthest from every safe zone, so the guide cannot arrive while the test waits.
+  const away = u.world.areas.find((x) => x.kind === 'labyrinth') || u.world.areas.find((x) => x.kind === 'battle') || u.world.areas.find((x) => x.kind !== 'event');
+  const safeCells = u.world.areas.filter((x) => x.kind === 'event').map((x) => x.floorCells[0]);
+  const far = (c) => Math.min(...safeCells.map((s) => Math.hypot(c[0] - s[0], c[1] - s[1])));
+  const cell = away.floorCells.reduce((best, c) => (far(c) > far(best) ? c : best), away.floorCells[0]);
   g.playerPos = [cell[0] * 3, cell[1] * 3]; u.area = away;
   T.face('north');
   const pos0 = [...g.playerPos];

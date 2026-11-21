@@ -340,6 +340,15 @@ const PANNER_POOL = 64;
 // that panner last played within PANNER_REUSE_DEG of where the new sound is; otherwise a new
 // panner, which starts exactly where it is put. When the pool is full, the panner that goes
 // is the one pointing nearest another in the pool, so the pool keeps panners pointing every way.
+// (Web 6.3.4, Russell, 21 November 2026: "the popping is back in standard mode".) 6.3.3
+// let a full pool drop a panner by unplugging it, and walking a labyrinth, with the exit's
+// beep in a new direction every second, made new panners all the time: in a minute's walk,
+// 117 made and 42 unplugged, the 6.3.0 pop again. Now no panner is ever unplugged. A mix
+// makes new panners only until it has PANNER_POOL of them; after that a sound takes the
+// free panner pointing nearest its place, even if not within PANNER_REUSE_DEG (with that
+// many pointing every way, the nearest is close). Only when every panner is busy is
+// another made, and it is kept too.
+const PANNER_COUNT = new WeakMap(); // mix -> how many panners have been made for it
 const PANNER_REUSE_DEG = 8;
 const PANNER_REUSE_COS = Math.cos(PANNER_REUSE_DEG * Math.PI / 180);
 export const pannerStats = { made: 0, reused: 0, dropped: 0 };
@@ -961,17 +970,20 @@ export class AudioEngine {
       // The free panner that last played nearest this place, if one is near enough
       // (see PANNER_REUSE_COS): a panner pointing elsewhere would start the sound there.
       const [ux, uy, uz] = unitDir(x, y, z);
-      let best = -1; let bestCos = PANNER_REUSE_COS;
+      let best = -1; let bestCos = -2;
       for (let i = free.length - 1; i >= 0; i--) {
         const d = free[i].__dir;
-        if (!d) continue;
-        const c = ux * d[0] + uy * d[1] + uz * d[2];
-        if (c >= bestCos) { bestCos = c; best = i; }
+        const c = d ? ux * d[0] + uy * d[1] + uz * d[2] : -1.5;
+        if (c > bestCos) { bestCos = c; best = i; }
       }
-      if (best >= 0) { p = free[best]; free.splice(best, 1); pannerStats.reused += 1; }
+      // Near enough, or the mix already has its full number of panners: take it.
+      if (best >= 0 && (bestCos >= PANNER_REUSE_COS || (PANNER_COUNT.get(bus) || 0) >= PANNER_POOL)) {
+        p = free[best]; free.splice(best, 1); pannerStats.reused += 1;
+      }
     }
     if (!p) {
       pannerStats.made += 1;
+      PANNER_COUNT.set(bus, (PANNER_COUNT.get(bus) || 0) + 1);
       p = ctx.createPanner();
       p.panningModel = 'HRTF';
       p.distanceModel = 'linear';
@@ -987,7 +999,7 @@ export class AudioEngine {
   }
 
   // A panner whose sound is done, its input already cut: kept plugged in for the
-  // next sound, or let go if enough are kept already.
+  // next sound (6.3.4: always; never unplugged).
   givePanner(p) {
     if (!p) return;
     const bus = p.__bus;
@@ -999,25 +1011,7 @@ export class AudioEngine {
     }
     if (free.includes(p)) return;
     free.push(p);
-    if (free.length <= PANNER_POOL) return;
-    // Full: the panner least needed goes, the one pointing nearest another in the pool
-    // (6.3.3), so those left still point every way and the next sound finds one near it.
-    let worst = 0; let worstCos = -2;
-    for (let i = 0; i < free.length; i++) {
-      const a = free[i].__dir;
-      if (!a) { worst = i; break; }
-      let near = -2;
-      for (let j = 0; j < free.length; j++) {
-        const b = free[j].__dir;
-        if (j === i || !b) continue;
-        const c = a[0] * b[0] + a[1] * b[1] + a[2] * b[2];
-        if (c > near) near = c;
-      }
-      if (near > worstCos) { worstCos = near; worst = i; }
-    }
-    const [gone] = free.splice(worst, 1);
-    try { gone.disconnect(); } catch (e) { /* already */ }
-    pannerStats.dropped += 1;
+    // (6.3.4) Kept, always: a panner unplugged from the mix can be heard as a pop.
   }
 
   // The world's level (a regeneration fades it out and in) and its muffling (the

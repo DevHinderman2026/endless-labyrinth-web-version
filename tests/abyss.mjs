@@ -79,7 +79,7 @@ const start = await page.evaluate(async () => {
   out.bg = ab.amb && ab.amb.name;
   return out;
 });
-check(start.state === 'abyss' && Math.abs(start.time - 60) < 0.1 && start.lives === 3, 'a run begins with sixty seconds and three lives: ' + JSON.stringify([start.time, start.lives]));
+check(start.state === 'abyss' && Math.abs(start.time - 45) < 0.1 && start.lives === 3, 'a run begins with forty-five seconds (6.3.4) and three lives: ' + JSON.stringify([start.time, start.lives]));
 check(start.creatures === 3 && start.creatureD.every((d) => d >= 44.9 && d <= 75.1), 'three creatures, 45 to 75 units (15 to 25 steps) away: ' + start.creatureD.map((d) => d.toFixed(0)).join(', '));
 check(start.creatureGap >= 14.9, 'none woke right beside another (five steps or more apart): ' + start.creatureGap.toFixed(1));
 check(start.cases === 3 && start.caseD.every((d) => d >= 24.9 && d <= 55.1), 'three glass cases, 25 to 55 units away');
@@ -108,21 +108,30 @@ const moves = await page.evaluate(() => {
   const a0 = [a.x, a.y]; const b0 = [b.x, b.y];
   t.frames(0.3); out.aMoving = a.moving; out.creep = Math.hypot(a.x - a0[0], a.y - a0[1]) / 0.3;
   out.bStayed = !b.moving;
-  t.frames(0.5); const a1 = [a.x, a.y]; t.frames(1.0);
-  out.aFrozen = !a.moving && Math.hypot(a.x - a1[0], a.y - a1[1]) <= 1.5 + 1e-6;
+  // (6.3.4) Stopping is no longer a free pause: it creeps on to the spot where it heard
+  // you and gives up there. Here you slip away sideways unheard, so it finds nothing.
+  ab.nextStrike = 999;
+  const heardAt = [...g.playerPos];
+  g.playerPos = [heardAt[0] + 40, heardAt[1]];
+  t.frames(0.6); out.aStillComing = a.moving;
+  let nearest = 1e9;
+  for (let k = 0; k < 70; k++) { t.frames(0.1); nearest = Math.min(nearest, Math.hypot(a.x - heardAt[0], a.y - heardAt[1])); }
+  out.aArrived = nearest < 1.0;
+  out.aGaveUp = !a.moving && a.move <= 0;
+  t.put(a, 0, 24); g.playerPos = [...heardAt];
   // A run's step (as the game marks one): b hears it now, and charges.
   g.strideStepping = 'up'; g.input('up'); g.strideStepping = null;
   const b1 = [b.x, b.y]; t.frames(0.2);
   out.charge = Math.hypot(b.x - b1[0], b.y - b1[1]) / 0.2;
-  t.frames(0.5); const b2 = [b.x, b.y]; t.frames(1.0);
-  out.bFrozen = !b.moving && Math.hypot(b.x - b2[0], b.y - b2[1]) <= 1.5 + 1e-6;
+  t.frames(0.8); out.bStillComing = b.moving;
+  b.move = 0; t.put(b, 0, -45);
   out.replaced = !ab.creatures.includes(c) && ab.creatures.length === 3;
   out.footsteps = t.at.filter(([n]) => /^ut_glass_step_/.test(n)).length;
   return out;
 });
 check(moves.wanderSpeed > 0.5 && moves.wanderSpeed <= 1.5 + 1e-6 && moves.neverCloser && moves.notHunting, 'while you stand still they only wander, 30 steps a minute, never toward you: ' + moves.wanderSpeed.toFixed(2));
 check(moves.aMoving && Math.abs(moves.creep - 4.5) < 0.3 && moves.bStayed, 'a walking step: creatures within ten steps creep toward it (90 steps a minute); one further off does not hear it: ' + moves.creep.toFixed(2));
-check(moves.aFrozen && moves.bFrozen, 'then they stop hunting, and only wander, until they hear you again');
+check(moves.aStillComing && moves.aArrived && moves.aGaveUp && moves.bStillComing, 'when you stop, a creature that heard you keeps coming to the spot where it heard you, then gives up there and wanders (6.3.4): ' + JSON.stringify([moves.aStillComing, moves.aArrived, moves.aGaveUp, moves.bStillComing]));
 check(Math.abs(moves.charge - 11) < 0.3, 'a running step is heard from twenty steps, and they charge, 220 steps a minute (your run is 280): ' + moves.charge.toFixed(2));
 check(moves.footsteps >= 2, 'a moving creature makes a footstep on the glass from where it is');
 check(moves.replaced, 'a creature far behind is gone, and another appears nearer');
@@ -190,7 +199,7 @@ check(storm.ducked < 0.5 && storm.pinned && storm.varied, 'each strike is one of
 check(storm.storm[0] && storm.storm[1] && !storm.storm[2] && storm.toward, 'creatures near the strike run toward it; one far off does not: ' + JSON.stringify(storm.storm));
 check(storm.coveredStep, 'a step during the cover is not heard');
 check(storm.coverAfter === 0 && storm.heardAgain, 'once the five seconds are over, your steps are heard again');
-check(JSON.stringify(storm.gaps) === JSON.stringify([[6, 10], [7, 12], [9, 15], [15, 15], [15, 15]]), 'strikes every 6 to 10 seconds, less often every three cases, never more than 15 apart (6.3.3): ' + JSON.stringify(storm.gaps));
+check(JSON.stringify(storm.gaps) === JSON.stringify([[6, 10], [7, 12], [9, 16], [16, 20], [20, 20]]), 'strikes every 6 to 10 seconds, less often every three cases, never more than 20 apart (back in 6.3.4): ' + JSON.stringify(storm.gaps));
 
 // ------------------------------------------------------------------ glass cases
 const cases = await page.evaluate(async () => {
@@ -242,6 +251,9 @@ const cases = await page.evaluate(async () => {
   const n = { 10: 0, 20: 0, 30: 0, 60: 0 };
   for (let i = 0; i < 40000; i++) n[mod.rollReward()] += 1;
   out.odds = n;
+  const nc = { 10: 0, 20: 0, 30: 0, 60: 0 };
+  for (let i = 0; i < 40000; i++) nc[mod.rollReward(Math.random(), mod.AB_CHAOS_REWARDS)] += 1;
+  out.chaosOdds = nc;
   out.creaturesFor = [0, 2, 3, 6, 9, 12, 30].map((k) => mod.creaturesFor(k));
   return out;
 });
@@ -254,7 +266,9 @@ check(cases.coveredSmash, 'a smash under the lightning\'s cover brings no charge
 check(cases.lightningCase, 'a lightning case sends a strike, and the creatures run to it instead of you');
 check(cases.click, 'with nothing in reach, the attack clicks');
 const o = cases.odds; const sh = (k) => o[k] / 40000;
-check(Math.abs(sh(10) - 0.62) < 0.02 && Math.abs(sh(20) - 0.25) < 0.02 && Math.abs(sh(30) - 0.10) < 0.015 && Math.abs(sh(60) - 0.03) < 0.01, 'cases give 10 seconds mostly, sometimes 20 or 30, rarely 60: ' + JSON.stringify(o));
+check(Math.abs(sh(10) - 0.7) < 0.02 && Math.abs(sh(20) - 0.3) < 0.02 && o[30] === 0 && o[60] === 0, 'cases give 10 seconds mostly, sometimes 20, never 30 or 60 (6.3.4): ' + JSON.stringify(o));
+{ const oc = cases.chaosOdds; const sc = (k) => oc[k] / 40000;
+  check(Math.abs(sc(10) - 0.62) < 0.02 && Math.abs(sc(20) - 0.25) < 0.02 && Math.abs(sc(30) - 0.10) < 0.015 && Math.abs(sc(60) - 0.03) < 0.01, 'in Chaos the cases keep 10 mostly, sometimes 20 or 30, rarely 60: ' + JSON.stringify(oc)); }
 check(JSON.stringify(cases.creaturesFor) === JSON.stringify([3, 3, 4, 5, 6, 7, 7]), 'one more creature every three cases, at most seven: ' + JSON.stringify(cases.creaturesFor));
 
 // ------------------------------------------------------------------ endless, the report
