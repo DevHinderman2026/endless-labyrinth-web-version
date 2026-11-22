@@ -423,14 +423,25 @@ export const CASE_ITEMS = [2, 3];
 // world of this mode, for the world's own random length, inside a chaos run.
 // Its credits are chaos TIME credits, every one of them in a glass case, as many
 // as this mode's credits (CREDITS_AT_ONCE); everything else pays points as here,
-// toward the chaos score. Every water slide adds CHAOS_SLIDE_TIME to the chaos
-// clock the moment you splash in. Its ammo and items are its own, carried from
+// toward the chaos score. A water slide adds chaos time the moment you splash in:
+// CHAOS_SLIDE_TIME on the world's first ride, less on each one after (chaosSlideTime). Its ammo and items are its own, carried from
 // one world stage to the next. Enemies and buses come along unchanged (Russell's
 // decision); the two switches are here in case that is ever revisited.
 export const CHAOS_WORLD_ENEMIES = true;
 export const CHAOS_WORLD_BUSES = true;
 export const CHAOS_CREDIT_VALUES = [40, 50, 60];   // seconds, as every chaos credit
 export const CHAOS_SLIDE_TIME = 30;
+// (Web 6.3.7, Russell, 22 November 2026: "I actually don't want the player to keep banking
+// time" on the slide, which could be ridden again and again for 30 s each.) The first ride in
+// a chaos world gives CHAOS_SLIDE_TIME, each one after it CHAOS_SLIDE_STEP less, never below
+// CHAOS_SLIDE_FLOOR: 30, 25, 20, 15, then 10 every ride. Every slide in the world counts
+// together (u.slideRides), and a new world starts again at 30. The clock runs during a ride,
+// so from about the fifth ride riding again no longer gains time.
+export const CHAOS_SLIDE_STEP = 5;
+export const CHAOS_SLIDE_FLOOR = 10;
+export function chaosSlideTime(ridesBefore) {
+  return Math.max(CHAOS_SLIDE_FLOOR, CHAOS_SLIDE_TIME - CHAOS_SLIDE_STEP * Math.max(0, ridesBefore || 0));
+}
 // (Web 6.3.0, Russell, 20 November 2026: the time in a chaos world stage was not fair
 // beside the rest of chaos, where most things you do earn time.) Everything that
 // scores points in a chaos world stage now puts time on the chaos clock as well:
@@ -1018,7 +1029,7 @@ const mixin = {
     u.safe = SAFE_SECONDS + (first ? 0 : FADE_IN);
     u.enemies = []; u.projectiles = []; u.pickups = []; u.timers = []; u.respawn = new Map();
     u.towerItems = new Map(); u.potionDue = new Map();    // (the items in your hands stay there: they are carried like ammo)
-    u.place = 'world'; u.ride = null; u.rideMix = null; u.seabed = null; u.lift = null; u.liftArmed = false; u.dingTimer = 0; u.slide = null; u.slides = []; u.cases = []; u.glass = []; u.bus = null; u.busAt = null; u.shSafe = 0; u.shBus = 0;
+    u.place = 'world'; u.ride = null; u.rideMix = null; u.seabed = null; u.lift = null; u.liftArmed = false; u.dingTimer = 0; u.slide = null; u.slides = []; u.slideRides = 0; u.cases = []; u.glass = []; u.bus = null; u.busAt = null; u.shSafe = 0; u.shBus = 0;
     this._utCompassOff(true);
     u.worldPoints = 0; u.worldDamage = 0;
     u.steps = [];
@@ -2075,7 +2086,10 @@ const mixin = {
       u.place = 'world';
       u.slide = null;
       this._utScore(SLIDE_POINTS, { safeOk: true });
-      if (u.chaos) this._utChaosTime(CHAOS_SLIDE_TIME);
+      if (u.chaos) {
+        this._utChaosTime(chaosSlideTime(u.slideRides));
+        u.slideRides = (u.slideRides || 0) + 1;
+      }
       this._utRefreshRooms();
       this._utListenerMix();
     }
