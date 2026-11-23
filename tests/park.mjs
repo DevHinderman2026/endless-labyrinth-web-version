@@ -72,12 +72,11 @@ check(start.near >= 23, 'no attraction is right where you start');
 
 const sizes = await page.evaluate(async () => {
   const m = await import('./js/modes/park.js');
-  return { a: [1, 2, 3, 6].map((p) => m.attractionsFor(p)), c: [1, 2, 3, 13, 20].map((p) => m.clockFor(p)), bends: [1, 2, 9, 20].map((p) => m.bendsFor(p)),
+  return { a: [1, 2, 3, 6].map((p) => m.attractionsFor(p)), c: [1, 2, 3, 13, 20].map((p) => m.clockFor(p)),
     deal: [...Array(200)].map(() => m.dealKinds(4)).every((d) => new Set(d).size === 4), deal6: m.dealKinds(6) };
 });
 check(JSON.stringify(sizes.a) === '[3,4,5,8]', 'one more attraction in every park: ' + sizes.a.join(', '));
 check(sizes.c[0] === 130 && sizes.c[1] === 40 + 29 * 4 && sizes.c[3] === 40 + 18 * 15 && sizes.c[4] === 40 + 18 * 22, 'the clock: 30 a park\'s attraction, one less each park, never under 18: ' + sizes.c.join(', '));
-check(JSON.stringify(sizes.bends) === '[3,4,10,10]', 'a slide\'s bends: 3, one more each park, at most 10: ' + sizes.bends.join(', '));
 check(sizes.deal, 'every kind comes once before any comes twice');
 
 // ------------------------------------------------------------------ each attraction
@@ -97,7 +96,80 @@ async function only(kind) {
   }, kind);
 }
 
-// The slide: climb, steer, splash, token.
+// ------------------------------------------------------------------ 7.0.1: hearing the park
+const hear = await page.evaluate(async () => {
+  const g = window.__el.game; const t = window.__t;
+  t.start('park');
+  await t.frames(0.3);
+  const pk = g.pk;
+  for (const at of pk.attractions) if (at.voice) { at.voice.stop(); at.voice = null; }
+  pk.attractions = [];
+  g._pkLayout(['slide', 'dive', 'wave', 'bucket']);
+  pk.count = 4;
+  // Far from every one of them.
+  g.playerPos = [400, 400];
+  t.played.length = 0;
+  await t.frames(6.0);
+  const at = (k) => pk.attractions.find((a) => a.kind === k);
+  const lvl = (v) => (v ? Math.max(v.l, v.r) : 0);
+  const out = {
+    room: g._currentRoom(), amb: +pk.amb.voice.l.toFixed(2),
+    slide: +lvl(at('slide').voice).toFixed(2), waves: +lvl(at('wave').voice).toFixed(2), fill: at('bucket').phase === 'fill' ? +lvl(at('bucket').voice).toFixed(2) : 1,
+    boards: t.played.filter((n) => n === 'wp_board').length, breaking: t.played.filter((n) => n === 'wp_wave').length,
+  };
+  // The hall's echo on the park's sounds (none under the water).
+  const v = at('slide').voice;
+  out.echo = !!(v && v.wet && v.wet.conv && v.wet.conv.key && v.wet.conv.key.startsWith('hall'));
+  // (The park's air is a long recording, decoded as it is first played: at 48,000 a
+  // second that takes a moment longer, so wait for it to begin.)
+  for (let i = 0; i < 100 && !pk.amb.voice.dry; i++) await new Promise((r) => setTimeout(r, 50));
+  out.ambEcho = !!(pk.amb.voice.wet && pk.amb.voice.wet.conv);
+  return out;
+});
+check(hear.room === 'hall' && hear.echo && hear.ambEcho, `7.0.1: the park rings like a large hall, its attractions and its air in the hall's echo (${hear.room})`);
+check(hear.amb === 0.55, `7.0.1: the park's air is lower, 0.55 (was 0.8): ${hear.amb}`);
+check(hear.slide >= 0.29 && hear.waves >= 0.29 && hear.fill >= 0.17, `7.0.1: from the far end of the park every attraction is still heard: slide ${hear.slide}, waves ${hear.waves}, bucket ${hear.fill}`);
+check(hear.boards >= 5, `7.0.1: the diving board bounces about once a second (${hear.boards} in six seconds)`);
+check(hear.breaking >= 2, `7.0.1: the wave pool sounds a breaking wave every few seconds from the deck (${hear.breaking} in six seconds)`);
+
+// ------------------------------------------------------------------ 7.0.1: the fence
+const fence = await page.evaluate(async () => {
+  const g = window.__el.game; const t = window.__t;
+  const lims = [];
+  for (let i = 0; i < 20; i++) {
+    t.start('park');
+    await t.frames(0.1);
+    const pk = g.pk;
+    // Everything in the park stands inside the fence, with room to spare.
+    let far = 0;
+    for (const a of pk.attractions) {
+      far = Math.max(far, Math.abs(a.pos[0]), Math.abs(a.pos[1]));
+      if (a.token) far = Math.max(far, Math.abs(a.token[0]), Math.abs(a.token[1]));
+    }
+    lims.push({ lim: pk.limit, arena: g.arenaLimit, far });
+  }
+  const pk = g.pk;
+  // Walk east until the fence stops you.
+  g.playerPos = [pk.limit - 4, 0];
+  g._face(Math.PI / 2);
+  t.played.length = 0;
+  for (let i = 0; i < 4; i++) g._pkWalk('up');
+  const head = { pos: [...g.playerPos], buzz: t.played.filter((n) => n === 'boundary').length };
+  // Met at a slant (north-east), you carry on north along it, in silence.
+  g._face(Math.PI / 4);
+  t.played.length = 0;
+  const y0 = g.playerPos[1];
+  g._pkWalk('up');
+  const slant = { moved: y0 - g.playerPos[1], x: g.playerPos[0], buzz: t.played.filter((n) => n === 'boundary').length };
+  const near = g.mode.surroundings(g, g.playerPos)[0]; const mid = g.mode.surroundings(g, [0, 0])[0];
+  return { lims, lim: pk.limit, head, slant, near, mid };
+});
+check(fence.lims.every((x) => x.lim === x.arena && x.lim >= x.far + 9.9 && x.lim < 200), `7.0.1: every park has a fence round it, beyond its farthest attraction: ${fence.lims.slice(0, 5).map((x) => Math.round(x.lim)).join(', ')}`);
+check(fence.head.buzz >= 1 && fence.head.pos[0] <= fence.lim + 1e-6, `7.0.1: walking into the fence buzzes and stops you (${fence.head.buzz} buzzes, ${fence.head.pos[0].toFixed(1)} of ${fence.lim.toFixed(1)})`);
+check(fence.slant.moved > 1 && fence.slant.buzz === 0 && fence.slant.x <= fence.lim + 1e-6, `7.0.1: met at a slant, you slide along the fence (${fence.slant.moved.toFixed(1)} along)`);
+check(fence.near > fence.mid, `7.0.1: the hall's echo grows near the fence (${fence.near.toFixed(2)} by it, ${fence.mid.toFixed(2)} in the middle)`);
+
+// The slide: climb, straight down, splash, token (7.0.1: no steering).
 await only('slide');
 const slide = await page.evaluate(async () => {
   const g = window.__el.game; const t = window.__t; const pk = g.pk;
@@ -109,26 +181,22 @@ const slide = await page.evaluate(async () => {
   const pauseBlocked = g.mode.blockPause(g);
   const clock0 = g.timeLeft;
   let rideTime = 0;
-  // Steer right at every bend but one, which is missed.
-  let bends = 0; let missed = 0; let swung = [];
+  // Flicks and swipes on the way down do nothing.
+  const pos0 = [...g.playerPos];
+  let still = true;
   for (let i = 0; i < 30 * 40 && pk.ride; i++) {
+    if (i % 10 === 5) { g.input(i % 20 === 5 ? 'left' : 'up'); if (pk.ride && (g.playerPos[0] !== pos0[0] || g.playerPos[1] !== pos0[1])) still = false; }
     g.frame(1 / 30); rideTime += 1 / 30;
-    const r = pk.ride;
-    if (r && r.cue && r.cue.answered === null && r.cue.t < 0.3) {
-      const rush = r.rush; swung.push([r.cue.side, rush ? +(rush.l - rush.r).toFixed(2) : null]);
-      if (bends === 1) { g.input(r.cue.side === 'left' ? 'right' : 'left'); missed += 1; } else g.input(r.cue.side);
-      bends += 1;
-    }
   }
-  return { heard, riding, pauseBlocked, bends, missed, swung, done: at.done, won: pk.won, exit: !!pk.exit, lost: +(clock0 - g.timeLeft - rideTime).toFixed(1),
+  return { heard, riding, pauseBlocked, still, rideTime: +rideTime.toFixed(1), done: at.done, won: pk.won, exit: !!pk.exit, lost: +(clock0 - g.timeLeft - rideTime).toFixed(1),
     played: [...new Set(t.played)], said: [...t.said] };
 });
 check(slide.heard, 'the slide is heard by its staircase beacon');
 check(slide.riding && slide.pauseBlocked, 'walking up to it starts the ride, and a pause waits until it is over');
-check(slide.bends === 3 && slide.swung.every(([s, d]) => (s === 'left' ? d > 0.3 : d < -0.3)), 'three bends, the rush swinging to the bend\'s side before each: ' + JSON.stringify(slide.swung));
-check(slide.played.includes('stairs_climb') && slide.played.includes('wp_rush') && slide.played.includes('evt_water_splash') && slide.played.includes('wp_token') && slide.played.includes('boundary'),
-  'the climb, the rush, a bump at the missed bend, the splash, the token: ' + slide.played.join(', '));
-check(slide.lost > 1.8 && slide.lost < 2.3, `the missed bend cost 2 seconds, besides the ride's own time: ${slide.lost}`);
+check(slide.still && slide.rideTime > 5.4 && slide.rideTime < 6.0, `straight down: the climb and the ride take ${slide.rideTime} seconds, and nothing you do moves you`);
+check(slide.played.includes('stairs_climb') && slide.played.includes('ut_slide') && slide.played.includes('evt_water_splash') && slide.played.includes('wp_token') && !slide.played.includes('boundary'),
+  'the climb, the rush, the splash, the token: ' + slide.played.join(', '));
+check(Math.abs(slide.lost) < 0.2, `the ride costs only its own time: ${slide.lost}`);
 check(slide.done && slide.won === 1 && slide.exit, 'the token is won at the splash, and with the park\'s only token the gate opens');
 check(slide.said.includes('The exit is open.'), 'the voice says the gate is open: ' + slide.said.join(' | '));
 
@@ -234,14 +302,17 @@ const bucket = await page.evaluate(async () => {
   const caught = { dump: t.played.includes('wp_bucket_dump'), whistle: t.played.includes('wp_whistle'), d: Math.hypot(g.playerPos[0] - at.pos[0], g.playerPos[1] - at.pos[1]), lost: +(c0 - g.timeLeft).toFixed(1), done: at.done };
   // Wait for the next dump, then dash in.
   while (at.phase !== 'dump') g.frame(1 / 30);
+  t.played.length = 0;
   while (at.phase === 'dump') g.frame(1 / 30);
+  const chime = t.played.includes('evt_chime_clear');
   await t.walkTo(at.pos, 0.5);
   await t.frames(1.3);
-  return { fill, caught, done: at.done, token: t.played.includes('wp_token') };
+  return { fill, caught, chime, done: at.done, token: t.played.includes('wp_token') };
 });
 check(bucket.fill === 'wp_bucket_fill', 'the bucket is heard filling');
 check(bucket.caught.dump && bucket.caught.whistle && bucket.caught.d > 8 && !bucket.caught.done, `caught under the dump: the whistle, pushed back (${bucket.caught.d.toFixed(1)} away)`);
 check(bucket.caught.lost > 5 && bucket.caught.lost < 6, `the whistle cost 5 seconds: ${bucket.caught.lost}`);
+check(bucket.chime, '7.0.1: as the dump ends, a chime says run under it now');
 check(bucket.done && bucket.token, 'in just after a dump, and a moment under it: the token');
 
 // ------------------------------------------------------------------ the voice: all recordings
@@ -279,6 +350,8 @@ const chaos = await page.evaluate(async () => {
   delete g._chaosPickNext;
   out.state = g.state; out.count = g.pk && g.pk.count; out.chaos = g.pk && g.pk.chaos;
   out.amb = g.pk && g.pk.amb && g.pk.amb.voice && g.pk.amb.voice.name;
+  out.room = g._currentRoom(); out.ambLevel = g.pk && g.pk.amb.voice.l;
+  out.locators = g.pk.attractions.map((a) => a.kind);
   // Every token but by the rules: each one won is 15 seconds.
   const c0 = g.timeLeft;
   for (const at of [...g.pk.attractions]) { g._pkQuiet(at); g._pkToken(at); }
@@ -288,8 +361,11 @@ const chaos = await page.evaluate(async () => {
   out.ambAtExit = !!(g.pk.amb && g.pk.amb.voice && g.pk.amb.voice.busy && g.pk.amb.voice.l > 0.5);
   const amb = g.pk.amb.voice;
   const pts = g.chaosPoints;
+  // (The level after it is any kind, a park one time in nine: here, not a park.)
+  g._chaosPickNext = () => 'drive';
   await t.walkTo(g.pk.exit.pos, 0.5);
   await t.frames(0.5);
+  delete g._chaosPickNext;
   out.next = g.state; out.points = g.chaosPoints - pts; out.ambFades = !!amb.fadingOut || !amb.busy;
   // The next water park in the run has one more attraction.
   g._chaosPickNext = () => 'park';
@@ -301,6 +377,7 @@ const chaos = await page.evaluate(async () => {
 });
 check(chaos.weight === 1, 'a water park comes up in Chaos as often as an abyss');
 check(chaos.state === 'park' && chaos.chaos && chaos.count === 3 && chaos.amb === 'wp_park', 'a chaos water park: three attractions, the park\'s air');
+check(chaos.room === 'hall' && Math.abs(chaos.ambLevel - 0.55) < 0.01, `7.0.1: a chaos water park is the same: the hall's echo, the park's air at 0.55 (${chaos.room}, ${chaos.ambLevel})`);
 check(chaos.added === 45, `each token is 15 seconds on the chaos clock: ${chaos.added}`);
 check(chaos.exit && chaos.won && chaos.waits, 'every token won: the exit, and the chaos clock waits');
 check(chaos.ambAtExit, 'the park\'s air plays on when the exit opens');
