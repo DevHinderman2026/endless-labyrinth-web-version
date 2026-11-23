@@ -8,7 +8,7 @@
   <link rel="icon" href="icons/icon-192.png">
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
   <meta name="theme-color" content="#0c0f14">
-  <link rel="stylesheet" href="css/site.css?v=6.3.6">
+  <link rel="stylesheet" href="css/site.css?v=6.3.7">
 </head>
 <body data-update-alert="history">
   <header class="site">
@@ -19,6 +19,50 @@
   <main class="page">
     <p>This page lists the web version. For the Windows version, see its <a href="https://github.com/DevHinderman2026/Endless-Labyrinth/blob/main/Credits%20and%20Version%20History/CHANGELOG.md">changelog</a> on GitHub.</p>
     <p>The game updates by itself: the next time you open it, you have the latest version. Only a sound pack that has changed is downloaded again, and your high scores are kept. Events are not listed here: they appear in the Events menu as they open.</p>
+
+    <h2>6.3.7 (22 November 2026), web only</h2>
+    <p>A temporary fix for the static on iPhone and iPad; beacons that could fall silent after a pause; backgrounds that stay when an exit appears; echoes that ring out when you pause; fairer ammo on the islands; and credits that no longer vanish in Chaos mode.</p>
+    <p><em>A bug hunt, from one end of the game to the other.</em></p>
+    <h3>The static on iPhone and iPad: a temporary fix</h3>
+    <ul>
+      <li>This is a temporary fix for the static some players hear on iPhone and iPad. It isn't completely solved yet and we're still working on it, but it should be much better than in the last update.</li>
+      <li>What changed: a sound you could not hear, such as a beacon out of earshot, was still being worked on by the phone as if you could, because its loudness only ever crept toward nothing and never reached it. Now a silent sound is truly silent, and the phone can leave it alone. In a test of thirty-two such sounds, the work fell by more than half.</li>
+      <li>Every run now also starts on a fresh sound engine: the first time you touch the main menu after a run, the game makes a new one, so nothing from the last run is carried into the next.</li>
+      <li>A beacon you walk back into earshot of no longer comes in with a tiny click.</li>
+    </ul>
+    <h3>Fixed: beacons that stayed silent after a pause</h3>
+    <ul>
+      <li>Now and then, about once or twice in a hundred pauses, resuming the game could leave some beacons silent for the rest of the level, and Game resumed was not said. In Standard mode that could be the exit itself. It happened when the pause landed in the first hundredth of a second of a beep. It was introduced in 6.3.6 and is fixed; the same fault could happen on leaving Help, or on saying No to returning to the main menu.</li>
+    </ul>
+    <h3>Changed: the background stays when the exit appears</h3>
+    <ul>
+      <li>In Chaos mode's Abyss levels and Find the Voice levels, the background used to fade away when the exit appeared, leaving only the exit's Morse signal. Now the wind of the abyss, or the room's background, plays on until you walk through the exit, and then fades into the next level like any other. The creatures, the cases, the lightning and the guide still go, as before.</li>
+    </ul>
+    <h3>Changed: an echo rings out when you pause</h3>
+    <ul>
+      <li>Pausing while a bell rang in Call of Fate cut the bell and its echo off in the same instant. Now the sound stops and its echo dies away in the room, over about a second, as it would in a real one. When you resume, the sound and its echo come back together, in step. This reaches every held sound with an echo, in every mode and event: bells, exits and beacons.</li>
+    </ul>
+    <h3>Changed: ammo on the islands</h3>
+    <ul>
+      <li>In Island mode, and on Chaos mode's islands, ammo could pile up: every seabed laid out a full supply whatever you already carried, so fifty shots or more by the second or third island was normal. Now a seabed holds what its island needs and a spare, less what you carry: a shot for each enemy, the hits its guardian takes, and, if a guardian waits on the next island, that guardian's hits and a shot for each enemy that can be after you at once there. The spare is two to four shots and half of the need again.</li>
+      <li>Each reinforcement that lands while you are down now leaves one more shot on the seabed. Until now three were allowed for whether they landed or not.</li>
+      <li>There is always at least one small cartridge to find, cartridges still hold two to six shots, and what you leave on the seabed is still there on your next dive.</li>
+      <li>A careful player always has enough. In twenty thousand pretend runs, a player who hits four shots in five had enough ammo for eight islands in 96 runs out of 100; one who hits seven in ten, in 69. Every miss counts now.</li>
+    </ul>
+    <h3>Changed in Chaos mode: credits and cartridges stay when the exit appears</h3>
+    <ul>
+      <li>When a level was won and its exit appeared, a time credit still lying there vanished, even one you were a step away from. Now a credit already out stays, its beacon still sounding, and you can take it for its time: in a battle, on a tower floor and on a road. A cartridge already out in a battle stays too, and its shots still go to your battles' ammo.</li>
+      <li>No new credit or cartridge appears once a level is won, as before, and the clock still waits while the exit is open.</li>
+    </ul>
+    <h3>Changed in Chaos mode's worlds: the water slide</h3>
+    <ul>
+      <li>A water slide could be ridden again and again for thirty seconds each time. Now the first ride in a world adds thirty seconds, and each ride after it five fewer: thirty, twenty-five, twenty, fifteen, then ten for every ride after that. Every slide in the world counts together, and a new world starts again at thirty. The points for a ride are unchanged.</li>
+    </ul>
+    <h3>Fixed in events: creatures that listen for you</h3>
+    <ul>
+      <li>In an event whose creatures listen for you, a creature could settle right beside the thing you had to reach, a key, a door, a treasure, or face it, so that you could only reach it by waking the creature. Now they keep clear of everything you have to reach.</li>
+      <li>High scores are not touched by this update.</li>
+    </ul>
 
     <h2>6.3.6 (21 November 2026), web only</h2>
     <p>The exit's beeping now comes from one place, the exit, even after you have turned; and so does every other sound that is heard from a place.</p>
@@ -768,65 +812,65 @@
   <script type="importmap">
   {
     "imports": {
-      "./js/accessibility.js": "./js/accessibility.js?v=6.3.6",
-      "./js/audio.js": "./js/audio.js?v=6.3.6",
-      "./js/backup.js": "./js/backup.js?v=6.3.6",
-      "./js/backups-page.js": "./js/backups-page.js?v=6.3.6",
-      "./js/bella-lexicon.js": "./js/bella-lexicon.js?v=6.3.6",
-      "./js/bella-words.js": "./js/bella-words.js?v=6.3.6",
-      "./js/braille.js": "./js/braille.js?v=6.3.6",
-      "./js/calendar.js": "./js/calendar.js?v=6.3.6",
-      "./js/device.js": "./js/device.js?v=6.3.6",
-      "./js/display.js": "./js/display.js?v=6.3.6",
-      "./js/game.js": "./js/game.js?v=6.3.6",
-      "./js/gestures.js": "./js/gestures.js?v=6.3.6",
-      "./js/help-data.js": "./js/help-data.js?v=6.3.6",
-      "./js/help-page.js": "./js/help-page.js?v=6.3.6",
-      "./js/keywords.js": "./js/keywords.js?v=6.3.6",
-      "./js/main.js": "./js/main.js?v=6.3.6",
-      "./js/modes/abyss.js": "./js/modes/abyss.js?v=6.3.6",
-      "./js/modes/chaos.js": "./js/modes/chaos.js?v=6.3.6",
-      "./js/modes/driving.js": "./js/modes/driving.js?v=6.3.6",
-      "./js/modes/events/blocks.js": "./js/modes/events/blocks.js?v=6.3.6",
-      "./js/modes/events/engine.js": "./js/modes/events/engine.js?v=6.3.6",
-      "./js/modes/events/feed.js": "./js/modes/events/feed.js?v=6.3.6",
-      "./js/modes/events/help.js": "./js/modes/events/help.js?v=6.3.6",
-      "./js/modes/events/missions.js": "./js/modes/events/missions.js?v=6.3.6",
-      "./js/modes/events/more-spec.js": "./js/modes/events/more-spec.js?v=6.3.6",
-      "./js/modes/events/more.js": "./js/modes/events/more.js?v=6.3.6",
-      "./js/modes/events/py.js": "./js/modes/events/py.js?v=6.3.6",
-      "./js/modes/events/schema.js": "./js/modes/events/schema.js?v=6.3.6",
-      "./js/modes/events/sign.js": "./js/modes/events/sign.js?v=6.3.6",
-      "./js/modes/events/sounds.js": "./js/modes/events/sounds.js?v=6.3.6",
-      "./js/modes/events/tunes.js": "./js/modes/events/tunes.js?v=6.3.6",
-      "./js/modes/events/wording.js": "./js/modes/events/wording.js?v=6.3.6",
-      "./js/modes/events.js": "./js/modes/events.js?v=6.3.6",
-      "./js/modes/findvoice-guide.js": "./js/modes/findvoice-guide.js?v=6.3.6",
-      "./js/modes/findvoice.js": "./js/modes/findvoice.js?v=6.3.6",
-      "./js/modes/index.js": "./js/modes/index.js?v=6.3.6",
-      "./js/modes/island.js": "./js/modes/island.js?v=6.3.6",
-      "./js/modes/tower.js": "./js/modes/tower.js?v=6.3.6",
-      "./js/modes/ultimate/cast.js": "./js/modes/ultimate/cast.js?v=6.3.6",
-      "./js/modes/ultimate/help.js": "./js/modes/ultimate/help.js?v=6.3.6",
-      "./js/modes/ultimate/world.js": "./js/modes/ultimate/world.js?v=6.3.6",
-      "./js/modes/ultimate.js": "./js/modes/ultimate.js?v=6.3.6",
-      "./js/packs.js": "./js/packs.js?v=6.3.6",
-      "./js/site.js": "./js/site.js?v=6.3.6",
-      "./js/sound-rules.js": "./js/sound-rules.js?v=6.3.6",
-      "./js/speech.js": "./js/speech.js?v=6.3.6",
-      "./js/stats.js": "./js/stats.js?v=6.3.6",
-      "./js/storage.js": "./js/storage.js?v=6.3.6",
-      "./js/turning.js": "./js/turning.js?v=6.3.6",
-      "./js/update-alert.js": "./js/update-alert.js?v=6.3.6",
-      "./js/version.js": "./js/version.js?v=6.3.6",
-      "./js/voice-text.js": "./js/voice-text.js?v=6.3.6",
-      "./js/voice.js": "./js/voice.js?v=6.3.6",
-      "./js/wetworker.js": "./js/wetworker.js?v=6.3.6"
+      "./js/accessibility.js": "./js/accessibility.js?v=6.3.7",
+      "./js/audio.js": "./js/audio.js?v=6.3.7",
+      "./js/backup.js": "./js/backup.js?v=6.3.7",
+      "./js/backups-page.js": "./js/backups-page.js?v=6.3.7",
+      "./js/bella-lexicon.js": "./js/bella-lexicon.js?v=6.3.7",
+      "./js/bella-words.js": "./js/bella-words.js?v=6.3.7",
+      "./js/braille.js": "./js/braille.js?v=6.3.7",
+      "./js/calendar.js": "./js/calendar.js?v=6.3.7",
+      "./js/device.js": "./js/device.js?v=6.3.7",
+      "./js/display.js": "./js/display.js?v=6.3.7",
+      "./js/game.js": "./js/game.js?v=6.3.7",
+      "./js/gestures.js": "./js/gestures.js?v=6.3.7",
+      "./js/help-data.js": "./js/help-data.js?v=6.3.7",
+      "./js/help-page.js": "./js/help-page.js?v=6.3.7",
+      "./js/keywords.js": "./js/keywords.js?v=6.3.7",
+      "./js/main.js": "./js/main.js?v=6.3.7",
+      "./js/modes/abyss.js": "./js/modes/abyss.js?v=6.3.7",
+      "./js/modes/chaos.js": "./js/modes/chaos.js?v=6.3.7",
+      "./js/modes/driving.js": "./js/modes/driving.js?v=6.3.7",
+      "./js/modes/events/blocks.js": "./js/modes/events/blocks.js?v=6.3.7",
+      "./js/modes/events/engine.js": "./js/modes/events/engine.js?v=6.3.7",
+      "./js/modes/events/feed.js": "./js/modes/events/feed.js?v=6.3.7",
+      "./js/modes/events/help.js": "./js/modes/events/help.js?v=6.3.7",
+      "./js/modes/events/missions.js": "./js/modes/events/missions.js?v=6.3.7",
+      "./js/modes/events/more-spec.js": "./js/modes/events/more-spec.js?v=6.3.7",
+      "./js/modes/events/more.js": "./js/modes/events/more.js?v=6.3.7",
+      "./js/modes/events/py.js": "./js/modes/events/py.js?v=6.3.7",
+      "./js/modes/events/schema.js": "./js/modes/events/schema.js?v=6.3.7",
+      "./js/modes/events/sign.js": "./js/modes/events/sign.js?v=6.3.7",
+      "./js/modes/events/sounds.js": "./js/modes/events/sounds.js?v=6.3.7",
+      "./js/modes/events/tunes.js": "./js/modes/events/tunes.js?v=6.3.7",
+      "./js/modes/events/wording.js": "./js/modes/events/wording.js?v=6.3.7",
+      "./js/modes/events.js": "./js/modes/events.js?v=6.3.7",
+      "./js/modes/findvoice-guide.js": "./js/modes/findvoice-guide.js?v=6.3.7",
+      "./js/modes/findvoice.js": "./js/modes/findvoice.js?v=6.3.7",
+      "./js/modes/index.js": "./js/modes/index.js?v=6.3.7",
+      "./js/modes/island.js": "./js/modes/island.js?v=6.3.7",
+      "./js/modes/tower.js": "./js/modes/tower.js?v=6.3.7",
+      "./js/modes/ultimate/cast.js": "./js/modes/ultimate/cast.js?v=6.3.7",
+      "./js/modes/ultimate/help.js": "./js/modes/ultimate/help.js?v=6.3.7",
+      "./js/modes/ultimate/world.js": "./js/modes/ultimate/world.js?v=6.3.7",
+      "./js/modes/ultimate.js": "./js/modes/ultimate.js?v=6.3.7",
+      "./js/packs.js": "./js/packs.js?v=6.3.7",
+      "./js/site.js": "./js/site.js?v=6.3.7",
+      "./js/sound-rules.js": "./js/sound-rules.js?v=6.3.7",
+      "./js/speech.js": "./js/speech.js?v=6.3.7",
+      "./js/stats.js": "./js/stats.js?v=6.3.7",
+      "./js/storage.js": "./js/storage.js?v=6.3.7",
+      "./js/turning.js": "./js/turning.js?v=6.3.7",
+      "./js/update-alert.js": "./js/update-alert.js?v=6.3.7",
+      "./js/version.js": "./js/version.js?v=6.3.7",
+      "./js/voice-text.js": "./js/voice-text.js?v=6.3.7",
+      "./js/voice.js": "./js/voice.js?v=6.3.7",
+      "./js/wetworker.js": "./js/wetworker.js?v=6.3.7"
     }
   }
   </script>
   <!-- end of versions -->
-  <script type="module" src="js/site.js?v=6.3.6"></script>
-  <script type="module" src="js/update-alert.js?v=6.3.6"></script>
+  <script type="module" src="js/site.js?v=6.3.7"></script>
+  <script type="module" src="js/update-alert.js?v=6.3.7"></script>
 </body>
 </html>

@@ -422,7 +422,10 @@ export const BlocksMixin = {
   // could only be reached by waking it).
   _bGoalSpots() {
     const spots = (this.evItems || []).map((t) => [t.x, t.y]);
-    for (const th of [this.mKey, this.mExit, this.mSpot, this.mBomb, this.mBuried, this.mDropoff, this.evExit]) {
+    // (Fable's review: a mission's treasure, safe place, home and pen are places the
+    // player has to reach too, and were left out.)
+    for (const th of [this.mKey, this.mExit, this.mSpot, this.mBomb, this.mBuried, this.mDropoff, this.evExit,
+      this.mTreasure, this.mSafe, this.mHome, this.mPen]) {
       if (th && th.x !== undefined) spots.push([th.x, th.y]);
     }
     return spots;

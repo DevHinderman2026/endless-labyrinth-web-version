@@ -165,7 +165,13 @@ function begin() {
 // Every touch, tap and key press wakes the sound if the phone has stopped it:
 // these are the moments a phone allows sound to start again.
 for (const type of ['touchend', 'pointerup', 'click', 'keydown']) {
-  document.addEventListener(type, () => { if (audio) audio.wake(); }, { capture: true, passive: true });
+  document.addEventListener(type, () => {
+    if (!audio) return;
+    // (6.3.7) After a run, the first touch on the main menu makes a fresh sound engine
+    // for the next one: here, inside the touch, the only place a phone lets one start.
+    try { if (game && game.freshSoundDue && game.freshSoundDue()) audio.fresh(); } catch (e) { console.error(e); }
+    audio.wake();
+  }, { capture: true, passive: true });
 }
 
 function onGesture(g) {

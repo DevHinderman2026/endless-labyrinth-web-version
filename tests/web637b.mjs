@@ -313,6 +313,53 @@ check(Math.abs(s1.heard[0] - 0.6) < 1e-6 && Math.abs(s1.heard[1] - 0.6) < 1e-6, 
 check(s1.silent.every((x) => x === 0) && s1.front.every((x) => x === 0), `a beacon out of earshot is exactly silent, and so is the dull copy of one in front of you (${JSON.stringify([s1.silent, s1.front])})`);
 check(s1.again.rightAway < 0.3 && Math.abs(s1.again.after - 0.6) < 1e-6, `heard again after silence, its level glides in instead of jumping (${s1.again.rightAway.toFixed(3)} at once, ${s1.again.after} after)`);
 
+// ------------------------------------------------------------------ 1d: a fresh sound engine for every run
+const before = await page.evaluate(() => {
+  const g = window.__el.game; const a = g.audio;
+  const pick = g._chaosPickNext; g._chaosPickNext = () => 'battle';
+  window.startMode('chaos');
+  for (let i = 0; i < 60; i++) g.frame(1 / 30);
+  g._chaosPickNext = pick;
+  window.firstCtx = a.ctx;
+  g.triggerGameOver();
+  return { state: g.state, freshened: a.freshened || 0, recoveries: a.recoveries, stale: g.soundStale };
+});
+await page.keyboard.press('ArrowUp');          // a key at the game over screen: nothing yet
+const atOver = await page.evaluate(() => ({ same: window.__el.audio.ctx === window.firstCtx, state: window.__el.game.state }));
+await page.keyboard.press('Enter');            // back to the main menu
+const atMenu = await page.evaluate(() => ({ same: window.__el.audio.ctx === window.firstCtx, state: window.__el.game.state }));
+await page.keyboard.press('ArrowDown');        // the first key on the menu: the fresh engine
+await page.waitForTimeout(300);
+const fresh = await page.evaluate(async () => {
+  const g = window.__el.game; const a = g.audio;
+  const r = { changed: a.ctx !== window.firstCtx, freshened: a.freshened, recoveries: a.recoveries, state: a.ctx.state, live: a.live.size,
+    oldState: window.firstCtx.state, time: a.ctx.currentTime };
+  window.secondCtx = a.ctx;
+  return r;
+});
+await page.keyboard.press('ArrowUp');          // another key: no second fresh engine
+const second = await page.evaluate(async () => {
+  const g = window.__el.game; const a = g.audio; const r = { same: a.ctx === window.secondCtx, freshened: a.freshened };
+  // The next run plays in the new engine.
+  const pick = g._chaosPickNext; g._chaosPickNext = () => 'battle';
+  window.startMode('chaos');
+  for (let i = 0; i < 90; i++) { g.frame(1 / 30); await window.sleep(10); }
+  g._chaosPickNext = pick;
+  r.state = g.state;
+  r.inNew = [...a.live].every((v) => v.ctx === a.ctx) && a.live.size > 0;
+  r.running = a.ctx.state === 'running' && a.ctx.currentTime > 0.5;
+  window.toMenu();
+  return r;
+});
+await page.waitForTimeout(12500);
+const oldGone = await page.evaluate(() => window.firstCtx.state);
+check(before.state === 'game_over' && before.stale === true, 'a run ends: the next one is due a fresh sound engine');
+check(atOver.same && atMenu.same && atMenu.state === 'menu', 'not at the game over screen, where the result is still being said, nor on the way to the menu');
+check(fresh.changed && fresh.freshened === before.freshened + 1 && fresh.recoveries === before.recoveries && fresh.live === 0, `the first key on the main menu makes the fresh engine, with nothing carried into it: ${JSON.stringify(fresh)}`);
+check(second.same && second.freshened === fresh.freshened, 'only once: the next key leaves it alone');
+check(second.state === 'battle' && second.inNew && second.running, 'the next run plays in the new engine');
+check(fresh.oldState !== 'closed' && oldGone === 'closed', `the old engine is kept while anything in it finishes, then closed (${fresh.oldState}, then ${oldGone})`);
+
 //SECTIONS
 
 check(errors.length === 0, 'no errors in the page: ' + errors.slice(0, 3).join(' | '));

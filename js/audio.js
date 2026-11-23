@@ -339,9 +339,9 @@ const SENT = new WeakMap();
 // some devices every such change can be heard as a pop. Now a finished sound's
 // panner stays plugged in, silent, and is handed to the next sound that needs one:
 // the mix's inputs hardly ever change, and their number never grows past the most
-// sounds placed at once (PANNER_POOL per mix, beyond which one is let go).
+// sounds placed at once. (6.3.1 capped the pool at 64 and let one go beyond that; since
+// 6.3.4 nothing is ever let go, see below, and 6.3.7 took the unused cap out.)
 const PANNERS = new WeakMap();     // mix (a GainNode) -> panners plugged into it, silent, free to take
-const PANNER_POOL = 64;
 // (Web 6.3.3, Russell, 21 November 2026: the elevator's chime was "stereo spread instead of
 // at one central point", and sometimes the characters' voices were lopsided too.) An HRTF
 // panner that is moved does not jump to its new place: it crossfades from where it last
@@ -358,7 +358,7 @@ const PANNER_POOL = 64;
 // let a full pool drop a panner by unplugging it, and walking a labyrinth, with the exit's
 // beep in a new direction every second, made new panners all the time: in a minute's walk,
 // 117 made and 42 unplugged, the 6.3.0 pop again. Now no panner is ever unplugged. A mix
-// makes new panners only until it has PANNER_POOL of them; after that a sound takes the
+// made new panners only until it had 64 of them; after that a sound took the
 // free panner pointing nearest its place, even if not within PANNER_REUSE_DEG (with that
 // many pointing every way, the nearest is close). Only when every panner is busy is
 // another made, and it is kept too.
@@ -545,8 +545,28 @@ export class AudioEngine {
   // was (drones, beacons, enemies); a one-shot that was cut off is not replayed.
   // Sounds already decoded are kept: they belong to no engine in particular.
   recover() {
-    const old = this.ctx;
     this.recoveries += 1;
+    this._renew(2000);
+  }
+
+  // (Web 6.3.7, Russell, 22 November 2026: "static still shows up from time to time ...
+  // the channels are not cleared when you go back to the main menu".) Nothing was still
+  // playing after a run, but the sound engine itself carried from one run into the
+  // next for as long as the page stayed open: its panners, plugged in and silent, their
+  // inner state, every room's echo, the limiter. Now each run starts on a fresh engine.
+  // It is made at the first touch or key press on the main menu after a run has ended
+  // (js/main.js; game.js soundStale), because a phone starts a new sound engine only
+  // inside a touch: made at any other moment it would sit silent until the next one,
+  // and the game's own voice with it. The old engine is kept a while longer than in
+  // recover(), so whatever is still being said in it finishes; everything decoded is
+  // kept, as there.
+  fresh() {
+    this.freshened = (this.freshened || 0) + 1;
+    this._renew(12000);
+  }
+
+  _renew(keepOld) {
+    const old = this.ctx;
     this.recoveredAt = performance.now();
     this.ctx = newContext();
     ({ out: this.out, lim: this.limiter } = outChain(this.ctx, this.spatial ? MASTER_LEVEL_3D : MASTER_LEVEL));
@@ -564,8 +584,14 @@ export class AudioEngine {
     // nodes still belong to the old one.
     if (this.spatial) this.setAreaRooms(areas);
     // The old engine is kept a moment, so a one-shot already sounding there (a
-    // footstep, a shot) finishes rather than being cut off.
-    setTimeout(() => { try { old.close(); } catch (e) { /* already closed */ } }, 2000);
+    // footstep, a shot) finishes rather than being cut off. (6.3.7: never more than
+    // one old engine at a time: a phone allows only a few.)
+    if (this._oldCtx) { clearTimeout(this._oldTimer); try { this._oldCtx.close(); } catch (e) { /* already closed */ } }
+    this._oldCtx = old;
+    this._oldTimer = setTimeout(() => {
+      if (this._oldCtx === old) this._oldCtx = null;
+      try { old.close(); } catch (e) { /* already closed */ }
+    }, keepOld);
     this.ctx.resume().catch(() => {});
   }
 
@@ -1586,7 +1612,9 @@ export class Voice {
     if (this.fadingOut) { this.stop(); return; }
     if (!this.loop || !this.dry) {
       // A one-shot plays out where it began (see recover); it is just no longer
-      // tracked here.
+      // tracked here. (6.3.7: one that was being held has nowhere to carry on, its
+      // engine is going: it is stopped, so nothing waits for it to end.)
+      if (this.paused) this.stop();
       this.audio.live.delete(this);
       return;
     }

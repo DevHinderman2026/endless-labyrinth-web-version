@@ -1181,6 +1181,17 @@ export class Game {
     this.pausedVoices = [];
     this.isPaused = false;
     for (const m of MODES) if (m.stopAll) m.stopAll(this);
+    // (6.3.7) A run has ended: the next one starts on a fresh sound engine, made at
+    // the first touch on the main menu (see freshSoundDue and AudioEngine.fresh).
+    this.soundStale = true;
+  }
+
+  // Asked by js/main.js on every touch and key press, before anything else hears it:
+  // true once, on the main menu, after a run has ended.
+  freshSoundDue() {
+    if (!this.soundStale || this.state !== S.MENU) return false;
+    this.soundStale = false;
+    return true;
   }
 
   triggerGameOver() {
