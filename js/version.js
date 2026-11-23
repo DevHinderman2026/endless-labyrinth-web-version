@@ -47,6 +47,24 @@ export async function siteVersion() {
   }
 }
 
+// (7.1.4) The play page's Refresh button: asks the website for its version, says what
+// it found, lets go of anything the browser keeps for the site, and opens the page
+// afresh at a new address, so even a game on the Home Screen gets the newest version
+// at once. `say(text)` reports to the player.
+export async function refreshNow(say = () => {}) {
+  say('Checking for updates.');
+  const latest = await siteVersion();
+  if (!latest) { say('The website could not be reached. Check your connection, and try again.'); return false; }
+  try { if (globalThis.caches) for (const k of await caches.keys()) await caches.delete(k); } catch (e) { /* nothing kept */ }
+  try { sessionStorage.removeItem(MARK); } catch (e) { /* no session storage */ }
+  say(LOADED && latest !== LOADED ? `Updating to version ${latest}.` : `You have the newest version, ${latest}. Refreshing.`);
+  const u = new URL(location.href);
+  u.searchParams.set('v', latest);
+  u.searchParams.set('refresh', String(Date.now()));
+  setTimeout(() => location.replace(u.href), 1500);
+  return true;
+}
+
 // Reload this page once, at an address carrying the site's version, if the files
 // it is running are an older version. `stillOk()` is asked again just before
 // reloading (the play page: only while Start has not been pressed). Returns true

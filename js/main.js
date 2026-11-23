@@ -9,7 +9,7 @@ import { Game } from './game.js';
 import { deviceKind, isApple, isComputer, keyboardDevice, screenReaderName, deviceWord, windowsOnly } from './device.js';
 import { keyWords } from './keywords.js';
 import { applyDisplay, followDisplay } from './display.js';
-import { freshen } from './version.js';
+import { freshen, refreshNow, LOADED } from './version.js';
 import { Braille } from './braille.js';
 import { GameVoice } from './voice.js';
 
@@ -50,8 +50,11 @@ if (windowsOnly()) {
 function offInstructions() {
   const sr = screenReaderName(kind);
   if (isApple(kind)) {
+    // (7.1.4) An iPad's button is the top button; an iPhone's is the side button; older
+    // models of both have a Home button.
+    const button = kind === 'ipad' ? 'the top button' : 'the side button';
     return `Make sure your ${deviceWord(kind)} is not in silent mode, or the game's sounds will be muted. `
-      + `Now turn ${sr} off: triple-click the side button, or the Home button on older models, `
+      + `Now turn ${sr} off: triple-click ${button}, or the Home button on older models, `
       + `if your Accessibility Shortcut is set up, or ask Siri to turn ${sr} off. `
       + `The game speaks for itself. When ${sr} is off, swipe up anywhere on the screen to begin. `
       + `When you leave the game, turn ${sr} back on the same way.`;
@@ -186,6 +189,15 @@ const gestures = new Gestures($('stage'), onGesture);
 gestures.braille = braille;
 
 $('start').addEventListener('click', start);
+// (7.1.4) Refresh and check for updates, at the top of the play page.
+if ($('refresh')) {
+  if (LOADED) $('refresh-note').textContent = `Version ${LOADED}.`;
+  $('refresh').addEventListener('click', () => {
+    if (audio) return;            // (the button is on the start screen only)
+    $('refresh').disabled = true;
+    refreshNow((text) => { $('refresh-note').textContent = text; }).then((going) => { if (!going) $('refresh').disabled = false; });
+  });
+}
 
 // An old kept copy of the play page opens itself afresh once, and only while Start
 // has not been pressed (js/version.js); the saved scores are never touched.
