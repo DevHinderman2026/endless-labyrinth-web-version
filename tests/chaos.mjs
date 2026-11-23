@@ -93,7 +93,7 @@ check(setup.names.indexOf('Events') === setup.names.indexOf('Chaos Mode') + 1 &&
 check(setup.missing.length === 0, 'every chaos sound, its demos and the elevator\'s muffled drones are in the packs' + (setup.missing.length ? ': missing ' + setup.missing.join(', ') : ''));
 check(setup.keys.length === 0, 'no key names in the chaos help: ' + setup.keys.join(', '));
 check(JSON.stringify(setup.general) === JSON.stringify(['Help Menu', 'General Gestures', 'General Turning', 'General Sound on Your Device', 'General Headphones', 'General The Game\'s Voice', 'General Room Reverb',
-  'General Behind You', 'General Pause and Resume', 'General Quitting a Run', 'General High Scores', 'General Weekly Leaderboard', 'General Checking Where You Stand', 'General The Soundtrack'])
+  'General Behind You', 'General Pause and Resume', 'General Quitting a Run', 'General High Scores', 'General Checking Where You Stand', 'General The Soundtrack'])
   && setup.generalKeys.length === 0, 'General help: the desktop topics without Braille, with gestures: ' + setup.generalKeys.join(', '));
 
 // --------------------------------------------------------------- the harness

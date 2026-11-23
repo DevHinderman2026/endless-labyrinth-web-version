@@ -19,13 +19,13 @@ await page.goto(base + '/terms.html');
 {
   const h2s = await page.locator('main h2').allTextContents();
   const numbered = h2s.filter((t) => /^\d+\. /.test(t));
-  check(numbered.length === 24, `24 numbered sections, each a real heading (7.2.0: the Weekly Leaderboard): ${numbered.length}`);
-  check(numbered.every((t, i) => t.startsWith(`${i + 1}. `)), 'numbered 1 to 24 in order');
+  check(numbered.length === 23, `23 numbered sections, each a real heading: ${numbered.length}`);
+  check(numbered.every((t, i) => t.startsWith(`${i + 1}. `)), 'numbered 1 to 23 in order');
   const titles = numbered.map((t) => t.replace(/^\d+\. /, ''));
   for (const want of ['Acceptance of these Terms', 'All ages', 'Hacking and security', 'Cheating and tampering', 'Bots and automated access', 'Attacks and overload',
     'Malware, phishing and impersonation', 'Copying and redistribution', 'No selling', 'The sounds', 'Names and identity', 'Share buttons and outside services',
     'AI assistance and copyright', 'Enforcement', 'No warranty', 'Limitation of liability', 'Changes to these Terms', 'Severability and entire agreement', 'Contact',
-    'Assistive technology is always allowed', 'Recording, streaming and responsible reporting', 'The Windows version', 'The Weekly Leaderboard']) {
+    'Assistive technology is always allowed', 'Recording, streaming and responsible reporting', 'The Windows version']) {
     check(titles.includes(want), `section: ${want}`);
   }
   const h3s = await page.locator('main h3').allTextContents();
@@ -35,7 +35,7 @@ await page.goto(base + '/terms.html');
   const contents = await page.locator('nav.contents a').evaluateAll((as) => as.map((a) => a.getAttribute('href').slice(1)));
   const missing = [];
   for (const id of contents) if (!(await page.locator('#' + id).count())) missing.push(id);
-  check(contents.length === 25 && missing.length === 0, `every contents link has its section ${missing}`);
+  check(contents.length === 24 && missing.length === 0, `every contents link has its section ${missing}`);
   check(/Last updated: \d+ \w+ 2026\./.test(await page.locator('header.site p').textContent()), 'the date last updated is at the top');
   const text = await page.locator('main').textContent();
   check(/The game is free, and it stays free/.test(text) && /No one may sell, rent, license or charge money/.test(text), 'no selling is stated plainly in its own section');

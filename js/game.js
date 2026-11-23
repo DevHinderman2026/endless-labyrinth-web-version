@@ -5,8 +5,6 @@
 import { HELP as BASE_HELP } from './help-data.js';
 import { MODES } from './modes/index.js';
 import { RATES } from './speech.js';
-import * as lb from './leaderboard.js';
-import { mixin as LB_MIXIN, startLeaderboard } from './leaderboard-menu.js';
 import { keyboardDevice, windowsOnly } from './device.js';
 import { HIT_REACTIONS, HIT_REACT_LEVEL, HIT_REACT_AFTER } from './modes/ultimate.js';
 import { BATTLE_CROWD, BATTLE_BEACON_BOOST, CROWD_LEVEL, AMBIENCE_LEVEL, BACKGROUND_SEND, ROARS, ROAR_LEVEL, ROAR_AFTER,
@@ -121,7 +119,6 @@ const S = {
   MENU: 'menu', HELP: 'help', STANDARD: 'standard', BATTLE: 'battle', GAME_OVER: 'game_over',
   HIGH_SCORES: 'high_scores', CONFIRM_EXIT: 'confirm_exit', CONFIRM_RESET: 'confirm_reset', PRACTICE: 'practice',
   KEY_TEST: 'key_test',   // Windows (web 3.0.0): the Braille key test (js/braille.js)
-  LEADERBOARD: 'leaderboard',   // web 7.2.0: the Weekly Leaderboard (js/leaderboard-menu.js)
 };
 const PLAYING = [S.STANDARD, S.BATTLE];
 
@@ -361,7 +358,7 @@ export class Game {
     // speech rate: the game's own voice on or off, and a key test for a new
     // device (js/braille.js).
     const windows = windowsOnly() ? ['speech', 'keytest'] : [];
-    return ['standard', 'battle', ...this._menuItems().map((i) => i.key), 'scores', 'weekly', ...practice, ...windows, 'rate', 'leave'];
+    return ['standard', 'battle', ...this._menuItems().map((i) => i.key), 'scores', ...practice, ...windows, 'rate', 'leave'];
   }
 
   _menuLabel(k) {
@@ -369,7 +366,7 @@ export class Game {
     if (item) return typeof item.label === 'function' ? item.label(this) : item.label;
     const br = this.braille;
     return {
-      standard: 'Standard Mode', battle: 'Battle Mode', scores: 'High Scores', weekly: 'Weekly Leaderboard', practice: 'Gesture Practice',
+      standard: 'Standard Mode', battle: 'Battle Mode', scores: 'High Scores', practice: 'Gesture Practice',
       rate: `Speech Rate: ${this.tts.rateLevel} of ${RATES.length}`, leave: 'Leave Game',
       speech: br ? br.speechLabel() : 'Speech', keytest: 'Braille Key Test',
     }[k];
@@ -392,8 +389,6 @@ export class Game {
       this.scores.save();
     }
     this.tts.speak(line + this.menuOptions[this.menuIndex]);
-    // (7.2.0) The weekly leaderboard: last week's result, and the winner's ceremony.
-    startLeaderboard(this);
   }
 
   // -------------------------------------------------------------- state
@@ -607,14 +602,14 @@ export class Game {
       this.ambienceChannel = this.audio.play(LABYRINTH_DRONES[amb], { loops: -1, volume: 0.8, fadeMs: CHAOS_AMBIENCE_FADE * 1000 });
     }
     if (mode === S.STANDARD) {
-      this.timeLeft = lb.time(STANDARD_START_TIME);
+      this.timeLeft = STANDARD_START_TIME;
       this.nextAnnounceTime = Math.floor((this.timeLeft - 1) / 30.0) * 30.0;
       this.thirtySecAnnounced = this.timeLeft <= 30.0;
       this.lastBeepSecond = -1;
       this.generateLabyrinth();
     } else {
-      this.ammo = lb.ammo(this._battleTargetsNeeded() + 3);
-      this.timeLeft = lb.time(BATTLE_TIME_LIMIT);
+      this.ammo = this._battleTargetsNeeded() + 3;
+      this.timeLeft = BATTLE_TIME_LIMIT;
       this.nextAnnounceTime = Math.floor((this.timeLeft - 1) / BATTLE_TIME_ANNOUNCE) * BATTLE_TIME_ANNOUNCE;
       this.thirtySecAnnounced = this.timeLeft <= 30.0;
       this.lastBeepSecond = -1;
@@ -1215,8 +1210,6 @@ export class Game {
       // below are the same for every mode; r.after is added after them.
       const r = m.finish(this, mode);
       if (r.custom) { this.tts.speak(r.message); return; }
-      // (7.2.0) A Chaos run's points go to the weekly leaderboard.
-      if (r.key === lb.BOARD_KEY) lb.submit(r.score, this._runSeconds || 0);
       prevHigh = this.scores.scores[r.key] || 0;
       scoreValue = r.score;
       isHigh = this.scores.update(r.key, r.score);
@@ -1361,8 +1354,6 @@ export class Game {
     this._wake(false);
     this._refreshMenu();
     this.tts.speak(prefix + this.menuOptions[this.menuIndex]);
-    // (7.2.0) Last week's winner hears the ceremony here, once, if it has not yet.
-    this._lbMaybeCeremony();
   }
 
   // -------------------------------------------------------------- input
@@ -1432,7 +1423,6 @@ export class Game {
       case S.HELP: this._helpInput(g); return;
       case S.CONFIRM_RESET: this._resetInput(g); return;
       case S.HIGH_SCORES: this._scoresInput(g); return;
-      case S.LEADERBOARD: this._lbInput(g); return;
       case S.GAME_OVER:
         if (g === 'enter' || g === 'back') this._toMenu();
         return;
@@ -1471,8 +1461,7 @@ export class Game {
         this.state = S.HIGH_SCORES;
         this.scoreIndex = 0;
         this.tts.speak('High Scores Menu. Swipe up and down to hear scores. Double tap or triple tap to go back. ' + this._scoreLines()[0]);
-      } else if (k === 'weekly') this._lbOpen();
-      else if (k === 'practice') this._startPractice();
+      } else if (k === 'practice') this._startPractice();
       else if (this._menuItems().some((i) => i.key === k)) this._menuItems().find((i) => i.key === k).select(this);
       else if (k === 'rate') this._changeRate(1, true);
       else if (k === 'speech' && this.braille) {
@@ -2075,10 +2064,8 @@ export class Game {
       this._statsRunId = this.runId;
       this._statsMode = this._statsKey();
       this.scores.runStarted(this._statsMode);
-      this._runSeconds = 0;       // (7.2.0) this run's play, sent with a Chaos score
     }
     if (!this.isPaused && this._statsMode) this.scores.addPlayTime(this._statsMode, dt);
-    if (!this.isPaused) this._runSeconds = (this._runSeconds || 0) + dt;
   }
 
   // -------------------------------------------------------------- one frame
@@ -2120,7 +2107,6 @@ export class Game {
       case S.MENU: return 'Main Menu: ' + this.menuOptions[this.menuIndex];
       case S.HELP: return 'Help';
       case S.HIGH_SCORES: return 'High Scores';
-      case S.LEADERBOARD: return 'Weekly Leaderboard';
       case S.GAME_OVER: return 'Game Over';
       case S.CONFIRM_EXIT: return 'Return to the main menu?';
       case S.CONFIRM_RESET: return 'Reset all high scores?';
@@ -2136,4 +2122,3 @@ export const STATES = S;
 // Each added mode's methods become the game's own (written with the desktop's
 // names, in camelCase, so they read like the desktop code).
 for (const m of MODES) if (m.mixin) Object.assign(Game.prototype, m.mixin);
-Object.assign(Game.prototype, LB_MIXIN);      // the Weekly Leaderboard (web 7.2.0)

@@ -342,8 +342,15 @@ const duck = await page.evaluate(async () => {
   const face = (pos) => { g._turnStop(); g._face(Math.atan2(pos[0] - g.playerPos[0], -(pos[1] - g.playerPos[1])), true); };
   // Facing away from every duck: the shot misses.
   const d0 = s.ducks[0];
-  face([g.playerPos[0] - d0.dir[0] * 10, g.playerPos[1] - d0.dir[1] * 10]);
-  const others = s.ducks.filter((d) => d !== d0);
+  // (The way furthest from every duck in the air: straight away from one could face the other.)
+  let away = 0; let gap = -1;
+  for (let k = 0; k < 72; k++) {
+    const a = k * Math.PI / 36;
+    const m = Math.min(...s.ducks.map((d) => Math.abs(Math.atan2(Math.sin(a - Math.atan2(d.dir[0], -d.dir[1])), Math.cos(a - Math.atan2(d.dir[0], -d.dir[1]))))));
+    if (m > gap) { gap = m; away = a; }
+  }
+  face([g.playerPos[0] + Math.sin(away) * 10, g.playerPos[1] - Math.cos(away) * 10]);
+  const others = s.ducks;
   out.awayOk = others.every((d) => { const [side, ahead] = g._rel(d.pos); return ahead <= 0 || Math.abs(side / Math.hypot(side, ahead)) >= 0.6; });
   t.played.length = 0;
   g.input('space');

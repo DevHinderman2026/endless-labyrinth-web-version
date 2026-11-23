@@ -27,7 +27,6 @@
 // Chaos Mode plays Find the Voice stages too (js/modes/chaos.js): a quota of finds,
 // then an exit, with the stage's own three lives for the whole chaos run.
 
-import * as lb from '../leaderboard.js';
 import { aliasRecording } from './events/sounds.js';
 import { EVENT_BACKGROUNDS, AMBIENCE_LEVEL, BACKGROUND_SEND } from './ultimate.js';
 import { RULES } from '../sound-rules.js';
@@ -221,7 +220,7 @@ const mixin = {
     this._wake(true);
     if (this.ambienceChannel) { this.ambienceChannel.stop(); this.ambienceChannel = null; }
     if (this.beatChannel) { this.beatChannel.stop(); this.beatChannel = null; }
-    this._fvBegin({ chaos: false, level: 1, quota: FV_FINDS_PER_LEVEL, lives: lb.lives(FV_LIVES) });   // (7.2.0: lb.lives, the leaderboard's reward)
+    this._fvBegin({ chaos: false, level: 1, quota: FV_FINDS_PER_LEVEL, lives: FV_LIVES });
     // (6.0.1, Russell: only the level is said; the mode's name was just heard on the menu.)
     this.tts.speak('Level 1.', { interrupt: true });
   },

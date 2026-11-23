@@ -60,9 +60,7 @@ export class Speech {
   // after: a function to run once this line has been said to its end.
   // now: start speaking within this very call. Phones allow speech to begin only
   // straight from a touch, so the first line, said as Start is pressed, uses it.
-  // bella: Bella's even outside a run, if her recordings can say it (web 7.2.0: the
-  // leaderboard's ceremony).
-  speak(text, { interrupt = true, after = null, now = false, device = false, bella = false } = {}) {
+  speak(text, { interrupt = true, after = null, now = false, device = false } = {}) {
     if (text && this.words) text = this.words(text);
     if (text) this.show(text);
     if (interrupt) {
@@ -73,7 +71,7 @@ export class Speech {
       this.speaking = false;
     }
     if (!text || !String(text).trim()) return;
-    this.queue.push({ text: String(text), after, gen: this.gen, device, bella });
+    this.queue.push({ text: String(text), after, gen: this.gen, device });
     if (!this.speaking) this._next(now);
   }
 
@@ -90,7 +88,7 @@ export class Speech {
     if (item.device || !this.bella) return false;
     let run = false;
     try { run = !!this.inRun(); } catch (e) { run = false; }
-    return (run || item.bella) && this.bella.canSay(item.text);
+    return run && this.bella.canSay(item.text);
   }
 
   _next(now = false) {

@@ -18,9 +18,6 @@
 // calling. Ride it down to the seabed, gather ammo on one breath, and find the elevator
 // up to the next island before the air runs out. Drowning ends the run, exactly like
 // an enemy reaching you. The score is islands crossed.
-
-import * as lb from '../leaderboard.js';
-
 const ISLAND_ARENA = 35.0;
 const SEABED_ARENA = 38.0;
 const ISLAND_START_AMMO = 8;
@@ -284,7 +281,7 @@ const mixin = {
     this._wake(true);
     if (this.ambienceChannel) { this.ambienceChannel.stop(); this.ambienceChannel = null; }
     if (this.beatChannel) { this.beatChannel.stop(); this.beatChannel = null; }
-    this.ammo = lb.ammo(ISLAND_START_AMMO);   // (7.2.0: the leaderboard's reward, if this device won last week)
+    this.ammo = ISLAND_START_AMMO;
     this.kills = 0;
     this.islandNumber = 1;
     this.guardianPlan = {};

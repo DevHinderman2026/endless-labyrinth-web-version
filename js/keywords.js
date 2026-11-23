@@ -135,8 +135,6 @@ const PHRASES = [
   [/\bswiping up and down moves between its topics\b/g, 'the up and down arrows move between its topics'],
   [/\bswipe up and down to hear them\b/g, 'use the up and down arrows to hear them'],
   [/\bSwipe up and down to hear (scores|them)\b/g, 'Use the up and down arrows to hear $1'],
-  // (7.2.0) The Weekly Leaderboard.
-  [/Double tap to choose, triple tap to go back\./g, 'Press Enter to choose, Escape to go back.'],
   [/\bDouble tap or triple tap to go back\b/g, 'Press Enter or Escape to go back'],
   [/\bTriple tap also steps back\b/g, 'Escape also steps back'],
   [/\bTriple tap leaves\b/g, 'Escape leaves'],

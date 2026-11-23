@@ -6,8 +6,6 @@
 // The `this.chaosMode` branches are the desktop's chaos tower floors, kept so Chaos
 // mode can reuse this code; standalone Tower Mode never takes them.
 
-import * as lb from '../leaderboard.js';
-
 // ------------------------------------------------------------------ constants
 // Roughly how fast a player crosses ground: 3.0 units a step at about 3 steps a
 // second. Used only to keep the tower item races close to even.
@@ -375,7 +373,6 @@ const mixin = {
     this.towerHeight = randint(TOWER_FLOORS_MIN, TOWER_FLOORS_MAX);
     this.towerFloor = 1;
     // No clock at all: attrition is the whole fail condition.
-    this.towerMaxHp = lb.health(100);   // (7.2.0: the leaderboard's reward, if this device won last week)
     this.towerHp = this.towerMaxHp;
     this.towerItems = 2;
     this.level = 0;  // tower score counts floors actually COMPLETED
