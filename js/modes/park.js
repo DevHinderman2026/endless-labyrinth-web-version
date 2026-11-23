@@ -22,12 +22,18 @@
 //   the tipping bucket  the water filling it, louder as it fills, then the dump, then a
 //                     chime: run under it now. The token is under it: dash in just after a dump and stay under it a
 //                     moment to take the token. Caught under the dump: the whistle.
+//   the duck stand    (7.1.0) its carnival organ. Walk up to its counter and take the air
+//                     rifle: a ding says start. Ducks fly in at you from all around, two
+//                     at a time, quacking; turn until one is straight ahead and shoot it
+//                     down. A duck that reaches you: the whistle, ten seconds off, and
+//                     another duck in its place. Shoot every duck and the token is yours.
 // The park rings like a large hall (7.0.1), and its own air is kept low enough to hear
 // every attraction from anywhere in it.
 // A first park has three attractions, each new park one more, drawn from these kinds.
-// The clock is the park's own: forty seconds, and thirty for each attraction, one
-// second less for each attraction in every new park, never under eighteen. Left-over
-// time is not carried on. When the last token is won the clock stops, the bell rings
+// The clock is the park's own (7.1.0, Russell: firmer; it was forty seconds and thirty
+// for each attraction, one less each park, never under eighteen): twenty-five seconds,
+// and twenty-two for each attraction, a second and a half less for each attraction in
+// every new park, never under twelve. Left-over time is not carried on. When the last token is won the clock stops, the bell rings
 // and the gate is heard (the battle exit's Morse signal); walk through it.
 //
 // Chaos Mode has water parks too (js/modes/chaos.js): one park per level, with three
@@ -38,7 +44,9 @@
 //
 // The park's own recordings (Pixabay, web-only, in the waterpark pack): the park's air,
 // the bucket filling and dumping, a wave, the diving board, the lifeguard's whistle, a
-// token won and the bell (Developer Tools/Web Packs/web-only/waterpark.json).
+// token won and the bell; and (7.1.0) the duck stand's air rifle, carnival organ, ding
+// and a duck knocked down (Developer Tools/Web Packs/web-only/waterpark.json). The
+// ducks quack with the event library's duck (evt_duck).
 
 import { BACKGROUND_SEND, makeSounds as makeUltimateSounds } from './ultimate.js';
 
@@ -49,9 +57,10 @@ export const BOARD = 'park';
 export const PK_STEP = 3.0;                   // one step, in the game's units
 // The parks and their clock.
 export const PK_FIRST = 3;                    // attractions in the first park; one more in each park after
-export const PK_CLOCK_BASE = 40.0;            // seconds, plus PK_CLOCK_EACH for each attraction
-export const PK_CLOCK_EACH = 30.0;            // ...one second less for each attraction in every new park...
-export const PK_CLOCK_EACH_MIN = 18.0;        // ...never under this
+export const PK_CLOCK_BASE = 25.0;            // seconds, plus PK_CLOCK_EACH for each attraction (7.1.0: was 40)
+export const PK_CLOCK_EACH = 22.0;            // ...(was 30)...
+export const PK_CLOCK_DROP = 1.5;             // ...this much less for each attraction in every new park (was 1)...
+export const PK_CLOCK_EACH_MIN = 12.0;        // ...never under this (was 18)
 export const PK_MISTAKE = 5.0;                // seconds a whistle costs
 // Chaos: the attractions of a park, and each token's time.
 export const PK_CHAOS_FIRST = 3;
@@ -87,7 +96,26 @@ export const PK_FILL = [6.0, 3.5];            // seconds it fills: first park, l
 export const PK_DUMP = 1.2;                   // seconds the dump comes down
 export const PK_DRENCH = 4.5;                 // units: caught under the dump within this
 export const PK_GRAB = 1.0;                   // seconds under it to take the token
+// The duck stand (7.1.0, Russell's design, 23 November 2026).
+export const PK_DUCKS = [4, 10];              // ducks to shoot down: first park, most (one more each park)
+export const PK_DUCK_AIR = 2;                 // ducks in the air at once
+export const PK_DUCK_TIME = [6.0, 3.5];       // seconds a duck takes to reach you: first park, least (0.3 less each park)
+export const PK_DUCK_FROM = 24.0;             // units away a duck sets off from
+export const PK_DUCK_START = 1.2;             // seconds from the ding to the first duck
+export const PK_DUCK_GAP = 0.6;               // seconds before another duck sets off
+export const PK_DUCK_SPREAD = 0.8;            // radians: two ducks in the air never set off closer than this
+export const PK_DUCK_QUACK = 1.0;             // seconds between a duck's quacks (the quack is about a second long)
+export const PK_DUCK_AIM = 0.6;               // a shot takes a duck this close to dead ahead (the sine of the angle: about 37 degrees)
+export const PK_RELOAD = 0.5;                 // seconds to cock the air rifle again
+export const PK_DUCK_HIT = 10.0;              // seconds a duck reaching you costs
+export const PK_STAND_ORGAN = 0.35;           // the organ's loudness at the counter while you shoot
+export const PK_STAND_AIR = 0.5;              // the park's air at the counter while you shoot (of PK_AMBIENCE)
 // Sounds.
+export const PK_RIFLE = 'wp_rifle';
+export const PK_ORGAN = 'wp_organ';
+export const PK_DING = 'wp_ding';
+export const PK_DUCK_DOWN = 'wp_duck_down';
+export const PK_QUACK = 'evt_duck';
 export const PK_BACKGROUND = 'wp_park';
 export const PK_BUCKET_FILL = 'wp_bucket_fill';
 export const PK_BUCKET_DUMP = 'wp_bucket_dump';
@@ -104,7 +132,7 @@ export const PK_WAVES_LOOP = 'island_09_waves_breaking';
 export const PK_PING = 'event_beacon_bell';   // a token under water, or across the wave pool
 export const PK_WADE = ['ut_water_step_1', 'ut_water_step_2', 'ut_water_step_3', 'ut_water_step_4'];
 export const PK_STROKES = ['ut_dive_stroke_1', 'ut_dive_stroke_2', 'ut_dive_stroke_3', 'ut_dive_stroke_4'];
-export const PK_KINDS = ['slide', 'dive', 'wave', 'bucket'];
+export const PK_KINDS = ['slide', 'dive', 'wave', 'bucket', 'duck'];
 // (7.0.1, Russell, 23 November 2026: "a water park would have a lot of reverberation
 // since it's big".) The park rings like a large hall, a big indoor water park: the
 // game's own hall echo, and every sound of the park sent into it (PK_SEND), above the
@@ -134,12 +162,14 @@ const clamp = (v, lo, hi) => Math.min(hi, Math.max(lo, v));
 
 // How many attractions a park has, and its clock.
 export function attractionsFor(park) { return PK_FIRST + Math.max(0, park - 1); }
-export function clockEach(park) { return Math.max(PK_CLOCK_EACH_MIN, PK_CLOCK_EACH - Math.max(0, park - 1)); }
+export function clockEach(park) { return Math.max(PK_CLOCK_EACH_MIN, PK_CLOCK_EACH - PK_CLOCK_DROP * Math.max(0, park - 1)); }
 export function clockFor(park, n = attractionsFor(park)) { return PK_CLOCK_BASE + clockEach(park) * n; }
 // The attractions' own difficulty, by the park (in Chaos, by the visit).
 export function waveLongFor(park) { return Math.min(PK_WAVE_LONG[1], PK_WAVE_LONG[0] + 1.5 * Math.max(0, park - 1)); }
 export function waveEveryFor(park) { return Math.max(PK_WAVE_EVERY[1], PK_WAVE_EVERY[0] - 0.15 * Math.max(0, park - 1)); }
 export function fillFor(park) { return Math.max(PK_FILL[1], PK_FILL[0] - 0.2 * Math.max(0, park - 1)); }
+export function ducksFor(park) { return Math.min(PK_DUCKS[1], PK_DUCKS[0] + Math.max(0, park - 1)); }
+export function duckTimeFor(park) { return Math.max(PK_DUCK_TIME[1], PK_DUCK_TIME[0] - 0.3 * Math.max(0, park - 1)); }
 
 // The kinds of a park's attractions: every kind once before any comes twice, in no
 // fixed order.
@@ -175,6 +205,8 @@ const mixin = {
     this.audio.prepare(PK_BACKGROUND);
     this.audio.prepare(PK_WAVES_LOOP, 'park:waves');
     this.audio.prepare(PK_BUCKET_FILL, 'park:fill');
+    this.audio.prepare(PK_ORGAN, 'park:organ');
+    if (this.audio.has(PK_QUACK)) this.audio.prepare(PK_QUACK, 'park:duck');
     const prev = this.pk;
     const tokens = prev && !chaos ? prev.tokens : 0;
     const parks = prev && !chaos ? prev.parks : 0;
@@ -303,6 +335,7 @@ const mixin = {
           if (this.audio.has(PK_BOARD)) this._pkPlay(PK_BOARD, { at: at.pos, volume: Math.max(l, r) });
         }
       } else if (at.kind === 'bucket') this._pkBucket(at, dt);
+      else if (at.kind === 'duck') this._pkLoop(at, PK_ORGAN, at.pos, 1.0);
     }
     // Walking up to one starts it.
     if (pk.at || pk.ride) return;
@@ -352,6 +385,14 @@ const mixin = {
       pk.at = { at, kind: 'wave', ping: null };
       this.playerPos = [...at.pos];
       this._pkStep('wade');
+      return;
+    }
+    if (at.kind === 'duck') {
+      // At the counter, the air rifle in your hands: the ding says start.
+      this.playerPos = [...at.pos];
+      pk.at = { at, kind: 'duck', total: ducksFor(pk.park), shot: 0, ducks: [], startIn: PK_DUCK_START, nextIn: 0, reload: 0, hits: 0 };
+      this._pkDuckAir(true, at, PK_STAND_AIR);
+      if (this.audio.has(PK_DING)) this._pkPlay(PK_DING, { keep: true });
     }
   },
 
@@ -360,11 +401,12 @@ const mixin = {
     return [centre[0] + Math.sin(a) * d, centre[1] - Math.cos(a) * d];
   },
 
-  // Under the water, or on the slide, the park's air is far off.
-  _pkDuckAir(on) {
+  // Under the water, or on the slide, the park's air is far off (at the duck stand,
+  // quieter, and its organ plays on: `keep`).
+  _pkDuckAir(on, keep = null, level = 0.25) {
     const pk = this.pk;
-    if (pk.amb && pk.amb.voice) pk.amb.voice.setVolume(PK_AMBIENCE * (on ? 0.25 : 1.0));
-    for (const at of pk.attractions) if (on && at.voice) { at.voice.fadeout(200); at.voice = null; }
+    if (pk.amb && pk.amb.voice) pk.amb.voice.setVolume(PK_AMBIENCE * (on ? level : 1.0));
+    for (const at of pk.attractions) if (on && at.voice && at !== keep) { at.voice.fadeout(200); at.voice = null; }
   },
 
   // ---------------------------------------------------------------- the water slide
@@ -553,6 +595,83 @@ const mixin = {
     }
   },
 
+  // ---------------------------------------------------------------- the duck stand (7.1.0)
+  // Ducks fly in at you from all around, PK_DUCK_AIR at a time, each straight at you,
+  // quacking as it comes; one that reaches you hits you. You stay at the counter and
+  // turn; the air rifle takes the nearest duck within PK_DUCK_AIM of straight ahead.
+  _pkUpdateDuck(dt) {
+    const pk = this.pk;
+    const s = pk.at;
+    this._pkLoop(s.at, PK_ORGAN, s.at.pos, PK_STAND_ORGAN);
+    s.reload = Math.max(0, s.reload - dt);
+    if (s.startIn > 0) { s.startIn -= dt; return; }
+    s.nextIn -= dt;
+    if (s.nextIn <= 0 && s.ducks.length < PK_DUCK_AIR && s.shot + s.ducks.length < s.total) {
+      this._pkLaunchDuck(s);
+      s.nextIn = PK_DUCK_GAP;
+    }
+    const time = duckTimeFor(pk.park);
+    for (const d of [...s.ducks]) {
+      d.t += dt;
+      const k = Math.max(0, 1 - d.t / time);
+      d.pos = [this.playerPos[0] + d.dir[0] * PK_DUCK_FROM * k, this.playerPos[1] + d.dir[1] * PK_DUCK_FROM * k];
+      d.quack -= dt;
+      if (d.quack <= 0 && d.t < time) {
+        d.quack = PK_DUCK_QUACK * uniform(0.85, 1.15);
+        const [l, r] = this._pkLevels(d.pos, 1.0, PK_DUCK_FROM * 1.5, 0.15);
+        if (this.audio.has(PK_QUACK)) this._pkPlay(PK_QUACK, { at: d.pos, volume: Math.max(l, r) });
+      }
+      if (d.t >= time) {
+        // It reached you: the whistle, ten seconds, and another duck will come.
+        s.ducks.splice(s.ducks.indexOf(d), 1);
+        s.hits += 1;
+        if (this.audio.has(PK_QUACK)) this._pkPlay(PK_QUACK, { volume: 1.0 });
+        this._pkWhistle(PK_DUCK_HIT);
+        if (this.pk !== pk || pk.at !== s) return;
+        s.nextIn = Math.max(s.nextIn, PK_DUCK_GAP);
+      }
+    }
+  },
+
+  _pkLaunchDuck(s) {
+    let a = uniform(0, Math.PI * 2);
+    // (Never right beside another duck in the air, so two can always be told apart.)
+    for (let i = 0; i < 30; i++) {
+      if (s.ducks.every((d) => Math.abs(Math.atan2(Math.sin(a - d.angle), Math.cos(a - d.angle))) >= PK_DUCK_SPREAD)) break;
+      a = uniform(0, Math.PI * 2);
+    }
+    const dir = [Math.sin(a), -Math.cos(a)];
+    s.ducks.push({ angle: a, dir, t: 0, quack: 0, pos: [this.playerPos[0] + dir[0] * PK_DUCK_FROM, this.playerPos[1] + dir[1] * PK_DUCK_FROM] });
+  },
+
+  // Space, or a two-finger tap, at the counter.
+  _pkFire() {
+    const pk = this.pk;
+    const s = pk.at;
+    if (s.startIn > 0 || s.reload > 0) { this._pkPlay('empty_click', { send: 0 }); return; }
+    s.reload = PK_RELOAD;
+    if (this.audio.has(PK_RIFLE)) this._pkPlay(PK_RIFLE, { keep: true });
+    let best = null; let bestD = 1e9;
+    for (const d of s.ducks) {
+      const [side, ahead] = this._rel(d.pos);
+      const dist = Math.hypot(side, ahead);
+      if (dist <= 0 || ahead <= 0) continue;
+      if (Math.abs(side / dist) < PK_DUCK_AIM && dist < bestD) { best = d; bestD = dist; }
+    }
+    if (!best) return;
+    s.ducks.splice(s.ducks.indexOf(best), 1);
+    s.shot += 1;
+    const [l, r] = this._pkLevels(best.pos, 1.0, PK_DUCK_FROM * 1.5, 0.3);
+    if (this.audio.has(PK_DUCK_DOWN)) this._pkPlay(PK_DUCK_DOWN, { at: best.pos, volume: Math.max(l, r), keep: true });
+    if (s.shot >= s.total) {
+      // Every duck down: the token.
+      pk.at = null;
+      this._pkQuiet(s.at);
+      this._pkDuckAir(false);
+      this._pkToken(s.at);
+    }
+  },
+
   // ---------------------------------------------------------------- tokens, mistakes and the gate
   _pkToken(at) {
     const pk = this.pk;
@@ -566,9 +685,9 @@ const mixin = {
     this._pkOpenExit();
   },
 
-  _pkWhistle() {
+  _pkWhistle(secs = PK_MISTAKE) {
     if (this.audio.has(PK_WHISTLE)) this._pkPlay(PK_WHISTLE, { keep: true });
-    this._pkCost(PK_MISTAKE);
+    this._pkCost(secs);
     this.tts.speak('Missed.', { interrupt: true });
   },
 
@@ -636,6 +755,7 @@ const mixin = {
     }
     if (pk.ride) { this._pkUpdateSlide(dt); return; }
     if (pk.at && pk.at.kind === 'dive') { this._pkUpdateDive(dt); return; }
+    if (pk.at && pk.at.kind === 'duck') { this._pkUpdateDuck(dt); return; }
     if (pk.at && pk.at.kind === 'wave') this._pkUpdateWave(dt);
     if (this.pk !== pk) return;
     this._pkUpdateDeck(dt);
@@ -648,6 +768,7 @@ const mixin = {
     const dir = g === 'up' ? f : [-f[0], -f[1]];
     const from = [...this.playerPos];
     let to = [from[0] + dir[0] * PK_STEP, from[1] + dir[1] * PK_STEP];
+    if (pk.at && pk.at.kind === 'duck') return;     // at the counter until every duck is down
     if (pk.at && pk.at.kind === 'dive') {
       if (pk.at.splashIn > 0) return;
       // The pool's walls.
@@ -716,7 +837,7 @@ const mixin = {
     this._pkSilence(pk, true);
     pk.exit = null;
     pk.stopped = true;
-    for (const k of ['park:waves', 'park:fill']) this.audio.pins.delete(k);
+    for (const k of ['park:waves', 'park:fill', 'park:organ', 'park:duck']) this.audio.pins.delete(k);
   },
 };
 
@@ -728,7 +849,8 @@ const HELP_SECTIONS = [
     { title: 'Water Park Diving Pool', sound: null, desc: 'The diving pool is found by someone bouncing on its diving board, again and again, about once a second. Walk onto the board and you dive in. Under the water you hold your breath for fifteen seconds. The token lies on the bottom, a few steps away: you hear its bell ringing, so turn until it is centred and swim to it, each step a swimming stroke. Reach it and you come back up with it. With six seconds of breath left, the voice says Low air and the high beeps begin, faster and faster. Run out of breath and the lifeguard blows the whistle: you come back up at the board without the token, and it costs five seconds. Dive again to try once more.' },
     { title: 'Water Park Wave Pool', sound: null, desc: 'The wave pool is found by its waves: you hear them rolling, and a wave breaking at its edge every few seconds. Walk into it at its edge, and the token\'s bell rings from its far side. Wade toward it, one step at a time. Every few seconds a wave comes: you hear it rise ahead of you, and then break over you. Stand still as it breaks and you hold your ground. Take a step just as it breaks, and it carries you three steps back, and if that takes you out of the pool, you are back at its edge. Reach the far side and the token is yours. The waves come a little more often in every park, and the pool is a little longer.' },
     { title: 'Water Park Tipping Bucket', sound: null, desc: 'The tipping bucket is found by the water filling it, louder and louder as it fills, until it tips and dumps its water with a crash. As the last of the water falls, a chime rings: that is your moment to run under it, before it fills again. The token is right under it. Dash in at the chime, and stay under it for a moment, a second, to take the token. If the bucket dumps while you are under it, or close beside it, you are caught: the lifeguard blows the whistle, you are pushed back from the bucket, and it costs five seconds. The bucket fills a little faster in every park.' },
-    { title: 'Water Park Closing Time and Score', sound: null, desc: 'Each park has its own clock: forty seconds, and thirty more for each attraction, with one second less for each attraction in every new park, never less than eighteen. The first park has three attractions, two minutes and ten seconds. Every token you win is announced with how many are left to go. When the last one is won, the clock stops, a bell rings, and the gate is heard, the battle exit\'s Morse signal: walk through it to the next park, which has one more attraction. Time left over is not carried on. When closing time comes, the bell rings and your visit is over. Your score is the number of parks you finished, and Water Park has its own high score board.' },
+    { title: 'Water Park Duck Stand', sound: null, desc: 'The duck stand, new in 7.1.0, is found by its carnival organ music. Walk up to its counter and you take the air rifle: a ding says start shooting. Ducks fly in toward you from all around, two in the air at once, each quacking as it comes, louder as it nears. Turn until a duck is centred straight ahead of you and shoot, with a two-finger tap or Space: a hit knocks it down with a clang. A shot takes only a duck in front of you. There is no ammo to collect, but the rifle takes half a second to cock again between shots. You stay at the counter while you shoot, turning only. If a duck reaches you, it hits you: the lifeguard blows the whistle, it costs ten seconds, and another duck comes in its place. Shoot down every duck and the token is yours. The first park has four ducks, each taking six seconds to reach you; every new park has one more duck, up to ten, and they fly a little faster, never taking less than three and a half seconds.' },
+    { title: 'Water Park Closing Time and Score', sound: null, desc: 'Each park has its own clock: twenty-five seconds, and twenty-two more for each attraction, with a second and a half less for each attraction in every new park, never less than twelve. The first park has three attractions, one minute and thirty-one seconds. Every token you win is announced with how many are left to go. When the last one is won, the clock stops, a bell rings, and the gate is heard, the battle exit\'s Morse signal: walk through it to the next park, which has one more attraction. Time left over is not carried on. When closing time comes, the bell rings and your visit is over. Your score is the number of parks you finished, and Water Park has its own high score board.' },
     { title: 'Water Park in Chaos Mode', sound: null, desc: 'Chaos Mode has water parks too, one park to a level, which you know by the busy pool and its children. A water park in chaos has three attractions the first time in a run, and one more each time after, at most six. There is no park clock there: each token you win adds fifteen seconds to the chaos clock, and a mistake takes its seconds off it. When the last token is won, the exit is heard over the park, which plays on, and the chaos clock waits until you walk through it. There, double tap for the tokens found, then your health, the clock and the points.' },
   ]],
 ];
@@ -745,6 +867,11 @@ const HELP_DEMOS = [
     { title: 'Bucket Filling', sound: PK_BUCKET_FILL, desc: 'The tipping bucket filling, louder as it fills.' },
     { title: 'Bucket Dumping', sound: PK_BUCKET_DUMP, desc: 'The tipping bucket dumping its water.' },
     { title: 'Bucket Chime', sound: PK_BUCKET_CHIME, desc: 'The dump is over: run under the bucket now.' },
+    { title: 'Duck Stand Organ', sound: PK_ORGAN, desc: 'The carnival organ that marks the duck stand.' },
+    { title: 'Duck Stand Ding', sound: PK_DING, desc: 'At the counter: start shooting.' },
+    { title: 'A Duck', sound: PK_QUACK, desc: 'A duck flying in toward you. Turn until it is centred, and shoot.' },
+    { title: 'Air Rifle', sound: PK_RIFLE, desc: 'The air rifle\'s shot.' },
+    { title: 'Duck Knocked Down', sound: PK_DUCK_DOWN, desc: 'A duck hit and knocked down.' },
     { title: 'Lifeguard\'s Whistle', sound: PK_WHISTLE, desc: 'A mistake at an attraction: back to its edge, and five seconds off the clock.' },
     { title: 'Token Won', sound: PK_TOKEN, desc: 'A token won.' },
     { title: 'The Bell', sound: PK_BELL, desc: 'The gate to the next park opening, and closing time.' },
@@ -767,7 +894,11 @@ function input(game, g) {
   }
   if (g === 'enter') { game._pkReport(); return; }
   if (pk.ride) return;          // on the slide: nothing to do but ride
-  if (g === 'space') { game.audio.play('empty_click'); return; }
+  if (g === 'space') {
+    if (pk.at && pk.at.kind === 'duck') game._pkFire();
+    else game.audio.play('empty_click');
+    return;
+  }
   if (g === 'left' || g === 'right') { game._turnQuick(g === 'right' ? 1 : -1); return; }
   if (g === 'up' || g === 'down') game._pkWalk(g);
 }
@@ -796,7 +927,7 @@ export default {
   turns(game) { return game.state === STATE && !(game.pk && game.pk.ride); },
   keepFacing(game) { return !!(game.pk && game.pk.ride); },
   blockPause(game) { return !!(game.pk && game.pk.ride); },
-  blockStride(game) { return !!(game.pk && (game.pk.ride || (game.pk.at && game.pk.at.splashIn > 0))); },
+  blockStride(game) { return !!(game.pk && (game.pk.ride || (game.pk.at && (game.pk.at.splashIn > 0 || game.pk.at.kind === 'duck')))); },
   // The hall's echo grows near the fence, as Battle's does near its edge.
   surroundings(game, pos) { return game._arenaSurroundings(pos); },
   strideSig(game) { const pk = game.pk; return pk ? `${pk.park}|${!!pk.exit}|${pk.at ? pk.at.kind : ''}|${!!pk.ride}` : ''; },

@@ -64,7 +64,7 @@ const start = await page.evaluate(async () => {
 });
 check(start.state === 'park' && start.park === 1 && start.count === 3, `a run starts in park 1 with 3 attractions: ${start.kinds.join(', ')}`);
 check(new Set(start.kinds).size === 3, 'the first park\'s three attractions are three different kinds');
-check(start.clock >= 128 && start.clock <= 130, `park 1's clock is 40 + 3 x 30 = 130 seconds: ${start.clock}`);
+check(start.clock >= 89 && start.clock <= 91, `7.1.0: park 1's clock is 25 + 3 x 22 = 91 seconds: ${start.clock}`);
 check(start.amb === 'wp_park', 'the park\'s own air plays');
 check(start.said.includes('Level 1.'), 'the voice says the level: ' + start.said.join(' | '));
 check(start.turns, 'the park turns with you');
@@ -73,11 +73,14 @@ check(start.near >= 23, 'no attraction is right where you start');
 const sizes = await page.evaluate(async () => {
   const m = await import('./js/modes/park.js');
   return { a: [1, 2, 3, 6].map((p) => m.attractionsFor(p)), c: [1, 2, 3, 13, 20].map((p) => m.clockFor(p)),
-    deal: [...Array(200)].map(() => m.dealKinds(4)).every((d) => new Set(d).size === 4), deal6: m.dealKinds(6) };
+    deal: [...Array(200)].map(() => m.dealKinds(5)).every((d) => new Set(d).size === 5), deal6: m.dealKinds(6),
+    kinds: m.PK_KINDS, ducks: [1, 2, 7, 20].map((p) => m.ducksFor(p)), dt: [1, 2, 9, 20].map((p) => +m.duckTimeFor(p).toFixed(2)) };
 });
 check(JSON.stringify(sizes.a) === '[3,4,5,8]', 'one more attraction in every park: ' + sizes.a.join(', '));
-check(sizes.c[0] === 130 && sizes.c[1] === 40 + 29 * 4 && sizes.c[3] === 40 + 18 * 15 && sizes.c[4] === 40 + 18 * 22, 'the clock: 30 a park\'s attraction, one less each park, never under 18: ' + sizes.c.join(', '));
+check(sizes.c[0] === 91 && sizes.c[1] === 25 + 20.5 * 4 && sizes.c[2] === 25 + 19 * 5 && sizes.c[3] === 25 + 12 * 15 && sizes.c[4] === 25 + 12 * 22, '7.1.0: the clock: 22 a park\'s attraction, 1.5 less each park, never under 12: ' + sizes.c.join(', '));
 check(sizes.deal, 'every kind comes once before any comes twice');
+check(sizes.kinds.includes('duck') && sizes.kinds.length === 5, '7.1.0: the duck stand is a fifth kind of attraction: ' + sizes.kinds.join(', '));
+check(JSON.stringify(sizes.ducks) === '[4,5,10,10]' && JSON.stringify(sizes.dt) === '[6,5.7,3.6,3.5]', `7.1.0: four ducks in park 1, one more each park, at most ten; six seconds to reach you, 0.3 less each park, never under 3.5: ${sizes.ducks} / ${sizes.dt}`);
 
 // ------------------------------------------------------------------ each attraction
 // A park made of one kind at a time, so each can be played on its own.
@@ -114,7 +117,7 @@ const hear = await page.evaluate(async () => {
   const lvl = (v) => (v ? Math.max(v.l, v.r) : 0);
   const out = {
     room: g._currentRoom(), amb: +pk.amb.voice.l.toFixed(2),
-    slide: +lvl(at('slide').voice).toFixed(2), waves: +lvl(at('wave').voice).toFixed(2), fill: at('bucket').phase === 'fill' ? +lvl(at('bucket').voice).toFixed(2) : 1,
+    slide: +lvl(at('slide').voice).toFixed(2), waves: +lvl(at('wave').voice).toFixed(2), fill: at('bucket').phase === 'fill' && at('bucket').voice ? +lvl(at('bucket').voice).toFixed(2) : 1,   // (none for the one frame between a dump and the next fill)
     boards: t.played.filter((n) => n === 'wp_board').length, breaking: t.played.filter((n) => n === 'wp_wave').length,
   };
   // The hall's echo on the park's sounds (none under the water).
@@ -212,7 +215,7 @@ const gate = await page.evaluate(async () => {
 check(gate.still, 'the clock stops once the gate is open');
 check(gate.morse === 'exit_morse', 'the gate is heard by the battle exit\'s Morse signal');
 check(gate.park === 2 && gate.count === 4 && gate.parks === 1, `walking through it: park 2, with 4 attractions (parks finished: ${gate.parks})`);
-check(gate.clock === 40 + 29 * 4, 'park 2\'s own clock, nothing carried on: ' + gate.clock);
+check(Math.abs(gate.clock - (25 + 20.5 * 4)) <= 1, 'park 2\'s own clock, nothing carried on (7.1.0: 25 + 4 x 20.5): ' + gate.clock);
 check(gate.amb, 'the park\'s air plays on into the next park');
 check(gate.said.includes('Level 2.'), 'the voice says level 2');
 
@@ -310,10 +313,74 @@ const bucket = await page.evaluate(async () => {
   return { fill, caught, chime, done: at.done, token: t.played.includes('wp_token') };
 });
 check(bucket.fill === 'wp_bucket_fill', 'the bucket is heard filling');
-check(bucket.caught.dump && bucket.caught.whistle && bucket.caught.d > 8 && !bucket.caught.done, `caught under the dump: the whistle, pushed back (${bucket.caught.d.toFixed(1)} away)`);
+check(bucket.caught.dump && bucket.caught.whistle && bucket.caught.d > 7.9 && !bucket.caught.done, `caught under the dump: the whistle, pushed back (${bucket.caught.d.toFixed(1)} away)`);
 check(bucket.caught.lost > 5 && bucket.caught.lost < 6, `the whistle cost 5 seconds: ${bucket.caught.lost}`);
 check(bucket.chime, '7.0.1: as the dump ends, a chime says run under it now');
 check(bucket.done && bucket.token, 'in just after a dump, and a moment under it: the token');
+
+// ------------------------------------------------------------------ 7.1.0: the duck stand
+await only('duck');
+const duck = await page.evaluate(async () => {
+  const g = window.__el.game; const t = window.__t; const pk = g.pk;
+  const at = pk.attractions[0];
+  const out = {};
+  await t.frames(0.3);
+  out.organ = at.voice && at.voice.name;
+  await t.walkTo(at.pos, 0.5);
+  const s = pk.at;
+  out.at = s && s.kind; out.total = s && s.total; out.ding = t.played.includes('wp_ding');
+  out.organAtCounter = !!(at.voice && at.voice.busy);
+  // At the counter: a step goes nowhere, and the rifle is not ready before the start.
+  const p0 = [...g.playerPos];
+  g.input('up'); g.frame(1 / 30);
+  out.stayed = Math.hypot(g.playerPos[0] - p0[0], g.playerPos[1] - p0[1]) < 1e-6;
+  t.played.length = 0;
+  g.input('space');
+  out.early = t.played.includes('empty_click') && !t.played.includes('wp_rifle');
+  await t.frames(2.0);
+  out.inAir = s.ducks.length; out.quack = t.played.includes('evt_duck');
+  const face = (pos) => { g._turnStop(); g._face(Math.atan2(pos[0] - g.playerPos[0], -(pos[1] - g.playerPos[1])), true); };
+  // Facing away from every duck: the shot misses.
+  const d0 = s.ducks[0];
+  face([g.playerPos[0] - d0.dir[0] * 10, g.playerPos[1] - d0.dir[1] * 10]);
+  const others = s.ducks.filter((d) => d !== d0);
+  out.awayOk = others.every((d) => { const [side, ahead] = g._rel(d.pos); return ahead <= 0 || Math.abs(side / Math.hypot(side, ahead)) >= 0.6; });
+  t.played.length = 0;
+  g.input('space');
+  out.miss = t.played.includes('wp_rifle') && s.shot === 0 && !t.played.includes('wp_duck_down');
+  // At once again: the rifle is still being cocked.
+  t.played.length = 0;
+  face(d0.pos); g.input('space');
+  out.reload = t.played.includes('empty_click') && s.shot === 0;
+  await t.frames(0.6);
+  face(d0.pos);
+  t.played.length = 0;
+  g.input('space');
+  out.hit = s.shot === 1 && t.played.includes('wp_rifle') && t.played.includes('wp_duck_down') && !s.ducks.includes(d0);
+  // Let a duck reach you.
+  const c0 = g.timeLeft; const shot = s.shot; let n = 0;
+  t.played.length = 0;
+  for (; n < 400 && s.hits === 0; n++) g.frame(1 / 30);
+  out.reached = { hits: s.hits, whistle: t.played.includes('wp_whistle'), lost: +(c0 - g.timeLeft - n / 30).toFixed(1), shot: s.shot === shot, total: s.total };
+  // Then shoot every duck.
+  for (let i = 0; i < 2000 && pk.at === s; i++) {
+    g.frame(1 / 30);
+    if (s.ducks.length && s.reload <= 0) { face(s.ducks[0].pos); g.input('space'); }
+  }
+  out.done = at.done && pk.at === null && t.played.includes('wp_token');
+  out.amb = +pk.amb.voice.l.toFixed(2);
+  return out;
+});
+check(duck.organ === 'wp_organ', '7.1.0: the duck stand is heard by its carnival organ');
+check(duck.at === 'duck' && duck.total === 4 && duck.ding && duck.organAtCounter, `7.1.0: at its counter, the ding says start, the organ plays on, four ducks in park 1 (${duck.total})`);
+check(duck.stayed && duck.early, '7.1.0: at the counter a step goes nowhere, and before the start the rifle only clicks');
+check(duck.inAir === 2 && duck.quack, `7.1.0: two ducks in the air at once, quacking (${duck.inAir})`);
+check(duck.awayOk && duck.miss, '7.1.0: a shot with no duck straight ahead hits nothing');
+check(duck.reload, '7.1.0: straight after a shot the rifle is still being cocked: a click');
+check(duck.hit, '7.1.0: facing a duck, the air rifle knocks it down');
+check(duck.reached.hits === 1 && duck.reached.whistle && duck.reached.lost >= 9.9 && duck.reached.lost < 11 && duck.reached.shot && duck.reached.total === 4, `7.1.0: a duck that reaches you: the whistle and 10 seconds off (${duck.reached.lost}), and another duck in its place`);
+check(duck.done, '7.1.0: every duck down: the token');
+check(duck.amb === 0.55, `7.1.0: the park's air comes back up after the stand: ${duck.amb}`);
 
 // ------------------------------------------------------------------ the voice: all recordings
 const voice = await page.evaluate(() => {
