@@ -64,7 +64,7 @@ const start = await page.evaluate(async () => {
 });
 check(start.state === 'park' && start.park === 1 && start.count === 3, `a run starts in park 1 with 3 attractions: ${start.kinds.join(', ')}`);
 check(new Set(start.kinds).size === 3, 'the first park\'s three attractions are three different kinds');
-check(start.clock >= 89 && start.clock <= 91, `7.1.0: park 1's clock is 25 + 3 x 22 = 91 seconds: ${start.clock}`);
+check(start.clock >= 128 && start.clock <= 130, `park 1's clock is 40 + 3 x 30 = 130 seconds (7.1.1: back from 7.1.0's firmer clock): ${start.clock}`);
 check(start.amb === 'wp_park', 'the park\'s own air plays');
 check(start.said.includes('Level 1.'), 'the voice says the level: ' + start.said.join(' | '));
 check(start.turns, 'the park turns with you');
@@ -77,7 +77,7 @@ const sizes = await page.evaluate(async () => {
     kinds: m.PK_KINDS, ducks: [1, 2, 7, 20].map((p) => m.ducksFor(p)), dt: [1, 2, 9, 20].map((p) => +m.duckTimeFor(p).toFixed(2)) };
 });
 check(JSON.stringify(sizes.a) === '[3,4,5,8]', 'one more attraction in every park: ' + sizes.a.join(', '));
-check(sizes.c[0] === 91 && sizes.c[1] === 25 + 20.5 * 4 && sizes.c[2] === 25 + 19 * 5 && sizes.c[3] === 25 + 12 * 15 && sizes.c[4] === 25 + 12 * 22, '7.1.0: the clock: 22 a park\'s attraction, 1.5 less each park, never under 12: ' + sizes.c.join(', '));
+check(sizes.c[0] === 130 && sizes.c[1] === 40 + 29 * 4 && sizes.c[3] === 40 + 18 * 15 && sizes.c[4] === 40 + 18 * 22, 'the clock: 30 a park\'s attraction, one less each park, never under 18: ' + sizes.c.join(', '));
 check(sizes.deal, 'every kind comes once before any comes twice');
 check(sizes.kinds.includes('duck') && sizes.kinds.length === 5, '7.1.0: the duck stand is a fifth kind of attraction: ' + sizes.kinds.join(', '));
 check(JSON.stringify(sizes.ducks) === '[4,5,10,10]' && JSON.stringify(sizes.dt) === '[6,5.7,3.6,3.5]', `7.1.0: four ducks in park 1, one more each park, at most ten; six seconds to reach you, 0.3 less each park, never under 3.5: ${sizes.ducks} / ${sizes.dt}`);
@@ -215,7 +215,7 @@ const gate = await page.evaluate(async () => {
 check(gate.still, 'the clock stops once the gate is open');
 check(gate.morse === 'exit_morse', 'the gate is heard by the battle exit\'s Morse signal');
 check(gate.park === 2 && gate.count === 4 && gate.parks === 1, `walking through it: park 2, with 4 attractions (parks finished: ${gate.parks})`);
-check(Math.abs(gate.clock - (25 + 20.5 * 4)) <= 1, 'park 2\'s own clock, nothing carried on (7.1.0: 25 + 4 x 20.5): ' + gate.clock);
+check(Math.abs(gate.clock - (40 + 29 * 4)) <= 1, 'park 2\'s own clock, nothing carried on: ' + gate.clock);
 check(gate.amb, 'the park\'s air plays on into the next park');
 check(gate.said.includes('Level 2.'), 'the voice says level 2');
 

@@ -30,10 +30,10 @@
 // The park rings like a large hall (7.0.1), and its own air is kept low enough to hear
 // every attraction from anywhere in it.
 // A first park has three attractions, each new park one more, drawn from these kinds.
-// The clock is the park's own (7.1.0, Russell: firmer; it was forty seconds and thirty
-// for each attraction, one less each park, never under eighteen): twenty-five seconds,
-// and twenty-two for each attraction, a second and a half less for each attraction in
-// every new park, never under twelve. Left-over time is not carried on. When the last token is won the clock stops, the bell rings
+// The clock is the park's own: forty seconds, and thirty for each attraction, one
+// second less for each attraction in every new park, never under eighteen (7.1.0 made
+// it firmer, 7.1.1 put it back: Russell found the firmer clock too strict). Left-over
+// time is not carried on. When the last token is won the clock stops, the bell rings
 // and the gate is heard (the battle exit's Morse signal); walk through it.
 //
 // Chaos Mode has water parks too (js/modes/chaos.js): one park per level, with three
@@ -57,10 +57,10 @@ export const BOARD = 'park';
 export const PK_STEP = 3.0;                   // one step, in the game's units
 // The parks and their clock.
 export const PK_FIRST = 3;                    // attractions in the first park; one more in each park after
-export const PK_CLOCK_BASE = 25.0;            // seconds, plus PK_CLOCK_EACH for each attraction (7.1.0: was 40)
-export const PK_CLOCK_EACH = 22.0;            // ...(was 30)...
-export const PK_CLOCK_DROP = 1.5;             // ...this much less for each attraction in every new park (was 1)...
-export const PK_CLOCK_EACH_MIN = 12.0;        // ...never under this (was 18)
+export const PK_CLOCK_BASE = 40.0;            // seconds, plus PK_CLOCK_EACH for each attraction
+export const PK_CLOCK_EACH = 30.0;            // ...
+export const PK_CLOCK_DROP = 1.0;             // ...this much less for each attraction in every new park...
+export const PK_CLOCK_EACH_MIN = 18.0;        // ...never under this (7.1.1: back to 7.0's clock; 7.1.0 tried 25, 22, 1.5 and 12)
 export const PK_MISTAKE = 5.0;                // seconds a whistle costs
 // Chaos: the attractions of a park, and each token's time.
 export const PK_CHAOS_FIRST = 3;
@@ -850,7 +850,7 @@ const HELP_SECTIONS = [
     { title: 'Water Park Wave Pool', sound: null, desc: 'The wave pool is found by its waves: you hear them rolling, and a wave breaking at its edge every few seconds. Walk into it at its edge, and the token\'s bell rings from its far side. Wade toward it, one step at a time. Every few seconds a wave comes: you hear it rise ahead of you, and then break over you. Stand still as it breaks and you hold your ground. Take a step just as it breaks, and it carries you three steps back, and if that takes you out of the pool, you are back at its edge. Reach the far side and the token is yours. The waves come a little more often in every park, and the pool is a little longer.' },
     { title: 'Water Park Tipping Bucket', sound: null, desc: 'The tipping bucket is found by the water filling it, louder and louder as it fills, until it tips and dumps its water with a crash. As the last of the water falls, a chime rings: that is your moment to run under it, before it fills again. The token is right under it. Dash in at the chime, and stay under it for a moment, a second, to take the token. If the bucket dumps while you are under it, or close beside it, you are caught: the lifeguard blows the whistle, you are pushed back from the bucket, and it costs five seconds. The bucket fills a little faster in every park.' },
     { title: 'Water Park Duck Stand', sound: null, desc: 'The duck stand, new in 7.1.0, is found by its carnival organ music. Walk up to its counter and you take the air rifle: a ding says start shooting. Ducks fly in toward you from all around, two in the air at once, each quacking as it comes, louder as it nears. Turn until a duck is centred straight ahead of you and shoot, with a two-finger tap or Space: a hit knocks it down with a clang. A shot takes only a duck in front of you. There is no ammo to collect, but the rifle takes half a second to cock again between shots. You stay at the counter while you shoot, turning only. If a duck reaches you, it hits you: the lifeguard blows the whistle, it costs ten seconds, and another duck comes in its place. Shoot down every duck and the token is yours. The first park has four ducks, each taking six seconds to reach you; every new park has one more duck, up to ten, and they fly a little faster, never taking less than three and a half seconds.' },
-    { title: 'Water Park Closing Time and Score', sound: null, desc: 'Each park has its own clock: twenty-five seconds, and twenty-two more for each attraction, with a second and a half less for each attraction in every new park, never less than twelve. The first park has three attractions, one minute and thirty-one seconds. Every token you win is announced with how many are left to go. When the last one is won, the clock stops, a bell rings, and the gate is heard, the battle exit\'s Morse signal: walk through it to the next park, which has one more attraction. Time left over is not carried on. When closing time comes, the bell rings and your visit is over. Your score is the number of parks you finished, and Water Park has its own high score board.' },
+    { title: 'Water Park Closing Time and Score', sound: null, desc: 'Each park has its own clock: forty seconds, and thirty more for each attraction, with one second less for each attraction in every new park, never less than eighteen. The first park has three attractions, two minutes and ten seconds. Every token you win is announced with how many are left to go. When the last one is won, the clock stops, a bell rings, and the gate is heard, the battle exit\'s Morse signal: walk through it to the next park, which has one more attraction. Time left over is not carried on. When closing time comes, the bell rings and your visit is over. Your score is the number of parks you finished, and Water Park has its own high score board.' },
     { title: 'Water Park in Chaos Mode', sound: null, desc: 'Chaos Mode has water parks too, one park to a level, which you know by the busy pool and its children. A water park in chaos has three attractions the first time in a run, and one more each time after, at most six. There is no park clock there: each token you win adds fifteen seconds to the chaos clock, and a mistake takes its seconds off it. When the last token is won, the exit is heard over the park, which plays on, and the chaos clock waits until you walk through it. There, double tap for the tokens found, then your health, the clock and the points.' },
   ]],
 ];
