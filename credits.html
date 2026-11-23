@@ -8,7 +8,7 @@
   <link rel="icon" href="icons/icon-192.png">
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
   <meta name="theme-color" content="#0c0f14">
-  <link rel="stylesheet" href="css/site.css?v=6.3.8">
+  <link rel="stylesheet" href="css/site.css?v=6.3.9">
 </head>
 <body>
   <header class="site">
@@ -22,9 +22,9 @@
     <p>Endless Labyrinth is designed and directed by Russell Hinderman (DevHinderman2026).</p>
     <p><strong>AI assisted.</strong> The game's code, including its modes, its sound design code, the event system and the developer tools, was written with the help of AI: Claude, by Anthropic, working under Russell's direction. Russell decides how every part of the game works, sounds and plays, and tests it by ear; the AI writes and checks the code that carries those decisions out.</p>
     <h2 id="voices">Voices</h2>
-    <p>The voices of the game during play are <strong>Kokoro</strong> (Kokoro-82M) by hexgrad, used under the <a href="https://www.apache.org/licenses/LICENSE-2.0">Apache License 2.0</a>. Model page: <a href="https://huggingface.co/hexgrad/Kokoro-82M">hexgrad/Kokoro-82M on Hugging Face</a>.</p>
-    <p>In the web version (6.0.0 and later), the game speaks during a run with Kokoro's American voice "Bella", the guide of Find the Voice is Kokoro's American voice "Heart", and each character of Ultimate Mode's safe zones speaks with a Kokoro voice of their own. In the Windows game (4.0.0 and later), the guide of Find the Voice is Kokoro's American voice "Heart", and everything else the game says is spoken by the voices built into Windows.</p>
-    <p>Since web 6.1.0 and Windows 4.0.0, every one of these lines is a recording. Each was made once from the Kokoro v1.0 model files published by the <a href="https://github.com/thewh1teagle/kokoro-onnx">kokoro-onnx</a> project (kokoro-onnx is MIT licensed; the model files are Apache 2.0), and they come with the game's sounds: in the web version's voice packs, and in the Windows game's sounds folder as ftv_guide_1.ogg to ftv_guide_361.ogg. Nothing is downloaded from another site for them, and no voice is made on the player's device.</p>
+    <p>The voices of the game during play are <strong>Kokoro</strong> (Kokoro-82M) by hexgrad, used under the <a href="https://www.apache.org/licenses/LICENSE-2.0">Apache License 2.0</a>. Model page: <a href="https://huggingface.co/hexgrad/Kokoro-82M">hexgrad/Kokoro-82M on Hugging Face</a>. A copy of the Apache License 2.0 comes with these credits: <a href="https://github.com/DevHinderman2026/Endless-Labyrinth/blob/main/Credits%20and%20Version%20History/Apache-License-2.0.txt">Apache-License-2.0.txt</a>.</p>
+    <p>In the web version (6.0.0 and later), the game speaks during a run with Kokoro's American voice "Bella", the guide of Find the Voice is Kokoro's American voice "Heart", and each character of Ultimate Mode's safe zones speaks with a Kokoro voice of their own. For a possible future update of the Windows version, the guide of Find the Voice has also been recorded with Kokoro's American voice "Heart"; there, everything else the game says would be spoken by the voices built into Windows.</p>
+    <p>Since web 6.1.0, every one of these lines is a recording, and so are the guide's lines for that possible Windows update. Each was made once from the Kokoro v1.0 model files published by the <a href="https://github.com/thewh1teagle/kokoro-onnx">kokoro-onnx</a> project (kokoro-onnx is MIT licensed; the model files are Apache 2.0), and they come with the game's sounds: in the web version's voice packs, and, for that possible Windows update, in the Windows game's sounds folder as ftv_guide_1.ogg to ftv_guide_361.ogg. Nothing is downloaded from another site for them, and no voice is made on the player's device.</p>
     <p>The pronunciations given to the model are written by hand in the phoneme notation of <a href="https://github.com/hexgrad/misaki">Misaki</a> by hexgrad, Apache License 2.0. No eSpeak NG or any other GPL-licensed code was used. A line the game builds itself, such as a score or a time, is said by joining recordings of its words and numbers. A line with no recording (only text typed into an event made after the recordings) is said by the device's own voice, and menus, help, Game Over and the final score always use the device's own voice.</p>
     <h2 id="sounds">Sounds</h2>
     <p>Every recorded sound in Endless Labyrinth comes from <a href="https://pixabay.com/">Pixabay</a> and is used under the <a href="https://pixabay.com/service/license-summary/">Pixabay Content License</a>, except one, a set of announcer lines downloaded for the web version and not used, which comes from <a href="https://freesound.org/">Freesound</a> under the <a href="https://creativecommons.org/licenses/by/4.0/">Creative Commons Attribution 4.0 licence</a>. The Pixabay license allows free use, including in games, and allows editing. It does not require credit, but every recording is credited here anyway, with a link to its original page; the Freesound recording requires this credit, and has it, although it is not played.</p>
@@ -540,64 +540,64 @@
   <script type="importmap">
   {
     "imports": {
-      "./js/accessibility.js": "./js/accessibility.js?v=6.3.8",
-      "./js/audio.js": "./js/audio.js?v=6.3.8",
-      "./js/backup.js": "./js/backup.js?v=6.3.8",
-      "./js/backups-page.js": "./js/backups-page.js?v=6.3.8",
-      "./js/bella-lexicon.js": "./js/bella-lexicon.js?v=6.3.8",
-      "./js/bella-words.js": "./js/bella-words.js?v=6.3.8",
-      "./js/braille.js": "./js/braille.js?v=6.3.8",
-      "./js/calendar.js": "./js/calendar.js?v=6.3.8",
-      "./js/device.js": "./js/device.js?v=6.3.8",
-      "./js/display.js": "./js/display.js?v=6.3.8",
-      "./js/game.js": "./js/game.js?v=6.3.8",
-      "./js/gestures.js": "./js/gestures.js?v=6.3.8",
-      "./js/help-data.js": "./js/help-data.js?v=6.3.8",
-      "./js/help-page.js": "./js/help-page.js?v=6.3.8",
-      "./js/keywords.js": "./js/keywords.js?v=6.3.8",
-      "./js/main.js": "./js/main.js?v=6.3.8",
-      "./js/modes/abyss.js": "./js/modes/abyss.js?v=6.3.8",
-      "./js/modes/chaos.js": "./js/modes/chaos.js?v=6.3.8",
-      "./js/modes/driving.js": "./js/modes/driving.js?v=6.3.8",
-      "./js/modes/events/blocks.js": "./js/modes/events/blocks.js?v=6.3.8",
-      "./js/modes/events/engine.js": "./js/modes/events/engine.js?v=6.3.8",
-      "./js/modes/events/feed.js": "./js/modes/events/feed.js?v=6.3.8",
-      "./js/modes/events/help.js": "./js/modes/events/help.js?v=6.3.8",
-      "./js/modes/events/missions.js": "./js/modes/events/missions.js?v=6.3.8",
-      "./js/modes/events/more-spec.js": "./js/modes/events/more-spec.js?v=6.3.8",
-      "./js/modes/events/more.js": "./js/modes/events/more.js?v=6.3.8",
-      "./js/modes/events/py.js": "./js/modes/events/py.js?v=6.3.8",
-      "./js/modes/events/schema.js": "./js/modes/events/schema.js?v=6.3.8",
-      "./js/modes/events/sign.js": "./js/modes/events/sign.js?v=6.3.8",
-      "./js/modes/events/sounds.js": "./js/modes/events/sounds.js?v=6.3.8",
-      "./js/modes/events/tunes.js": "./js/modes/events/tunes.js?v=6.3.8",
-      "./js/modes/events/wording.js": "./js/modes/events/wording.js?v=6.3.8",
-      "./js/modes/events.js": "./js/modes/events.js?v=6.3.8",
-      "./js/modes/findvoice-guide.js": "./js/modes/findvoice-guide.js?v=6.3.8",
-      "./js/modes/findvoice.js": "./js/modes/findvoice.js?v=6.3.8",
-      "./js/modes/index.js": "./js/modes/index.js?v=6.3.8",
-      "./js/modes/island.js": "./js/modes/island.js?v=6.3.8",
-      "./js/modes/tower.js": "./js/modes/tower.js?v=6.3.8",
-      "./js/modes/ultimate/cast.js": "./js/modes/ultimate/cast.js?v=6.3.8",
-      "./js/modes/ultimate/help.js": "./js/modes/ultimate/help.js?v=6.3.8",
-      "./js/modes/ultimate/world.js": "./js/modes/ultimate/world.js?v=6.3.8",
-      "./js/modes/ultimate.js": "./js/modes/ultimate.js?v=6.3.8",
-      "./js/packs.js": "./js/packs.js?v=6.3.8",
-      "./js/site.js": "./js/site.js?v=6.3.8",
-      "./js/sound-rules.js": "./js/sound-rules.js?v=6.3.8",
-      "./js/speech.js": "./js/speech.js?v=6.3.8",
-      "./js/stats.js": "./js/stats.js?v=6.3.8",
-      "./js/storage.js": "./js/storage.js?v=6.3.8",
-      "./js/turning.js": "./js/turning.js?v=6.3.8",
-      "./js/update-alert.js": "./js/update-alert.js?v=6.3.8",
-      "./js/version.js": "./js/version.js?v=6.3.8",
-      "./js/voice-text.js": "./js/voice-text.js?v=6.3.8",
-      "./js/voice.js": "./js/voice.js?v=6.3.8",
-      "./js/wetworker.js": "./js/wetworker.js?v=6.3.8"
+      "./js/accessibility.js": "./js/accessibility.js?v=6.3.9",
+      "./js/audio.js": "./js/audio.js?v=6.3.9",
+      "./js/backup.js": "./js/backup.js?v=6.3.9",
+      "./js/backups-page.js": "./js/backups-page.js?v=6.3.9",
+      "./js/bella-lexicon.js": "./js/bella-lexicon.js?v=6.3.9",
+      "./js/bella-words.js": "./js/bella-words.js?v=6.3.9",
+      "./js/braille.js": "./js/braille.js?v=6.3.9",
+      "./js/calendar.js": "./js/calendar.js?v=6.3.9",
+      "./js/device.js": "./js/device.js?v=6.3.9",
+      "./js/display.js": "./js/display.js?v=6.3.9",
+      "./js/game.js": "./js/game.js?v=6.3.9",
+      "./js/gestures.js": "./js/gestures.js?v=6.3.9",
+      "./js/help-data.js": "./js/help-data.js?v=6.3.9",
+      "./js/help-page.js": "./js/help-page.js?v=6.3.9",
+      "./js/keywords.js": "./js/keywords.js?v=6.3.9",
+      "./js/main.js": "./js/main.js?v=6.3.9",
+      "./js/modes/abyss.js": "./js/modes/abyss.js?v=6.3.9",
+      "./js/modes/chaos.js": "./js/modes/chaos.js?v=6.3.9",
+      "./js/modes/driving.js": "./js/modes/driving.js?v=6.3.9",
+      "./js/modes/events/blocks.js": "./js/modes/events/blocks.js?v=6.3.9",
+      "./js/modes/events/engine.js": "./js/modes/events/engine.js?v=6.3.9",
+      "./js/modes/events/feed.js": "./js/modes/events/feed.js?v=6.3.9",
+      "./js/modes/events/help.js": "./js/modes/events/help.js?v=6.3.9",
+      "./js/modes/events/missions.js": "./js/modes/events/missions.js?v=6.3.9",
+      "./js/modes/events/more-spec.js": "./js/modes/events/more-spec.js?v=6.3.9",
+      "./js/modes/events/more.js": "./js/modes/events/more.js?v=6.3.9",
+      "./js/modes/events/py.js": "./js/modes/events/py.js?v=6.3.9",
+      "./js/modes/events/schema.js": "./js/modes/events/schema.js?v=6.3.9",
+      "./js/modes/events/sign.js": "./js/modes/events/sign.js?v=6.3.9",
+      "./js/modes/events/sounds.js": "./js/modes/events/sounds.js?v=6.3.9",
+      "./js/modes/events/tunes.js": "./js/modes/events/tunes.js?v=6.3.9",
+      "./js/modes/events/wording.js": "./js/modes/events/wording.js?v=6.3.9",
+      "./js/modes/events.js": "./js/modes/events.js?v=6.3.9",
+      "./js/modes/findvoice-guide.js": "./js/modes/findvoice-guide.js?v=6.3.9",
+      "./js/modes/findvoice.js": "./js/modes/findvoice.js?v=6.3.9",
+      "./js/modes/index.js": "./js/modes/index.js?v=6.3.9",
+      "./js/modes/island.js": "./js/modes/island.js?v=6.3.9",
+      "./js/modes/tower.js": "./js/modes/tower.js?v=6.3.9",
+      "./js/modes/ultimate/cast.js": "./js/modes/ultimate/cast.js?v=6.3.9",
+      "./js/modes/ultimate/help.js": "./js/modes/ultimate/help.js?v=6.3.9",
+      "./js/modes/ultimate/world.js": "./js/modes/ultimate/world.js?v=6.3.9",
+      "./js/modes/ultimate.js": "./js/modes/ultimate.js?v=6.3.9",
+      "./js/packs.js": "./js/packs.js?v=6.3.9",
+      "./js/site.js": "./js/site.js?v=6.3.9",
+      "./js/sound-rules.js": "./js/sound-rules.js?v=6.3.9",
+      "./js/speech.js": "./js/speech.js?v=6.3.9",
+      "./js/stats.js": "./js/stats.js?v=6.3.9",
+      "./js/storage.js": "./js/storage.js?v=6.3.9",
+      "./js/turning.js": "./js/turning.js?v=6.3.9",
+      "./js/update-alert.js": "./js/update-alert.js?v=6.3.9",
+      "./js/version.js": "./js/version.js?v=6.3.9",
+      "./js/voice-text.js": "./js/voice-text.js?v=6.3.9",
+      "./js/voice.js": "./js/voice.js?v=6.3.9",
+      "./js/wetworker.js": "./js/wetworker.js?v=6.3.9"
     }
   }
   </script>
   <!-- end of versions -->
-  <script type="module" src="js/site.js?v=6.3.8"></script>
+  <script type="module" src="js/site.js?v=6.3.9"></script>
 </body>
 </html>
