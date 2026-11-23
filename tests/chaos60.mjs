@@ -115,7 +115,7 @@ check(!fv1.said.some((s) => /Level/.test(s)) && /^evt_amb_/.test(fv1.bg) && fv1.
 check(/^0 of [34] found\. 100 health\. Clock \d+ seconds\. 0 points total\. Facing north\.$/.test(fv1.report), 'its report, with the run\'s health: ' + fv1.report);
 check(fv1.afterCatch[1] === fv1.afterCatch[0] - 25 && fv1.afterCatch[2] === 3, 'a catch costs 25 of the run\'s health, not a life (6.2.0): ' + JSON.stringify(fv1.afterCatch));
 check(fv1.chaosAt45 === 'charge' && fv1.chaosAt53 === 'rest', 'in Chaos too, one step on glass gives a charge of at least 5 seconds (6.1.1): ' + JSON.stringify([fv1.chaosAt45, fv1.chaosAt53]));
-check(fv1.exit && fv1.loops.length === 1 && fv1.loops[0] === 'exit_morse' && fv1.creature === 'gone', 'the quota found, the exit appears and everything else goes: ' + fv1.loops.join(', '));
+check(fv1.exit && fv1.loops.length === 2 && fv1.loops.includes('exit_morse') && fv1.loops.some((n) => /^event_amb_file_/.test(n)) && fv1.creature === 'gone', 'the quota found, the exit appears over the room\'s background, which plays on (6.3.7), and the rest goes: ' + fv1.loops.join(', '));
 check(fv1.waits, 'the chaos clock waits until you go through the exit');
 check(fv1.gap === 'chaos_gap' && fv1.points === 10, 'through the exit: ten points, and the next stage: ' + JSON.stringify([fv1.gap, fv1.points]));
 

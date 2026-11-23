@@ -16,8 +16,13 @@
 // - 1: every level change is a glide that ends; a run's end makes a fresh sound engine.
 
 import { chromium } from 'playwright';
+import fs from 'node:fs';
+import path from 'node:path';
 
 const base = process.argv[2] || 'http://localhost:8790';
+const desk = process.argv[3] || '/home/claude/work/desktop';
+const fateFile = path.join(desk, 'Developer Tools', 'templates', 'call-of-fate.json');
+const FATE = fs.existsSync(fateFile) ? JSON.parse(fs.readFileSync(fateFile, 'utf8')) : null;
 let failures = 0;
 const check = (ok, what) => { console.log((ok ? 'PASS ' : 'FAIL ') + what); if (!ok) failures += 1; };
 
@@ -143,6 +148,127 @@ check(s8b.state === 'battle' && s8b.had, 'a Chaos battle with a cartridge on the
 check(s8b.exit && s8b.kept && s8b.level > 0, `the exit appears and the cartridge already out stays, its beacon still heard (level ${s8b.level})`);
 check(s8b.gained === s8b.shots && s8b.gained > 0 && s8b.silent, `stepped onto, it adds its ${s8b.shots} shots to the battles' ammo and falls silent`);
 check(s8b.noNew, 'no new cartridge appears once the exit is out');
+
+// ------------------------------------------------------------------ 3: a held loop's echo rings out
+// The level of a voice's baked echo, measured where it leaves the voice.
+await page.evaluate(() => {
+  window.echoTap = (v) => {
+    const ctx = v.ctx; const an = ctx.createAnalyser(); an.fftSize = 2048;
+    v.wet.merge.connect(an);
+    const buf = new Float32Array(an.fftSize);
+    return { rms: () => { an.getFloatTimeDomainData(buf); let x = 0; for (const y of buf) x += y * y; return Math.sqrt(x / buf.length); },
+      // the loudest of a few readings, so a quiet moment of the recording is not taken for silence
+      loud: async (ms = 120) => { let m = 0; const t = performance.now(); while (performance.now() - t < ms) { an.getFloatTimeDomainData(buf); let x = 0; for (const y of buf) x += y * y; m = Math.max(m, Math.sqrt(x / buf.length)); await window.sleep(10); } return m; },
+      off: () => { try { v.wet.merge.disconnect(an); } catch (e) { /* gone */ } } };
+  };
+  // A looping sound with its baked echo, at a steady level: played again until the echo is made.
+  window.bakedLoop = async (name) => {
+    const a = window.__el.audio;
+    for (let i = 0; i < 60; i++) {
+      const v = a.play(name, { loops: -1 });
+      if (v) { await window.sleep(60); if (v.wet && v.wet.buffer) { v.setVolume(0.8, 0.8, 0); return v; } v.stop(); }
+      await window.sleep(250);
+    }
+    return null;
+  };
+  window.ringTest = async (v, win = 300) => {
+    const r = {}; const tap = window.echoTap(v);
+    await window.sleep(300);
+    r.before = await tap.loud(win);
+    v.pause();
+    r.cleanStopped = v.sources.length === 0 && !!v.tail;
+    await window.sleep(60); r.at60 = await tap.loud(80);
+    await window.sleep(500); r.at600 = await tap.loud(80);
+    await window.sleep(800); r.at1500 = await tap.loud(80);
+    r.tailGone = v.tail === null;
+    v.resume();
+    await window.sleep(150);
+    r.after = await tap.loud(win);
+    r.oneEcho = !!v.wet.src && v.tail === null;
+    // Carried on while the echo is still ringing: the old echo is taken out, never two.
+    v.pause(); await window.sleep(200);
+    r.ringing = !!v.tail;
+    const old = v.tail && v.tail.src; let ended = false; if (old) old.addEventListener('ended', () => { ended = true; });
+    v.resume();
+    r.heldNoTail = v.tail === null && !!v.wet.src && v.wet.src !== old;
+    await window.sleep(120);
+    r.oldEnded = ended;
+    r.afterQuick = await tap.loud(win);
+    // In step: the echo's place in the loop is the sound's own.
+    r.inStep = Math.abs(v.startedAt - (v.ctx.currentTime - ((v.ctx.currentTime - v.startedAt)))) < 1e-9;
+    // Pausing and carrying on fast, many times: nothing left over.
+    for (let i = 0; i < 40; i++) { v.pause(); await window.sleep(1 + (i % 5) * 4); v.resume(); await window.sleep(2 + (i % 3) * 5); }
+    await window.sleep(1500);
+    r.afterMany = await tap.loud(win);
+    r.cleanAfterMany = v.tail === null && v.sources.length >= 2 && !v.paused;
+    tap.off();
+    return r;
+  };
+});
+const s3 = await page.evaluate(async () => {
+  const g = window.__el.game; const a = g.audio;
+  window.startMode('standard');
+  const name = [...a.entries.keys()].find((k) => /^credit_beacon_\d+$/.test(k));
+  const v = await window.bakedLoop(name);
+  if (!v) { window.toMenu(); return { name, none: true, room: a.room }; }
+  const r = await window.ringTest(v);
+  r.name = name; r.room = a.room;
+  v.stop(); window.toMenu();
+  return r;
+});
+const ringChecks = (r, what, low = 0.6) => {
+  check(!r.none, `${what}: a looping sound with a baked echo to test with (${r.name}, room ${r.room})`);
+  if (r.none) return;
+  check(r.cleanStopped && r.at60 > 0.25 * r.before, `${what}: held, the sound itself stops and its echo is still heard a moment later (${r.at60.toFixed(4)} of ${r.before.toFixed(4)} before)`);
+  check(r.at600 < r.at60 && r.at600 > 0 && r.at1500 < 0.02 * r.before && r.tailGone, `${what}: the echo dies away smoothly and is gone (${r.at60.toFixed(4)}, ${r.at600.toFixed(4)}, ${r.at1500.toFixed(5)})`);
+  check(r.after > low * r.before && r.after < 1.6 * r.before && r.oneEcho, `${what}: carried on, the echo is back at its level (${r.after.toFixed(4)} against ${r.before.toFixed(4)}), one echo`);
+  check(r.ringing && r.heldNoTail && r.oldEnded && r.afterQuick < 1.6 * r.before, `${what}: carried on while still ringing, the old echo is taken out, never two at once (${r.afterQuick.toFixed(4)})`);
+  check(r.cleanAfterMany && r.afterMany > low * r.before && r.afterMany < 1.6 * r.before, `${what}: forty quick pauses later, one sound and one echo, at its level (${r.afterMany.toFixed(4)})`);
+};
+ringChecks(s3, 'a credit beacon in a labyrinth');
+
+if (!FATE) console.log('(Call of Fate\'s template was not found: its bell is not checked.)');
+else {
+  const fate = await page.evaluate(async (d) => {
+    const { checkEvent } = await import('./js/modes/events/schema.js');
+    const G = window.__el.game; const a = G.audio;
+    const [ev] = checkEvent(d);
+    G._toMenu(''); G.state = 'events_menu';
+    G._eventLoadThenStart(ev);
+    for (let i = 0; i < 400 && G.state !== 'event'; i++) await window.sleep(50);
+    if (G.state !== 'event') return { none: true, name: 'no event', room: a.room };
+    for (let i = 0; i < 10; i++) { G.frame(1 / 30); await window.sleep(20); }
+    // One of its bells, with the baked echo (made a moment after the room is first heard).
+    let v = null;
+    for (let i = 0; i < 80 && !v; i++) {
+      v = [...a.live].find((x) => x.loop && /bell/.test(x.name) && x.wet && x.wet.buffer) || null;
+      if (!v) { G.frame(1 / 30); await window.sleep(100); }
+    }
+    const bells = [...a.live].filter((x) => x.loop && /bell/.test(x.name)).map((x) => x.name);
+    if (!v) {
+      // (Its bells began before their echo was made: one more, played now, has it.)
+      const nm = bells[0];
+      v = nm ? await window.bakedLoop(nm) : null;
+      if (!v) { window.toMenu(); return { none: true, name: bells.join(','), room: a.room }; }
+    }
+    v.setVolume(0.8, 0.8, 0);
+    const r = await window.ringTest(v, 1200);
+    r.name = v.name; r.room = a.room;
+    // And through the game's own pause: every bell held, each with its echo ringing.
+    for (let i = 0; i < 5; i++) { G.frame(1 / 30); await window.sleep(20); }
+    G.input('pause');
+    const held = G.pausedVoices.filter((x) => /bell/.test(x.name));
+    r.gameHeld = held.length; r.gameRinging = held.filter((x) => x.wet && x.wet.buffer).every((x) => !!x.tail);
+    await window.sleep(300);
+    G.input('pause');
+    r.gameResumed = !G.isPaused && held.every((x) => !x.paused && !x.tail);
+    r.gameSaw = { paused: G.isPaused, state: G.state, held: held.map((x) => [x.name.slice(-6), !!(x.wet && x.wet.buffer), x.paused, !!x.tail, x.stopped]) };
+    window.toMenu();
+    return r;
+  }, FATE);
+  ringChecks(fate, 'a bell in Call of Fate', 0.3);   // (a bell is loud only as it is struck: the readings vary)
+  if (!fate.none) check(fate.gameHeld > 0 && fate.gameRinging && fate.gameResumed, `Call of Fate, paused by the game: ${fate.gameHeld} bells held with their echoes ringing out, all carried on by the resume: ${JSON.stringify(fate.gameSaw)}`);
+}
 
 //SECTIONS
 

@@ -378,6 +378,18 @@ const PANNER_POOL = 64;
 const PANNER_COUNT = new WeakMap(); // mix -> how many panners have been made for it
 const PANNER_NEAR = 1; const PANNER_FAR = 1.5;
 const START_LEAD = 0.009;          // seconds: three slices of sound
+// (Web 6.3.7, Russell, 22 November 2026: in Call of Fate a ringing bell lost its echo the
+// moment you paused.) A looping sound's echo is baked into a copy of the loop, played in
+// step with it, and a pause stopped that copy in the same instant as the sound: the bell
+// and the room it rang in went dead together. Now the sound stops and its echo rings
+// out: the copy plays on, dying away over RING_OUT seconds (to a thousandth, a room's
+// own decay), and is stopped then. Carried on, the echo comes back in step with the
+// sound, over RING_BACK seconds instead of at once; and if it is carried on while the
+// old echo is still ringing, that one is taken out over RING_CROSS seconds first, so
+// there are never two echoes of one sound.
+const RING_OUT = 1.2;
+const RING_BACK = 0.012;
+const RING_CROSS = 0.015;
 export const pannerStats = { made: 0, reused: 0, dropped: 0, woken: 0 };
 
 // The way a place lies, as a unit vector (a point underfoot is a step ahead, as _place has it).
@@ -1567,6 +1579,7 @@ export class Voice {
     }
     const wasPaused = this.paused;
     const offset = wasPaused ? this.offset : Math.max(0, oldCtx.currentTime - this.startedAt);
+    this._endTail(0, oldCtx.currentTime);   // (6.3.7: a ringing echo belongs to the old engine)
     this._stopSources();
     this._disconnect();
     this.ctx = this.audio.ctx;
@@ -1574,10 +1587,10 @@ export class Voice {
     this.fadeMs = 0;
     this.paused = false;
     this.begin(offset);
-    if (wasPaused) this.pause();
+    if (wasPaused) this.pause(undefined, false);     // (held again in silence: no echo to ring out)
   }
 
-  _startSources(offset, now = this.ctx.currentTime) {
+  _startSources(offset, now = this.ctx.currentTime, echoLate = 0) {
     this.sources = [];
     if (!(offset > 0)) offset = 0;       // (6.3.7: never below nothing, nor not a number)
     let first = null;
@@ -1590,7 +1603,10 @@ export class Voice {
       s.buffer = br.buffer;
       s.loop = this.loop;
       s.connect(br.fade);
-      if (this.loop) s.start(now, offset % br.buffer.duration);
+      // (6.3.7: a baked echo carried on while its old self still rings starts a moment
+      // later, that much further on, so it is still in step: see resume.)
+      const late = br === this.wet ? echoLate : 0;
+      if (this.loop) s.start(now + late, (offset + late) % br.buffer.duration);
       else if (offset < br.buffer.duration) s.start(now, offset);
       else continue;
       br.src = s;
@@ -1817,6 +1833,7 @@ export class Voice {
     this.stopped = true;
     for (const f of this.followers.splice(0)) f.stop();
     this._stopSources();
+    this._endTail(0.03);
     this.audio.live.delete(this);
     setTimeout(() => this._disconnect(), 4000);
   }
@@ -1840,7 +1857,7 @@ export class Voice {
 
   // Held where it is, and carrying on from there. (`now` is the clock's reading
   // to go by: AudioEngine.holdAll gives several voices the same one.)
-  pause(now = this.ctx.currentTime) {
+  pause(now = this.ctx.currentTime, ring = true) {
     if (this.paused || this.stopped || this.ended || !this.dry) return;
     // (6.3.7) Never before the sound's own beginning: a placed one-shot starts a few
     // milliseconds on (START_LEAD), and a pause landing in those milliseconds gave an
@@ -1848,6 +1865,7 @@ export class Voice {
     // carries on (the resume stopped part-way, and every beacon after it stayed held).
     this.offset = Math.max(0, now - this.startedAt);
     this.paused = true;
+    if (ring) this._ringOut(now);
     this._stopSources();
   }
 
@@ -1856,7 +1874,74 @@ export class Voice {
     this.paused = false;
     this.jump = true;
     this._reaim(now);
-    this._startSources(this.offset, now);
+    // (6.3.7) The baked echo comes back in step, over a few milliseconds; if its old
+    // self is still ringing out, that is taken away first.
+    const w = this.wet && this.wet.buffer ? this.wet : null;
+    let late = 0;
+    if (w && this.loop && !this.fadingOut) {
+      const g = w.fade.gain;
+      if (this.tail && now < this.tail.until) {
+        late = RING_CROSS;
+        this._endTail(RING_CROSS, now);
+      } else {
+        this._endTail(0, now);
+        g.cancelScheduledValues(now);
+        g.setValueAtTime(0, now);
+      }
+      g.setValueAtTime(0, now + late);
+      g.linearRampToValueAtTime(1, now + late + RING_BACK);
+      this.echoBack = now + late;
+    }
+    this._startSources(this.offset, now, late);
+  }
+
+  // (6.3.7) A held loop's baked echo rings out instead of stopping with it: its source
+  // is taken out of the ones a hold stops, and dies away on the echo's own fade.
+  _ringOut(now) {
+    const w = this.wet && this.wet.buffer ? this.wet : null;
+    if (!w || !this.loop || !w.src || this.fadingOut) return;
+    const src = w.src;
+    const g = w.fade.gain;
+    // Where the echo's fade stands, worked out here (not every browser says, of a
+    // level in the middle of a glide): full, unless it is still fading in.
+    let level = 1;
+    if (this.fadeMs > 0 && now < this.begunAt + this.fadeMs / 1000) level = (now - this.begunAt) / (this.fadeMs / 1000);
+    if (this.echoBack !== undefined && now < this.echoBack + RING_BACK) level = Math.max(0, (now - this.echoBack) / RING_BACK);
+    // (An echo not yet faded in, or one still being brought back: nothing to ring.)
+    if (!(level > 0.05)) return;
+    const i = this.sources.indexOf(src);
+    if (i >= 0) this.sources.splice(i, 1);
+    w.src = null;
+    this._endTail(0, now);
+    g.cancelScheduledValues(now);
+    g.setValueAtTime(level, now);
+    g.exponentialRampToValueAtTime(level * 0.001, now + RING_OUT);
+    g.setValueAtTime(0, now + RING_OUT);
+    try { src.stop(now + RING_OUT + 0.02); } catch (e) { /* not started */ }
+    const tail = { src, from: now, level, until: now + RING_OUT };
+    src.onended = () => { try { src.disconnect(); } catch (e) { /* gone */ } if (this.tail === tail) this.tail = null; };
+    this.tail = tail;
+  }
+
+  // The ringing echo taken away over `secs` (at once if nothing).
+  _endTail(secs = 0, now = this.ctx.currentTime) {
+    const t = this.tail;
+    if (!t) return;
+    this.tail = null;
+    const w = this.wet;
+    if (secs > 0 && w && w.fade && now < t.until) {
+      const g = w.fade.gain;
+      // (Where the ring-out has got to, worked out as in _ringOut.)
+      const level = t.level * Math.pow(0.001, clamp((now - t.from) / RING_OUT, 0, 1));
+      g.cancelScheduledValues(now);
+      g.setValueAtTime(level, now);
+      g.linearRampToValueAtTime(0, now + secs);
+      try { t.src.stop(now + secs); } catch (e) { /* not started */ }
+    } else {
+      t.src.onended = null;
+      try { t.src.stop(); } catch (e) { /* not started */ }
+      try { t.src.disconnect(); } catch (e) { /* gone */ }
+    }
   }
 
   // (6.3.3) Before a held sound plays again: each of its panners is put where the sound

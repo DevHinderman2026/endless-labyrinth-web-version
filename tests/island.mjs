@@ -448,6 +448,106 @@ else {
   check(water.phase === 'seabed' && water.peak < 0.75, `at rest on the seabed the game's sound stays well under the top before the limiter (peak ${water.peak.toFixed(2)}; it was 0.8 to 1.1), and the limiter is all but idle (${water.reduction.toFixed(1)} dB)`);
 }
 
+// --------------------------------------------------------------- 6.3.7: the seabed's supply, by need
+// (Russell, 22 November 2026: "I once had over 50 shots early in an Island run.")
+// The game's own rule (_islandSupply, _islandCartridges), run over thousands of
+// pretend runs: a player who takes every cartridge and shoots only what must be shot.
+const supply = await page.evaluate(() => {
+  const g = window.__el.game;
+  const keepPlan = g.guardianPlan;
+  const run = (islands, hit) => {
+    g.guardianPlan = {};
+    let ammo = 8; const o = { carried: [], dry: 0, over: 0, ones: 0, sumBad: 0, guardShort: 0, most: 0 };
+    for (let n = 1; n <= islands; n++) {
+      const draw = 2 + Math.floor(Math.random() * 3);
+      const G = g._guardianHits(n);
+      const atOnce = Math.min(6, 1 + Math.floor(n / 2));
+      // A guardian's island: what you arrive with must cover it and the enemies at once.
+      if (G > 0 && hit === 1 && ammo < G + atOnce) o.guardShort += 1;
+      const sup = g._islandSupply(n, ammo, draw);
+      const carts = g._islandCartridges(sup.shots);
+      if (carts.some((c) => c < 2 || c > 6)) o.ones += 1;
+      if (carts.reduce((a, c) => a + c, 0) !== sup.shots) o.sumBad += 1;
+      const before = ammo;
+      ammo += sup.shots;
+      if (ammo > Math.max(sup.need + sup.spare, before + 2)) o.over += 1;
+      if (ammo > sup.need + sup.spare + 6) o.over += 1;
+      o.carried.push(ammo); o.most = Math.max(o.most, ammo);
+      // What the island takes: a hit for every enemy and every hit of the guardian.
+      let hits = (3 + n) + G; let fired = 0;
+      while (hits > 0 && fired < ammo) { fired += 1; if (hit >= 1 || Math.random() < hit) hits -= 1; }
+      if (hits > 0) { o.dry = n; break; }
+      ammo -= fired;
+    }
+    return o;
+  };
+  const many = (runs, islands, hit) => {
+    const r = { runs, dry: 0, over: 0, ones: 0, sumBad: 0, guardShort: 0, most: 0, avg: [], top: [] };
+    const sums = Array(islands).fill(0); const cnt = Array(islands).fill(0); const top = Array(islands).fill(0);
+    for (let i = 0; i < runs; i++) {
+      const o = run(islands, hit);
+      if (o.dry) r.dry += 1;
+      r.over += o.over; r.ones += o.ones; r.sumBad += o.sumBad; r.guardShort += o.guardShort; r.most = Math.max(r.most, o.most);
+      o.carried.forEach((c, k) => { sums[k] += c; cnt[k] += 1; top[k] = Math.max(top[k], c); });
+    }
+    r.avg = sums.map((x, k) => (cnt[k] ? Math.round(x / cnt[k]) : 0)); r.top = top;
+    return r;
+  };
+  const out = { perfect: many(4000, 12, 1), good: many(4000, 8, 0.8), poor: many(4000, 8, 0.7) };
+  g.guardianPlan = keepPlan;
+  return out;
+});
+check(supply.perfect.dry === 0, `every shot a hit: no run of 12 islands in ${supply.perfect.runs} runs dry of ammo`);
+check(supply.perfect.guardShort === 0, 'a guardian\'s island is always reached with its hits and a shot for each enemy at once there');
+check(supply.perfect.over === 0 && supply.good.over === 0, `ammo carried never passes what the island needs and its spare (most ever carried over 12 islands: ${supply.perfect.most}; by island, average ${supply.perfect.avg.join(', ')}; most ${supply.perfect.top.join(', ')})`);
+check(supply.perfect.ones + supply.good.ones + supply.poor.ones === 0 && supply.perfect.sumBad + supply.good.sumBad + supply.poor.sumBad === 0, 'every cartridge holds two to six shots, never one, and together they are the supply');
+console.log(`(Runs with enough ammo for 8 islands: every shot a hit 100%, 4 in 5 hit ${Math.round(100 - 100 * supply.good.dry / supply.good.runs)}%, 7 in 10 hit ${Math.round(100 - 100 * supply.poor.dry / supply.poor.runs)}%.)`);
+check(supply.good.dry / supply.good.runs < 0.08 && supply.poor.dry / supply.poor.runs > 0.15 && supply.poor.dry / supply.poor.runs < 0.45, 'a careful player has enough (four hits in five: over 92 runs in 100); one who misses a lot runs short (seven in ten: about 69 in 100)');
+
+// In the game itself: the island as made, rich arrivals, reinforcements, and a Chaos island.
+const made = await page.evaluate(async () => {
+  const g = window.__el.game; const out = {};
+  const total = () => g.islandAmmoCartridges.reduce((a, c) => a + c, 0) + (g.islandPhase === 'seabed' ? g.ammoPickups.reduce((a, p) => a + p.shots, 0) : 0);
+  const menu = () => { if (g.state !== 'menu') { g._stopRunSounds(); g.runId += 1; g.state = 'menu'; g._refreshMenu(); } };
+  menu(); g.menuIndex = g.menuKeys.indexOf('island'); g.input('enter'); g.frame(1 / 30);
+  out.first = { ammo: g.ammo, need: g.islandAmmoNeed, spare: g.islandAmmoSpare, shots: total(), carts: [...g.islandAmmoCartridges] };
+  // Arriving rich: the seabed holds one small cartridge, no more.
+  g.ammo = 60; g.islandNumber = 3; g._islandNewIsland();
+  out.rich = { shots: total(), carts: [...g.islandAmmoCartridges] };
+  // Arriving with nothing: the whole need and spare.
+  g.ammo = 0; g.islandNumber = 4; g._islandNewIsland();
+  out.poor = { shots: total(), want: g.islandAmmoNeed + g.islandAmmoSpare };
+  // Down to the seabed, and a reinforcement lands: one more shot, exactly.
+  g._islandStartRide('down');
+  for (let i = 0; i < 30 * 30 && g.islandRide; i++) g.frame(1 / 30);
+  out.phase = g.islandPhase;
+  const t0 = total(); const e0 = g.islandTargets;
+  g.islandCleared = false; g.islandDiveReinforced = 0; g.islandReinforceTimer = 0; g.islandAir = 20;
+  g.frame(1 / 30);
+  out.reinforced = { enemies: g.islandTargets - e0, shots: total() - t0 };
+  // Every cartridge full: the shot waits for a second one, and the two make a cartridge.
+  g.islandAmmoCartridges = [6]; for (const p of g.ammoPickups) p.shots = 6;
+  const t1 = total();
+  g._islandOweShot(); out.oneWaits = [total() - t1, g.islandAmmoOwed];
+  g._islandOweShot(); out.twoMake = [total() - t1, g.islandAmmoOwed, Math.min(...g.islandAmmoCartridges)];
+  menu();
+  // A Chaos island: the same rule, on the Chaos islands' own pool.
+  const pick = g._chaosPickNext; g._chaosPickNext = () => 'island';
+  g.menuIndex = g.menuKeys.indexOf('chaos'); g.input('enter'); g.frame(1 / 30);
+  out.chaos = { state: g.state, ammo: g.ammo, shots: g.islandAmmoCartridges.reduce((a, c) => a + c, 0), want: Math.max(2, g.islandAmmoNeed + g.islandAmmoSpare - g.ammo) };
+  g.ammo = 45; g.islandNumber = 2; g._islandNewIsland();
+  out.chaosRich = g.islandAmmoCartridges.reduce((a, c) => a + c, 0);
+  g._chaosPickNext = pick;
+  menu();
+  return out;
+});
+check(made.first.shots === Math.max(2, made.first.need + made.first.spare - made.first.ammo) && made.first.ammo + made.first.shots <= 17,
+  `island one: 8 shots carried, a need of ${made.first.need} and ${made.first.spare} spare, so ${made.first.shots} on the seabed (${made.first.carts.join(', ')})`);
+check(made.rich.shots === 2 && made.poor.shots === made.poor.want, `arrive with 60 shots and the seabed holds one small cartridge (${made.rich.shots}); arrive with none and it holds the whole need and spare (${made.poor.shots})`);
+check(made.phase === 'seabed' && made.reinforced.enemies === 1 && made.reinforced.shots === 1, `a reinforcement that lands adds exactly one shot to the seabed: ${JSON.stringify(made.reinforced)}`);
+check(made.oneWaits[0] === 0 && made.oneWaits[1] === 1 && made.twoMake[0] === 2 && made.twoMake[1] === 0 && made.twoMake[2] >= 2, `with every cartridge full, one shot waits for a second and the two make a cartridge, never a single-shot one: ${JSON.stringify([made.oneWaits, made.twoMake])}`);
+check(made.chaos.state === 'island' && made.chaos.shots === made.chaos.want && made.chaosRich === 2, `a Chaos island follows the same rule (${made.chaos.ammo} carried, ${made.chaos.shots} on the seabed; 45 carried, ${made.chaosRich})`);
+
 check(errors.length === 0, 'no errors in the page' + (errors.length ? ': ' + errors.join(' | ') : ''));
 await browser.close();
 console.log(failures ? `${failures} FAILED` : 'ALL PASSED');

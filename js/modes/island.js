@@ -102,8 +102,25 @@ const ISLAND_AMMO_BANDS = [[8.0, 18.0], [14.0, 28.0], [24.0, 42.0]];
 const ISLAND_AMMO_BAND_WEIGHTS = [2, 3, 2];
 // Each island's seabed holds ONE supply of ammo, fixed when the island is made and
 // shared by every dive to it, always covering what the island needs.
-const ISLAND_AMMO_CARTRIDGES = [2, 6];
-const ISLAND_AMMO_POOL_REINFORCE = 3;
+// (Web 6.3.7, Russell, 22 November 2026: "I once had over 50 shots early in an Island
+// run." Until now every seabed drew two to six cartridges of two to six shots whatever
+// you carried, topped up if short and never cut down if you were rich, so the stock
+// snowballed: measured over 20,000 runs, 36 shots on average by the second island and
+// over 40 in a third of runs.) Now the seabed holds what the island needs and a fair
+// spare, less what you carry:
+// - the need: the island's enemies, its guardian's hits, and the next island's
+//   guardian's hits; and, when the next island has a guardian (whose elevator stays shut
+//   until it falls, so nothing can be fetched during that fight), a shot for each enemy
+//   that can be after you at once there;
+// - the spare: ISLAND_AMMO_SPARE shots, drawn at random, and half of the need (Russell,
+//   22 November 2026, on the measured numbers: with a quarter, a player hitting four
+//   shots in five had enough for eight islands in only 72 runs of 100; with half, in 96,
+//   and one hitting seven in ten in 69; the most ever carried by island eight is 37);
+// - never less than one small cartridge, so there is always something to find;
+// - each reinforcement that lands while you are down adds one shot (it used to be a
+//   flat three, landed or not).
+const ISLAND_AMMO_SPARE = [2, 4];
+const ISLAND_AMMO_SPARE_SHARE = 0.5;
 const ISLAND_AMMO_SHOTS = [2, 6];      // shots in a cartridge
 // Coming back up from the seabed, an enemy that was standing where you step out is
 // set back to at least this far, so the arrival is never a strike.
@@ -470,6 +487,53 @@ const mixin = {
     return ISLAND_GUARDIAN_HITS + before;
   },
 
+  // (6.3.7) What island n's seabed holds for a player arriving with `carried` shots:
+  // the need, the spare, and the shots laid out (see the top of the file).
+  _islandSupply(n, carried, spareDraw) {
+    let need = (3 + n) + this._guardianHits(n) + this._guardianHits(n + 1);
+    if (this._guardianOn(n + 1)) need += Math.min(ISLAND_MAX_CONCURRENT, 1 + Math.floor((n + 1) / 2));
+    const spare = spareDraw + Math.floor(need * ISLAND_AMMO_SPARE_SHARE);
+    const shots = Math.max(ISLAND_AMMO_SHOTS[0], need + spare - Math.max(0, carried || 0));
+    return { need, spare, shots };
+  },
+
+  // That many shots as cartridges of two to six, never one of a single shot.
+  _islandCartridges(shots) {
+    const [lo, hi] = ISLAND_AMMO_SHOTS;
+    const out = [];
+    let left = Math.max(lo, Math.floor(shots));
+    while (left > 0) {
+      if (left <= hi) { out.push(left); break; }
+      let c = randint(lo, hi);
+      if (left - c < lo) c = left - lo;      // (never a single shot left over)
+      out.push(c);
+      left -= c;
+    }
+    shuffle(out);
+    return out;
+  },
+
+  // (6.3.7) A reinforcement has landed: one more shot on this island's seabed. It
+  // goes into a cartridge not yet laid out, or the one lying there, if either has
+  // room; otherwise it waits for a second, and the two make a cartridge of their own.
+  _islandOweShot() {
+    const hi = ISLAND_AMMO_SHOTS[1]; const lo = ISLAND_AMMO_SHOTS[0];
+    this.islandAmmoOwed = (this.islandAmmoOwed || 0) + 1;
+    const queue = this.islandAmmoCartridges || (this.islandAmmoCartridges = []);
+    while (this.islandAmmoOwed > 0) {
+      const i = queue.findIndex((c) => c < hi);
+      if (i >= 0) { queue[i] += 1; this.islandAmmoBudget = (this.islandAmmoBudget || 0) + 1; this.islandAmmoOwed -= 1; continue; }
+      const lying = this.islandPhase === 'seabed' ? this.ammoPickups.find((p) => p.shots < hi) : null;
+      if (lying) { lying.shots += 1; this.islandAmmoOwed -= 1; continue; }
+      if (this.islandAmmoOwed >= lo) {
+        queue.push(lo); this.islandAmmoBudget = (this.islandAmmoBudget || 0) + lo; this.islandAmmoOwed -= lo;
+        if (this.islandPhase === 'seabed') this._islandRestock();
+        continue;
+      }
+      break;
+    }
+  },
+
   _islandEnemiesLeft() { return Math.max(0, this.islandTargets - this.islandKillsHere); },
 
   // ------------------------------------------------------------------ islands
@@ -483,27 +547,13 @@ const mixin = {
     this.islandTreasure = rand() < ISLAND_TREASURE_CHANCE;
     this.islandDiver = n > 1 && rand() < ISLAND_DIVER_CHANCE;
     this.islandGuardianHp = this._guardianHits(n);
-    // This island's one supply of ammo, on its seabed.
-    let need = this.islandTargets + this.islandGuardianHp + ISLAND_AMMO_POOL_REINFORCE;
-    need += this._guardianHits(n + 1);
-    const [lo, hi] = ISLAND_AMMO_SHOTS;
-    const count = randint(...ISLAND_AMMO_CARTRIDGES);
-    const cartridges = [];
-    for (let k = 0; k < count; k++) cartridges.push(randint(lo, hi));
-    // A lean draw is filled up to the need, counting what you already carry.
-    need = Math.max(0, need - this.ammo);
-    let i = 0;
-    const sum = () => cartridges.reduce((s, c) => s + c, 0);
-    while (sum() < need) {
-      if (cartridges.every((c) => c >= hi)) cartridges.push(randint(lo, hi));
-      else {
-        cartridges[i % cartridges.length] = Math.min(hi, cartridges[i % cartridges.length] + 1);
-        i += 1;
-      }
-    }
-    shuffle(cartridges);
-    this.islandAmmoCartridges = cartridges;
-    this.islandAmmoBudget = sum();
+    // This island's one supply of ammo, on its seabed (6.3.7: by need, see the top).
+    const supply = this._islandSupply(n, this.ammo, randint(...ISLAND_AMMO_SPARE));
+    this.islandAmmoNeed = supply.need;
+    this.islandAmmoSpare = supply.spare;
+    this.islandAmmoCartridges = this._islandCartridges(supply.shots);
+    this.islandAmmoBudget = supply.shots;
+    this.islandAmmoOwed = 0;
     this.islandReinforced = 0;
     this.islandSaved = null;        // what was on the island when you last left it
     this.islandCreditRolled = false;
@@ -1116,6 +1166,7 @@ const mixin = {
         this.islandReinforceTimer = ISLAND_REINFORCE_EVERY;
         this.islandTargets += 1;
         this.islandDiveReinforced += 1;
+        this._islandOweShot();       // (6.3.7: it brings its own shot to the seabed)
       }
     }
 
@@ -1288,8 +1339,8 @@ const HELP_SECTIONS = [
     { title: 'Island Mode', sound: null, desc: 'A chain of islands with the sea in between, and the only way across is down. Every island has an elevator in the middle that takes you down to the seabed whenever you like, and every island\'s way onward is locked. To reach the next island you need two things: the island cleared of enemies, and its key, which lies somewhere on the seabed. With both, the elevator up from the seabed takes you on to a new island. Without them, it brings you back up to the island you left. If an enemy reaches you, a guardian strikes you, or your air runs out on the seabed, the run is over. Nothing in this mode is ever described to you. You arrive at a random spot on each island, every island sounds different, and everything that happens has its own sound, so this help section is where you learn what each one means. The only words you will hear during play are Low air, and whatever you ask for with a double tap.' },
     { title: 'Island Enemies and Shooting', sound: null, desc: 'Enemies on an island work exactly like battle mode: whatever sounds centred between your ears, straight ahead of you or directly behind you, is what a two-finger tap hits. An island turns with you, as the seabed does: flick left or right to turn 30 degrees, slide and keep your finger down to keep turning, and swipe up to walk the way you face. Enemies come from any side, so turn until one is centred, then fire; one behind you sounds duller (see Behind You). In the elevator you do not turn. Island one has four enemies and every island after it adds one more, with more of them at once and faster as you go. There is no ammo on an island. You begin with eight shots, and everything after that comes from the seabed.' },
     { title: 'Island Elevators', sound: null, desc: 'An elevator is a steady low hum with a soft chime every second or two: two notes on an island, and a single note on the seabed. On an island it stands in the middle, and it works at any time, even mid-fight. When you come up onto an island you step out somewhere away from it, so finding it again is up to your ears. On the seabed the elevator up is always a long swim from where you arrive. A ride takes about fifteen seconds and you cannot move. As the doors close, where you are goes muffled, because you are inside, and it stays with you a few seconds longer, faint through the walls. While the car moves, that gives way to where you are going, which you hear coming through the walls before the doors open; when they open it opens up to its full sound. In chaos mode, if the next level is not an island, it is that level\'s own sound that rises through the doors.' },
-    { title: 'Island Reinforcements', sound: null, desc: 'Diving mid-fight to reload is allowed, but the island does not wait for you. Stay down more than ten seconds and one more enemy lands on the island, then another every eight seconds, up to four per dive. Nothing tells you how many arrived; double tap on the island to hear how many enemies are left. Enemies still on the island when you leave are not lost, they are waiting. A cleared island gets no reinforcements, so once it is clear you can take as long as your air allows.' },
-    { title: 'Island The Seabed and Air', sound: null, desc: 'On the seabed you are holding your breath: twenty seconds every dive. Nothing is announced when you arrive. With ten seconds left you hear Low air and then high beeps, once a second at first and faster and faster as your air runs out, and if it runs out you drown. That high beep is not the clock\'s: the clock\'s countdown is the lower one. You cannot shoot underwater and there are no enemies below. Cartridges lie there one at a time, marked by the same fast spinning beacon as battle mode, and the moment you take one the next appears somewhere else, nearer or further, but only until the island\'s supply runs out. Every island\'s seabed holds one supply of ammo, fixed when the island is made and shared by every dive to it: between two and six cartridges, drawn at random, of two to six shots each, and, counting what you already carry, never less than the island needs (a deep island that needs more than six full cartridges gets more) for its enemies, its guardian, three reinforcements, and any guardian waiting on the next island. Some islands are rich and some are lean. What you leave on the seabed is still there on your next dive. When it is gone, it is gone, so every shot you waste up top is a shot the island will not give back. Double tap for your air, your ammo and whether you have the key.' },
+    { title: 'Island Reinforcements', sound: null, desc: 'Diving mid-fight to reload is allowed, but the island does not wait for you. Stay down more than ten seconds and one more enemy lands on the island, then another every eight seconds, up to four per dive. Each one that lands leaves one more shot on the seabed, so it never costs you a shot you were counting on. Nothing tells you how many arrived; double tap on the island to hear how many enemies are left. Enemies still on the island when you leave are not lost, they are waiting. A cleared island gets no reinforcements, so once it is clear you can take as long as your air allows.' },
+    { title: 'Island The Seabed and Air', sound: null, desc: 'On the seabed you are holding your breath: twenty seconds every dive. Nothing is announced when you arrive. With ten seconds left you hear Low air and then high beeps, once a second at first and faster and faster as your air runs out, and if it runs out you drown. That high beep is not the clock\'s: the clock\'s countdown is the lower one. You cannot shoot underwater and there are no enemies below. Cartridges lie there one at a time, marked by the same fast spinning beacon as battle mode, and the moment you take one the next appears somewhere else, nearer or further, but only until the island\'s supply runs out. Every island\'s seabed holds one supply of ammo, fixed when the island is made and shared by every dive to it, in cartridges of two to six shots. It holds what the island needs and a little to spare, less what you already carry: a shot for each of its enemies, the hits its guardian takes, and, if a guardian waits on the next island, that guardian\'s hits and a shot for each enemy that can be after you at once there, since its elevator stays shut until it falls. The spare is a few shots, a little more on the deeper islands, so some islands are slightly richer than others, and there is always at least one small cartridge to find. Arrive with plenty and the seabed holds less; nobody can build a stockpile. Each reinforcement that lands while you are down leaves one more shot on the seabed. What you leave on the seabed is still there on your next dive. When it is gone, it is gone, so every shot you waste up top is a shot the island will not give back. Double tap for your air, your ammo and whether you have the key.' },
     { title: 'Island Air Vents', sound: null, desc: 'Every dive has an air vent somewhere on the seabed: loud, steady bubbling, and quietly underneath it the chime of a tower health potion, the game\'s sound for something that restores you. Swim into it and you hear the rush of your air being refilled, back up to a full twenty seconds. Each vent works once, but ten seconds after you take one, another appears somewhere else on the seabed, so a long dive is a matter of swimming from vent to vent with your errands in between. When you hear one, it is often worth going to it first.' },
     { title: 'Island The Key', sound: null, desc: 'Every island has a key on the seabed, marked by three small bright metal clinks. You need it to move on: the elevator up takes you to the next island only once the island is clear and you have its key. You can find the key before or after clearing the island, on any dive. Once you have it, it is yours for that island, and a double tap tells you whether you have it.' },
     { title: 'Island Treasure', sound: null, desc: 'Some islands have treasure lying out on the island itself, marked by a soft high shimmer that never stops. It is out in the open where the enemies are, and it waits there until you walk to it. It is worth fifty points.' },
