@@ -123,7 +123,7 @@ await page.waitForURL(/help\.html#faq$/);
 await page.waitForFunction(() => document.querySelector('#faq button.topic-toggle') && document.querySelector('#faq button.topic-toggle').getAttribute('aria-expanded') === 'true');
 {
   const qs = await page.locator('#faq-panel h3').allTextContents();
-  check(qs.length === 15 && /difference between the website version and the Windows version/.test(qs[0]), `the old questions page opens Help at the fifteen questions (5.0.0: six about turning; 6.0.0: the game's voice), the versions question first: ${qs.length}`);
+  check(qs.length === 16 && /difference between the website version and the Windows version/.test(qs[0]), `the old questions page opens Help at the sixteen questions (5.0.0: six about turning; 6.0.0: the game's voice; 6.3.7: the static), the versions question first: ${qs.length}`);
   check(await page.locator('footer.site nav a[href="faq.html"]').count() === 0, 'the footer no longer links to the old questions page');
 }
 await page.goto(base + '/history.html');
