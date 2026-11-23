@@ -13,7 +13,11 @@ import { RULES } from './sound-rules.js';
 import { loadPacks } from './packs.js';
 import { reverbIsLoop } from './modes/events/sounds.js';
 
+// The rate of the recordings in the packs (their frame counts are at this rate). Since
+// web 7.0.0 the engine runs at the device's own rate (see newContext), and every recording
+// is converted to it once, when decoded.
 const RATE = 44100;
+export const SRC_RATE = RATE;
 // Ultimate Mode (web 2.0.0) hears the world in binaural 3D: the browser's
 // HRTF panner. In that mode (AudioEngine.spatial) every sound played with a
 // position goes through a panner, its echo goes to the bus of the area it is in,
@@ -290,7 +294,20 @@ function newContext() {
     // slice of sound, so a phone's audio thread does not fall behind and stutter
     // when many binaural sounds play at once. The difference is a few
     // milliseconds, too little to hear in a gesture.
-    return new AC({ sampleRate: RATE, latencyHint: 'balanced' });
+    // (Web 7.0.0, Russell, 22 November 2026: "it has to be the amount of sounds ... because
+    // when you pause, something gets cleared".) Until 7.0.0 the engine was made at 44,100
+    // samples a second, the rate of the recordings. An iPhone's speaker and headphones run
+    // at 48,000, so every slice of the game's sound was converted to the phone's rate on its
+    // way out, by the browser, in real time, for as long as the page was open; and that
+    // converter in Safari (which every iPhone browser is) is known to crackle, more and more
+    // as it runs (WebKit bugs 219201 and 221553). What a pause clears: the line "Game paused"
+    // is said by the phone's own voice (the run is paused, so Bella does not say it), and
+    // the phone's voice starting up restarts the phone's sound output, converter and all.
+    // Since 6.1.0 nearly everything said in a run is a recording, so nothing else in a run
+    // ever restarted it: the static first crept in the day after 6.1.0. Now the engine runs
+    // at the device's own rate and nothing is converted on the way out; each recording is
+    // converted once, when it is decoded (see SRC_RATE).
+    return new AC({ latencyHint: 'balanced' });
   } catch (e) {
     return new AC();
   }
@@ -584,6 +601,9 @@ export class AudioEngine {
     // every voice at its area's new bus, which must not be done to a voice whose
     // nodes still belong to the old one.
     if (this.spatial) this.setAreaRooms(areas);
+    // (7.0.0) The new engine runs at the device's rate of the moment, which can differ
+    // from the old one's (headphones plugged in or taken out between two runs).
+    if (this.ctx.sampleRate !== old.sampleRate) this._rateChanged();
     // The old engine is kept a moment, so a one-shot already sounding there (a
     // footstep, a shot) finishes rather than being cut off. (6.3.7: never more than
     // one old engine at a time: a phone allows only a few.)
@@ -594,6 +614,51 @@ export class AudioEngine {
       try { old.close(); } catch (e) { /* already closed */ }
     }, keepOld);
     this.ctx.resume().catch(() => {});
+  }
+
+  // (7.0.0) Everything decoded at the old rate is let go and decoded again at the new one:
+  // the rooms' echoes at once (a convolver takes only an echo at its engine's rate), and
+  // the short recordings in the background. A sound still playing keeps the copy it has
+  // (the browser converts it as it plays, as it always may); a long recording is decoded
+  // again when it is next played. Until a room's echo is in again, a sound plays clean.
+  _rateChanged() {
+    this.rateChanges = (this.rateChanges || 0) + 1;
+    this.irBuffers = new Map();
+    this.stretched = new Map();
+    this.loopWets = new Map();
+    this.convolvers = new Map();
+    for (const k of [...this.pending.keys()]) this.pending.delete(k);
+    this.buffers = new Map();
+    this.bigUsed = new Map();
+    const rooms = new Set(['lab', 'battle', 'tower', 'tunnel', 'cathedral', 'hall', ...Object.values(this.variants)]);
+    for (const b of this.areaBuses.values()) if (b.room) rooms.add(b.room);
+    const irs = [];
+    for (const key of rooms) {
+      for (let t = 0; t < (this.irEntries.get(key) || []).length; t++) irs.push(this._irBuffer(key, t).catch(() => null));
+    }
+    const ctx = this.ctx;
+    Promise.all(irs).then(() => {
+      if (this.ctx !== ctx) return;
+      // The 3D world's areas get their echoes back.
+      for (const b of this.areaBuses.values()) {
+        if (b.conv || !b.room) continue;
+        const ir = this._stretchedIr(b.room, 0, b.stretch || 1);
+        if (!ir || ir.sampleRate !== ctx.sampleRate) continue;
+        b.conv = ctx.createConvolver();
+        b.conv.normalize = false;
+        b.conv.buffer = ir;
+        b.conv.key = b.room + '#0';
+        b.gain.connect(b.conv);
+        b.conv.connect(this.bus);
+      }
+      if (this.room) this._buildAhead(this.room, this.room);
+    });
+    for (const [name, pair] of this.entries) {
+      for (const kind of ['dry', 'dull']) {
+        const e = pair[kind];
+        if (e && e.frames <= BIG_FRAMES && !e.lazy) this._decode(kind + ':' + name, e).catch(() => null);
+      }
+    }
   }
 
   // ---------------------------------------------------------------- loading
@@ -654,7 +719,10 @@ export class AudioEngine {
     });
     // Cut back to the exact length: a loop was written with its own opening on
     // the end, and some browsers decode a few extra samples at the end of a file.
-    const frames = Math.min(e.frames || decoded.length, decoded.length);
+    // (7.0.0: the pack's count is at the recordings' own rate; the decoded copy is at the
+    // engine's, so the count is converted with it.)
+    const want = e.frames ? Math.round(e.frames * decoded.sampleRate / SRC_RATE) : decoded.length;
+    const frames = Math.min(want, decoded.length);
     // A sound whose two sides are the same is kept once (half the memory): every
     // Voice spreads one channel to both ears, exactly as the desktop's copy does.
     const same = decoded.numberOfChannels === 1 || sameSides(decoded, frames);
@@ -804,7 +872,8 @@ export class AudioEngine {
       let node = this.convolvers.get(k);
       if (node) return node;
       const buf = this.irBuffers.get(k);
-      if (!buf) continue;
+      // (7.0.0: a convolver takes only an echo at the engine's own rate.)
+      if (!buf || buf.sampleRate !== this.ctx.sampleRate) continue;
       node = this.ctx.createConvolver();
       node.normalize = false;
       node.buffer = buf;
@@ -912,7 +981,8 @@ export class AudioEngine {
         this._wetJobs.delete(ev.data.id);
         if (ev.data.error || !ev.data.out) { job(null); return; }
         const [l, r] = ev.data.out;
-        const buf = this.ctx.createBuffer(2, l.length, RATE);
+        // (7.0.0: at the rate the loop and the room were decoded at, the engine's own.)
+        const buf = this.ctx.createBuffer(2, l.length, job.rate || this.ctx.sampleRate);
         buf.copyToChannel(l, 0);
         buf.copyToChannel(r, 1);
         job(buf);
@@ -922,9 +992,14 @@ export class AudioEngine {
         this._wetJobs.clear();
       };
     }
+    // (7.0.0) A loop and a room decoded at different rates (the device's rate changed
+    // between two runs, see _renew) cannot be folded together: the room's shared echo
+    // stands in until both are decoded again at the new rate.
+    if (dry.sampleRate !== ir.sampleRate) return Promise.resolve(null);
     const id = ++this._wetSeq;
     const chans = (b) => Array.from({ length: b.numberOfChannels }, (_, c) => b.getChannelData(c).slice());
     return new Promise((resolve) => {
+      resolve.rate = dry.sampleRate;
       this._wetJobs.set(id, resolve);
       const dryCh = chans(dry);
       const irCh = chans(ir);
@@ -1162,7 +1237,7 @@ export class AudioEngine {
       b.gain.gain.value = 1.0;
       if (a.room) {
         const ir = this._stretchedIr(a.room, 0, a.stretch || 1);
-        if (ir) {
+        if (ir && ir.sampleRate === this.ctx.sampleRate) {
           b.conv = this.ctx.createConvolver();
           b.conv.normalize = false;
           b.conv.buffer = ir;

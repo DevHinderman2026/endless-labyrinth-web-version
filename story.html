@@ -9,7 +9,7 @@
   <link rel="icon" href="icons/icon-192.png">
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
   <meta name="theme-color" content="#0c0f14">
-  <link rel="stylesheet" href="css/site.css?v=6.3.9">
+  <link rel="stylesheet" href="css/site.css?v=7.0.0">
 </head>
 <body>
   <header class="site">
@@ -33,6 +33,7 @@
         <li><a href="#turning">Turning, and a voice of its own</a></li>
         <li><a href="#abyss">The Abyss</a></li>
         <li><a href="#static">Hunting the static</a></li>
+        <li><a href="#park">Water Park</a></li>
         <li><a href="#how">How I make the game</a></li>
         <li><a href="#timeline">Timeline</a></li>
         <li><a href="#sources">Sources</a></li>
@@ -105,8 +106,12 @@
 
     <h2 id="static">Hunting the static</h2>
     <p>Not every chapter is a new feature. From 19 November, playing on my iPhone, I heard a slight static creeping onto the edges of the sounds the longer I played, and pausing the game made it vanish. It is the hardest problem the game has had, because it cannot be heard anywhere but on a real phone, and only I could hear it.</p>
-    <p>Each search found a real cause. The seabed's water was playing more than twice as loud as it was made to, so the game was always straining at the top. Sounds that had moved once kept the phone working on them for good. Every sound ever placed stayed connected inside the phone's audio engine, and a five-minute Chaos run left about thirteen hundred of them. Sounds you could no longer hear were still being worked on as if you could. Each fix made it better, and some fixes caused new problems, like a popping in the labyrinths that had to be undone. Version 6.3.7, on 22 November, is the latest step. The static is much less likely now, but it is not completely solved, and if you hear it, pausing and resuming the game clears it.</p>
+    <p>Each search found a real cause. The seabed's water was playing more than twice as loud as it was made to, so the game was always straining at the top. Sounds that had moved once kept the phone working on them for good. Every sound ever placed stayed connected inside the phone's audio engine, and a five-minute Chaos run left about thirteen hundred of them. Sounds you could no longer hear were still being worked on as if you could. Each fix made it better, and some fixes caused new problems, like a popping in the labyrinths that had to be undone. Version 6.3.7, on 22 November, made the static much less likely, but did not solve it, and pausing and resuming the game still cleared it.</p>
+    <p>That clue turned out to be the key. Pausing is the one moment in a run when the phone's own voice speaks, saying Game paused, because while the game is paused its recorded voice is silent. When the phone's voice starts, the phone restarts its sound output. The game had been making its sound at 44,100 samples a second, the rate of its recordings, while an iPhone plays at 48,000, so the phone was converting every sound on its way out for as long as the game was open, and that converter in the iPhone's browser is known to crackle more and more as it runs. Since version 6.1.0 nearly every line in a run had been a recording, so nothing else in a run ever restarted it, and the static first crept in the day after 6.1.0. In version 7.0.0, on 23 November, the game makes its sound at the device's own rate, and each recording is converted only once, when it is loaded.</p>
     <p>For this hunt, Claude and I changed how we work. Claude's Opus model reviews the whole game and writes every fix it believes is right into a plan. Its Fable model then checks each fix against the code before building it: if a fix is right, it builds it; if a fact is wrong, it corrects the plan first and tells me why. Automated players play every mode and every event, pausing and resuming hundreds of times, and the plan records what was measured. When the numbers change how the game plays, the decision comes back to me. For the islands, the planned ammo rule looked fair on paper, but measured over twenty thousand pretend runs it left careful players short, so I chose a bigger spare.</p>
+
+    <h2 id="park">Water Park</h2>
+    <p>The Abyss frightens you; I wanted a mode where you simply have fun, and still a challenge. Water Park, version 7.0.0, is a water park on a summer's day. Every attraction holds a token, the water slide, the diving pool, the wave pool and the tipping bucket, each found by its own sound, and every token must be won before closing time. Then a gate opens to the next park, which is bigger. Nothing in the park can hurt you: a mistake brings the lifeguard's whistle and costs a few seconds. On the slide you steer by ear, turning as the rush of the water swings to one side before each bend. Its new sounds, the busy pool, the bucket, the waves, the diving board and the whistle, came from Pixabay as always, and it came to Chaos Mode too, one park to a level.</p>
 
     <h2 id="how">How I make the game</h2>
     <p>Endless Labyrinth is AI assisted, and I am open about how. I am the designer and the tester. Claude writes the code. I have worked this way since the game's first days, when its first version was made in Gemini, and over time it has become a method.</p>
@@ -162,6 +167,7 @@
       <dt>20 November 2026</dt><dd>The Abyss: web version 6.2.0, web only. The hunt for the static on iPhone begins in earnest (6.3.0 to 6.3.2).</dd>
       <dt>21 November 2026</dt><dd>Web versions 6.3.3 to 6.3.6: a full bug review, the popping in the labyrinths, and sounds that come from exactly one place.</dd>
       <dt>22 November 2026</dt><dd>Web version 6.3.7: a temporary fix for the static, fairer island ammo, and many more fixes from a review of the whole game.</dd>
+      <dt>23 November 2026</dt><dd>Web version 7.0.0: Water Park, web only, and a water park in Chaos Mode; and the static, traced to the sound being converted to the phone's rate, fixed at its source.</dd>
     </dl>
 
     <h2 id="sources">Sources</h2>
@@ -180,64 +186,65 @@
   <script type="importmap">
   {
     "imports": {
-      "./js/accessibility.js": "./js/accessibility.js?v=6.3.9",
-      "./js/audio.js": "./js/audio.js?v=6.3.9",
-      "./js/backup.js": "./js/backup.js?v=6.3.9",
-      "./js/backups-page.js": "./js/backups-page.js?v=6.3.9",
-      "./js/bella-lexicon.js": "./js/bella-lexicon.js?v=6.3.9",
-      "./js/bella-words.js": "./js/bella-words.js?v=6.3.9",
-      "./js/braille.js": "./js/braille.js?v=6.3.9",
-      "./js/calendar.js": "./js/calendar.js?v=6.3.9",
-      "./js/device.js": "./js/device.js?v=6.3.9",
-      "./js/display.js": "./js/display.js?v=6.3.9",
-      "./js/game.js": "./js/game.js?v=6.3.9",
-      "./js/gestures.js": "./js/gestures.js?v=6.3.9",
-      "./js/help-data.js": "./js/help-data.js?v=6.3.9",
-      "./js/help-page.js": "./js/help-page.js?v=6.3.9",
-      "./js/keywords.js": "./js/keywords.js?v=6.3.9",
-      "./js/main.js": "./js/main.js?v=6.3.9",
-      "./js/modes/abyss.js": "./js/modes/abyss.js?v=6.3.9",
-      "./js/modes/chaos.js": "./js/modes/chaos.js?v=6.3.9",
-      "./js/modes/driving.js": "./js/modes/driving.js?v=6.3.9",
-      "./js/modes/events/blocks.js": "./js/modes/events/blocks.js?v=6.3.9",
-      "./js/modes/events/engine.js": "./js/modes/events/engine.js?v=6.3.9",
-      "./js/modes/events/feed.js": "./js/modes/events/feed.js?v=6.3.9",
-      "./js/modes/events/help.js": "./js/modes/events/help.js?v=6.3.9",
-      "./js/modes/events/missions.js": "./js/modes/events/missions.js?v=6.3.9",
-      "./js/modes/events/more-spec.js": "./js/modes/events/more-spec.js?v=6.3.9",
-      "./js/modes/events/more.js": "./js/modes/events/more.js?v=6.3.9",
-      "./js/modes/events/py.js": "./js/modes/events/py.js?v=6.3.9",
-      "./js/modes/events/schema.js": "./js/modes/events/schema.js?v=6.3.9",
-      "./js/modes/events/sign.js": "./js/modes/events/sign.js?v=6.3.9",
-      "./js/modes/events/sounds.js": "./js/modes/events/sounds.js?v=6.3.9",
-      "./js/modes/events/tunes.js": "./js/modes/events/tunes.js?v=6.3.9",
-      "./js/modes/events/wording.js": "./js/modes/events/wording.js?v=6.3.9",
-      "./js/modes/events.js": "./js/modes/events.js?v=6.3.9",
-      "./js/modes/findvoice-guide.js": "./js/modes/findvoice-guide.js?v=6.3.9",
-      "./js/modes/findvoice.js": "./js/modes/findvoice.js?v=6.3.9",
-      "./js/modes/index.js": "./js/modes/index.js?v=6.3.9",
-      "./js/modes/island.js": "./js/modes/island.js?v=6.3.9",
-      "./js/modes/tower.js": "./js/modes/tower.js?v=6.3.9",
-      "./js/modes/ultimate/cast.js": "./js/modes/ultimate/cast.js?v=6.3.9",
-      "./js/modes/ultimate/help.js": "./js/modes/ultimate/help.js?v=6.3.9",
-      "./js/modes/ultimate/world.js": "./js/modes/ultimate/world.js?v=6.3.9",
-      "./js/modes/ultimate.js": "./js/modes/ultimate.js?v=6.3.9",
-      "./js/packs.js": "./js/packs.js?v=6.3.9",
-      "./js/site.js": "./js/site.js?v=6.3.9",
-      "./js/sound-rules.js": "./js/sound-rules.js?v=6.3.9",
-      "./js/speech.js": "./js/speech.js?v=6.3.9",
-      "./js/stats.js": "./js/stats.js?v=6.3.9",
-      "./js/storage.js": "./js/storage.js?v=6.3.9",
-      "./js/turning.js": "./js/turning.js?v=6.3.9",
-      "./js/update-alert.js": "./js/update-alert.js?v=6.3.9",
-      "./js/version.js": "./js/version.js?v=6.3.9",
-      "./js/voice-text.js": "./js/voice-text.js?v=6.3.9",
-      "./js/voice.js": "./js/voice.js?v=6.3.9",
-      "./js/wetworker.js": "./js/wetworker.js?v=6.3.9"
+      "./js/accessibility.js": "./js/accessibility.js?v=7.0.0",
+      "./js/audio.js": "./js/audio.js?v=7.0.0",
+      "./js/backup.js": "./js/backup.js?v=7.0.0",
+      "./js/backups-page.js": "./js/backups-page.js?v=7.0.0",
+      "./js/bella-lexicon.js": "./js/bella-lexicon.js?v=7.0.0",
+      "./js/bella-words.js": "./js/bella-words.js?v=7.0.0",
+      "./js/braille.js": "./js/braille.js?v=7.0.0",
+      "./js/calendar.js": "./js/calendar.js?v=7.0.0",
+      "./js/device.js": "./js/device.js?v=7.0.0",
+      "./js/display.js": "./js/display.js?v=7.0.0",
+      "./js/game.js": "./js/game.js?v=7.0.0",
+      "./js/gestures.js": "./js/gestures.js?v=7.0.0",
+      "./js/help-data.js": "./js/help-data.js?v=7.0.0",
+      "./js/help-page.js": "./js/help-page.js?v=7.0.0",
+      "./js/keywords.js": "./js/keywords.js?v=7.0.0",
+      "./js/main.js": "./js/main.js?v=7.0.0",
+      "./js/modes/abyss.js": "./js/modes/abyss.js?v=7.0.0",
+      "./js/modes/chaos.js": "./js/modes/chaos.js?v=7.0.0",
+      "./js/modes/driving.js": "./js/modes/driving.js?v=7.0.0",
+      "./js/modes/events/blocks.js": "./js/modes/events/blocks.js?v=7.0.0",
+      "./js/modes/events/engine.js": "./js/modes/events/engine.js?v=7.0.0",
+      "./js/modes/events/feed.js": "./js/modes/events/feed.js?v=7.0.0",
+      "./js/modes/events/help.js": "./js/modes/events/help.js?v=7.0.0",
+      "./js/modes/events/missions.js": "./js/modes/events/missions.js?v=7.0.0",
+      "./js/modes/events/more-spec.js": "./js/modes/events/more-spec.js?v=7.0.0",
+      "./js/modes/events/more.js": "./js/modes/events/more.js?v=7.0.0",
+      "./js/modes/events/py.js": "./js/modes/events/py.js?v=7.0.0",
+      "./js/modes/events/schema.js": "./js/modes/events/schema.js?v=7.0.0",
+      "./js/modes/events/sign.js": "./js/modes/events/sign.js?v=7.0.0",
+      "./js/modes/events/sounds.js": "./js/modes/events/sounds.js?v=7.0.0",
+      "./js/modes/events/tunes.js": "./js/modes/events/tunes.js?v=7.0.0",
+      "./js/modes/events/wording.js": "./js/modes/events/wording.js?v=7.0.0",
+      "./js/modes/events.js": "./js/modes/events.js?v=7.0.0",
+      "./js/modes/findvoice-guide.js": "./js/modes/findvoice-guide.js?v=7.0.0",
+      "./js/modes/findvoice.js": "./js/modes/findvoice.js?v=7.0.0",
+      "./js/modes/index.js": "./js/modes/index.js?v=7.0.0",
+      "./js/modes/island.js": "./js/modes/island.js?v=7.0.0",
+      "./js/modes/park.js": "./js/modes/park.js?v=7.0.0",
+      "./js/modes/tower.js": "./js/modes/tower.js?v=7.0.0",
+      "./js/modes/ultimate/cast.js": "./js/modes/ultimate/cast.js?v=7.0.0",
+      "./js/modes/ultimate/help.js": "./js/modes/ultimate/help.js?v=7.0.0",
+      "./js/modes/ultimate/world.js": "./js/modes/ultimate/world.js?v=7.0.0",
+      "./js/modes/ultimate.js": "./js/modes/ultimate.js?v=7.0.0",
+      "./js/packs.js": "./js/packs.js?v=7.0.0",
+      "./js/site.js": "./js/site.js?v=7.0.0",
+      "./js/sound-rules.js": "./js/sound-rules.js?v=7.0.0",
+      "./js/speech.js": "./js/speech.js?v=7.0.0",
+      "./js/stats.js": "./js/stats.js?v=7.0.0",
+      "./js/storage.js": "./js/storage.js?v=7.0.0",
+      "./js/turning.js": "./js/turning.js?v=7.0.0",
+      "./js/update-alert.js": "./js/update-alert.js?v=7.0.0",
+      "./js/version.js": "./js/version.js?v=7.0.0",
+      "./js/voice-text.js": "./js/voice-text.js?v=7.0.0",
+      "./js/voice.js": "./js/voice.js?v=7.0.0",
+      "./js/wetworker.js": "./js/wetworker.js?v=7.0.0"
     }
   }
   </script>
   <!-- end of versions -->
-  <script type="module" src="js/site.js?v=6.3.9"></script>
+  <script type="module" src="js/site.js?v=7.0.0"></script>
 </body>
 </html>

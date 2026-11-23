@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <title>Endless Labyrinth: a 3D audio game for phones, tablets and computers</title>
-  <meta name="description" content="Endless Labyrinth is a 3D audio game played by ear with headphones, on iPhone, iPad, Android, Chromebook, Mac, Linux and Windows: every mode and event of the Windows game, plus Find the Voice, Ultimate Mode and The Abyss.">
+  <meta name="description" content="Endless Labyrinth is a 3D audio game played by ear with headphones, on iPhone, iPad, Android, Chromebook, Mac, Linux and Windows: every mode and event of the Windows game, plus Find the Voice, Ultimate Mode, The Abyss and Water Park.">
   <link rel="manifest" href="manifest.webmanifest">
   <link rel="icon" href="icons/icon-192.png">
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
@@ -12,7 +12,7 @@
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-title" content="Endless Labyrinth">
   <meta name="theme-color" content="#0c0f14">
-  <link rel="stylesheet" href="css/site.css?v=6.3.9">
+  <link rel="stylesheet" href="css/site.css?v=7.0.0">
 </head>
 <body data-update-alert="home">
   <div id="site-announcer" class="sr-hint" aria-live="assertive" aria-atomic="true"></div>
@@ -28,7 +28,7 @@
 
     <div class="panel">
       <h2>The complete game, now in your browser</h2>
-      <p>Endless Labyrinth began as a game for Windows. Since November 2026 the complete game plays in the web browser of an iPhone, an iPad, an Android phone or tablet, a Chromebook, a Mac, a Linux computer or a Windows computer: every mode and the same events as the Windows version, and nothing to install. The website also has modes of its own: <strong>Ultimate Mode</strong> (web version 2.0.0), one huge, mixed world that regenerates at random, without warning, while you survive in it; <strong>Find the Voice</strong> (6.0.0); and <strong>The Abyss</strong> (6.2.0). Since version 5.0.0 the whole web game is heard in binaural 3D, and its walking modes turn with you: in Standard, Battle, Tower, Island, Find the Voice, The Abyss, Chaos's walking levels and Ultimate Mode you turn where you stand and walk the way you face, while Driving and the events keep north ahead. Since version 6.0.0 the game also has a voice of its own, Bella, during a run. The Windows version and this web version are developed side by side, and compatibility between them is maintained to the highest extent that both can allow. See the <a href="history.html">Update History</a> for what each version brought.</p>
+      <p>Endless Labyrinth began as a game for Windows. Since November 2026 the complete game plays in the web browser of an iPhone, an iPad, an Android phone or tablet, a Chromebook, a Mac, a Linux computer or a Windows computer: every mode and the same events as the Windows version, and nothing to install. The website also has modes of its own: <strong>Ultimate Mode</strong> (web version 2.0.0), one huge, mixed world that regenerates at random, without warning, while you survive in it; <strong>Find the Voice</strong> (6.0.0); <strong>The Abyss</strong> (6.2.0); and <strong>Water Park</strong> (7.0.0). Since version 5.0.0 the whole web game is heard in binaural 3D, and its walking modes turn with you: in Standard, Battle, Tower, Island, Find the Voice, The Abyss, Water Park, Chaos's walking levels and Ultimate Mode you turn where you stand and walk the way you face, while Driving and the events keep north ahead. Since version 6.0.0 the game also has a voice of its own, Bella, during a run. The Windows version and this web version are developed side by side, and compatibility between them is maintained to the highest extent that both can allow. See the <a href="history.html">Update History</a> for what each version brought.</p>
     </div>
 
     <div class="panel">
@@ -48,6 +48,7 @@
       <li><strong>Island:</strong> clear a chain of islands, diving to the seabed for each island's key before your air runs out.</li>
       <li><strong>Find the Voice:</strong> find a calling voice by ear, again and again, while a blind creature listens for your steps on broken glass.</li>
       <li><strong>The Abyss:</strong> web only: an endless abyss floored with broken glass, where blind creatures hunt you only while you move; smash glass cases for time under cover of the lightning.</li>
+      <li><strong>Water Park:</strong> web only: win a token at every attraction of a water park before closing time, the water slide, the diving pool, the wave pool and the tipping bucket, each found by its own sound, and every park bigger than the last.</li>
       <li><strong>Chaos:</strong> every kind of level, chosen at random, against a single five-minute clock.</li>
       <li><strong>Ultimate:</strong> the hardest mode, web only: survive in one huge world of labyrinths, islands, tower and battle areas and event places, in binaural 3D, that regenerates at random, without warning.</li>
       <li><strong>Events:</strong> limited-time challenges, shared with the Windows version.</li>
@@ -61,7 +62,7 @@
         <li>The game speaks for itself: in the menus with your device's own voice, and during a run with its own voice, Bella. After the sounds load, it asks you to turn your screen reader off while you play (VoiceOver, TalkBack, ChromeVox or Orca; on Windows, NVDA's or JAWS's speech), and to turn it back on when you leave.</li>
         <li>On an iPhone or iPad, add the game to your Home Screen (Share, then Add to Home Screen) and play from there, so your high scores are kept safe.</li>
         <li>The first start downloads the game's sounds, about 120 megabytes, and its voices, about 95 megabytes more, so use Wi-Fi if you can. After that they stay on your device, and only a sound pack that has changed is ever downloaded again.</li>
-        <li>If you hear static or crackling, which can still happen on an iPhone or iPad after a while, pause the game and resume it, and it goes away. See <a href="help.html#faq-static">the frequently asked questions</a>.</li>
+        <li>The static some players heard on an iPhone or iPad is fixed at its source in version 7.0.0. If you ever still hear static or crackling, pause the game and resume it, and it goes away. See <a href="help.html#faq-static">the frequently asked questions</a>.</li>
       </ul>
       <p><a class="button" href="play.html">Play Endless Labyrinth</a></p>
     </div>
@@ -84,65 +85,66 @@
   <script type="importmap">
   {
     "imports": {
-      "./js/accessibility.js": "./js/accessibility.js?v=6.3.9",
-      "./js/audio.js": "./js/audio.js?v=6.3.9",
-      "./js/backup.js": "./js/backup.js?v=6.3.9",
-      "./js/backups-page.js": "./js/backups-page.js?v=6.3.9",
-      "./js/bella-lexicon.js": "./js/bella-lexicon.js?v=6.3.9",
-      "./js/bella-words.js": "./js/bella-words.js?v=6.3.9",
-      "./js/braille.js": "./js/braille.js?v=6.3.9",
-      "./js/calendar.js": "./js/calendar.js?v=6.3.9",
-      "./js/device.js": "./js/device.js?v=6.3.9",
-      "./js/display.js": "./js/display.js?v=6.3.9",
-      "./js/game.js": "./js/game.js?v=6.3.9",
-      "./js/gestures.js": "./js/gestures.js?v=6.3.9",
-      "./js/help-data.js": "./js/help-data.js?v=6.3.9",
-      "./js/help-page.js": "./js/help-page.js?v=6.3.9",
-      "./js/keywords.js": "./js/keywords.js?v=6.3.9",
-      "./js/main.js": "./js/main.js?v=6.3.9",
-      "./js/modes/abyss.js": "./js/modes/abyss.js?v=6.3.9",
-      "./js/modes/chaos.js": "./js/modes/chaos.js?v=6.3.9",
-      "./js/modes/driving.js": "./js/modes/driving.js?v=6.3.9",
-      "./js/modes/events/blocks.js": "./js/modes/events/blocks.js?v=6.3.9",
-      "./js/modes/events/engine.js": "./js/modes/events/engine.js?v=6.3.9",
-      "./js/modes/events/feed.js": "./js/modes/events/feed.js?v=6.3.9",
-      "./js/modes/events/help.js": "./js/modes/events/help.js?v=6.3.9",
-      "./js/modes/events/missions.js": "./js/modes/events/missions.js?v=6.3.9",
-      "./js/modes/events/more-spec.js": "./js/modes/events/more-spec.js?v=6.3.9",
-      "./js/modes/events/more.js": "./js/modes/events/more.js?v=6.3.9",
-      "./js/modes/events/py.js": "./js/modes/events/py.js?v=6.3.9",
-      "./js/modes/events/schema.js": "./js/modes/events/schema.js?v=6.3.9",
-      "./js/modes/events/sign.js": "./js/modes/events/sign.js?v=6.3.9",
-      "./js/modes/events/sounds.js": "./js/modes/events/sounds.js?v=6.3.9",
-      "./js/modes/events/tunes.js": "./js/modes/events/tunes.js?v=6.3.9",
-      "./js/modes/events/wording.js": "./js/modes/events/wording.js?v=6.3.9",
-      "./js/modes/events.js": "./js/modes/events.js?v=6.3.9",
-      "./js/modes/findvoice-guide.js": "./js/modes/findvoice-guide.js?v=6.3.9",
-      "./js/modes/findvoice.js": "./js/modes/findvoice.js?v=6.3.9",
-      "./js/modes/index.js": "./js/modes/index.js?v=6.3.9",
-      "./js/modes/island.js": "./js/modes/island.js?v=6.3.9",
-      "./js/modes/tower.js": "./js/modes/tower.js?v=6.3.9",
-      "./js/modes/ultimate/cast.js": "./js/modes/ultimate/cast.js?v=6.3.9",
-      "./js/modes/ultimate/help.js": "./js/modes/ultimate/help.js?v=6.3.9",
-      "./js/modes/ultimate/world.js": "./js/modes/ultimate/world.js?v=6.3.9",
-      "./js/modes/ultimate.js": "./js/modes/ultimate.js?v=6.3.9",
-      "./js/packs.js": "./js/packs.js?v=6.3.9",
-      "./js/site.js": "./js/site.js?v=6.3.9",
-      "./js/sound-rules.js": "./js/sound-rules.js?v=6.3.9",
-      "./js/speech.js": "./js/speech.js?v=6.3.9",
-      "./js/stats.js": "./js/stats.js?v=6.3.9",
-      "./js/storage.js": "./js/storage.js?v=6.3.9",
-      "./js/turning.js": "./js/turning.js?v=6.3.9",
-      "./js/update-alert.js": "./js/update-alert.js?v=6.3.9",
-      "./js/version.js": "./js/version.js?v=6.3.9",
-      "./js/voice-text.js": "./js/voice-text.js?v=6.3.9",
-      "./js/voice.js": "./js/voice.js?v=6.3.9",
-      "./js/wetworker.js": "./js/wetworker.js?v=6.3.9"
+      "./js/accessibility.js": "./js/accessibility.js?v=7.0.0",
+      "./js/audio.js": "./js/audio.js?v=7.0.0",
+      "./js/backup.js": "./js/backup.js?v=7.0.0",
+      "./js/backups-page.js": "./js/backups-page.js?v=7.0.0",
+      "./js/bella-lexicon.js": "./js/bella-lexicon.js?v=7.0.0",
+      "./js/bella-words.js": "./js/bella-words.js?v=7.0.0",
+      "./js/braille.js": "./js/braille.js?v=7.0.0",
+      "./js/calendar.js": "./js/calendar.js?v=7.0.0",
+      "./js/device.js": "./js/device.js?v=7.0.0",
+      "./js/display.js": "./js/display.js?v=7.0.0",
+      "./js/game.js": "./js/game.js?v=7.0.0",
+      "./js/gestures.js": "./js/gestures.js?v=7.0.0",
+      "./js/help-data.js": "./js/help-data.js?v=7.0.0",
+      "./js/help-page.js": "./js/help-page.js?v=7.0.0",
+      "./js/keywords.js": "./js/keywords.js?v=7.0.0",
+      "./js/main.js": "./js/main.js?v=7.0.0",
+      "./js/modes/abyss.js": "./js/modes/abyss.js?v=7.0.0",
+      "./js/modes/chaos.js": "./js/modes/chaos.js?v=7.0.0",
+      "./js/modes/driving.js": "./js/modes/driving.js?v=7.0.0",
+      "./js/modes/events/blocks.js": "./js/modes/events/blocks.js?v=7.0.0",
+      "./js/modes/events/engine.js": "./js/modes/events/engine.js?v=7.0.0",
+      "./js/modes/events/feed.js": "./js/modes/events/feed.js?v=7.0.0",
+      "./js/modes/events/help.js": "./js/modes/events/help.js?v=7.0.0",
+      "./js/modes/events/missions.js": "./js/modes/events/missions.js?v=7.0.0",
+      "./js/modes/events/more-spec.js": "./js/modes/events/more-spec.js?v=7.0.0",
+      "./js/modes/events/more.js": "./js/modes/events/more.js?v=7.0.0",
+      "./js/modes/events/py.js": "./js/modes/events/py.js?v=7.0.0",
+      "./js/modes/events/schema.js": "./js/modes/events/schema.js?v=7.0.0",
+      "./js/modes/events/sign.js": "./js/modes/events/sign.js?v=7.0.0",
+      "./js/modes/events/sounds.js": "./js/modes/events/sounds.js?v=7.0.0",
+      "./js/modes/events/tunes.js": "./js/modes/events/tunes.js?v=7.0.0",
+      "./js/modes/events/wording.js": "./js/modes/events/wording.js?v=7.0.0",
+      "./js/modes/events.js": "./js/modes/events.js?v=7.0.0",
+      "./js/modes/findvoice-guide.js": "./js/modes/findvoice-guide.js?v=7.0.0",
+      "./js/modes/findvoice.js": "./js/modes/findvoice.js?v=7.0.0",
+      "./js/modes/index.js": "./js/modes/index.js?v=7.0.0",
+      "./js/modes/island.js": "./js/modes/island.js?v=7.0.0",
+      "./js/modes/park.js": "./js/modes/park.js?v=7.0.0",
+      "./js/modes/tower.js": "./js/modes/tower.js?v=7.0.0",
+      "./js/modes/ultimate/cast.js": "./js/modes/ultimate/cast.js?v=7.0.0",
+      "./js/modes/ultimate/help.js": "./js/modes/ultimate/help.js?v=7.0.0",
+      "./js/modes/ultimate/world.js": "./js/modes/ultimate/world.js?v=7.0.0",
+      "./js/modes/ultimate.js": "./js/modes/ultimate.js?v=7.0.0",
+      "./js/packs.js": "./js/packs.js?v=7.0.0",
+      "./js/site.js": "./js/site.js?v=7.0.0",
+      "./js/sound-rules.js": "./js/sound-rules.js?v=7.0.0",
+      "./js/speech.js": "./js/speech.js?v=7.0.0",
+      "./js/stats.js": "./js/stats.js?v=7.0.0",
+      "./js/storage.js": "./js/storage.js?v=7.0.0",
+      "./js/turning.js": "./js/turning.js?v=7.0.0",
+      "./js/update-alert.js": "./js/update-alert.js?v=7.0.0",
+      "./js/version.js": "./js/version.js?v=7.0.0",
+      "./js/voice-text.js": "./js/voice-text.js?v=7.0.0",
+      "./js/voice.js": "./js/voice.js?v=7.0.0",
+      "./js/wetworker.js": "./js/wetworker.js?v=7.0.0"
     }
   }
   </script>
   <!-- end of versions -->
-  <script type="module" src="js/site.js?v=6.3.9"></script>
-  <script type="module" src="js/update-alert.js?v=6.3.9"></script>
+  <script type="module" src="js/site.js?v=7.0.0"></script>
+  <script type="module" src="js/update-alert.js?v=7.0.0"></script>
 </body>
 </html>

@@ -71,7 +71,7 @@ const weights = await page.evaluate(async () => {
   return { n, w: CHAOS_STAGE_WEIGHTS, noWorld };
 });
 const share = (k) => weights.n[k] / 40000;
-check(Object.keys(weights.n).length === 8 && Math.abs(share('abyss') - share('island')) < 0.02 && Math.abs(share('findvoice') - share('island')) < 0.02 && share('ultimate') < share('island') * 0.65 && share('ultimate') > 0.04,
+check(Object.keys(weights.n).length === 9 && Math.abs(share('abyss') - share('island')) < 0.02 && Math.abs(share('park') - share('island')) < 0.02 && Math.abs(share('findvoice') - share('island')) < 0.02 && share('ultimate') < share('island') * 0.65 && share('ultimate') > 0.04,
   'every kind comes up; Find the Voice and The Abyss as often as an island, a world the rarest: ' + JSON.stringify(weights.n));
 check(weights.noWorld === 0, 'a kind can be kept from coming next (no world straight after an island\'s ride up)');
 

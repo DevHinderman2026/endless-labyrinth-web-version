@@ -14,9 +14,11 @@ import ultimate from './ultimate.js';
 import events from './events.js';
 import findvoice from './findvoice.js';
 import abyss from './abyss.js';
+import park from './park.js';
 
 // Web 6.0.1 (Russell, 19 Nov): every mode comes before Events on the main menu:
 // Standard, Battle, Driving, Tower, Island, Find the Voice, Ultimate Mode, Chaos
 // Mode, then Events and Event High Scores.
 // Web 6.2.0 (Russell, 20 Nov): The Abyss comes after Find the Voice.
-export const MODES = [driving, tower, island, findvoice, abyss, ultimate, chaos, events];
+// Web 7.0.0 (Russell, 23 Nov): the Water Park comes after The Abyss.
+export const MODES = [driving, tower, island, findvoice, abyss, park, ultimate, chaos, events];

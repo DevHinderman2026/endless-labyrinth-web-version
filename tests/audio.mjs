@@ -89,7 +89,7 @@ const wet = await page.evaluate(async () => {
     // The reference, the way the browser itself would render it.
     const n = dry.length;
     const turns = Math.ceil(Math.max(1, ir.length - 1) / n) + 1;
-    const off = new Real(2, turns * n, 44100);
+    const off = new Real(2, turns * n, dry.sampleRate);   // (7.0.0: the engine's own rate)
     const src = off.createBufferSource(); src.buffer = dry; src.loop = true;
     const conv = off.createConvolver(); conv.normalize = false; conv.buffer = ir;
     src.connect(conv); conv.connect(off.destination); src.start(0);

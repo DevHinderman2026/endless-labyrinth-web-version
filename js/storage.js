@@ -18,7 +18,7 @@ const DEFAULT_SCORES = { standard: 0, battle: 0 };
 // Scores are kept elsewhere and are not touched; nor are play time and runs (stats).
 export const SCORES_RESET_AT = Date.UTC(2026, 10, 21, 19, 0, 0);   // 21 November 2026, 2 PM Eastern
 // The modes stats are kept for, by the key the Game Stats page shows them under.
-export const STAT_MODES = ['standard', 'battle', 'drive', 'tower', 'island', 'chaos', 'findvoice', 'abyss', 'ultimate', 'event'];
+export const STAT_MODES = ['standard', 'battle', 'drive', 'tower', 'island', 'chaos', 'findvoice', 'abyss', 'park', 'ultimate', 'event'];
 const STATS_FLUSH_SECONDS = 15;   // play time is written this often, and at the end of a run
 
 export function emptyStats() {

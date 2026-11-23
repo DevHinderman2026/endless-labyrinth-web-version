@@ -119,7 +119,8 @@ await page.evaluate(() => {
 const st = await page.evaluate(async () => {
   const g = window.__el.game;
   window.__t.start();
-  for (let i = 0; i < 40; i++) { g.frame(1 / 30); await new Promise((r) => setTimeout(r, 5)); }
+  // (7.0.0: long enough for the shore to be decoded at the device's own rate, which takes a little longer.)
+  for (let i = 0; i < 40; i++) { g.frame(1 / 30); await new Promise((r) => setTimeout(r, 12)); }
   const amb = g.islandAmb;
   return {
     state: g.state, ammo: g.ammo, n: g.islandNumber, room: window.__el.audio.room,
@@ -250,7 +251,9 @@ const q = await page.evaluate(async () => {
   g.input('pause');
   g.frame(1 / 30);
   out.autoResumed = !g.isPaused && !g.islandRideCh.paused && g.islandRide.t > t1;
-  // Let the ride finish: on the seabed.
+  // Let the ride finish: on the seabed. (7.0.0: a moment first for the next shore to be
+  // decoded at the device's own rate; the frames below run with no time between them.)
+  await new Promise((r) => setTimeout(r, 500));
   for (let i = 0; i < 30 * 20 && g.islandRide; i++) g.frame(1 / 30);
   out.phase = g.islandPhase;
   out.levels = [g.islandAmb.surface.l, g.islandAmb.muffled.l, g.islandAmb.under.l];

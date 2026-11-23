@@ -105,9 +105,9 @@ await page.goto(base + '/credits.html');
   const links = await page.locator('ul.contents-list a').evaluateAll((as) => as.map((a) => a.getAttribute('href').slice(1)));
   const missing = [];
   for (const id of links) if (!(await page.locator('#' + id).count())) missing.push(id);
-  check(n === 357, `the Credits page lists all 357 recordings (6.2.0: six for The Abyss; 6.3.0: three grass steps; 6.3.3: the new glass): ${n}`);
+  check(n === 365, `the Credits page lists all 365 recordings (6.2.0: six for The Abyss; 6.3.0: three grass steps; 6.3.3: the new glass; 7.0.0: eight for the Water Park): ${n}`);
   check(heads.includes('Standard mode') && heads.includes('Events') && heads.includes('Downloaded but not used'), `the Credits page has its headings: ${heads.join(', ')}`);
-  check(links.length === 28 && missing.length === 0, `every link in the credits contents has its heading ${missing}`);
+  check(links.length === 29 && missing.length === 0, `every link in the credits contents has its heading ${missing}`);
 }
 await page.goto(base + '/story.html');
 {
@@ -127,9 +127,9 @@ await page.waitForFunction(() => document.querySelector('#faq button.topic-toggl
   check(await page.locator('footer.site nav a[href="faq.html"]').count() === 0, 'the footer no longer links to the old questions page');
 }
 await page.goto(base + '/history.html');
-check((await page.locator('main h2').allTextContents()).join(' | ').startsWith('6.3.9 (22 November 2026), web only | 6.3.8 (22 November 2026), web only | 6.3.7 (22 November 2026), web only | 6.3.6 (21 November 2026), web only | 6.3.5 (21 November 2026), web only | 6.3.4 (21 November 2026), web only | 6.3.3 (21 November 2026) | 6.3.2 (20 November 2026) | 6.3.1 (20 November 2026) | 6.3.0 (20 November 2026) | 6.2.0 (20 November 2026), web only | 6.1.0 (19 November 2026) | 6.0.3 (19 November 2026) | 6.0.2 (19 November 2026), web only | 6.0.1 (19 November 2026), web only | 6.0.0 (19 November 2026) | 5.1.2 (12 November 2026), web only | 5.1.1 (12 November 2026), web only | 5.1.0 (12 November 2026), web only | 5.0.0 (12 November 2026) | 4.1.2 (11 November 2026), web only | 4.1.1 (11 November 2026), web only | 4.1.0 (11 November 2026), web only | 4.0.0 (11 November 2026), web only | 3.3.0 (10 November 2026), web only | 3.2.0 (9 November 2026), web only | 3.1.0 (9 November 2026), web only | 3.0.0 (8 November 2026), web only | 2.0.0 (8 November 2026), web only'), 'the Update History lists the newest version first, 2.1.0 then 2.0.0, marked web only');
+check((await page.locator('main h2').allTextContents()).join(' | ').startsWith('7.0.0 (23 November 2026), web only | 6.3.9 (22 November 2026), web only | 6.3.8 (22 November 2026), web only | 6.3.7 (22 November 2026), web only | 6.3.6 (21 November 2026), web only | 6.3.5 (21 November 2026), web only | 6.3.4 (21 November 2026), web only | 6.3.3 (21 November 2026) | 6.3.2 (20 November 2026) | 6.3.1 (20 November 2026) | 6.3.0 (20 November 2026) | 6.2.0 (20 November 2026), web only | 6.1.0 (19 November 2026) | 6.0.3 (19 November 2026) | 6.0.2 (19 November 2026), web only | 6.0.1 (19 November 2026), web only | 6.0.0 (19 November 2026) | 5.1.2 (12 November 2026), web only | 5.1.1 (12 November 2026), web only | 5.1.0 (12 November 2026), web only | 5.0.0 (12 November 2026) | 4.1.2 (11 November 2026), web only | 4.1.1 (11 November 2026), web only | 4.1.0 (11 November 2026), web only | 4.0.0 (11 November 2026), web only | 3.3.0 (10 November 2026), web only | 3.2.0 (9 November 2026), web only | 3.1.0 (9 November 2026), web only | 3.0.0 (8 November 2026), web only | 2.0.0 (8 November 2026), web only'), 'the Update History lists the newest version first, 2.1.0 then 2.0.0, marked web only');
 await page.goto(base + '/credits.html');
-check((await page.locator('ul.credits li').count()) === 357, 'credits list the recordings');
+check((await page.locator('ul.credits li').count()) === 365, 'credits list the recordings');
 
 // The play page on a computer, with the test switch.
 await page.goto(base + '/play.html?desktop=1');
@@ -139,15 +139,16 @@ check(true, 'sound packs downloaded and decoded');
 const counts = await page.evaluate(() => ({ entries: window.__el.audio.entries.size, buffers: window.__el.audio.buffers.size }));
 check(counts.entries > 80, `pack entries: ${counts.entries}, decoded now: ${counts.buffers}`);
 
-// Exact lengths: a loop is cut to its frames.
+// Exact lengths: a loop is cut to its frames (7.0.0: converted to the engine's own rate,
+// the device's, from the recordings' 44,100).
 const lens = await page.evaluate(async () => {
   const a = window.__el.audio;
   const out = {};
   for (const n of ['obstacle_0', 'ammo_beacon', 'prox_3', 'credit_beacon']) {
-    out[n] = [a.buffers.get('dry:' + n).length, a.entries.get(n).dry.frames, !!a.buffers.get('dull:' + n)];
+    out[n] = [a.buffers.get('dry:' + n).length, Math.round(a.entries.get(n).dry.frames * a.ctx.sampleRate / 44100), !!a.buffers.get('dull:' + n)];
   }
   const drone = await a.prepare('lab_03_scifi_cave');
-  out.lab_03 = [drone.length, a.entries.get('lab_03_scifi_cave').dry.frames, false];
+  out.lab_03 = [drone.length, Math.round(a.entries.get('lab_03_scifi_cave').dry.frames * a.ctx.sampleRate / 44100), false];
   return out;
 });
 for (const [n, [len, frames, dull]] of Object.entries(lens)) check(len === frames, `${n} decoded to its exact length ${frames}${dull ? ', with its dull copy' : ''}`);

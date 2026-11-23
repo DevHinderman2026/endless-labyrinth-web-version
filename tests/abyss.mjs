@@ -57,7 +57,7 @@ const setup = await page.evaluate(async () => {
     demos: (HELP.find(([n]) => n === 'Demos, The Abyss') || [0, []])[1].map((i) => i.sound).filter((s) => s) };
 });
 const mi = (k) => setup.keys.indexOf(k);
-check(mi('abyss') === mi('findvoice') + 1 && mi('ultimate') === mi('abyss') + 1 && mi('chaos') === mi('ultimate') + 1, 'The Abyss comes after Find the Voice on the main menu: ' + setup.menu.join(', '));
+check(mi('abyss') === mi('findvoice') + 1 && mi('park') === mi('abyss') + 1 && mi('ultimate') === mi('park') + 1 && mi('chaos') === mi('ultimate') + 1, 'The Abyss comes after Find the Voice on the main menu: ' + setup.menu.join(', '));
 check(setup.lines.some((l) => /^The Abyss: No score yet$/.test(l)), 'The Abyss has its own high score board');
 check(setup.names.includes('The Abyss') && setup.names.includes('Demos, The Abyss'), 'help has a section for The Abyss and its demos');
 const demoOk = await page.evaluate((sounds) => sounds.map((s) => [s, window.__el.audio.has(s)]), setup.demos);

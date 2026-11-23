@@ -188,10 +188,31 @@ function gauss(seed) {
 
 // ------------------------------------------------------------ the desktop's sound making
 // A sound here is [left, right], Float64Arrays in the desktop's int16 units.
+// (Web 7.0.0: the engine runs at the device's own rate, and a recording is decoded at
+// that rate. Everything made here works at the desktop's 44,100, as the desktop does, so
+// a recording decoded at another rate is first brought back to 44,100; the copies made
+// from it are then right in pitch and length, and toBuffer marks them as 44,100.)
 export function fromBuffer(buf) {
-  const L = Float64Array.from(buf.getChannelData(0), (v) => v * I16);
-  const R = buf.numberOfChannels > 1 ? Float64Array.from(buf.getChannelData(1), (v) => v * I16) : Float64Array.from(L);
+  let L = Float64Array.from(buf.getChannelData(0), (v) => v * I16);
+  let R = buf.numberOfChannels > 1 ? Float64Array.from(buf.getChannelData(1), (v) => v * I16) : Float64Array.from(L);
+  if (buf.sampleRate && buf.sampleRate !== SR) { L = toRate(L, buf.sampleRate); R = toRate(R, buf.sampleRate); }
   return [L, R];
+}
+
+// One channel from `from` samples a second to SR, by straight-line steps between samples.
+export function toRate(x, from) {
+  const r = from / SR;
+  const n = Math.max(1, Math.round(x.length / r));
+  const out = new Float64Array(n);
+  const last = x.length - 1;
+  for (let k = 0; k < n; k++) {
+    const idx = k * r;
+    const lo = Math.min(Math.floor(idx), last);
+    const hi = Math.min(lo + 1, last);
+    const f = idx - lo;
+    out[k] = x[lo] * (1 - f) + x[hi] * f;
+  }
+  return out;
 }
 const toInt16 = (v) => Math.trunc(Math.max(-32768, Math.min(32767, v)));
 
