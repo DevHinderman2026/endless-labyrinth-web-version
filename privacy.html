@@ -9,16 +9,16 @@
   <link rel="icon" href="icons/icon-192.png">
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
   <meta name="theme-color" content="#0c0f14">
-  <link rel="stylesheet" href="css/site.css?v=7.1.1">
+  <link rel="stylesheet" href="css/site.css?v=7.2.0">
 </head>
 <body>
   <header class="site">
     <h1>Privacy Policy</h1>
-    <p>Last updated: 19 November 2026.</p>
+    <p>Last updated: 23 November 2026.</p>
   </header>
   <nav class="site" aria-label="Site" data-page="privacy"></nav>
   <main class="page legal">
-    <p>This Privacy Policy (the "Policy") is issued by Russell Hinderman, trading as DevHinderman2026 (the "Developer"), and describes the treatment of information in connection with Endless Labyrinth. It covers the website, the game it plays, and the Windows version of the game, and it forms part of the <a href="terms.html">Terms of Use</a>. Expressions defined in the Terms of Use have the same meanings in this Policy. The Policy is brief, because the Game collects no personal data: its purpose is to set out precisely what is stored on your own device and what, if anything, is transmitted.</p>
+    <p>This Privacy Policy (the "Policy") is issued by Russell Hinderman, trading as DevHinderman2026 (the "Developer"), and describes the treatment of information in connection with Endless Labyrinth. It covers the website, the game it plays, and the Windows version of the game, and it forms part of the <a href="terms.html">Terms of Use</a>. Expressions defined in the Terms of Use have the same meanings in this Policy. The Policy is brief, because the Game collects no personal data: its purpose is to set out precisely what is stored on your own device and what is transmitted, including the anonymous scores of the Weekly Leaderboard (section 4).</p>
 
     <nav class="panel contents" aria-label="On this page">
       <h2>Contents</h2>
@@ -26,48 +26,66 @@
         <li><a href="#p1">No collection of personal data</a></li>
         <li><a href="#p2">Data stored in your browser</a></li>
         <li><a href="#p3">Transmissions during play and backups</a></li>
-        <li><a href="#p4">GitHub, the hosting provider</a></li>
-        <li><a href="#p5">Share buttons</a></li>
-        <li><a href="#p6">The Windows version</a></li>
-        <li><a href="#p7">Children</a></li>
-        <li><a href="#p8">Changes to this Policy and contact</a></li>
+        <li><a href="#p4">The Weekly Leaderboard</a></li>
+        <li><a href="#p5">GitHub, the hosting provider</a></li>
+        <li><a href="#p6">Share buttons</a></li>
+        <li><a href="#p7">The Windows version</a></li>
+        <li><a href="#p8">Children</a></li>
+        <li><a href="#p9">Changes to this Policy and contact</a></li>
       </ol>
     </nav>
 
     <h2 id="p1">1. No collection of personal data</h2>
-    <p>Endless Labyrinth, on the Website and on Windows, collects no personal data. The Game has no user accounts, no sign-in, no chat facility and no purchases. It does not request your name, your email address or any other information about you, it does not employ cookies or analytics for the purpose of tracking, and it does not profile or track you in any manner. The Developer receives no information about any person from the Game.</p>
+    <p>Endless Labyrinth, on the Website and on Windows, collects no personal data. The Game has no user accounts, no sign-in, no chat facility and no purchases. It does not request your name, your email address or any other information about you, it does not employ cookies or analytics for the purpose of tracking, and it does not profile or track you in any manner. The Developer receives no information about any person from the Game. The only information that the Web Game sends is the anonymous Chaos Mode score of the Weekly Leaderboard, described in section 4, which is linked to a random number standing for a device, and never to a person.</p>
 
     <h2 id="p2">2. Data stored in your browser</h2>
-    <p>On the Website, your play stays in your browser. Your high scores, statistics, settings and Event records (together, your "Save Data") are held in the local storage of your own browser, on your own device, and the Game's sound packs and voice files are cached on your device so that they need not be downloaded again. None of this data is transmitted to the Developer or to any other person. The <a href="stats.html">Game Stats</a> and <a href="events.html">Events</a> pages read it from your browser alone. You may delete it at any time by clearing your browser's storage for the Website.</p>
+    <p>On the Website, your play stays in your browser. Your high scores, statistics, settings and Event records (together, your "Save Data") are held in the local storage of your own browser, on your own device, and the Game's sound packs and voice files are cached on your device so that they need not be downloaded again. None of this data is transmitted to the Developer or to any other person, save that the points of each Chaos Mode run are sent to the Weekly Leaderboard (section 4). Your browser also holds the random device identifier used by the Weekly Leaderboard. The <a href="stats.html">Game Stats</a> and <a href="events.html">Events</a> pages read it from your browser alone. You may delete it at any time by clearing your browser's storage for the Website.</p>
 
     <h2 id="p3">3. Transmissions during play and backups</h2>
-    <p>The Web Game sends nothing about you during play. The only requests it makes are ordinary requests to GitHub, to read the list of Events and the Event files, and to the Website itself, to learn the current time. The Game's voices are recordings that come with its sounds, from the Website itself: no other service is contacted for them, and nothing the Game says is sent anywhere. A <a href="backups.html">backup file</a> of your Save Data is written only to the location that you choose; the Website does not receive it.</p>
+    <p>The Web Game sends nothing about you during play. Apart from the Weekly Leaderboard (section 4), the only requests it makes are ordinary requests to GitHub, to read the list of Events and the Event files and the Weekly Leaderboard's board and results, and to the Website itself, to learn the current time. The Game's voices are recordings that come with its sounds, from the Website itself: no other service is contacted for them, and nothing the Game says is sent anywhere. A <a href="backups.html">backup file</a> of your Save Data is written only to the location that you choose; the Website does not receive it.</p>
 
-    <h2 id="p4">4. GitHub, the hosting provider</h2>
-    <p>The Website is hosted on GitHub Pages, and the Game reads its Events from GitHub. In common with every web host, GitHub receives the ordinary technical details of a visit, such as your IP address and the pages that your browser requests, and processes them in accordance with <a href="https://docs.github.com/en/site-policy/privacy-policies/github-general-privacy-statement">GitHub's General Privacy Statement</a>. Those details are not disclosed to the Developer.</p>
+    <h2 id="p4">4. The Weekly Leaderboard</h2>
+    <h3 id="p4-1">4.1 What is sent</h3>
+    <p>The Weekly Leaderboard forms part of the Web Game and is always active; it cannot be switched off. When a run of Chaos Mode ends with at least one point, the Web Game sends the following information, and nothing else:</p>
+    <ol type="a">
+      <li>the points scored in the run;</li>
+      <li>the length of the run, in seconds;</li>
+      <li>the week in which it was played, and the time at which it was sent; and</li>
+      <li>a device identifier: a random number made by the Web Game the first time it runs in your browser and kept in your browser's local storage. It is not derived from your device, your browser or any information about you, and it does not identify you.</li>
+    </ol>
+    <p>No name, account, email address, location or other score is sent, and runs of the other modes are not sent. A score that cannot be sent at once, for want of a connection, is kept in your browser and sent the next time the Game is opened in the same week.</p>
+    <h3 id="p4-2">4.2 Where it goes</h3>
+    <p>The information is sent to the leaderboard service operated by the Developer on Cloudflare Workers. The service checks it and records, for each device identifier, its best score of the week, the number of its scores received that week and the time of the latest, in a public file in the Developer's GitHub repository named Endless-Labyrinth-score-leaderboard, which the Website reads to show the board. These files are public, and are kept as the record of each week. Cloudflare receives the ordinary technical details of the request, such as your IP address, and processes them in accordance with <a href="https://www.cloudflare.com/privacypolicy/">Cloudflare's Privacy Policy</a>; the Developer's service does not record them.</p>
+    <h3 id="p4-3">4.3 The weekly result</h3>
+    <p>Each week the Developer reviews the best scores of the previous week and publishes a result, signed with the Developer's key, which states the winning score, the winning device identifier, the number of players and the reward. The result is published in the Game's GitHub repository, read by every copy of the Web Game, and kept as a public record.</p>
+    <h3 id="p4-4">4.4 Your choices</h3>
+    <p>Because the device identifier is random, the Developer cannot connect a score to any person. Clearing your browser's storage for the Website deletes the identifier, and a new one is made the next time the Game runs; scores already recorded remain in the public record under the old identifier. If you do not wish a score to be sent, do not play Chaos Mode on the Website. You may ask the Developer to remove a score from the record by writing to the contact address given in the footer, stating the date of the run and the points scored.</p>
 
-    <h2 id="p5">5. Share buttons</h2>
+    <h2 id="p5">5. GitHub, the hosting provider</h2>
+    <p>The Website is hosted on GitHub Pages, and the Game reads its Events and its Weekly Leaderboard from GitHub. In common with every web host, GitHub receives the ordinary technical details of a visit, such as your IP address and the pages that your browser requests, and processes them in accordance with <a href="https://docs.github.com/en/site-policy/privacy-policies/github-general-privacy-statement">GitHub's General Privacy Statement</a>. Those details are not disclosed to the Developer.</p>
+
+    <h2 id="p6">6. Share buttons</h2>
     <p>The footer of each page contains buttons for sharing the Website on Facebook, X (formerly Twitter) and other third-party services. The code of those services is loaded only when you tap one of their buttons, and never with the page itself, so that those services receive information only about visitors who choose to share, and do so under their own privacy policies rather than this Policy. Sharing is entirely optional.</p>
 
-    <h2 id="p6">6. The Windows version</h2>
-    <h3 id="p6-1">6.1 Data stored on your computer</h3>
+    <h2 id="p7">7. The Windows version</h2>
+    <h3 id="p7-1">7.1 Data stored on your computer</h3>
     <p>The Windows Program stores your high scores, Event High Scores and settings in its players folder, on your own computer, in scrambled and sealed form. They are never uploaded. The Program functions offline.</p>
-    <h3 id="p6-2">6.2 Transmissions</h3>
+    <h3 id="p7-2">7.2 Transmissions</h3>
     <p>When the Program has an internet connection, it communicates only with the following services, and transmits no information about you to any of them:</p>
     <ol type="a">
       <li>GitHub, to read the list of Events and the Event files, and to obtain the current time from GitHub's response, so that Events begin and end at the correct moment;</li>
       <li>GitHub, to determine whether a newer version of the game has been released, so that the main menu may inform you of it; nothing is downloaded by that check;</li>
-      <li>GitHub, to download the Program's latest release archive, in either of two circumstances only: when you choose Check for Updates and confirm the update by pressing Y, in which case the archive is used to install the update and is then deleted (see section 6.3); or only if a sound in its sounds folder is missing or damaged, in which case the sound is restored from the archive and the archive is then deleted;</li>
+      <li>GitHub, to download the Program's latest release archive, in either of two circumstances only: when you choose Check for Updates and confirm the update by pressing Y, in which case the archive is used to install the update and is then deleted (see section 7.3); or only if a sound in its sounds folder is missing or damaged, in which case the sound is restored from the archive and the archive is then deleted;</li>
       <li>NV Access, the developer of the NVDA screen reader, to download NVDA's controller library, only if that library is missing from the Program's folder, for the purpose of Braille display support.</li>
     </ol>
-    <p>In common with any download, GitHub and NV Access receive the ordinary technical details of those requests, such as your IP address, and process them under their own privacy policies; GitHub's is linked in section 4.</p>
-    <h3 id="p6-3">6.3 Updates</h3>
+    <p>In common with any download, GitHub and NV Access receive the ordinary technical details of those requests, such as your IP address, and process them under their own privacy policies; GitHub's is linked in section 5.</p>
+    <h3 id="p7-3">7.3 Updates</h3>
     <p>From version 2.0.0, the Program is able to update itself, but only when you request it. No update is downloaded or installed without your confirmation, and the Program contains no automatic update facility. An update replaces the Program's own files only; the players folder, containing your Save Data, is not read, transmitted or altered by an update. The Program writes a single line to a file beside itself recording whether the update succeeded, reads that line aloud when it next starts, and then deletes the file. Nothing concerning an update is transmitted to the Developer or to any other person.</p>
 
-    <h2 id="p7">7. Children</h2>
-    <p>Anyone of any age may play either version of the Game. The Game collects no information from any person, and therefore collects no information from children. The Developer does not knowingly receive personal data from any child.</p>
+    <h2 id="p8">8. Children</h2>
+    <p>Anyone of any age may play either version of the Game. The Game collects no information that identifies any person, and therefore none that identifies a child: the anonymous Chaos Mode score described in section 4 is sent in the same way for every player. The Developer does not knowingly receive personal data from any child.</p>
 
-    <h2 id="p8">8. Changes to this Policy and contact</h2>
+    <h2 id="p9">9. Changes to this Policy and contact</h2>
     <p>The Developer may amend this Policy from time to time. The date shown at the top of this page indicates when the Policy was last updated. Questions concerning this Policy should be directed to the contact address given in the footer of every page.</p>
   </main>
   <footer class="site"></footer>
@@ -75,65 +93,68 @@
   <script type="importmap">
   {
     "imports": {
-      "./js/accessibility.js": "./js/accessibility.js?v=7.1.1",
-      "./js/audio.js": "./js/audio.js?v=7.1.1",
-      "./js/backup.js": "./js/backup.js?v=7.1.1",
-      "./js/backups-page.js": "./js/backups-page.js?v=7.1.1",
-      "./js/bella-lexicon.js": "./js/bella-lexicon.js?v=7.1.1",
-      "./js/bella-words.js": "./js/bella-words.js?v=7.1.1",
-      "./js/braille.js": "./js/braille.js?v=7.1.1",
-      "./js/calendar.js": "./js/calendar.js?v=7.1.1",
-      "./js/device.js": "./js/device.js?v=7.1.1",
-      "./js/display.js": "./js/display.js?v=7.1.1",
-      "./js/game.js": "./js/game.js?v=7.1.1",
-      "./js/gestures.js": "./js/gestures.js?v=7.1.1",
-      "./js/help-data.js": "./js/help-data.js?v=7.1.1",
-      "./js/help-page.js": "./js/help-page.js?v=7.1.1",
-      "./js/keywords.js": "./js/keywords.js?v=7.1.1",
-      "./js/main.js": "./js/main.js?v=7.1.1",
-      "./js/modes/abyss.js": "./js/modes/abyss.js?v=7.1.1",
-      "./js/modes/chaos.js": "./js/modes/chaos.js?v=7.1.1",
-      "./js/modes/driving.js": "./js/modes/driving.js?v=7.1.1",
-      "./js/modes/events/blocks.js": "./js/modes/events/blocks.js?v=7.1.1",
-      "./js/modes/events/engine.js": "./js/modes/events/engine.js?v=7.1.1",
-      "./js/modes/events/feed.js": "./js/modes/events/feed.js?v=7.1.1",
-      "./js/modes/events/help.js": "./js/modes/events/help.js?v=7.1.1",
-      "./js/modes/events/missions.js": "./js/modes/events/missions.js?v=7.1.1",
-      "./js/modes/events/more-spec.js": "./js/modes/events/more-spec.js?v=7.1.1",
-      "./js/modes/events/more.js": "./js/modes/events/more.js?v=7.1.1",
-      "./js/modes/events/py.js": "./js/modes/events/py.js?v=7.1.1",
-      "./js/modes/events/schema.js": "./js/modes/events/schema.js?v=7.1.1",
-      "./js/modes/events/sign.js": "./js/modes/events/sign.js?v=7.1.1",
-      "./js/modes/events/sounds.js": "./js/modes/events/sounds.js?v=7.1.1",
-      "./js/modes/events/tunes.js": "./js/modes/events/tunes.js?v=7.1.1",
-      "./js/modes/events/wording.js": "./js/modes/events/wording.js?v=7.1.1",
-      "./js/modes/events.js": "./js/modes/events.js?v=7.1.1",
-      "./js/modes/findvoice-guide.js": "./js/modes/findvoice-guide.js?v=7.1.1",
-      "./js/modes/findvoice.js": "./js/modes/findvoice.js?v=7.1.1",
-      "./js/modes/index.js": "./js/modes/index.js?v=7.1.1",
-      "./js/modes/island.js": "./js/modes/island.js?v=7.1.1",
-      "./js/modes/park.js": "./js/modes/park.js?v=7.1.1",
-      "./js/modes/tower.js": "./js/modes/tower.js?v=7.1.1",
-      "./js/modes/ultimate/cast.js": "./js/modes/ultimate/cast.js?v=7.1.1",
-      "./js/modes/ultimate/help.js": "./js/modes/ultimate/help.js?v=7.1.1",
-      "./js/modes/ultimate/world.js": "./js/modes/ultimate/world.js?v=7.1.1",
-      "./js/modes/ultimate.js": "./js/modes/ultimate.js?v=7.1.1",
-      "./js/packs.js": "./js/packs.js?v=7.1.1",
-      "./js/site.js": "./js/site.js?v=7.1.1",
-      "./js/sound-rules.js": "./js/sound-rules.js?v=7.1.1",
-      "./js/speech.js": "./js/speech.js?v=7.1.1",
-      "./js/stats.js": "./js/stats.js?v=7.1.1",
-      "./js/storage.js": "./js/storage.js?v=7.1.1",
-      "./js/turning.js": "./js/turning.js?v=7.1.1",
-      "./js/update-alert.js": "./js/update-alert.js?v=7.1.1",
-      "./js/version.js": "./js/version.js?v=7.1.1",
-      "./js/voice-text.js": "./js/voice-text.js?v=7.1.1",
-      "./js/voice.js": "./js/voice.js?v=7.1.1",
-      "./js/wetworker.js": "./js/wetworker.js?v=7.1.1"
+      "./js/accessibility.js": "./js/accessibility.js?v=7.2.0",
+      "./js/audio.js": "./js/audio.js?v=7.2.0",
+      "./js/backup.js": "./js/backup.js?v=7.2.0",
+      "./js/backups-page.js": "./js/backups-page.js?v=7.2.0",
+      "./js/bella-lexicon.js": "./js/bella-lexicon.js?v=7.2.0",
+      "./js/bella-words.js": "./js/bella-words.js?v=7.2.0",
+      "./js/braille.js": "./js/braille.js?v=7.2.0",
+      "./js/calendar.js": "./js/calendar.js?v=7.2.0",
+      "./js/device.js": "./js/device.js?v=7.2.0",
+      "./js/display.js": "./js/display.js?v=7.2.0",
+      "./js/game.js": "./js/game.js?v=7.2.0",
+      "./js/gestures.js": "./js/gestures.js?v=7.2.0",
+      "./js/help-data.js": "./js/help-data.js?v=7.2.0",
+      "./js/help-page.js": "./js/help-page.js?v=7.2.0",
+      "./js/keywords.js": "./js/keywords.js?v=7.2.0",
+      "./js/leaderboard-menu.js": "./js/leaderboard-menu.js?v=7.2.0",
+      "./js/leaderboard-page.js": "./js/leaderboard-page.js?v=7.2.0",
+      "./js/leaderboard.js": "./js/leaderboard.js?v=7.2.0",
+      "./js/main.js": "./js/main.js?v=7.2.0",
+      "./js/modes/abyss.js": "./js/modes/abyss.js?v=7.2.0",
+      "./js/modes/chaos.js": "./js/modes/chaos.js?v=7.2.0",
+      "./js/modes/driving.js": "./js/modes/driving.js?v=7.2.0",
+      "./js/modes/events/blocks.js": "./js/modes/events/blocks.js?v=7.2.0",
+      "./js/modes/events/engine.js": "./js/modes/events/engine.js?v=7.2.0",
+      "./js/modes/events/feed.js": "./js/modes/events/feed.js?v=7.2.0",
+      "./js/modes/events/help.js": "./js/modes/events/help.js?v=7.2.0",
+      "./js/modes/events/missions.js": "./js/modes/events/missions.js?v=7.2.0",
+      "./js/modes/events/more-spec.js": "./js/modes/events/more-spec.js?v=7.2.0",
+      "./js/modes/events/more.js": "./js/modes/events/more.js?v=7.2.0",
+      "./js/modes/events/py.js": "./js/modes/events/py.js?v=7.2.0",
+      "./js/modes/events/schema.js": "./js/modes/events/schema.js?v=7.2.0",
+      "./js/modes/events/sign.js": "./js/modes/events/sign.js?v=7.2.0",
+      "./js/modes/events/sounds.js": "./js/modes/events/sounds.js?v=7.2.0",
+      "./js/modes/events/tunes.js": "./js/modes/events/tunes.js?v=7.2.0",
+      "./js/modes/events/wording.js": "./js/modes/events/wording.js?v=7.2.0",
+      "./js/modes/events.js": "./js/modes/events.js?v=7.2.0",
+      "./js/modes/findvoice-guide.js": "./js/modes/findvoice-guide.js?v=7.2.0",
+      "./js/modes/findvoice.js": "./js/modes/findvoice.js?v=7.2.0",
+      "./js/modes/index.js": "./js/modes/index.js?v=7.2.0",
+      "./js/modes/island.js": "./js/modes/island.js?v=7.2.0",
+      "./js/modes/park.js": "./js/modes/park.js?v=7.2.0",
+      "./js/modes/tower.js": "./js/modes/tower.js?v=7.2.0",
+      "./js/modes/ultimate/cast.js": "./js/modes/ultimate/cast.js?v=7.2.0",
+      "./js/modes/ultimate/help.js": "./js/modes/ultimate/help.js?v=7.2.0",
+      "./js/modes/ultimate/world.js": "./js/modes/ultimate/world.js?v=7.2.0",
+      "./js/modes/ultimate.js": "./js/modes/ultimate.js?v=7.2.0",
+      "./js/packs.js": "./js/packs.js?v=7.2.0",
+      "./js/site.js": "./js/site.js?v=7.2.0",
+      "./js/sound-rules.js": "./js/sound-rules.js?v=7.2.0",
+      "./js/speech.js": "./js/speech.js?v=7.2.0",
+      "./js/stats.js": "./js/stats.js?v=7.2.0",
+      "./js/storage.js": "./js/storage.js?v=7.2.0",
+      "./js/turning.js": "./js/turning.js?v=7.2.0",
+      "./js/update-alert.js": "./js/update-alert.js?v=7.2.0",
+      "./js/version.js": "./js/version.js?v=7.2.0",
+      "./js/voice-text.js": "./js/voice-text.js?v=7.2.0",
+      "./js/voice.js": "./js/voice.js?v=7.2.0",
+      "./js/wetworker.js": "./js/wetworker.js?v=7.2.0"
     }
   }
   </script>
   <!-- end of versions -->
-  <script type="module" src="js/site.js?v=7.1.1"></script>
+  <script type="module" src="js/site.js?v=7.2.0"></script>
 </body>
 </html>

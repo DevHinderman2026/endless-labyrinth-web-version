@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Weekly Leaderboard: Endless Labyrinth</title>
+  <meta name="description" content="The week's best Chaos Mode scores in Endless Labyrinth, last week's signed winner and their reward.">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" href="icons/icon-192.png">
+  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+  <meta name="theme-color" content="#0c0f14">
+  <link rel="stylesheet" href="css/site.css?v=7.2.0">
+</head>
+<body>
+  <header class="site">
+    <h1>Weekly Leaderboard</h1>
+    <p>The best Chaos Mode scores of the week, from every player, with no names.</p>
+  </header>
+  <nav class="site" aria-label="Site" data-page="leaderboard"></nav>
+  <main class="page">
+    <p id="lb-note" class="panel" aria-live="polite">Loading the scores.</p>
+
+    <h2 id="this-week">This week</h2>
+    <p id="lb-week"></p>
+    <ol id="lb-top"></ol>
+    <p id="lb-mine"></p>
+
+    <h2 id="last-week">Last week's winner</h2>
+    <p id="lb-winner"></p>
+
+    <h2 id="how">How it works</h2>
+    <p>Every Chaos Mode score counts. A week runs from Monday at 12:00 AM to Sunday at 11:59 PM, Eastern time, and each player's best score of the week is on the board. There are no names and no accounts: only the scores are shown, and you can find your own here or on the Weekly Leaderboard in the game's main menu.</p>
+    <p>On Monday the developer checks the best score of the week before, and signs it with the same key that signs the game's events, so the game knows the result is real. That player gets a reward in every run for the whole of the next week, and hears a ceremony the first time they open the game: their score and reward announced, the developer's pen signing, and applause. The rewards take turns, week by week:</p>
+    <ul>
+      <li>Extra health: one extra life where there are lives, and 25 percent more health where there is health.</li>
+      <li>Extra ammo: 50 percent more ammo at the start of every run.</li>
+      <li>Extra time: 30 extra seconds on every starting clock.</li>
+    </ul>
+
+    <h2 id="what-is-sent">What is sent</h2>
+    <p>When a Chaos Mode run ends with points, the game sends three things: the points, how long the run lasted, and a random number made by the game the first time it ran on your device, which stands for that device and says nothing about you. They go to the game's own leaderboard service, which keeps each device's best score of the week in a public list on GitHub. Nothing else is sent: no name, no account, no location, no other score. The <a href="privacy.html">Privacy Policy</a> says more, and the <a href="terms.html">Terms of Use</a> set out the rules for the leaderboard.</p>
+  </main>
+  <footer class="site"></footer>
+  <!-- versions: written by tools/stamp-version.mjs from version.json -->
+  <script type="importmap">
+  {
+    "imports": {
+      "./js/accessibility.js": "./js/accessibility.js?v=7.2.0",
+      "./js/audio.js": "./js/audio.js?v=7.2.0",
+      "./js/backup.js": "./js/backup.js?v=7.2.0",
+      "./js/backups-page.js": "./js/backups-page.js?v=7.2.0",
+      "./js/bella-lexicon.js": "./js/bella-lexicon.js?v=7.2.0",
+      "./js/bella-words.js": "./js/bella-words.js?v=7.2.0",
+      "./js/braille.js": "./js/braille.js?v=7.2.0",
+      "./js/calendar.js": "./js/calendar.js?v=7.2.0",
+      "./js/device.js": "./js/device.js?v=7.2.0",
+      "./js/display.js": "./js/display.js?v=7.2.0",
+      "./js/game.js": "./js/game.js?v=7.2.0",
+      "./js/gestures.js": "./js/gestures.js?v=7.2.0",
+      "./js/help-data.js": "./js/help-data.js?v=7.2.0",
+      "./js/help-page.js": "./js/help-page.js?v=7.2.0",
+      "./js/keywords.js": "./js/keywords.js?v=7.2.0",
+      "./js/leaderboard-menu.js": "./js/leaderboard-menu.js?v=7.2.0",
+      "./js/leaderboard-page.js": "./js/leaderboard-page.js?v=7.2.0",
+      "./js/leaderboard.js": "./js/leaderboard.js?v=7.2.0",
+      "./js/main.js": "./js/main.js?v=7.2.0",
+      "./js/modes/abyss.js": "./js/modes/abyss.js?v=7.2.0",
+      "./js/modes/chaos.js": "./js/modes/chaos.js?v=7.2.0",
+      "./js/modes/driving.js": "./js/modes/driving.js?v=7.2.0",
+      "./js/modes/events/blocks.js": "./js/modes/events/blocks.js?v=7.2.0",
+      "./js/modes/events/engine.js": "./js/modes/events/engine.js?v=7.2.0",
+      "./js/modes/events/feed.js": "./js/modes/events/feed.js?v=7.2.0",
+      "./js/modes/events/help.js": "./js/modes/events/help.js?v=7.2.0",
+      "./js/modes/events/missions.js": "./js/modes/events/missions.js?v=7.2.0",
+      "./js/modes/events/more-spec.js": "./js/modes/events/more-spec.js?v=7.2.0",
+      "./js/modes/events/more.js": "./js/modes/events/more.js?v=7.2.0",
+      "./js/modes/events/py.js": "./js/modes/events/py.js?v=7.2.0",
+      "./js/modes/events/schema.js": "./js/modes/events/schema.js?v=7.2.0",
+      "./js/modes/events/sign.js": "./js/modes/events/sign.js?v=7.2.0",
+      "./js/modes/events/sounds.js": "./js/modes/events/sounds.js?v=7.2.0",
+      "./js/modes/events/tunes.js": "./js/modes/events/tunes.js?v=7.2.0",
+      "./js/modes/events/wording.js": "./js/modes/events/wording.js?v=7.2.0",
+      "./js/modes/events.js": "./js/modes/events.js?v=7.2.0",
+      "./js/modes/findvoice-guide.js": "./js/modes/findvoice-guide.js?v=7.2.0",
+      "./js/modes/findvoice.js": "./js/modes/findvoice.js?v=7.2.0",
+      "./js/modes/index.js": "./js/modes/index.js?v=7.2.0",
+      "./js/modes/island.js": "./js/modes/island.js?v=7.2.0",
+      "./js/modes/park.js": "./js/modes/park.js?v=7.2.0",
+      "./js/modes/tower.js": "./js/modes/tower.js?v=7.2.0",
+      "./js/modes/ultimate/cast.js": "./js/modes/ultimate/cast.js?v=7.2.0",
+      "./js/modes/ultimate/help.js": "./js/modes/ultimate/help.js?v=7.2.0",
+      "./js/modes/ultimate/world.js": "./js/modes/ultimate/world.js?v=7.2.0",
+      "./js/modes/ultimate.js": "./js/modes/ultimate.js?v=7.2.0",
+      "./js/packs.js": "./js/packs.js?v=7.2.0",
+      "./js/site.js": "./js/site.js?v=7.2.0",
+      "./js/sound-rules.js": "./js/sound-rules.js?v=7.2.0",
+      "./js/speech.js": "./js/speech.js?v=7.2.0",
+      "./js/stats.js": "./js/stats.js?v=7.2.0",
+      "./js/storage.js": "./js/storage.js?v=7.2.0",
+      "./js/turning.js": "./js/turning.js?v=7.2.0",
+      "./js/update-alert.js": "./js/update-alert.js?v=7.2.0",
+      "./js/version.js": "./js/version.js?v=7.2.0",
+      "./js/voice-text.js": "./js/voice-text.js?v=7.2.0",
+      "./js/voice.js": "./js/voice.js?v=7.2.0",
+      "./js/wetworker.js": "./js/wetworker.js?v=7.2.0"
+    }
+  }
+  </script>
+  <!-- end of versions -->
+  <script type="module" src="js/site.js?v=7.2.0"></script>
+  <script type="module" src="js/leaderboard-page.js?v=7.2.0"></script>
+</body>
+</html>

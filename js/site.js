@@ -25,6 +25,7 @@ export const NAV = [
   ['history.html', 'Update History'],
   ['events.html', 'Events'],
   ['stats.html', 'Game Stats'],
+  ['leaderboard.html', 'Weekly Leaderboard'],
   ['backups.html', 'Score Backups'],
   ['accessibility.html', 'Accessibility'],
 ];

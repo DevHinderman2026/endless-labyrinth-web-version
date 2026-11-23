@@ -21,6 +21,7 @@
 // stay right during a chaos run. This mode owns the run as a whole (ownsRun): its
 // finish and its status line are used whichever state the run is in.
 
+import * as lb from '../leaderboard.js';
 import { TOWER_DRONES } from './tower.js';
 import { RoadThing } from './driving.js';
 import { FV_LIVES, FV_FIRST_BACKGROUND } from './findvoice.js';
@@ -132,7 +133,7 @@ const mixin = {
     if (this.beatChannel) this.beatChannel.stop();
 
     // One flat five minute budget for the ENTIRE run, so every run is worth the same.
-    this.timeLeft = CHAOS_TIME_LIMIT;
+    this.timeLeft = lb.time(CHAOS_TIME_LIMIT);   // (7.2.0: lb.*, the leaderboard's reward, if this device won last week)
     this.nextAnnounceTime = Math.floor((this.timeLeft - 1) / 120.0) * 120.0;
     this.thirtySecAnnounced = false;
     this.lastBeepSecond = -1;
@@ -140,9 +141,10 @@ const mixin = {
     // What carries across the whole chaos run. Each kind of level that shoots -
     // battles, islands and roads - keeps its own ammo. The tower is one climb, a
     // floor at a time, with health and items carried from floor to floor.
-    this.chaosAmmo = { battle: ISLAND_START_AMMO, island: ISLAND_START_AMMO, drive: ISLAND_START_AMMO };
+    const startAmmo = lb.ammo(ISLAND_START_AMMO);
+    this.chaosAmmo = { battle: startAmmo, island: startAmmo, drive: startAmmo };
     this.chaosAmmoKind = null;
-    this.ammo = ISLAND_START_AMMO;
+    this.ammo = startAmmo;
     this.chaosTowerFloors = 0;
     this.chaosDriveCount = 0;
     this.chaosIslandCount = 0;
@@ -150,7 +152,8 @@ const mixin = {
     this.towerNumber = 1;
     this.towerHeight = randint(TOWER_FLOORS_MIN, TOWER_FLOORS_MAX);
     this.towerFloor = 1;
-    this.towerHp = CHAOS_HEALTH_START;
+    this.towerHp = lb.health(CHAOS_HEALTH_START);
+    this.towerMaxHp = lb.health(100);
     this.towerLowWarned = false;
     this.chaosDeath = null;
     this.chaosHitGrace = 0;
@@ -168,12 +171,12 @@ const mixin = {
     // Find the Voice stages: their count, their quota so far, and their own lives.
     this.chaosFvCount = 0;
     this.chaosFvQuota = null;
-    this.chaosFvLives = FV_LIVES;
+    this.chaosFvLives = lb.lives(FV_LIVES);
     this.chaosFvPreviewStem = null;
     // Abyss stages (web 6.2.0): their count, their quota so far, and their own lives.
     this.chaosAbyssCount = 0;
     this.chaosAbyssQuota = null;
-    this.chaosAbyssLives = AB_LIVES;
+    this.chaosAbyssLives = lb.lives(AB_LIVES);
     // Water parks (web 7.0.0): their count, and how many attractions the last one had.
     this.chaosParkCount = 0;
     this.chaosParkSize = null;

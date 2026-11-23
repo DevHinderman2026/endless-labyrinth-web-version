@@ -61,7 +61,7 @@ const menu = await page.evaluate((nameSrc) => {
   const g = window.__el.game;
   return { menu: g.menuOptions.slice(), keys: g.menuKeys.slice(), said: document.getElementById('said').textContent, name: document.getElementById('console').getAttribute('aria-label'), focused: document.activeElement.id };
 });
-check(menu.keys.join() === 'standard,battle,drive,tower,island,findvoice,abyss,park,ultimate,chaos,events,event_score,scores,speech,keytest,rate,leave' && menu.menu.includes('Speech: On') && menu.menu.includes('Braille Key Test') && !menu.menu.some((m) => /Braille Keyboard/.test(m)), 'the Windows menu: Speech and the Braille Key Test, no Braille Keyboard setting: ' + menu.menu.join(' | '));
+check(menu.keys.join() === 'standard,battle,drive,tower,island,findvoice,abyss,park,ultimate,chaos,events,event_score,scores,weekly,speech,keytest,rate,leave' && menu.menu.includes('Speech: On') && menu.menu.includes('Braille Key Test') && !menu.menu.some((m) => /Braille Keyboard/.test(m)), 'the Windows menu: Speech and the Braille Key Test, no Braille Keyboard setting: ' + menu.menu.join(' | '));
 check(menu.name === menu.said && /Welcome to Endless Labyrinth/.test(menu.name) && !/Braille device/.test(menu.name) && menu.focused === 'console', 'the welcome is the game area\'s name (on the display), with no detection announcement, and the focus stays there');
 
 // --------------------------------------------------------------- helpers

@@ -137,7 +137,7 @@ const playEvent = async (file, seconds) => {
 };
 
 const baseline = await sample('after loading');
-const modes = await page.evaluate(() => window.__el.game.menuKeys.filter((k) => !['scores', 'practice', 'rate', 'leave', 'braille', 'speech', 'keytest', 'events'].includes(k)));
+const modes = await page.evaluate(() => window.__el.game.menuKeys.filter((k) => !['scores', 'weekly', 'practice', 'rate', 'leave', 'braille', 'speech', 'keytest', 'events'].includes(k)));
 console.log('modes:', modes.join(', '));
 const results = {};
 for (const key of modes) {

@@ -39,6 +39,7 @@
 // speaking its leg; the lift's hum silent in the car; and the area echoes, which a
 // string-against-number lookup had left silent.
 
+import * as lb from '../leaderboard.js';
 import { TowerEnemy, TowerItem, TowerProjectile, volleySpread, TOWER_DRONES } from './tower.js';
 import { addMade, aliasRecording, ensureCopies } from './events/sounds.js';
 import { knockSound } from './events/blocks.js';
@@ -665,7 +666,7 @@ const mixin = {
     return {
       run: this.runId,
       worldNo: 0, worlds: 0, elapsed: 0.0, worldTime: 0.0, worldLen: 0.0, phase: 'play', gap: 0.0, safe: 0.0, lastCount: -1,
-      hp: START_HP, ammo: randint(START_AMMO[0], START_AMMO[1]), items: randint(START_ITEMS[0], START_ITEMS[1]),
+      hp: lb.health(START_HP), ammo: lb.ammo(randint(START_AMMO[0], START_AMMO[1])), items: randint(START_ITEMS[0], START_ITEMS[1]),
       points: 0, worldPoints: 0, worldDamage: 0, kills: 0, speedBonus: 1.0,
       world: null, area: null, areaSounds: new Map(), enemies: [], projectiles: [], towerItems: new Map(),
       pickups: [], timers: [], respawn: new Map(), potionDue: new Map(), hitCooldown: 0, lowWarned: false,

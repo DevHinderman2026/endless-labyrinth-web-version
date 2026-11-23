@@ -43,6 +43,7 @@
 // "Hungry Monster Growl: Deep Demonic Beast Breathing SFX" while it hunts, each cut
 // to a seamless loop (Developer Tools/Web Packs/web-only/abyss.json).
 
+import * as lb from '../leaderboard.js';
 import { aliasRecording } from './events/sounds.js';
 import { RULES } from '../sound-rules.js';
 import {
@@ -204,11 +205,11 @@ const mixin = {
     this._wake(true);
     if (this.ambienceChannel) { this.ambienceChannel.stop(); this.ambienceChannel = null; }
     if (this.beatChannel) { this.beatChannel.stop(); this.beatChannel = null; }
-    this.timeLeft = AB_START_TIME;
+    this.timeLeft = lb.time(AB_START_TIME);   // (7.2.0: lb.*, the leaderboard's reward, if this device won last week)
     this.nextAnnounceTime = Math.floor((this.timeLeft - 1) / 30.0) * 30.0;
     this.thirtySecAnnounced = this.timeLeft <= 30.0;
     this.lastBeepSecond = -1;
-    this._abBegin({ chaos: false, quota: 0, lives: AB_LIVES });
+    this._abBegin({ chaos: false, quota: 0, lives: lb.lives(AB_LIVES) });
   },
 
   // A run, or a chaos stage (quota: the cases wanted; 0 for a run of its own).

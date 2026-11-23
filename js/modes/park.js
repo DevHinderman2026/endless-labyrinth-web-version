@@ -48,6 +48,7 @@
 // and a duck knocked down (Developer Tools/Web Packs/web-only/waterpark.json). The
 // ducks quack with the event library's duck (evt_duck).
 
+import * as lb from '../leaderboard.js';
 import { BACKGROUND_SEND, makeSounds as makeUltimateSounds } from './ultimate.js';
 
 export const STATE = 'park';
@@ -222,7 +223,7 @@ const mixin = {
     this._pkBackground(adopt);
     this._pkLayout(dealKinds(count));
     if (!chaos) {
-      this.timeLeft = clockFor(park, count);
+      this.timeLeft = lb.time(clockFor(park, count));   // (7.2.0: the leaderboard's reward, if this device won last week)
       this.nextAnnounceTime = Math.floor((this.timeLeft - 1) / 30.0) * 30.0;
       this.thirtySecAnnounced = this.timeLeft <= 30.0;
       this.lastBeepSecond = -1;

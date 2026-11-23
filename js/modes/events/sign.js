@@ -307,13 +307,17 @@ const fromHex = (h) => {
   return out;
 };
 
-let webKey;     // the imported WebCrypto key, null where WebCrypto has no Ed25519
+const webKeys = new Map();     // the imported WebCrypto keys, by public key; null where WebCrypto has no Ed25519
 async function webVerify(pub, message, sig) {
-  if (webKey === undefined) {
-    try {
-      webKey = await crypto.subtle.importKey('raw', pub, { name: 'Ed25519' }, false, ['verify']);
-    } catch (e) { webKey = null; }
+  // (7.2.0) One imported key for each public key: a check with another key (the
+  // leaderboard's tests use one of their own) never answers with an earlier key.
+  const id = Array.from(pub, (b) => b.toString(16).padStart(2, '0')).join('');
+  if (!webKeys.has(id)) {
+    let k = null;
+    try { k = await crypto.subtle.importKey('raw', pub, { name: 'Ed25519' }, false, ['verify']); } catch (e) { k = null; }
+    webKeys.set(id, k);
   }
+  const webKey = webKeys.get(id);
   if (!webKey) return undefined;
   try { return await crypto.subtle.verify({ name: 'Ed25519' }, webKey, sig, message); } catch (e) { return undefined; }
 }

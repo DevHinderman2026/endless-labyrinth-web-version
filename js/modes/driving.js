@@ -18,6 +18,8 @@
 // nextLevel for a chaos level, chaosDriveQuota, chaosPoints, islandPoints) belong
 // to the Chaos port.
 
+import * as lb from '../leaderboard.js';
+
 // ------------------------------------------------------------------ constants
 // Three lanes: left, middle, right. Odd, so there is a middle one to sit in.
 const DRIVE_LANES = 3;
@@ -164,10 +166,10 @@ const mixin = {
     this.driveSwerve = 0.0;
     // Where on the road the first credit is due. See DRIVE_CREDIT_SPACING.
     this.driveNextCredit = this.driveDist + this._driveCreditGap();
-    this.ammo = 8;
+    this.ammo = lb.ammo(8);   // (7.2.0: the leaderboard's reward, if this device won last week)
     this.level = 0;          // score is cars destroyed
 
-    this.timeLeft = DRIVE_TIME_LIMIT;
+    this.timeLeft = lb.time(DRIVE_TIME_LIMIT);
     this.nextAnnounceTime = Math.floor((this.timeLeft - 1) / DRIVE_TIME_ANNOUNCE) * DRIVE_TIME_ANNOUNCE;
     this.thirtySecAnnounced = false;
     this.lastBeepSecond = -1;
