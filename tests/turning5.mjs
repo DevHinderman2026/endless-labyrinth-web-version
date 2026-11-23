@@ -279,7 +279,7 @@ check(!rest.drive.turns && rest.drive.facing === 0 && !rest.drive.hold, 'Driving
     && !/fr[eo]z/i.test(during.r.text),
     'for thirty days the Update History opens with a region named Alert: turning, and compatibility between Windows and the web');
   check(before.r === null && after.r === null, 'it is not there before 5.0.0 came out, and it is gone after thirty days');
-  check(/^7\.1\.5 \(23 November 2026\)/.test(during.top), 'the Update History begins with the newest version, 7.1.5: ' + during.top);
+  check(/^7\.1\.6 \(23 November 2026\)/.test(during.top), 'the Update History begins with the newest version, 7.1.6: ' + during.top);
   await page.goto(base + '/help.html');
   const faq = await page.evaluate(() => ['faq-turning', 'faq-turning-lost', 'faq-turning-aim', 'faq-turning-walls', 'faq-turning-which', 'faq-turning-slide'].map((id) => { const h = document.getElementById(id); return h ? h.textContent : null; }));
   check(faq.every(Boolean), 'the frequently asked questions have six questions about turning: ' + faq.join(' | '));

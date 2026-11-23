@@ -28,6 +28,8 @@
 
 // The version this page's files were built with: this file's own address carries
 // it (js/version.js?v=3.2.0, through the import map), or null without one.
+import { CACHE as PACK_CACHE } from './packs.js';
+
 export const LOADED = (() => {
   try { return new URL(import.meta.url).searchParams.get('v'); } catch (e) { return null; }
 })();
@@ -51,11 +53,17 @@ export async function siteVersion() {
 // it found, lets go of anything the browser keeps for the site, and opens the page
 // afresh at a new address, so even a game on the Home Screen gets the newest version
 // at once. `say(text)` reports to the player.
+// (7.1.6, Russell: "the game re-downloads the whole entire sound pack ... It should only
+// re-download the missing sound packs".) It let go of the sound packs too, so every
+// Refresh downloaded all of them again. Now the packs' store is kept: the packs need no
+// help to stay up to date, since each pack's file name carries a fingerprint of its
+// contents (packs/manifest.json). A pack that changed has a new name and is the only one
+// downloaded on the next start; the old one is removed then (packs.js loadPacks).
 export async function refreshNow(say = () => {}) {
   say('Checking for updates.');
   const latest = await siteVersion();
   if (!latest) { say('The website could not be reached. Check your connection, and try again.'); return false; }
-  try { if (globalThis.caches) for (const k of await caches.keys()) await caches.delete(k); } catch (e) { /* nothing kept */ }
+  try { if (globalThis.caches) for (const k of await caches.keys()) if (k !== PACK_CACHE) await caches.delete(k); } catch (e) { /* nothing kept */ }
   try { sessionStorage.removeItem(MARK); } catch (e) { /* no session storage */ }
   say(LOADED && latest !== LOADED ? `Updating to version ${latest}.` : `You have the newest version, ${latest}. Refreshing.`);
   const u = new URL(location.href);

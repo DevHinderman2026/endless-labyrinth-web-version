@@ -6,7 +6,8 @@
 // say) gets a new name and only that one is fetched. Packs are kept in the
 // browser's Cache Storage, and old ones are removed.
 
-const CACHE = 'endless-labyrinth-sounds';
+// (7.1.6: exported, so the Refresh button keeps it; see version.js refreshNow.)
+export const CACHE = 'endless-labyrinth-sounds';
 const MAGIC = 'ELPACK1\n';
 
 async function fetchWithProgress(url, onBytes) {

@@ -144,6 +144,9 @@ const same = await page.evaluate(async () => {
     const out = await ctx.startRendering();
     return [out.getChannelData(0).slice(), out.getChannelData(1).slice()];
   };
+  // A first render, thrown away: the browser loads its HRTF data on the first panner, and a
+  // render begun before that has finished (a busy machine) starts with plain panning.
+  await render(false);
   const A = await render(false); const B = await render(true);
   let se = 0; let sa = 0;
   for (let c = 0; c < 2; c++) for (let i = 0; i < A[c].length; i++) { const dd = A[c][i] - B[c][i]; se += dd * dd; sa += A[c][i] * A[c][i]; }
