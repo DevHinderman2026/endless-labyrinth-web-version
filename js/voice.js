@@ -300,7 +300,13 @@ export class GameVoice {
           if (done) return;
           // A breath of a fade, so a cut-off line does not click.
           const now = ctx.currentTime;
-          try { dry.gain.setTargetAtTime(0, now, 0.01); if (wet) wet.gain.setTargetAtTime(0, now, 0.01); } catch (e) { /* gone */ }
+          // (6.3.7: glides that end, as every level's now: js/audio.js LEVEL_GLIDE.)
+          try {
+            for (const g of [dry.gain, wet ? wet.gain : null]) {
+              if (!g) continue;
+              g.cancelScheduledValues(now); g.setValueAtTime(g.value, now); g.linearRampToValueAtTime(0, now + 0.04);
+            }
+          } catch (e) { /* gone */ }
           for (const s of srcs) { try { s.stop(now + 0.05); } catch (e) { /* never started */ } }
           finish(false);
         },

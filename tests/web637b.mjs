@@ -270,6 +270,49 @@ else {
   if (!fate.none) check(fate.gameHeld > 0 && fate.gameRinging && fate.gameResumed, `Call of Fate, paused by the game: ${fate.gameHeld} bells held with their echoes ringing out, all carried on by the resume: ${JSON.stringify(fate.gameSaw)}`);
 }
 
+// ------------------------------------------------------------------ 1b, 1c: levels are glides that end
+const s1 = await page.evaluate(async () => {
+  const g = window.__el.game; const a = g.audio; const r = {};
+  // Count every kind of change sent to the sound's own thread.
+  const counts = { setTargetAtTime: 0, linearRampToValueAtTime: 0, setValueAtTime: 0 };
+  const proto = AudioParam.prototype; const real = {};
+  for (const k of Object.keys(counts)) { real[k] = proto[k]; proto[k] = function (...args) { counts[k] += 1; return real[k].apply(this, args); }; }
+  const pick = g._chaosPickNext; g._chaosPickNext = () => 'battle';
+  window.startMode('chaos');
+  // Ten seconds of a Chaos battle, walking and turning.
+  const t0 = performance.now(); let frames = 0;
+  while (performance.now() - t0 < 10000) {
+    g.frame(1 / 30); frames += 1;
+    if (frames % 20 === 0) g.input(['up', 'left', 'up', 'right'][(frames / 20) % 4]);
+    await window.sleep(30);
+  }
+  r.state = g.state; r.counts = { ...counts }; r.perSecond = Math.round((counts.linearRampToValueAtTime + counts.setValueAtTime + counts.setTargetAtTime) / 10);
+  // A beacon you cannot hear: its levels are exactly nothing, not creeping toward it.
+  const v = a.play('ammo_beacon', { loops: -1, volume: 0.0 });
+  v.setVolume(0.6, 0.3, 0); await window.sleep(120);
+  r.heard = [v.dry.gl.gain.value, v.dry.gr.gain.value];
+  v.setVolume(0, 0, 0); await window.sleep(120);
+  r.silent = [v.dry.gl.gain.value, v.dry.gr.gain.value, v.dull ? v.dull.gl.gain.value : 0, v.dull ? v.dull.gr.gain.value : 0];
+  // In front of you, the dull copy is exactly nothing too.
+  v.setVolume(0.6, 0.6, 0); await window.sleep(120);
+  r.front = v.dull ? [v.dull.gl.gain.value, v.dull.gr.gain.value] : [0, 0];
+  // 1c: heard again after silence, its level comes in on a glide, not in one jump.
+  v.setVolume(0, 0, 0); await window.sleep(120);
+  v.setVolume(0.6, 0.6, 0);
+  r.again = { rightAway: v.dry.gl.gain.value };
+  await window.sleep(80);
+  r.again.after = v.dry.gl.gain.value;
+  v.stop();
+  for (const k of Object.keys(counts)) proto[k] = real[k];
+  g._chaosPickNext = pick;
+  window.toMenu();
+  return r;
+});
+check(s1.state === 'battle' && s1.counts.setTargetAtTime === 0, `ten seconds of a Chaos battle: not one open-ended glide is sent (${JSON.stringify(s1.counts)}, about ${s1.perSecond} changes a second)`);
+check(Math.abs(s1.heard[0] - 0.6) < 1e-6 && Math.abs(s1.heard[1] - 0.6) < 1e-6, `a level lands on what was sent and stays there (the louder side's, 0.6: the panner does the rest; ${s1.heard.join(', ')})`);
+check(s1.silent.every((x) => x === 0) && s1.front.every((x) => x === 0), `a beacon out of earshot is exactly silent, and so is the dull copy of one in front of you (${JSON.stringify([s1.silent, s1.front])})`);
+check(s1.again.rightAway < 0.3 && Math.abs(s1.again.after - 0.6) < 1e-6, `heard again after silence, its level glides in instead of jumping (${s1.again.rightAway.toFixed(3)} at once, ${s1.again.after} after)`);
+
 //SECTIONS
 
 check(errors.length === 0, 'no errors in the page: ' + errors.slice(0, 3).join(' | '));

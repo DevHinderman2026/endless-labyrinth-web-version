@@ -122,6 +122,20 @@ const FACE_GLIDE = 0.045;        // seconds: the listener's turn (was a 0.015 ti
 const LEVEL_SAME = 0.005;        // of a level: a change smaller than this is not sent (about 0.04 decibels)
 const SEND_GAP = 1 / 30;         // seconds: the least time between two small changes to one gain or panner
 const SEND_BIG = 0.05;           // of a level: a change at least this big is sent at once
+// (Web 6.3.7, Russell, 22 November 2026: "static still shows up from time to time, and
+// pausing clears it".) A sound's levels were still sent as setTargetAtTime, the kind of
+// glide 6.2.0 took off the panners' places: one that never ends. Two costs, for as long
+// as the sound lives. A gain with an open glide is worked out afresh for every sample.
+// And a level glided to nothing only ever creeps toward it and never is nothing, so the
+// browser cannot tell that the branch has gone silent, and everything after it, the
+// HRTF panner above all, goes on doing its full work on a sound nobody can hear: a
+// beacon out of earshot, and the dull copy of everything in front of you (its own
+// panner, outside Ultimate Mode), about half of all the panners in a busy battle.
+// Holding those sounds stopped their sources, which is silence the browser can see:
+// the static cleared on a pause. Now every level change is a short straight glide that
+// ends on the level itself; nothing is left open, and nothing is nothing.
+const LEVEL_GLIDE = 0.012;       // seconds: a level's change (was a 0.008 time constant)
+const SEND_GLIDE = 0.12;         // seconds: an echo send's, and the master level's (was a 0.05 time constant)
 
 // A glide that ends: from where the parameter is now, straight to v.
 function glideTo(p, v, now, secs) {
@@ -934,8 +948,7 @@ export class AudioEngine {
     if (!this.out) return;
     const g = this.out.gain;
     const now = this.ctx.currentTime;
-    g.cancelScheduledValues(now);
-    g.setTargetAtTime(level, now, 0.05);
+    glideTo(g, level, now, SEND_GLIDE);    // (6.3.7: a glide that ends, see LEVEL_GLIDE)
   }
 
   // The way the listener faces, in radians clockwise from north (web 4.0.0:
@@ -1445,7 +1458,7 @@ export class Voice {
     const now = this.ctx.currentTime;
     // Areas no longer in the mix fade out of it.
     // (6.3.0: a tap's level is sent only when it changes, not in every frame.)
-    for (const [id, tap] of w.taps) if (!(this.areaMix && this.areaMix[id]) && tap.want !== 0) { tap.want = 0; tap.gain.setTargetAtTime(0, now, 0.05); }
+    for (const [id, tap] of w.taps) if (!(this.areaMix && this.areaMix[id]) && tap.want !== 0) { tap.want = 0; glideTo(tap.gain, 0, now, SEND_GLIDE); }
     for (const [key, want] of Object.entries(this.areaMix || {})) {
       // (The mix's keys are strings, as every object key is; the buses are kept
       // by the areas' numbers.)
@@ -1471,7 +1484,7 @@ export class Voice {
       const level = clamp(want, 0, 1) * scale;
       if (tap.want !== undefined && Math.abs(tap.want - level) < 1e-3) continue;
       tap.want = level;
-      tap.gain.setTargetAtTime(level, now, 0.05);
+      glideTo(tap.gain, level, now, SEND_GLIDE);
     }
   }
 
@@ -1668,7 +1681,14 @@ export class Voice {
     }
     SENT.set(param, [v, now]);
     if (instant || now <= this.begunAt) { param.cancelScheduledValues(now); param.setValueAtTime(v, now); }
-    else param.setTargetAtTime(v, now, 0.008);
+    // (6.3.7) A straight glide that ends, see LEVEL_GLIDE. The last glide has nearly
+    // always ended by now (a level is sent at most once a frame), and then the level is
+    // exactly what was last sent: the glide starts from there, with nothing to cancel
+    // and nothing asked of the audio thread. Otherwise from wherever the level has got to.
+    else if (was !== undefined && now - was[1] > LEVEL_GLIDE + 0.004) {
+      param.setValueAtTime(was[0], now);
+      param.linearRampToValueAtTime(v, now + LEVEL_GLIDE);
+    } else glideTo(param, v, now, LEVEL_GLIDE);
   }
 
   get busy() { return !this.stopped && !this.ended; }
@@ -1749,7 +1769,10 @@ export class Voice {
         this.audio.wakePanner(br.panner);
         if (at) Voice._place(br.panner, at[0], at[1], at[2], this.ctx.currentTime, true);
       }
-      instant = true;
+      // (6.3.7: its level is no longer set outright here. 6.3.6 did, and a beacon
+      // walking back into earshot jumped from nothing to its level in one sample, a
+      // click at the edge of hearing every time. The panner is new and already in
+      // its place, so the level comes in with the usual short glide.)
     }
     if (this.binPlaced) {
       // The way the thing lies in the world, from the levels the mode worked out:
