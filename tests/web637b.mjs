@@ -351,7 +351,7 @@ const second = await page.evaluate(async () => {
   window.toMenu();
   return r;
 });
-await page.waitForTimeout(12500);
+await page.waitForTimeout(8500);
 const oldGone = await page.evaluate(() => window.firstCtx.state);
 check(before.state === 'game_over' && before.stale === true, 'a run ends: the next one is due a fresh sound engine');
 check(atOver.same && atMenu.same && atMenu.state === 'menu', 'not at the game over screen, where the result is still being said, nor on the way to the menu');

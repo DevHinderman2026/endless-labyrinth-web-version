@@ -557,12 +557,13 @@ export class AudioEngine {
   // It is made at the first touch or key press on the main menu after a run has ended
   // (js/main.js; game.js soundStale), because a phone starts a new sound engine only
   // inside a touch: made at any other moment it would sit silent until the next one,
-  // and the game's own voice with it. The old engine is kept a while longer than in
-  // recover(), so whatever is still being said in it finishes; everything decoded is
-  // kept, as there.
+  // and the game's own voice with it. The old engine is kept eight seconds, longer than
+  // in recover(), so the menu line still being said in it finishes; with every sound of
+  // the run stopped it is silent otherwise, which costs next to nothing. Everything
+  // decoded is kept, as there.
   fresh() {
     this.freshened = (this.freshened || 0) + 1;
-    this._renew(12000);
+    this._renew(8000);
   }
 
   _renew(keepOld) {
