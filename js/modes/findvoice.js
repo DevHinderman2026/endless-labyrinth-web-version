@@ -596,9 +596,10 @@ const mixin = {
   },
 
   // ---------------------------------------------------------------- Chaos: the exit
-  // The quota is found: everything else goes, the creature, the guide, the glass
-  // and the air, and only the exit is heard. The chaos clock waits until you reach
-  // it (chaos.js _chaosExitOpen).
+  // The quota is found: the creature, the guide and the glass go, and the exit is
+  // heard over the room's own background. (6.3.7, Russell, 22 November 2026: the
+  // background stays. Until now it faded out with the rest.) The chaos clock waits
+  // until you reach it (chaos.js _chaosExitOpen).
   _fvOpenExit() {
     const fv = this.fv;
     this._fvStopGuide();
@@ -606,8 +607,6 @@ const mixin = {
     const c = fv.creature;
     if (c.voice) { c.voice.fadeout(300); c.voice = null; }
     c.state = 'gone';
-    if (fv.amb && fv.amb.voice) fv.amb.voice.fadeout(600);
-    fv.amb = null;
     fv.glass.clear(); fv.moat.clear();
     const pos = this._fvSpot(FV_EXIT_RANGE[0], FV_EXIT_RANGE[1]);
     fv.exit = { pos, voice: this.audio.play('exit_morse', { loops: -1, volume: 0.0 }) };
@@ -722,7 +721,7 @@ const HELP_SECTIONS = [
     { title: 'Find the Voice The Creature', sound: null, desc: 'One creature shares each level with you. Creatures are blind, just like you, and they hunt by sound. At rest it breathes calmly and does not move. Step on glass and it hears you: it charges, with a constant aggressive growl and a footstep for every step it runs, heard from where it is. It keeps coming for as long as you are on glass, and for 3 seconds after you are back on concrete, and every charge lasts at least 5 seconds, even if you step straight off the glass; then it stops where it is and breathes calmly again. It runs a little slower than you can run, so when it charges, get off the glass and run. It keeps charging through the chime, too. If it catches you, you lose a life, and it is thrown back far away, still breathing, at rest.' },
     { title: 'Find the Voice Glass', sound: null, desc: 'The floor is concrete, with patches of broken glass, and your footsteps tell you which you are on. Glass is never laid close to where the creature rests, so when you step on it there is always time to turn and get away. Sometimes the guide stands where only glass will take you to her: then you must decide when to cross, and be ready to run.' },
     { title: 'Find the Voice Levels, Lives and Score', sound: null, desc: 'You have three lives and there is no clock: a run lasts until the creature has caught you three times. Each level, the guide stands farther away and the creature runs five steps a minute faster, up to a limit that stays below your run. Each level has new air: the first is always the witch\'s, and after that a different event background each level, never repeated until you have heard them all. Your score is the number of levels you complete, and Find the Voice has its own high score board.' },
-    { title: 'Find the Voice in Chaos Mode', sound: null, desc: 'Chaos Mode has Find the Voice levels too, about as often as islands. There the guide must be found a set number of times: three or four the first time in a run, and one more each time after, at most eight. When you have found her enough, everything else goes silent and only an exit is heard, the battle exit\'s Morse signal; the chaos clock waits until you walk through it. There a catch costs 25 health from the one health bar of the chaos run (see Chaos Health) instead of a life. There, double tap for how many you have found, then your health, the clock and the points.' },
+    { title: 'Find the Voice in Chaos Mode', sound: null, desc: 'Chaos Mode has Find the Voice levels too, about as often as islands. There the guide must be found a set number of times: three or four the first time in a run, and one more each time after, at most eight. When you have found her enough, the creature, the guide and the glass all go, and over the room\'s background, which plays on, an exit is heard, the battle exit\'s Morse signal; the chaos clock waits until you walk through it. There a catch costs 25 health from the one health bar of the chaos run (see Chaos Health) instead of a life. There, double tap for how many you have found, then your health, the clock and the points.' },
   ]],
 ];
 

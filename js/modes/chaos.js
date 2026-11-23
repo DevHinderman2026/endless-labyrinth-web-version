@@ -228,7 +228,19 @@ const mixin = {
     this.driveBand = -1;
     // island
     this._islandStopAll();
-    // Find the Voice, and a world of Ultimate Mode
+    // Find the Voice, The Abyss, and a world of Ultimate Mode
+    // (6.3.7: a Find the Voice or Abyss stage's background now plays on when its exit
+    // opens, so here it fades out under the next level's, as every other level's air
+    // does, instead of being stopped dead by the stage's own stopAll.)
+    for (const m of [this.fv, this.ab]) {
+      const v = m && m.amb ? m.amb.voice : null;
+      if (!v) continue;
+      m.amb = null;
+      if (spared.some((k) => k === v)) continue;
+      v.fadeout(CHAOS_AMBIENCE_FADE * 1000);
+      spared.push(v);
+      fading.push(v);
+    }
     if (this.fv) { this._fvStopAll(); this.fv = null; }
     if (this.ab) { this._abStopAll(); this.ab = null; }
     if (this.ut && this.ut.chaos) this._utChaosLeave();
@@ -609,23 +621,6 @@ const mixin = {
     return false;
   },
 
-  // Take away any credit left in a chaos level once it is won and its clock has
-  // stopped. It goes quietly: its beacon simply stops.
-  _chaosDropCredits() {
-    const c = this.timeCredit;
-    if (c) {
-      if (this.state === TOWER) this._towerStopLoop('credit');
-      else if (c.channel) c.channel.stop();
-      this.timeCredit = null;
-    }
-    if (this.state === DRIVE) {
-      for (const t of (this.driveThings || []).filter((x) => x.kind === 'credit')) {
-        if (t.channel) { t.channel.stop(); t.channel = null; }
-        this.driveThings.splice(this.driveThings.indexOf(t), 1);
-      }
-    }
-  },
-
   // Stereo levels for a chaos credit: heard from anywhere in the room, louder as
   // you close, never fully silent.
   _chaosCreditLevels(pos) {
@@ -645,7 +640,7 @@ const HELP_SECTIONS = [
   ["Chaos Mode", [
     { title: "Chaos Mode", sound: null, desc: "Chaos mode is every mode at once, and the hardest one in the game. Each level is chosen at random from eight kinds: a labyrinth, a battle, one floor of a tower, a stretch of road, an island, a Find the Voice room, an abyss, or, rarest of all, a world of Ultimate Mode. Nothing ever tells you which one you are in. You work it out from what you hear, the labyrinth's drone, the battle drums, the tower's thin stairwell air, your engine, the shore, the guide calling, the lightning of an abyss, which strikes the moment you arrive, or a world's many places, and then you play it by that mode's rules. Finish a level and the next one begins at once, its air fading in over the old one; after a tower floor's stairs it waits until the climb is over and half a second more, with the floor's air still playing. That silence is the mark of a change of place: the stairs, an exit, a road's exit, and then quiet, and then somewhere new. The one exception is leaving an island: the elevator ride itself carries you across, and the next level's sound rises through its doors. Your score is points. Every level you finish that is not an island or a world is worth ten. Islands are worth the most: everything island mode pays for enemies, guardians, treasure and rescued divers, plus one hundred for finishing the island. A world pays as Ultimate Mode does, while you play it. There are no level numbers anywhere in chaos, only points, and when the run ends you hear your points. In the first five kinds of level the clock is the only thing that speaks, apart from the Low air warning on a seabed, which is kept because your air runs out there just as it does in island mode; a Find the Voice room, an abyss and a world speak as those modes do. The walking levels of chaos, its labyrinths, battles, tower floors, islands, Find the Voice rooms, abysses and worlds, turn with you exactly as those modes do on their own: flick left or right to turn, swipe up to walk the way you face, and your facing carries from one walking level to the next. A road does not turn: there north is always ahead, as in driving mode, and the level after a road begins facing north." },
     { title: "Chaos Health", sound: null, desc: "In chaos mode you have one health bar for the whole run, starting at 100. Every level you finish, of any kind, gives you 10 more, and there is no limit, so a long run can carry you well past 100. Everything that hurts you takes from it. In a battle or on an island, an enemy that reaches you costs 25 health and is gone, and the crowd of a battle groans; on an island the guardian costs 25 and keeps coming, but if it reaches you while you are out of shots, it takes all your health at once. On a seabed, once your air runs out, you lose 10 health every second until you reach air again. A crash on a road costs 20 health as well as thirty seconds. In a Find the Voice room or an abyss, a creature catching you costs 25. A tower's throws and a world's dangers take what they always take. A tower's health potion, or a world's rare full heal, brings you back to 100 if you are below it, and other rewards simply add. When your health first falls to 35 or less, you hear three quick falling notes and the voice says Health low and how much you have left; heal above it and it can warn you again. When it reaches nothing, the run is over. Every double tap tells you your health." },
-    { title: "Chaos Time Limit", sound: null, desc: "You get exactly five minutes for the whole run. Not a range, the same five minutes every time, so one run is worth comparing to another. The clock never resets between levels, so survive as many as you can before it runs out. Remaining time is announced every two minutes, and every double tap tells you it, just before your points, or on a keyboard you can press T at any point to check it. The clock stops for the moment of silence between levels and for every elevator ride on an island level. It also stops once a level is won and only its exit is left: from the moment a battle's Morse exit sounds, a road's exit comes into hearing, a tower floor's stairs appear, or the exit of a Find the Voice room or an abyss sounds, until you reach it. In a world of Ultimate Mode the clock runs all the time. Any credit still lying in that level goes at the same moment, its beacon falling silent, so take a credit while the clock is still running. A labyrinth's clock never stops, because there the exit is the whole level." },
+    { title: "Chaos Time Limit", sound: null, desc: "You get exactly five minutes for the whole run. Not a range, the same five minutes every time, so one run is worth comparing to another. The clock never resets between levels, so survive as many as you can before it runs out. Remaining time is announced every two minutes, and every double tap tells you it, just before your points, or on a keyboard you can press T at any point to check it. The clock stops for the moment of silence between levels and for every elevator ride on an island level. It also stops once a level is won and only its exit is left: from the moment a battle's Morse exit sounds, a road's exit comes into hearing, a tower floor's stairs appear, or the exit of a Find the Voice room or an abyss sounds, until you reach it. In a world of Ultimate Mode the clock runs all the time. A credit already lying in that level stays where it is, its beacon still sounding, and you can still take it for its time; so does a cartridge already out in a battle. No new credit or cartridge appears once the level is won. A labyrinth's clock never stops, because there the exit is the whole level." },
     { title: "Chaos Ammo", sound: null, desc: "In chaos mode, each kind of level that shoots keeps its own ammo: battles, islands and roads each have their own inventory, starting at eight shots, and the worlds of Ultimate Mode have theirs (see Chaos Worlds). Shots you have left at the end of a battle wait for you in the next battle, and the same for islands and for roads. Ammo you collect in one kind of level is never added to another, and you never spend one kind's shots in another. A double tap, in each kind of level, tells you that level's own count. Tower floors use items, not ammo, and keep their own stock as well. Neither a Find the Voice room nor an abyss has anything to shoot." },
     { title: "Chaos Battles", sound: null, desc: "A battle inside chaos mode is a level, and that makes it a different game from standard battle mode. It has a fixed number of enemies to eliminate, ammo keeps appearing on the floor while you fight, and once the last enemy is down a Morse code exit appears which you walk to in order to advance the run. There are no waves and no breaks here. Standard battle mode has none of that: no levels, no exit, and ammo only between waves. What the two share is the aiming, the sounds and the endless scaling, and the way enemies come: in turns, never all at once, with the clock waiting whenever none is after you. How many may be after you at once grows with the battles you have played in that run: one at a time in your first three battles, two in the next three, then three, and from the tenth battle four, the most there will ever be. Battles keep their own ammo for the whole chaos run, separate from islands and roads: shots you save in one battle are waiting for you in the next, and they are never used up or added to by any other kind of level. Save them. The arena crowd is there too, as in battle mode: it roars when you shoot an enemy down, and here, since an enemy that reaches you costs health rather than the run (see Chaos Health), it groans when one does." },
     { title: "Chaos Battle Exit", sound: null, desc: "After eliminating every enemy in a chaos battle, find the exit to advance. Once it appears the round is over and your laser is disabled, so just head for it. A Morse code signal is the only thing marking it, and it carries everything you need: it pans left and right for the bearing and grows steadily louder as you close. There is no locating beep on top of it, because the room already has drums, ambience and everything the level made, and a second voice describing the same doorway would be one more thing to listen past." },

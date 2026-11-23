@@ -1579,6 +1579,7 @@ export class Voice {
 
   _startSources(offset, now = this.ctx.currentTime) {
     this.sources = [];
+    if (!(offset > 0)) offset = 0;       // (6.3.7: never below nothing, nor not a number)
     let first = null;
     // (6.3.6) A placed one-shot starts a few milliseconds on (START_LEAD), so that its
     // panner's new place has surely reached the sound's own thread before its first sample.
@@ -1841,7 +1842,11 @@ export class Voice {
   // to go by: AudioEngine.holdAll gives several voices the same one.)
   pause(now = this.ctx.currentTime) {
     if (this.paused || this.stopped || this.ended || !this.dry) return;
-    this.offset = now - this.startedAt;
+    // (6.3.7) Never before the sound's own beginning: a placed one-shot starts a few
+    // milliseconds on (START_LEAD), and a pause landing in those milliseconds gave an
+    // offset below nothing, which the browser refuses to start from when the sound
+    // carries on (the resume stopped part-way, and every beacon after it stayed held).
+    this.offset = Math.max(0, now - this.startedAt);
     this.paused = true;
     this._stopSources();
   }

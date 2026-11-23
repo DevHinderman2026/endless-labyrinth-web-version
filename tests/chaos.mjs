@@ -331,7 +331,8 @@ const playRun = () => page.evaluate(async (seq) => {
     if (now === 'battle' && g.battleExitActive && !battleDone) {
       battleDone = true;
       g.frame(1 / 30);
-      const r = { credit: !!credit && !credit.channel.busy && g.timeCredit === null, morse: t.loops().includes('exit_morse') };
+      // (6.3.7: the credit already out stays, beacon and all, and can still be taken.)
+      const r = { credit: !!credit && credit.channel.busy && g.timeCredit === credit, morse: t.loops().includes('exit_morse') };
       const ammo = g.ammo;
       t.played.length = 0;
       g.input('space');
@@ -341,8 +342,18 @@ const playRun = () => page.evaluate(async (seq) => {
       Math.random = () => 0;               // a battle credit would come at once, if it could
       for (let k = 0; k < 20; k++) g.frame(1 / 30);
       Math.random = rnd;
-      r.noNewCredit = g.timeCredit === null;
       r.clockStill = g.timeLeft === t0 && g.state === 'battle';
+      // Walked onto, it adds its time; and then no new one comes.
+      if (g.timeCredit) {
+        const back = [...g.playerPos]; const c = g.timeCredit;
+        g.playerPos = [c.x, c.y]; g._updateTimeCredit();
+        r.taken = g.timeCredit === null && Math.abs(g.timeLeft - (t0 + c.value)) < 1e-6 && !c.channel.busy;
+        g.playerPos = back;
+        Math.random = () => 0;
+        for (let k = 0; k < 20 && g.state === 'battle'; k++) g.frame(1 / 30);
+        Math.random = rnd;
+      }
+      r.noNewCredit = g.timeCredit === null;
       r.noBeep = !t.played.some((n) => n.startsWith('prox_'));
       out.battleExit.push(r);
     }
@@ -355,23 +366,31 @@ const playRun = () => page.evaluate(async (seq) => {
     if (now === 'tower' && g.towerStairsActive && !towerDone && credit) {
       towerDone = true;
       g.frame(1 / 30);
-      const r = { credit: !!credit && credit.channel.stopped && g.timeCredit === null && !('credit' in g.towerLoops) };
+      const r = { credit: !!credit && !credit.channel.stopped && g.timeCredit === credit && ('credit' in g.towerLoops) };
       r.saw = { had: !!credit, stopped: !!credit && !!credit.channel.stopped, busy: !!credit && !!credit.channel.busy, gone: g.timeCredit === null, loop: 'credit' in g.towerLoops, state: g.state };
       const t0 = g.timeLeft;
       for (let k = 0; k < 15 && g.state === 'tower'; k++) g.frame(1 / 30);
       r.clockStill = g.timeLeft === t0;
       r.saw.t0 = t0; r.saw.t1 = g.timeLeft; r.saw.after = g.state;
+      if (g.state === 'tower' && g.timeCredit) {
+        const back = [...g.playerPos]; const c = g.timeCredit;
+        g.playerPos = [c.x, c.y]; g._updateTimeCredit();
+        r.taken = g.timeCredit === null && Math.abs(g.timeLeft - (t0 + c.value)) < 1e-6 && !('credit' in g.towerLoops);
+        g.playerPos = back;
+      }
       out.towerStairs.push(r);
     }
     // ---- a road won: no credits once the quota is shot; the exit, the clock still
     if (now === 'drive' && !roadDone && g.driveKills >= g.chaosDriveQuota && g.chaosDriveExitSeen) {
       roadDone = true;
       g.frame(1 / 30);
-      const r = { creditGone: !!roadCredit && !g.driveThings.some((x) => x.kind === 'credit'), exit: g.driveThings.some((x) => x.kind === 'exit') };
+      // (6.3.7: a credit still on the road stays on it; none is added.)
+      const before = g.driveThings.filter((x) => x.kind === 'credit');
+      const r = { creditKept: !roadCredit || before.includes(roadCredit) || roadCredit.dist < g.driveDist, exit: g.driveThings.some((x) => x.kind === 'exit') };
       g.driveNextCredit = g.driveDist;
       const t0 = g.timeLeft;
       for (let k = 0; k < 10 && g.state === 'drive'; k++) g.frame(1 / 30);
-      r.noNewCredit = !g.driveThings.some((x) => x.kind === 'credit');
+      r.noNewCredit = g.driveThings.filter((x) => x.kind === 'credit').every((x) => before.includes(x));
       r.clockStill = g.timeLeft === t0 || g.state !== 'drive';
       out.roadExit.push(r);
     }
@@ -466,11 +485,11 @@ check(pointsBad.length === 0 && run.chaosPoints === 10 * kinds.filter((k) => k !
 // The won-level checks.
 const be = run.battleExit[0] || {};
 check(be.morse && be.click && be.noBeep, 'a won chaos battle: the Morse exit sounds, the laser only clicks, no locating beep');
-check(be.credit && be.noNewCredit && be.clockStill, 'from the Morse exit on, the credit lying there goes, no new one comes, and the clock waits');
+check(be.credit && be.taken && be.noNewCredit && be.clockStill, '6.3.7: from the Morse exit on, the credit lying there stays and can be taken for its time, no new one comes, and the clock waits: ' + JSON.stringify(be));
 const ts = run.towerStairs[0] || {};
-check(ts.credit && ts.clockStill, 'a won tower floor: once the stairs sound its credit goes and the clock waits' + (ts.credit && ts.clockStill ? '' : ': ' + JSON.stringify(ts.saw)));
+check(ts.credit && ts.taken && ts.clockStill, '6.3.7: a won tower floor: once the stairs sound its credit stays and can be taken, and the clock waits' + (ts.credit && ts.taken && ts.clockStill ? '' : ': ' + JSON.stringify(ts)));
 const re = run.roadExit[0] || {};
-check(re.creditGone && re.noNewCredit && re.exit && re.clockStill, 'a won road: the credit on it goes, none comes, the exit is on the road and the clock waits');
+check(re.creditKept && re.noNewCredit && re.exit && re.clockStill, '6.3.7: a won road: a credit on it stays, none is added, the exit is on the road and the clock waits: ' + JSON.stringify(re));
 
 // Rooms and gestures follow the level.
 check(JSON.stringify(run.rooms.standard) === '["lab"]' && JSON.stringify(run.rooms.battle) === '["battle"]' && JSON.stringify(run.rooms.tower) === '["tower"]'

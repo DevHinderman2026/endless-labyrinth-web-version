@@ -726,9 +726,10 @@ export class Game {
   _advanceTimer(dt) {
     if (this.isPaused) return false;
     if (this.chaosMode && this._chaosExitOpen()) {
-      // The level is won; the way to its exit costs no time. So a credit still
-      // lying in the level goes: walked to now, it would be free time.
-      this._chaosDropCredits();
+      // The level is won; the way to its exit costs no time. (6.3.7, Russell, 22
+      // November 2026: a credit already out stays, and can still be taken. Until now
+      // it vanished the moment the exit appeared, even one you were a step from. No
+      // new credit appears once the level is won: see _chaosLevelWon.)
       return false;
     }
     this.timeLeft -= dt;
@@ -1144,8 +1145,9 @@ export class Game {
     // mode has no exit at all.
     if (!this._battleEndless() && this.kills >= totalNeeded && !this.obstacles.length && !this.battleExitActive) {
       this.battleExitActive = true;
-      for (const p of this.ammoPickups) if (p.channel) p.channel.stop();
-      this.ammoPickups = [];
+      // (6.3.7, Russell, 22 November 2026: a cartridge already out stays until it is
+      // taken, as a credit does; a chaos battle's shots carry to the next battle. No
+      // new one appears: the quota is met.)
       // Exactly 40 steps away.
       let placed = false;
       for (let i = 0; i < 500; i++) {
@@ -1235,8 +1237,14 @@ export class Game {
   _pauseSounds() { this.pausedVoices = this.audio.pauseBeeps(); }
 
   _resumeSounds() {
-    for (const v of this.pausedVoices) v.resume();
+    // (6.3.7) Every held sound carries on, whatever happens to any one of them, and the
+    // list is always emptied: one that could not start again must not leave the rest
+    // held for the whole level (the next pause holds only what is not held already).
+    const held = this.pausedVoices;
     this.pausedVoices = [];
+    for (const v of held) {
+      try { v.resume(); } catch (e) { try { v.stop(); } catch (e2) { /* gone */ } }
+    }
   }
 
   // Called when the page is hidden: the phone locked, another app, another tab.

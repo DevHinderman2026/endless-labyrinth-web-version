@@ -363,7 +363,7 @@ check(chaos.state === 'abyss' && chaos.chaos && (chaos.quota === 3 || chaos.quot
 check(chaos.chaosWander.moved > 1 && chaos.chaosWander.nearest >= 9 - 1e-6 && !chaos.chaosWander.hunting, 'in Chaos too, the creatures wander while you are still, never within three steps: ' + JSON.stringify(chaos.chaosWander));
 check(chaos.thunder && chaos.cover > 4.9 && !chaos.saidLevel, 'lightning strikes the moment you arrive, and nothing says which stage it is');
 check(chaos.ticks > 0.9 && chaos.caseTime === 30, 'the chaos clock runs, and a case adds its time to it');
-check(chaos.exitLoops.length === 1 && chaos.exitLoops[0] === 'exit_morse' && chaos.creatures === 0, 'the quota smashed, every creature goes and only the exit is heard: ' + chaos.exitLoops.join(', '));
+check(chaos.exitLoops.length === 2 && chaos.exitLoops.includes('exit_morse') && chaos.exitLoops.some((n) => /^event_amb_file_/.test(n)) && chaos.creatures === 0, 'the quota smashed, every creature goes and the exit is heard over the abyss\'s own air, which plays on (6.3.7): ' + chaos.exitLoops.join(', '));
 check(chaos.waits && /^All [34] glass cases\. \d+ health\. Clock \d+ seconds\. \d+ points total\. Facing north\.$/.test(chaos.report), 'the clock waits for you to reach the exit; the report: ' + chaos.report);
 check(chaos.gap === 'chaos_gap' && chaos.points === 10, 'through the exit: ten points, and the next stage');
 check(chaos.second.state === 'abyss' && chaos.second.quota === Math.min(8, chaos.quota + 1) && chaos.second.count === 2, 'the next Abyss stage wants one case more: ' + JSON.stringify(chaos.second));
