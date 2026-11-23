@@ -412,7 +412,20 @@ export const BlocksMixin = {
   _bCrowdsAnItem(x, y, kind = null) {
     const hz = kind || this.ev.hazards;
     if (hz.behavior !== 'listen') return false;
-    return (this.evItems || []).some((t) => Math.hypot(t.x - x, t.y - y) < LISTENER_ROOM);
+    return this._bGoalSpots().some(([gx, gy]) => Math.hypot(gx - x, gy - y) < LISTENER_ROOM);
+  },
+
+  // (Web 6.3.7, Russell, 22 November 2026: Dungeon Keys' guards now listen.) Everything the
+  // player has to reach: the items, and a mission's own things, the key and the door of
+  // Dungeon Keys among them (until now only the items were kept clear of a listener, so a
+  // guard arriving with a new cell could settle beside the key, or face it, and the key
+  // could only be reached by waking it).
+  _bGoalSpots() {
+    const spots = (this.evItems || []).map((t) => [t.x, t.y]);
+    for (const th of [this.mKey, this.mExit, this.mSpot, this.mBomb, this.mBuried, this.mDropoff, this.evExit]) {
+      if (th && th.x !== undefined) spots.push([th.x, th.y]);
+    }
+    return spots;
   },
 
   // ================================================================ levels, endings, stages
@@ -713,8 +726,7 @@ export const BlocksMixin = {
     if (['sneak', 'defend'].includes(this.ev.mission) && !th.kind) return;   // those missions move the first kind themselves
     if (hz.behavior === 'listen') {
       const reach = hz.notice_steps * STEP;
-      const spots = [...this.evItems.map((t) => [t.x, t.y]), [...this.playerPos]];
-      if (this.mExit) spots.push([this.mExit.x, this.mExit.y]);
+      const spots = [...this._bGoalSpots(), [...this.playerPos]];
       const clear = (face) => {
         const cx = th.x + face[0] * reach / 2; const cy = th.y + face[1] * reach / 2;
         return spots.every(([sx, sy]) => Math.hypot(sx - cx, sy - cy) > reach / 2 + STEP);
