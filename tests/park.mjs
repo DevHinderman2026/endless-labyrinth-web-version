@@ -74,12 +74,14 @@ const sizes = await page.evaluate(async () => {
   const m = await import('./js/modes/park.js');
   return { a: [1, 2, 3, 6].map((p) => m.attractionsFor(p)), c: [1, 2, 3, 13, 20].map((p) => m.clockFor(p)),
     deal: [...Array(200)].map(() => m.dealKinds(5)).every((d) => new Set(d).size === 5), deal6: m.dealKinds(6),
+    aim: m.PK_DUCK_AIM,
     far: { dive: m.PK_DIVE_TOKEN, pool: m.PK_POOL_R, wave: [1, 2, 20].map((p) => m.waveLongFor(p)) },
     kinds: m.PK_KINDS, ducks: [1, 2, 7, 20].map((p) => m.ducksFor(p)), dt: [1, 2, 9, 20].map((p) => +m.duckTimeFor(p).toFixed(2)) };
 });
 check(JSON.stringify(sizes.a) === '[3,4,5,8]', 'one more attraction in every park: ' + sizes.a.join(', '));
 check(sizes.c[0] === 130 && sizes.c[1] === 40 + 29 * 4 && sizes.c[3] === 40 + 18 * 15 && sizes.c[4] === 40 + 18 * 22, 'the clock: 30 a park\'s attraction, one less each park, never under 18: ' + sizes.c.join(', '));
 check(sizes.deal, 'every kind comes once before any comes twice');
+check(Math.abs(Math.asin(sizes.aim) * 180 / Math.PI - 50) < 1, `7.1.3: the air rifle takes a duck up to about 50 degrees either side of straight ahead (was 37): ${(Math.asin(sizes.aim) * 180 / Math.PI).toFixed(1)}`);
 check(sizes.far.dive[0] === 14 && sizes.far.dive[1] === 20 && sizes.far.pool === 24 && JSON.stringify(sizes.far.wave) === '[36,38,60]', `7.1.2: the tokens further out: the diving pool's 14 to 20 units from where you land (pool 24), the wave pool's 36 across, 2 more each park, at most 60: ${JSON.stringify(sizes.far)}`);
 check(sizes.kinds.includes('duck') && sizes.kinds.length === 5, '7.1.0: the duck stand is a fifth kind of attraction: ' + sizes.kinds.join(', '));
 check(JSON.stringify(sizes.ducks) === '[4,5,10,10]' && JSON.stringify(sizes.dt) === '[6,5.7,3.6,3.5]', `7.1.0: four ducks in park 1, one more each park, at most ten; six seconds to reach you, 0.3 less each park, never under 3.5: ${sizes.ducks} / ${sizes.dt}`);
@@ -371,7 +373,7 @@ const duck = await page.evaluate(async () => {
   }
   face([g.playerPos[0] + Math.sin(away) * 10, g.playerPos[1] - Math.cos(away) * 10]);
   const others = s.ducks;
-  out.awayOk = others.every((d) => { const [side, ahead] = g._rel(d.pos); return ahead <= 0 || Math.abs(side / Math.hypot(side, ahead)) >= 0.6; });
+  out.awayOk = others.every((d) => { const [side, ahead] = g._rel(d.pos); return ahead <= 0 || Math.abs(side / Math.hypot(side, ahead)) >= 0.77; });
   t.played.length = 0;
   g.input('space');
   out.miss = t.played.includes('wp_rifle') && s.shot === 0 && !t.played.includes('wp_duck_down');
