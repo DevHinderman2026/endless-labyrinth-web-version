@@ -19,9 +19,11 @@
 //                     far side. You hear each wave rise before it breaks: stand still
 //                     as it hits you and you hold your ground; walk into it and it
 //                     carries you three steps back.
-//   the tipping bucket  the water filling it, louder as it fills, then the dump, then a
-//                     chime: run under it now. The token is under it: dash in just after a dump and stay under it a
-//                     moment to take the token. Caught under the dump: the whistle.
+//   the tipping bucket  the water filling it, louder as it fills, then the dump. (7.1.2)
+//                     A bell as it starts filling again: run under it now. Then three
+//                     bells a second apart, a countdown, and a second after the third,
+//                     the dump. The token is under it: dash in just after a dump and stay
+//                     under it a moment to take the token. Caught under the dump: the whistle.
 //   the duck stand    (7.1.0) its carnival organ. Walk up to its counter and take the air
 //                     rifle: a ding says start. Ducks fly in at you from all around, two
 //                     at a time, quacking; turn until one is straight ahead and shoot it
@@ -80,12 +82,12 @@ export const PK_SLIDE_DOWN = 3.0;             // seconds down the slide (Ultimat
 // The diving pool.
 export const PK_BREATH = 15.0;                // seconds of breath under the water
 export const PK_BREATH_WARN = 6.0;            // Low air, then the high beeps, faster and faster
-export const PK_POOL_R = 12.0;                // the pool's bottom, around the board
-export const PK_DIVE_TOKEN = [6.0, 10.0];     // units from where you land that the token lies
+export const PK_POOL_R = 24.0;                // the pool's bottom, around the board (7.1.2: was 12)
+export const PK_DIVE_TOKEN = [14.0, 20.0];    // units from where you land that the token lies (7.1.2, Russell: further; was 6 to 10)
 export const PK_TAKE = 2.5;                   // units: near enough to take a token
 export const PK_BOARD_EVERY = 0.9;            // seconds between bounces on the board, heard on the deck (7.0.1: was 2.2, Russell: more repetitive)
 // The wave pool.
-export const PK_WAVE_LONG = [18.0, 36.0];     // units from its edge to the token: first park, most (1.5 more each park)
+export const PK_WAVE_LONG = [36.0, 60.0];     // units from its edge to the token: first park, most (2 more each park; 7.1.2, Russell: further; was 18 to 36, 1.5 more)
 export const PK_WAVE_WIDE = 7.5;              // units either side of the line across it
 export const PK_WAVE_EVERY = [5.5, 3.5];      // seconds between waves: first park, least (0.15 less each park)
 export const PK_WAVE_BREAK = 0.75;            // seconds into the wave's sound that it breaks over you
@@ -144,12 +146,17 @@ export const PK_ROOM = 'hall';
 // attraction is heard louder and further, and never quieter than PK_FLOOR from
 // anywhere in the park; the wave pool also sounds a breaking wave from its edge every
 // few seconds (the waves' loop alone was lost under the park's own splashing); and
-// when the bucket has dumped, a chime says: run under it now.
+// when the bucket has dumped, a chime says: run under it now (7.1.2: a bell, and a
+// countdown of three bells before the next dump, PK_BUCKET_BELL).
 export const PK_AMBIENCE = 0.55;              // the park's air (Ultimate's backgrounds: 0.8)
 export const PK_FLOOR = 0.3;                  // an attraction's least loudness, however far
 export const PK_RANGE = 90.0;                 // units over which an attraction's sound falls to PK_FLOOR
 export const PK_WAVE_CALL = 2.6;              // seconds between the wave pool's breaking waves heard on the deck
-export const PK_BUCKET_CHIME = 'evt_chime_clear';
+// (7.1.2, Russell: a bell instead of the chime, and a countdown.) The bell (the event
+// library's evt_bell_real_6) rings once as the bucket starts filling again, then
+// PK_COUNTDOWN times a second apart before the dump, which comes a second after the last.
+export const PK_BUCKET_BELL = 'evt_bell_real_6';
+export const PK_COUNTDOWN = 3;
 export const PK_SEND = 0.4;                   // how much of a park sound goes into the hall's echo
 
 // ------------------------------------------------------------------ helpers
@@ -165,7 +172,7 @@ export function attractionsFor(park) { return PK_FIRST + Math.max(0, park - 1); 
 export function clockEach(park) { return Math.max(PK_CLOCK_EACH_MIN, PK_CLOCK_EACH - PK_CLOCK_DROP * Math.max(0, park - 1)); }
 export function clockFor(park, n = attractionsFor(park)) { return PK_CLOCK_BASE + clockEach(park) * n; }
 // The attractions' own difficulty, by the park (in Chaos, by the visit).
-export function waveLongFor(park) { return Math.min(PK_WAVE_LONG[1], PK_WAVE_LONG[0] + 1.5 * Math.max(0, park - 1)); }
+export function waveLongFor(park) { return Math.min(PK_WAVE_LONG[1], PK_WAVE_LONG[0] + 2.0 * Math.max(0, park - 1)); }
 export function waveEveryFor(park) { return Math.max(PK_WAVE_EVERY[1], PK_WAVE_EVERY[0] - 0.15 * Math.max(0, park - 1)); }
 export function fillFor(park) { return Math.max(PK_FILL[1], PK_FILL[0] - 0.2 * Math.max(0, park - 1)); }
 export function ducksFor(park) { return Math.min(PK_DUCKS[1], PK_DUCKS[0] + Math.max(0, park - 1)); }
@@ -205,6 +212,7 @@ const mixin = {
     this.audio.prepare(PK_BACKGROUND);
     this.audio.prepare(PK_WAVES_LOOP, 'park:waves');
     this.audio.prepare(PK_BUCKET_FILL, 'park:fill');
+    if (this.audio.has(PK_BUCKET_BELL)) this.audio.prepare(PK_BUCKET_BELL, 'park:bell');
     this.audio.prepare(PK_ORGAN, 'park:organ');
     if (this.audio.has(PK_QUACK)) this.audio.prepare(PK_QUACK, 'park:duck');
     const prev = this.pk;
@@ -570,8 +578,15 @@ const mixin = {
         at.under += dt;
         if (at.under >= PK_GRAB) { this._pkQuiet(at); this._pkToken(at); return; }
       } else at.under = 0;
+      // The countdown: a bell at three, two and one seconds before the dump.
+      const due = PK_COUNTDOWN - Math.ceil(fill - at.t - 1e-9) + 1;    // how many bells should have rung by now
+      if (due >= 1 && due <= PK_COUNTDOWN && (at.counted || 0) < due) {
+        at.counted = due;
+        this._pkBell(at);
+      }
       if (at.t >= fill) {
         at.phase = 'dump'; at.t = 0;
+        this._pkBellFade(at);
         if (at.voice) { at.voice.fadeout(120); at.voice = null; }
         const [l, r] = this._pkLevels(at.pos, 1.0);
         if (this.audio.has(PK_BUCKET_DUMP)) this._pkPlay(PK_BUCKET_DUMP, { at: at.pos, volume: Math.max(l, r, 0.8), keep: true });
@@ -588,11 +603,21 @@ const mixin = {
       this._pkWhistle();
     }
     if (at.t >= PK_DUMP) {
-      at.phase = 'fill'; at.t = 0; at.caught = false;
-      // The dump is over: the chime says run under it now.
-      const [l, r] = this._pkLevels(at.pos, 1.0);
-      if (this.audio.has(PK_BUCKET_CHIME)) this._pkPlay(PK_BUCKET_CHIME, { at: at.pos, volume: Math.max(l, r), keep: true });
+      at.phase = 'fill'; at.t = 0; at.caught = false; at.counted = 0;
+      // The dump is over: a bell says run under it now.
+      this._pkBell(at);
     }
+  },
+
+  // (The bell rings on for six seconds: each new one, and the dump, fades the one
+  // before, so the countdown is three clear strokes.)
+  _pkBell(at) {
+    this._pkBellFade(at);
+    const [l, r] = this._pkLevels(at.pos, 1.0);
+    if (this.audio.has(PK_BUCKET_BELL)) at.bell = this._pkPlay(PK_BUCKET_BELL, { at: at.pos, volume: Math.max(l, r), keep: true });
+  },
+  _pkBellFade(at) {
+    if (at.bell) { try { at.bell.fadeout(250); } catch (e) { /* gone */ } at.bell = null; }
   },
 
   // ---------------------------------------------------------------- the duck stand (7.1.0)
@@ -837,7 +862,7 @@ const mixin = {
     this._pkSilence(pk, true);
     pk.exit = null;
     pk.stopped = true;
-    for (const k of ['park:waves', 'park:fill', 'park:organ', 'park:duck']) this.audio.pins.delete(k);
+    for (const k of ['park:waves', 'park:fill', 'park:bell', 'park:organ', 'park:duck']) this.audio.pins.delete(k);
   },
 };
 
@@ -846,9 +871,9 @@ const HELP_SECTIONS = [
   ['Water Park', [
     { title: 'Water Park', sound: null, desc: 'Water Park is a mode of its own, new in 7.0.0. You are in a water park on a summer\'s day, a big one that rings like a huge hall, and its attractions are all around you, each found by its own sound, which you can hear from anywhere in the park. Every attraction holds one token. Win every token before closing time, and a gate opens to the next park, which is bigger. Nothing in the park can hurt you: only closing time ends your visit. The park has a fence all round it, a little beyond its farthest attraction: walk into it and it buzzes, as the edge of Battle Mode\'s arena does, and you stay put; meet it at a slant and you carry on along it. You turn and walk as in every walking mode (see General Turning). Double tap for the level, the tokens you have found, the seconds left and the way you are facing.' },
     { title: 'Water Park Water Slide', sound: null, desc: 'The water slide is found by its staircase beacon, Tower Mode\'s stairs: three short chimes rising, each with a footstep on metal stairs under it. Walk up to it and you climb the stairs by yourself, then ride straight down, the rush of the water building to the splash. The token is yours at the splash at the bottom, and you come up beside the slide. While you are on the slide you cannot walk or pause.' },
-    { title: 'Water Park Diving Pool', sound: null, desc: 'The diving pool is found by someone bouncing on its diving board, again and again, about once a second. Walk onto the board and you dive in. Under the water you hold your breath for fifteen seconds. The token lies on the bottom, a few steps away: you hear its bell ringing, so turn until it is centred and swim to it, each step a swimming stroke. Reach it and you come back up with it. With six seconds of breath left, the voice says Low air and the high beeps begin, faster and faster. Run out of breath and the lifeguard blows the whistle: you come back up at the board without the token, and it costs five seconds. Dive again to try once more.' },
+    { title: 'Water Park Diving Pool', sound: null, desc: 'The diving pool is found by someone bouncing on its diving board, again and again, about once a second. Walk onto the board and you dive in. Under the water you hold your breath for fifteen seconds. The token lies on the bottom, well out across the pool, five to seven strokes away: you hear its bell ringing, so turn until it is centred and swim to it, each step a swimming stroke. Reach it and you come back up with it. With six seconds of breath left, the voice says Low air and the high beeps begin, faster and faster. Run out of breath and the lifeguard blows the whistle: you come back up at the board without the token, and it costs five seconds. Dive again to try once more.' },
     { title: 'Water Park Wave Pool', sound: null, desc: 'The wave pool is found by its waves: you hear them rolling, and a wave breaking at its edge every few seconds. Walk into it at its edge, and the token\'s bell rings from its far side. Wade toward it, one step at a time. Every few seconds a wave comes: you hear it rise ahead of you, and then break over you. Stand still as it breaks and you hold your ground. Take a step just as it breaks, and it carries you three steps back, and if that takes you out of the pool, you are back at its edge. Reach the far side and the token is yours. The waves come a little more often in every park, and the pool is a little longer.' },
-    { title: 'Water Park Tipping Bucket', sound: null, desc: 'The tipping bucket is found by the water filling it, louder and louder as it fills, until it tips and dumps its water with a crash. As the last of the water falls, a chime rings: that is your moment to run under it, before it fills again. The token is right under it. Dash in at the chime, and stay under it for a moment, a second, to take the token. If the bucket dumps while you are under it, or close beside it, you are caught: the lifeguard blows the whistle, you are pushed back from the bucket, and it costs five seconds. The bucket fills a little faster in every park.' },
+    { title: 'Water Park Tipping Bucket', sound: null, desc: 'The tipping bucket is found by the water filling it, louder and louder as it fills, until it tips and dumps its water with a crash. As the last of the water falls, a bell rings: that is your moment to run under it, before it fills again. The token is right under it. Dash in at the bell, and stay under it for a moment, a second, to take the token. Before the next dump the bell counts down: three bells, one second apart, and a second after the third the water comes down. If the bucket dumps while you are under it, or close beside it, you are caught: the lifeguard blows the whistle, you are pushed back from the bucket, and it costs five seconds. The bucket fills a little faster in every park.' },
     { title: 'Water Park Duck Stand', sound: null, desc: 'The duck stand, new in 7.1.0, is found by its carnival organ music. Walk up to its counter and you take the air rifle: a ding says start shooting. Ducks fly in toward you from all around, two in the air at once, each quacking as it comes, louder as it nears. Turn until a duck is centred straight ahead of you and shoot, with a two-finger tap or Space: a hit knocks it down with a clang. A shot takes only a duck in front of you. There is no ammo to collect, but the rifle takes half a second to cock again between shots. You stay at the counter while you shoot, turning only. If a duck reaches you, it hits you: the lifeguard blows the whistle, it costs ten seconds, and another duck comes in its place. Shoot down every duck and the token is yours. The first park has four ducks, each taking six seconds to reach you; every new park has one more duck, up to ten, and they fly a little faster, never taking less than three and a half seconds.' },
     { title: 'Water Park Closing Time and Score', sound: null, desc: 'Each park has its own clock: forty seconds, and thirty more for each attraction, with one second less for each attraction in every new park, never less than eighteen. The first park has three attractions, two minutes and ten seconds. Every token you win is announced with how many are left to go. When the last one is won, the clock stops, a bell rings, and the gate is heard, the battle exit\'s Morse signal: walk through it to the next park, which has one more attraction. Time left over is not carried on. When closing time comes, the bell rings and your visit is over. Your score is the number of parks you finished, and Water Park has its own high score board.' },
     { title: 'Water Park in Chaos Mode', sound: null, desc: 'Chaos Mode has water parks too, one park to a level, which you know by the busy pool and its children. A water park in chaos has three attractions the first time in a run, and one more each time after, at most six. There is no park clock there: each token you win adds fifteen seconds to the chaos clock, and a mistake takes its seconds off it. When the last token is won, the exit is heard over the park, which plays on, and the chaos clock waits until you walk through it. There, double tap for the tokens found, then your health, the clock and the points.' },
@@ -866,7 +891,7 @@ const HELP_DEMOS = [
     { title: 'A Wave', sound: PK_WAVE, desc: 'A wave rising and breaking in the wave pool. Stand still as it breaks.' },
     { title: 'Bucket Filling', sound: PK_BUCKET_FILL, desc: 'The tipping bucket filling, louder as it fills.' },
     { title: 'Bucket Dumping', sound: PK_BUCKET_DUMP, desc: 'The tipping bucket dumping its water.' },
-    { title: 'Bucket Chime', sound: PK_BUCKET_CHIME, desc: 'The dump is over: run under the bucket now.' },
+    { title: 'Bucket Bell', sound: PK_BUCKET_BELL, desc: 'The bucket\'s bell. Once as the dump ends: run under the bucket now. Three times, a second apart, as the countdown to the next dump.' },
     { title: 'Duck Stand Organ', sound: PK_ORGAN, desc: 'The carnival organ that marks the duck stand.' },
     { title: 'Duck Stand Ding', sound: PK_DING, desc: 'At the counter: start shooting.' },
     { title: 'A Duck', sound: PK_QUACK, desc: 'A duck flying in toward you. Turn until it is centred, and shoot.' },

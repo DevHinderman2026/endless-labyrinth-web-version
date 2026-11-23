@@ -74,11 +74,13 @@ const sizes = await page.evaluate(async () => {
   const m = await import('./js/modes/park.js');
   return { a: [1, 2, 3, 6].map((p) => m.attractionsFor(p)), c: [1, 2, 3, 13, 20].map((p) => m.clockFor(p)),
     deal: [...Array(200)].map(() => m.dealKinds(5)).every((d) => new Set(d).size === 5), deal6: m.dealKinds(6),
+    far: { dive: m.PK_DIVE_TOKEN, pool: m.PK_POOL_R, wave: [1, 2, 20].map((p) => m.waveLongFor(p)) },
     kinds: m.PK_KINDS, ducks: [1, 2, 7, 20].map((p) => m.ducksFor(p)), dt: [1, 2, 9, 20].map((p) => +m.duckTimeFor(p).toFixed(2)) };
 });
 check(JSON.stringify(sizes.a) === '[3,4,5,8]', 'one more attraction in every park: ' + sizes.a.join(', '));
 check(sizes.c[0] === 130 && sizes.c[1] === 40 + 29 * 4 && sizes.c[3] === 40 + 18 * 15 && sizes.c[4] === 40 + 18 * 22, 'the clock: 30 a park\'s attraction, one less each park, never under 18: ' + sizes.c.join(', '));
 check(sizes.deal, 'every kind comes once before any comes twice');
+check(sizes.far.dive[0] === 14 && sizes.far.dive[1] === 20 && sizes.far.pool === 24 && JSON.stringify(sizes.far.wave) === '[36,38,60]', `7.1.2: the tokens further out: the diving pool's 14 to 20 units from where you land (pool 24), the wave pool's 36 across, 2 more each park, at most 60: ${JSON.stringify(sizes.far)}`);
 check(sizes.kinds.includes('duck') && sizes.kinds.length === 5, '7.1.0: the duck stand is a fifth kind of attraction: ' + sizes.kinds.join(', '));
 check(JSON.stringify(sizes.ducks) === '[4,5,10,10]' && JSON.stringify(sizes.dt) === '[6,5.7,3.6,3.5]', `7.1.0: four ducks in park 1, one more each park, at most ten; six seconds to reach you, 0.3 less each park, never under 3.5: ${sizes.ducks} / ${sizes.dt}`);
 
@@ -307,15 +309,33 @@ const bucket = await page.evaluate(async () => {
   while (at.phase !== 'dump') g.frame(1 / 30);
   t.played.length = 0;
   while (at.phase === 'dump') g.frame(1 / 30);
-  const chime = t.played.includes('evt_chime_clear');
+  const chime = t.played.includes('evt_bell_real_6');
+  // (7.1.2) The countdown: three bells a second apart, and the dump a second after the third.
+  const marks = []; let clock = 0; const fillT = (await import('./js/modes/park.js')).fillFor(pk.park);
+  const pos = [...g.playerPos]; g.playerPos = [at.pos[0] + 30, at.pos[1]];
+  t.played.length = 0;
+  while (at.phase !== 'dump' && clock < 20) {
+    const n = t.played.length; g.frame(1 / 30); clock += 1 / 30;
+    for (const name of t.played.slice(n)) if (name === 'evt_bell_real_6' || name === 'wp_bucket_dump') marks.push([name, +clock.toFixed(2)]);
+  }
+  g.playerPos = pos;
+  const countdown = { marks, fill: fillT, len: (() => { const e = window.__el.audio.entries.get('evt_bell_real_6'); return e && e.dry ? +(e.dry.frames / 44100).toFixed(2) : null; })() };
+  // Then wait for the next dump, and dash in.
+  while (at.phase === 'dump') g.frame(1 / 30);
   await t.walkTo(at.pos, 0.5);
   await t.frames(1.3);
-  return { fill, caught, chime, done: at.done, token: t.played.includes('wp_token') };
+  return { fill, caught, chime, countdown, done: at.done, token: t.played.includes('wp_token') };
 });
 check(bucket.fill === 'wp_bucket_fill', 'the bucket is heard filling');
 check(bucket.caught.dump && bucket.caught.whistle && bucket.caught.d > 7.9 && !bucket.caught.done, `caught under the dump: the whistle, pushed back (${bucket.caught.d.toFixed(1)} away)`);
 check(bucket.caught.lost > 5 && bucket.caught.lost < 6, `the whistle cost 5 seconds: ${bucket.caught.lost}`);
-check(bucket.chime, '7.0.1: as the dump ends, a chime says run under it now');
+check(bucket.chime, '7.1.2: as the dump ends, a bell (evt_bell_real_6) says run under it now');
+{
+  const m = bucket.countdown.marks; const bells = m.filter(([n]) => n === 'evt_bell_real_6').map(([, x]) => x); const dump = (m.find(([n]) => n === 'wp_bucket_dump') || [])[1];
+  const gaps = bells.slice(1).map((x, i) => +(x - bells[i]).toFixed(2));
+  check(bells.length === 3 && gaps.every((g) => Math.abs(g - 1) < 0.07) && dump !== undefined && Math.abs(dump - bells[2] - 1) < 0.07 && Math.abs(dump - bucket.countdown.fill) < 0.1,
+    `7.1.2: before the dump, three bells a second apart, and the dump a second after the third: ${JSON.stringify(m)} (the bell is ${bucket.countdown.len} s long)`);
+}
 check(bucket.done && bucket.token, 'in just after a dump, and a moment under it: the token');
 
 // ------------------------------------------------------------------ 7.1.0: the duck stand
