@@ -140,6 +140,32 @@ const SEND_BIG = 0.05;           // of a level: a change at least this big is se
 // ends on the level itself; nothing is left open, and nothing is nothing.
 const LEVEL_GLIDE = 0.012;       // seconds: a level's change (was a 0.008 time constant)
 const SEND_GLIDE = 0.12;         // seconds: an echo send's, and the master level's (was a 0.05 time constant)
+// (Web 7.1.5, Russell, 23 November 2026: "it keeps coming back ... I believe it's because of
+// something not being cleared ... the pause menu is always stopping it".) Nothing in the
+// game's sound piles up any more: over long runs the nodes the sound thread visits stay a
+// few hundred, and no setting's list of scheduled changes grows past a handful, by Safari's
+// own rules for keeping them (tested in Chromium, both). What a pause stops is movement. An
+// HRTF panner works in one of two ways. While nothing about it is gliding, it works out the
+// way its sound lies once a slice of sound (128 samples). While its place is gliding (the
+// sound or you walking) or the listener's facing is (you turning: every panner at once), it
+// works the way out afresh for every one of the 128 samples, the costliest sum it does, and
+// then uses only the first of them: the HRTF itself is chosen once a slice either way (Safari's
+// PannerNode and Chromium's alike). Measured in Chromium, sixteen panners: 3.4 percent of a
+// core with nothing moving, 22 percent turning or walking. In the game, a pause stops every
+// glide at once, which is why the static stopped with it. Now the panners' places and the
+// listener's facing are worked out once a slice (their automation rate is 'k-rate'): what is
+// heard is the same to within a millionth (tests/web715.mjs renders both). The sixteen panners
+// turning or walking: 5.7 percent, a quarter. Battle Mode turning: 24 percent before, 12 now,
+// against 8 standing still. (A browser that will not have it keeps the old way.)
+const PANNER_PARAMS = ['positionX', 'positionY', 'positionZ', 'orientationX', 'orientationY', 'orientationZ'];
+const LISTENER_PARAMS = ['positionX', 'positionY', 'positionZ', 'forwardX', 'forwardY', 'forwardZ', 'upX', 'upY', 'upZ'];
+function perSlice(owner, names) {
+  if (!owner) return owner;
+  for (const k of names) {
+    try { if (owner[k] && owner[k].automationRate !== 'k-rate') owner[k].automationRate = 'k-rate'; } catch (e) { /* kept per sample, as before */ }
+  }
+  return owner;
+}
 
 // A glide that ends: from where the parameter is now, straight to v.
 function glideTo(p, v, now, secs) {
@@ -307,10 +333,16 @@ function newContext() {
     // ever restarted it: the static first crept in the day after 6.1.0. Now the engine runs
     // at the device's own rate and nothing is converted on the way out; each recording is
     // converted once, when it is decoded (see SRC_RATE).
-    return new AC({ latencyHint: 'balanced' });
+    // (7.1.5: the listener's place and facing worked out once a slice, see PANNER_PARAMS.)
+    return listenerPerSlice(new AC({ latencyHint: 'balanced' }));
   } catch (e) {
-    return new AC();
+    return listenerPerSlice(new AC());
   }
+}
+
+function listenerPerSlice(ctx) {
+  try { perSlice(ctx.listener, LISTENER_PARAMS); } catch (e) { /* as before */ }
+  return ctx;
 }
 
 // The end of the chain: the master gain, then the limiter, then the speakers.
@@ -1131,6 +1163,7 @@ export class AudioEngine {
       p.refDistance = 1;
       p.maxDistance = 10000;
       p.rolloffFactor = 0;
+      perSlice(p, PANNER_PARAMS);      // (7.1.5: see PANNER_PARAMS)
       p.connect(bus);
     }
     p.__bus = bus;
@@ -1476,6 +1509,7 @@ export class Voice {
         p.refDistance = 1;
         p.maxDistance = 10000;
         p.rolloffFactor = 0;
+        perSlice(p, PANNER_PARAMS);    // (7.1.5: see PANNER_PARAMS)
         Voice._place(p, x, 0, 0, ctx.currentTime, true);
         return p;
       };

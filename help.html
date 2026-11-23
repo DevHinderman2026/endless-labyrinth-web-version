@@ -9,7 +9,7 @@
   <link rel="icon" href="icons/icon-192.png">
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
   <meta name="theme-color" content="#0c0f14">
-  <link rel="stylesheet" href="css/site.css?v=7.1.4">
+  <link rel="stylesheet" href="css/site.css?v=7.1.5">
 </head>
 <body>
   <header class="site">
@@ -64,7 +64,7 @@
       <p>Everything in the game is in the sound: where things are, how far away they are, and whether they are in front of you or behind you. Left and right are the whole point. A phone's own speaker, or a laptop's, mixes left and right together, so you cannot tell which way to turn. Any headphones or earbuds will do, wired or Bluetooth, as long as the left one is in your left ear.</p>
 
       <h3 id="faq-static">I hear static or crackling. What should I do?</h3>
-      <p>It can happen, mostly on an iPhone or iPad after a while of play: a slight static or crackle on the edges of the sounds. To clear it, pause the game and resume it: tap with three fingers, or press the P key on a keyboard, then do the same again. The static goes away. If it comes back later, pause and resume again. It does no harm to the game or your scores. Version 7.0.0 found its cause and fixed it at the source: the game's sound was being converted to the rate your device plays at, all the time you played, and now it is made at that rate. If you still hear it after 7.0.0, pausing and resuming still clears it, and please tell me, at the address on the home page.</p>
+      <p>It can happen, mostly on an iPhone or iPad after a while of play: a slight static or crackle on the edges of the sounds. To clear it, pause the game and resume it: tap with three fingers, or press the P key on a keyboard, then do the same again. The static goes away. If it comes back later, pause and resume again. It does no harm to the game or your scores. Two causes have been found and fixed. In version 7.0.0: the game's sound was being converted to the rate your device plays at, all the time you played, and now it is made at that rate. In version 7.1.5: while you turned or walked, every sound placed around you had its direction worked out far more often than it needed, which a pause stopped at once; now it is worked out only as often as it is used, and what you hear is the same. If you still hear static, pausing and resuming still clears it, and please tell me, at the address on the home page.</p>
 
       <h3 id="faq-voice">Why does the voice change when a run begins?</h3>
       <p>During a run the game speaks with its own voice, Bella: a natural American voice made by Kokoro, an open speech model, and heard with the echo of the room you are in, so it sounds as if it is there with you. The menus, the help, Game Over and your final score keep your device's own voice, at the speech rate you chose. Bella always speaks at one steady speed. Every line she says is a recording, made once for the game and downloaded with its sounds, so she is ready the moment a run begins and sounds the same on every device; a score, a time or a direction is said by joining the recordings of its words and numbers. Only words typed into an event made after this version have no recording, and your device's own voice says those, by itself. There is nothing to set. The guide in Find the Voice and the characters in Ultimate Mode's safe zones are recorded the same way, each with a voice of their own.</p>
@@ -90,66 +90,66 @@
   <script type="importmap">
   {
     "imports": {
-      "./js/accessibility.js": "./js/accessibility.js?v=7.1.4",
-      "./js/audio.js": "./js/audio.js?v=7.1.4",
-      "./js/backup.js": "./js/backup.js?v=7.1.4",
-      "./js/backups-page.js": "./js/backups-page.js?v=7.1.4",
-      "./js/bella-lexicon.js": "./js/bella-lexicon.js?v=7.1.4",
-      "./js/bella-words.js": "./js/bella-words.js?v=7.1.4",
-      "./js/braille.js": "./js/braille.js?v=7.1.4",
-      "./js/calendar.js": "./js/calendar.js?v=7.1.4",
-      "./js/device.js": "./js/device.js?v=7.1.4",
-      "./js/display.js": "./js/display.js?v=7.1.4",
-      "./js/game.js": "./js/game.js?v=7.1.4",
-      "./js/gestures.js": "./js/gestures.js?v=7.1.4",
-      "./js/help-data.js": "./js/help-data.js?v=7.1.4",
-      "./js/help-page.js": "./js/help-page.js?v=7.1.4",
-      "./js/keywords.js": "./js/keywords.js?v=7.1.4",
-      "./js/main.js": "./js/main.js?v=7.1.4",
-      "./js/modes/abyss.js": "./js/modes/abyss.js?v=7.1.4",
-      "./js/modes/chaos.js": "./js/modes/chaos.js?v=7.1.4",
-      "./js/modes/driving.js": "./js/modes/driving.js?v=7.1.4",
-      "./js/modes/events/blocks.js": "./js/modes/events/blocks.js?v=7.1.4",
-      "./js/modes/events/engine.js": "./js/modes/events/engine.js?v=7.1.4",
-      "./js/modes/events/feed.js": "./js/modes/events/feed.js?v=7.1.4",
-      "./js/modes/events/help.js": "./js/modes/events/help.js?v=7.1.4",
-      "./js/modes/events/missions.js": "./js/modes/events/missions.js?v=7.1.4",
-      "./js/modes/events/more-spec.js": "./js/modes/events/more-spec.js?v=7.1.4",
-      "./js/modes/events/more.js": "./js/modes/events/more.js?v=7.1.4",
-      "./js/modes/events/py.js": "./js/modes/events/py.js?v=7.1.4",
-      "./js/modes/events/schema.js": "./js/modes/events/schema.js?v=7.1.4",
-      "./js/modes/events/sign.js": "./js/modes/events/sign.js?v=7.1.4",
-      "./js/modes/events/sounds.js": "./js/modes/events/sounds.js?v=7.1.4",
-      "./js/modes/events/tunes.js": "./js/modes/events/tunes.js?v=7.1.4",
-      "./js/modes/events/wording.js": "./js/modes/events/wording.js?v=7.1.4",
-      "./js/modes/events.js": "./js/modes/events.js?v=7.1.4",
-      "./js/modes/findvoice-guide.js": "./js/modes/findvoice-guide.js?v=7.1.4",
-      "./js/modes/findvoice.js": "./js/modes/findvoice.js?v=7.1.4",
-      "./js/modes/index.js": "./js/modes/index.js?v=7.1.4",
-      "./js/modes/island.js": "./js/modes/island.js?v=7.1.4",
-      "./js/modes/park.js": "./js/modes/park.js?v=7.1.4",
-      "./js/modes/tower.js": "./js/modes/tower.js?v=7.1.4",
-      "./js/modes/ultimate/cast.js": "./js/modes/ultimate/cast.js?v=7.1.4",
-      "./js/modes/ultimate/help.js": "./js/modes/ultimate/help.js?v=7.1.4",
-      "./js/modes/ultimate/world.js": "./js/modes/ultimate/world.js?v=7.1.4",
-      "./js/modes/ultimate.js": "./js/modes/ultimate.js?v=7.1.4",
-      "./js/packs.js": "./js/packs.js?v=7.1.4",
-      "./js/site.js": "./js/site.js?v=7.1.4",
-      "./js/sound-rules.js": "./js/sound-rules.js?v=7.1.4",
-      "./js/speech.js": "./js/speech.js?v=7.1.4",
-      "./js/stats.js": "./js/stats.js?v=7.1.4",
-      "./js/storage.js": "./js/storage.js?v=7.1.4",
-      "./js/turning.js": "./js/turning.js?v=7.1.4",
-      "./js/update-alert.js": "./js/update-alert.js?v=7.1.4",
-      "./js/version.js": "./js/version.js?v=7.1.4",
-      "./js/voice-text.js": "./js/voice-text.js?v=7.1.4",
-      "./js/voice.js": "./js/voice.js?v=7.1.4",
-      "./js/wetworker.js": "./js/wetworker.js?v=7.1.4"
+      "./js/accessibility.js": "./js/accessibility.js?v=7.1.5",
+      "./js/audio.js": "./js/audio.js?v=7.1.5",
+      "./js/backup.js": "./js/backup.js?v=7.1.5",
+      "./js/backups-page.js": "./js/backups-page.js?v=7.1.5",
+      "./js/bella-lexicon.js": "./js/bella-lexicon.js?v=7.1.5",
+      "./js/bella-words.js": "./js/bella-words.js?v=7.1.5",
+      "./js/braille.js": "./js/braille.js?v=7.1.5",
+      "./js/calendar.js": "./js/calendar.js?v=7.1.5",
+      "./js/device.js": "./js/device.js?v=7.1.5",
+      "./js/display.js": "./js/display.js?v=7.1.5",
+      "./js/game.js": "./js/game.js?v=7.1.5",
+      "./js/gestures.js": "./js/gestures.js?v=7.1.5",
+      "./js/help-data.js": "./js/help-data.js?v=7.1.5",
+      "./js/help-page.js": "./js/help-page.js?v=7.1.5",
+      "./js/keywords.js": "./js/keywords.js?v=7.1.5",
+      "./js/main.js": "./js/main.js?v=7.1.5",
+      "./js/modes/abyss.js": "./js/modes/abyss.js?v=7.1.5",
+      "./js/modes/chaos.js": "./js/modes/chaos.js?v=7.1.5",
+      "./js/modes/driving.js": "./js/modes/driving.js?v=7.1.5",
+      "./js/modes/events/blocks.js": "./js/modes/events/blocks.js?v=7.1.5",
+      "./js/modes/events/engine.js": "./js/modes/events/engine.js?v=7.1.5",
+      "./js/modes/events/feed.js": "./js/modes/events/feed.js?v=7.1.5",
+      "./js/modes/events/help.js": "./js/modes/events/help.js?v=7.1.5",
+      "./js/modes/events/missions.js": "./js/modes/events/missions.js?v=7.1.5",
+      "./js/modes/events/more-spec.js": "./js/modes/events/more-spec.js?v=7.1.5",
+      "./js/modes/events/more.js": "./js/modes/events/more.js?v=7.1.5",
+      "./js/modes/events/py.js": "./js/modes/events/py.js?v=7.1.5",
+      "./js/modes/events/schema.js": "./js/modes/events/schema.js?v=7.1.5",
+      "./js/modes/events/sign.js": "./js/modes/events/sign.js?v=7.1.5",
+      "./js/modes/events/sounds.js": "./js/modes/events/sounds.js?v=7.1.5",
+      "./js/modes/events/tunes.js": "./js/modes/events/tunes.js?v=7.1.5",
+      "./js/modes/events/wording.js": "./js/modes/events/wording.js?v=7.1.5",
+      "./js/modes/events.js": "./js/modes/events.js?v=7.1.5",
+      "./js/modes/findvoice-guide.js": "./js/modes/findvoice-guide.js?v=7.1.5",
+      "./js/modes/findvoice.js": "./js/modes/findvoice.js?v=7.1.5",
+      "./js/modes/index.js": "./js/modes/index.js?v=7.1.5",
+      "./js/modes/island.js": "./js/modes/island.js?v=7.1.5",
+      "./js/modes/park.js": "./js/modes/park.js?v=7.1.5",
+      "./js/modes/tower.js": "./js/modes/tower.js?v=7.1.5",
+      "./js/modes/ultimate/cast.js": "./js/modes/ultimate/cast.js?v=7.1.5",
+      "./js/modes/ultimate/help.js": "./js/modes/ultimate/help.js?v=7.1.5",
+      "./js/modes/ultimate/world.js": "./js/modes/ultimate/world.js?v=7.1.5",
+      "./js/modes/ultimate.js": "./js/modes/ultimate.js?v=7.1.5",
+      "./js/packs.js": "./js/packs.js?v=7.1.5",
+      "./js/site.js": "./js/site.js?v=7.1.5",
+      "./js/sound-rules.js": "./js/sound-rules.js?v=7.1.5",
+      "./js/speech.js": "./js/speech.js?v=7.1.5",
+      "./js/stats.js": "./js/stats.js?v=7.1.5",
+      "./js/storage.js": "./js/storage.js?v=7.1.5",
+      "./js/turning.js": "./js/turning.js?v=7.1.5",
+      "./js/update-alert.js": "./js/update-alert.js?v=7.1.5",
+      "./js/version.js": "./js/version.js?v=7.1.5",
+      "./js/voice-text.js": "./js/voice-text.js?v=7.1.5",
+      "./js/voice.js": "./js/voice.js?v=7.1.5",
+      "./js/wetworker.js": "./js/wetworker.js?v=7.1.5"
     }
   }
   </script>
   <!-- end of versions -->
-  <script type="module" src="js/site.js?v=7.1.4"></script>
-  <script type="module" src="js/help-page.js?v=7.1.4"></script>
+  <script type="module" src="js/site.js?v=7.1.5"></script>
+  <script type="module" src="js/help-page.js?v=7.1.5"></script>
 </body>
 </html>
