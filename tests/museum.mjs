@@ -344,7 +344,9 @@ const fire = await page.evaluate(async () => {
   g.input('up');
   const fw = t.placed.slice(placedF).find(([n]) => /^mu_firework_[1-4]$/.test(n));
   await t.frames(0.3);
-  const r = { taken: m.taken, firework: !!fw, warned: (g.muSaid || []).some((id) => /\.fiery\./.test(id)), notYet: c.mode === 'sleep' };
+  const warnedEarly = (g.muSaid || []).some((id) => /\.fiery\./.test(id));
+  await t.frames(0.5);
+  const r = { taken: m.taken, firework: !!fw, warned: (g.muSaid || []).some((id) => /\.fiery\./.test(id)), warnedEarly, notYet: c.mode === 'sleep' };
   // It bursts on your left or right (you face north, so east or west of you).
   r.side = fw ? (fw[1][0] - g.playerPos[0]) * mu.sparkSide > 2.5 && Math.abs(fw[1][1] - g.playerPos[1]) < 0.5 : false;
   await t.frames(4.2);
@@ -386,6 +388,7 @@ const fire = await page.evaluate(async () => {
 });
 check(fire.taken && fire.firework && fire.warned && fire.notYet, 'a fiery memory: one of its four fireworks goes off and the character warns you');
 check(fire.side, 'it bursts on your left or right (7.2.6)');
+check(!fire.warnedEarly && fire.warned, 'the character warns you half a second into the firework, not before (7.2.9)');
 check(fire.sparks >= 4 && fire.sparks <= 6 && fire.asleepAtBang, `at the bang ${fire.sparks} sparks are released, and the creature sleeps on`);
 check(fire.silentStill && fire.stillAsleep, 'standing still, the sparks make no sound, none pops, and the creature stays asleep');
 check(fire.wokeOnFirst, 'the first spark you pop wakes the creature, and it charges');

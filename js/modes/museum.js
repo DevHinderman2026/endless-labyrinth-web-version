@@ -125,6 +125,7 @@ export const MU_FIRE_SIDE = 3.0;                // units to your left or right t
 export const MU_SPARKS = [4, 6];                // sparks a firework releases: that many steps to pop them all
 export const MU_POP_AHEAD = 1.5;                // units straight ahead of you that a spark pops
 export const MU_POP_LEVEL = 1.0;
+export const MU_WARN_AFTER = 0.5;               // seconds into the firework that the character warns you (7.2.9, Russell)
 export const MU_STORY_AFTER = 3.0;              // seconds after the last spark pops before the memory's story (7.2.8, Russell)
 // The character.
 export const MU_VOICE_LEVEL = 1.0;              // beside them: the in-run voice's level
@@ -415,7 +416,7 @@ const mixin = {
       ch: who, lines: (lines && who && lines.get(who.id)) || null,
       memories, pools: lay.pools, can: lay.can,
       creatures: lay.beds.map((p) => ({ x: p[0], y: p[1], mode: 'sleep', charge: 0, voice: null, note: null, knock: MU_STEP, dir: [0, 1], calmTo: null })),
-      sparksLeft: 0, firework: null, fireMemory: null, storyIn: 0, storyLater: null,
+      sparksLeft: 0, firework: null, fireMemory: null, storyIn: 0, storyLater: null, warnIn: 0, warnLine: null,
       lost: 0, shove: null, shoveGrace: 0,
       speaker: { pos: null, voice: null, beacon: null, until: chaos ? 0.3 : 1.0, wait: 0.6, phase: 'intro', target: null, line: null, queue: [], lastCall: null, waitSince: 0, pause: 0, loadWait: 0 },
       warnCool: 0, warnNear: false,
@@ -712,8 +713,11 @@ const mixin = {
       if (this.audio.has(name)) this._muPlay(name, { at, volume: 1.0, keep: true });
       mu.pendingStory = story;
       sp.queue = [];
+      // The warning comes half a second into the firework, cutting in at once (7.2.9,
+      // Russell); its recording starts decoding now so it is ready then.
       const warn = this._muLine('fiery');
-      if (warn) sp.queue.push(warn);
+      mu.warnLine = warn; mu.warnIn = warn ? MU_WARN_AFTER : 0;
+      if (warn && !this._muSilent()) { const cv = this._muVoices(); if (cv.has(warn)) cv.peek(warn); }
       return;
     }
     sp.queue = story ? [story] : [];
@@ -932,6 +936,7 @@ const mixin = {
       mu.firework.t += dt;
       if (mu.firework.t >= mu.firework.burst) this._muBurst();
     }
+    if (mu.warnIn > 0) { mu.warnIn -= dt; if (mu.warnIn <= 0) { const w = mu.warnLine; mu.warnLine = null; if (w) this._muSayNow(w); } }
     if (mu.storyIn > 0) { mu.storyIn -= dt; if (mu.storyIn <= 0) this._muTellStory(); }
   },
 
