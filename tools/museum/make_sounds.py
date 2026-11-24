@@ -26,13 +26,10 @@ SOUNDS = {
     'mu_pool':       ('museum_pool_584722.mp3', 10.0, 30.0, True, -21.0, True),
     # A fiery memory's firework: "Firework Explosion With Echo" by Alex_Jauk (147321): the launch, then the burst.
     'mu_firework':   ('museum_fw_147321.mp3', 0.0, 6.0, False, -17.0, False),
-    # A spark, popping and sizzling until it is stamped out (web 7.2.2): the pops of
-    # "Firecrackers" by Alex_Jauk (178799) over the steady sizzle of "Sparkler" by
-    # Dawnton (19831), so a spark is heard all the time, not only between pops. Mixed
-    # below (MIXES). (Stamping one out is a fizzle the game makes, museum.js; the
-    # "Firecracker" pop, 106974, sounded like the spark going off, and is no longer used.)
-    'mu_spark':      ('museum_spark_178799.mp3', 0.0, 7.2, True, -22.0, True),
-    'mu_sizzle':     ('museum_spark_19831.mp3', 38.0, 45.2, True, -24.0, True),
+    # A spark popping as you step on it: "Firecracker" by freesound_community (106974).
+    # (7.2.2 tried a loop of "Firecrackers" by Alex_Jauk over "Sparkler" by Dawnton, and a
+    # fizzle; from 7.2.3 the sparks are silent until you step, and each step pops one.)
+    'mu_stamp':      ('museum_spark_106974.mp3', 0.0, 1.1, False, -18.0, False),
     # The exit's buzzer, Russell's choice: "Loud Buzzer" by freesound_community (100567).
     'mu_buzzer':     ('museum_buzz_100567.mp3', 0.0, 3.29, False, -17.0, False),
     # The door: "Heavy Door Open and Closing" by HookedMedia (585113), cut in two.
@@ -41,7 +38,7 @@ SOUNDS = {
 }
 XFADE = 1.0     # seconds of a loop's end cross-faded into its start
 # Sounds made of two: (name, [parts], rms dB). The parts are not packed on their own.
-MIXES = [('mu_spark', ['mu_spark', 'mu_sizzle'], -20.0)]
+MIXES = []
 
 
 def decode(path):
