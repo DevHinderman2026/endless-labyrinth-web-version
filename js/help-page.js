@@ -124,7 +124,7 @@ async function playDemo(button, section, item) {
     // (web 6.0.0): made only for their own demos, so no other demo reads their packs.
     if (/^fv_demo_/.test(item.sound)) await makeFindVoiceSounds(audio);
     // (A memory's tune, The Museum's, web 7.2.0.)
-    if (item.sound === 'mu_tune_demo') makeMuseumSounds(audio);
+    if (item.sound === 'mu_tune_demo' || item.sound === 'mu_fizzle') makeMuseumSounds(audio);
     const room = helpRoomFor(section);
     if (room) await audio.prepareRoom(room);
     audio.setRoom(room);

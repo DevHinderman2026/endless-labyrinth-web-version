@@ -141,7 +141,9 @@ export const MU_CHAOS_TIME_FIERY = 30;          // and for a fiery one
 export const MU_POOL = 'mu_pool';
 export const MU_FIREWORK = 'mu_firework';
 export const MU_SPARK = 'mu_spark';
-export const MU_STAMP_SOUND = 'mu_stamp';
+// A spark stamped out: a short fizzle the game makes (web 7.2.2; the firecracker pop
+// it was before sounded like the spark going off when you stepped on it, Russell).
+export const MU_STAMP_SOUND = 'mu_fizzle';
 export const MU_BUZZER = 'mu_buzzer';
 export const MU_DOOR_OPEN = 'mu_door_open';
 export const MU_DOOR_CLOSE = 'mu_door_close';
@@ -238,6 +240,26 @@ export function tuneSound(notes, gap = 0.26, rest = 1.1) {
 // page makes it too, js/help-page.js).
 export function makeMuseumSounds(audio) {
   if (!audio.has('mu_tune_demo')) addMade(audio, 'mu_tune_demo', tuneSound([0, 2, 4, 5, 4], 0.26, 0.4));
+  if (!audio.has(MU_STAMP_SOUND)) addMade(audio, MU_STAMP_SOUND, fizzleSound());
+}
+
+// A spark put out: half a second of hiss, bright at first and dulling as it dies, like
+// a spark smothered underfoot. Made by the game, the same every time.
+export function fizzleSound(secs = 0.5) {
+  const n = Math.floor(RATE * secs);
+  const L = new Float64Array(n);
+  let seed = 12345; let lp = 0; let prev = 0;
+  for (let i = 0; i < n; i++) {
+    seed = (seed * 1103515245 + 12345) & 0x7fffffff;
+    const white = seed / 0x3fffffff - 1;
+    const t = i / RATE;
+    const k = 0.25 + 0.6 * Math.exp(-t / 0.12);          // the filter closes as it dies
+    lp += k * (white - lp);
+    const hi = lp - prev; prev = lp;                         // a little of the top kept
+    const env = Math.min(1, t / 0.004) * Math.exp(-t / 0.13);
+    L[i] = (lp * 0.7 + hi * 0.6) * env * 0.5 * 32768;
+  }
+  return [L, Float64Array.from(L)];
 }
 
 // ------------------------------------------------------------------ the layout
@@ -371,11 +393,12 @@ const mixin = {
   // ch: a character already chosen, as a chaos ride's preview does).
   _muBegin({ chaos, museum, count, ch = null, stem = null, adopt = null }) {
     try { makeUltimateSounds(this.audio); } catch (e) { /* the knock is the events' own */ }
+    try { makeMuseumSounds(this.audio); } catch (e) { /* made when the sounds are there */ }
     const prev = this.mu;
     const freed = prev && !chaos ? prev.freed : 0;
     const memoriesTotal = prev && !chaos ? prev.memoriesTotal : 0;
     if (prev) this._muSilence(prev, false);
-    for (const name of [MU_POOL, MU_SPARK, MU_FIREWORK, MU_BUZZER, MU_DOOR_OPEN, MU_DOOR_CLOSE, MU_STAMP_SOUND]) if (this.audio.has(name)) this.audio.prepare(name, `museum:${name}`);
+    for (const name of [MU_POOL, MU_SPARK, MU_FIREWORK, MU_BUZZER, MU_DOOR_OPEN, MU_DOOR_CLOSE]) if (this.audio.has(name)) this.audio.prepare(name, `museum:${name}`);
     this.muCreatureNames = [[AB_IDLE, aliasRecording(this.audio, AB_IDLE, `event_beacon_hazard_file_${AB_IDLE}`)],
       [AB_GROWL, aliasRecording(this.audio, AB_GROWL, `event_beacon_hazard_file_${AB_GROWL}`)]];
     for (const [, n] of this.muCreatureNames) if (n) this.audio.prepare(n, `museum:${n}`);
@@ -1152,7 +1175,7 @@ const mixin = {
     this._muSilence(mu, true);
     mu.door = null;
     mu.stopped = true;
-    for (const name of [MU_POOL, MU_SPARK, MU_FIREWORK, MU_BUZZER, MU_DOOR_OPEN, MU_DOOR_CLOSE, MU_STAMP_SOUND]) this.audio.pins.delete(`museum:${name}`);
+    for (const name of [MU_POOL, MU_SPARK, MU_FIREWORK, MU_BUZZER, MU_DOOR_OPEN, MU_DOOR_CLOSE]) this.audio.pins.delete(`museum:${name}`);
     for (const [, n] of this.muCreatureNames || []) if (n) this.audio.pins.delete(`museum:${n}`);
   },
 };
@@ -1165,7 +1188,7 @@ const HELP_SECTIONS = [
     { title: 'The Museum Characters', sound: null, desc: 'The character whose museum it is guides you. They call to you from beside the memory they want you to find next, the nearest one, in their own voice, so walk toward their voice. Each memory you find gives them back a piece of their life, and they tell you about it; then they call from beside the next one. When every memory is found, they tell you the door is open. As you walk out, they say goodbye, and they are free. They also warn you whenever you come close to the edge of a bottomless pool.' },
     { title: 'The Museum Bottomless Pools', sound: null, desc: 'The one danger in the museum is its bottomless pools, which dissolve memory. They lie all through the museum, many of them close around the memories, and sometimes you have to go around one to reach a memory. Each pool bubbles where it lies, louder as you come closer, and the nearest few are heard at once. When the step straight ahead of you would take you into a pool, the character warns you, so stop, turn, and go another way; a pool beside you or behind you is not called ahead, so listen to its bubbling too. Fall into a pool, and the run is over at once. There are no lives. Every museum has more pools than the last, closer around the memories, but there is always a way through to every memory and to the door.' },
     { title: 'The Museum Creatures', sound: null, desc: 'Creatures sleep in the museum: one in the first museum, two in the second, and three from the third museum on. You hear them breathing softly. They wake only on noise, never because you walk near them. Smash a glass case, and every creature charges you for about three seconds, growling, with a footstep for every step it runs. A creature that reaches you shoves you three steps, the way it was running, and if a pool is there, you fall in. Then it calms down and walks away, and the other creatures lose your trail for a moment, so you are never shoved twice in a row. You cannot shoot them.' },
-    { title: 'The Museum Fiery Memories', sound: null, desc: 'About one memory in four is a fiery one. When you take it, a firework goes up, whistling, and the character warns you. A few seconds later it bursts with a bang, every creature wakes, and sparks land on the floor around you, four to six of them, popping, two to four steps away. Run over every spark to stamp it out: each one goes out with a pop. The creatures charge you until the very last spark is out, so keep moving, and do not stand still. Sparks never land at the edge of a pool. When the last spark is out, the creatures calm down, and the character tells you about the memory.' },
+    { title: 'The Museum Fiery Memories', sound: null, desc: 'About one memory in four is a fiery one. When you take it, a firework goes up, whistling, and the character warns you. A few seconds later it bursts with a bang, every creature wakes, and sparks land on the floor around you, four to six of them, two to four steps away, popping and sizzling from the moment they land, even while you stand still. Run over every spark to stamp it out: each one fizzles and goes quiet. The creatures charge you until the very last spark is out, so keep moving, and do not stand still. Sparks never land at the edge of a pool. When the last spark is out, the creatures calm down, and the character tells you about the memory.' },
     { title: 'The Museum Door and Score', sound: null, desc: 'When every memory is found, a buzzer sounds from the museum\'s door, on one of its walls, ten steps or more away. Walk to it. The door opens, and you walk through by yourself while the character says goodbye; the door closes behind you, and the next museum begins. Your score is the number of souls you free, the museums you complete, and The Museum has its own high score board.' },
     { title: 'The Museum in Chaos Mode', sound: null, desc: 'Chaos Mode has museums too, one museum to a level, which you know by a character introducing themselves over their own world. A museum in chaos has three memories the first time in a run, and one more each time after, at most eight. Each memory puts twenty seconds on the chaos clock, and a fiery one thirty. When every memory is found the buzzer sounds, the chaos clock waits until you reach the door, and the door leads on to the next level. A fall into a bottomless pool ends the whole chaos run, however much health you have. There, double tap for the memories found, then your health, the clock and the points.' },
   ]],
@@ -1181,8 +1204,8 @@ const HELP_DEMOS = [
     { title: 'Creature, Sleeping', sound: AB_IDLE, desc: 'A creature asleep. Only noise wakes it.' },
     { title: 'Creature, Charging', sound: AB_GROWL, desc: 'A creature charging you.' },
     { title: 'Firework', sound: MU_FIREWORK, desc: 'A fiery memory\'s firework: the whistle as it goes up, then the burst that wakes every creature.' },
-    { title: 'A Spark', sound: MU_SPARK, desc: 'A spark popping on the floor. Run over it to stamp it out.' },
-    { title: 'Spark Stamped Out', sound: MU_STAMP_SOUND, desc: 'A spark stamped out.' },
+    { title: 'A Spark', sound: MU_SPARK, desc: 'A spark popping and sizzling on the floor, from the moment it lands. Run over it to stamp it out.' },
+    { title: 'Spark Stamped Out', sound: MU_STAMP_SOUND, desc: 'A spark stamped out: it fizzles and goes quiet.' },
     { title: 'The Buzzer', sound: MU_BUZZER, desc: 'The buzzer of the museum\'s door: every memory is found. Walk to it.' },
     { title: 'Door Opening', sound: MU_DOOR_OPEN, desc: 'The door opening.' },
     { title: 'Door Closing', sound: MU_DOOR_CLOSE, desc: 'The door closing behind you, before the next museum.' },

@@ -33,9 +33,9 @@ const check = (ok, what) => { console.log((ok ? 'PASS ' : 'FAIL ') + what); if (
   check(cast.every((c) => per(c.id, 'intro') === 1 && per(c.id, 'call') === 4 && per(c.id, 'pool') === 3 && per(c.id, 'fiery') === 2 && per(c.id, 'memory') === 8 && per(c.id, 'open') === 1 && per(c.id, 'goodbye') === 1),
     'every one of the 26 characters has an introduction, 4 calls, 3 pool warnings, 2 fiery warnings, 8 memories, the door and a goodbye');
   const sounds = pack('museum');
-  const want = ['mu_pool', 'mu_firework', 'mu_spark', 'mu_stamp', 'mu_buzzer', 'mu_door_open', 'mu_door_close'];
-  check(sounds.bytes && want.every((n) => sounds.head.entries.some((e) => e.name === n)) && sounds.head.entries.filter((e) => e.loop).map((e) => e.name).sort().join() === 'mu_pool,mu_spark',
-    'the museum pack holds its seven sounds, the pool and the spark looping');
+  const want = ['mu_pool', 'mu_firework', 'mu_spark', 'mu_buzzer', 'mu_door_open', 'mu_door_close'];
+  check(sounds.bytes && sounds.head.entries.length === 6 && want.every((n) => sounds.head.entries.some((e) => e.name === n)) && sounds.head.entries.filter((e) => e.loop).map((e) => e.name).sort().join() === 'mu_pool,mu_spark',
+    'the museum pack holds its six recordings, the pool and the spark looping (7.2.2: the stamp is the game\'s own fizzle)');
 }
 
 const browser = await chromium.launch({ args: ['--autoplay-policy=no-user-gesture-required'] });
@@ -341,13 +341,13 @@ const fire = await page.evaluate(async () => {
   r.sparks = mu.sparks.length; r.charging = c.mode === 'charge' && c.charge === Infinity;
   r.sparksClear = mu.sparks.every((s) => mu.pools.every((p) => Math.hypot(s.pos[0] - p.pos[0], s.pos[1] - p.pos[1]) > p.r + 2));
   r.sparksNear = mu.sparks.every((s) => { const d = Math.hypot(s.pos[0] - g.playerPos[0], s.pos[1] - g.playerPos[1]); return d >= 5.9 && d <= 12.1; });
-  r.popping = mu.sparks.every((s) => s.voice && s.voice.busy);
+  r.popping = mu.sparks.every((s) => s.voice && s.voice.busy && Math.max(...s.voice.heard.slice(0, 2)) >= 0.4);   // (7.2.2: loud, standing still)
   r.storyHeld = !(g.muSaid || []).some((id) => /\.memory\./.test(id));
   // Stamp them out.
   c.x = 38; c.y = 38;
   for (const s of [...mu.sparks]) { c.x = 38; c.y = 38; await t.walkTo(s.pos, 1.0); }
   await t.frames(0.3);
-  r.out = mu.sparks.length === 0; r.stamps = t.played.filter((n) => n === 'mu_stamp').length;
+  r.out = mu.sparks.length === 0; r.stamps = t.played.filter((n) => n === 'mu_fizzle').length;
   r.calm = c.mode !== 'charge';
   await t.frames(9);
   r.story = (g.muSaid || []).some((id) => /\.memory\.1$/.test(id));
@@ -355,9 +355,9 @@ const fire = await page.evaluate(async () => {
 });
 check(fire.taken && fire.firework && fire.warned && fire.notYet, 'a fiery memory: its firework goes up and the character warns you');
 check(fire.sparks >= 4 && fire.sparks <= 6 && fire.charging, `it bursts: ${fire.sparks} sparks land, and the creature charges`);
-check(fire.sparksNear && fire.sparksClear && fire.popping, 'the sparks pop two to four steps away, never at a pool');
+check(fire.sparksNear && fire.sparksClear && fire.popping, 'the sparks pop two to four steps away, never at a pool, loud from the moment they land, before you move');
 check(fire.storyHeld, 'the memory\'s story waits');
-check(fire.out && fire.stamps === fire.sparks && fire.calm, 'stamping out every spark calms the creature');
+check(fire.out && fire.stamps === fire.sparks && fire.calm, 'stamping out every spark (each a fizzle) calms the creature');
 check(fire.story, 'and then the character tells the memory\'s story');
 
 // ------------------------------------------------------------------ Enter's report and the score board
