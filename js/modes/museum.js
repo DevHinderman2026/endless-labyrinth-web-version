@@ -35,8 +35,9 @@
 // No clock. The score is souls freed: the museums you complete.
 //
 // Chaos Mode has museums too (js/modes/chaos.js): one museum to a stage, with three
-// memories the first time in a run and one more each time, at most eight. Each memory
-// puts twenty seconds on the chaos clock, a fiery one thirty. The door leads on to the
+// memories the first time in a run and one more each time, at most eight. A memory
+// puts no time on the chaos clock (7.2.15, Russell; until then twenty seconds, a fiery
+// one thirty): the clock runs on through the museum. The door leads on to the
 // next stage, and the chaos clock waits while it is open. A pool ends the whole run.
 //
 // The recordings (Pixabay, web-only, in the museum pack; tools/museum/make_sounds.py):
@@ -85,11 +86,11 @@ export const MU_GUARD_CHANCE = [0.35, 0.85];    // the chance a memory has a poo
 export const MU_PATH = 2.5;                     // units: every way through is at least this clear of a pool's edge, either side
 export const MU_POOL_RANGE = 30.0;              // a pool's bubbling is heard within this many units (ten steps)
 // Quieter, and only the nearest two, from 7.2.14 (Russell: by museums 3 and 4 the pools
-// drowned everything; they were 0.75 and three): and while the character speaks they
-// sink lower still, so the voice is always clear.
+// drowned everything; they were 0.75 and three). Every pool at the same level for its
+// distance: in 7.2.14 they also sank while the character spoke, and that rise and fall
+// made the pools sound uneven, so it is gone again (7.2.15, Russell).
 export const MU_POOL_GAIN = 0.45;
 export const MU_POOLS_HEARD = 2;                // only the nearest few bubble at once
-export const MU_POOL_UNDER_VOICE = 0.55;        // the pools' level while the character speaks
 // The character warns you when the step straight ahead of you (with half a unit to
 // spare) would take you into a pool: only then, so a pool beside you or behind you,
 // however near, is not called "ahead" (web 7.2.1, Russell).
@@ -170,8 +171,6 @@ export const MU_WALK_STEPS = 4;                 // the steps you take through th
 export const MU_WALK_EVERY = 0.45;
 export const MU_DOOR_HOLD = 0.8;                // the quiet after the door has closed, before the next museum
 // Chaos.
-export const MU_CHAOS_TIME = 20;                // seconds on the chaos clock for a memory
-export const MU_CHAOS_TIME_FIERY = 30;          // and for a fiery one
 // Sounds.
 export const MU_POOL = 'mu_pool';
 // A spark popping as you step on it (back to the firecracker pop in 7.2.3, Russell; 7.2.2
@@ -573,7 +572,10 @@ const mixin = {
         RULES.FAMILY[name] = 'speech';
         RULES.ROOMS[name] = VOICE_ROOMS;
         this.audio.buffers.set('dry:' + name, buf);
-        sp.voice = this.audio.play(name, { volume: 0.0, send: MU_VOICE_SEND });
+        // keep: a line is never the sound cut off when too many play at once (7.2.15:
+        // footsteps, pops and growls could push the oldest one-shot out, and a long line
+        // was often the oldest, so the character dropped out mid-sentence).
+        sp.voice = this.audio.play(name, { volume: 0.0, send: MU_VOICE_SEND, keep: true });
         sp.until = 0; sp.waitSince = 0; sp.line = ln;
         if (sp.beacon) { sp.beacon.fadeout(200); sp.beacon = null; }
         this._muLevelSpeaker();
@@ -718,7 +720,6 @@ const mixin = {
     mu.found += 1;
     mu.memoriesTotal += 1;
     if (this.audio.has(m.tune)) this._muPlay(m.tune, { at: m.pos, volume: 1.0, keep: true });
-    if (mu.chaos) this._muChaosTime(m.fiery ? MU_CHAOS_TIME_FIERY : MU_CHAOS_TIME);
     const sp = mu.speaker;
     this._muHush(100);
     if (sp.beacon) { sp.beacon.fadeout(200); sp.beacon = null; }
@@ -786,8 +787,7 @@ const mixin = {
       const dx = this.playerPos[0] - p.pos[0]; const dy = this.playerPos[1] - p.pos[1];
       const d = Math.hypot(dx, dy) || 1;
       const at = [p.pos[0] + dx / d * Math.min(p.r, d), p.pos[1] + dy / d * Math.min(p.r, d)];
-      const duck = (mu.speaker.voice && mu.speaker.voice.busy) ? MU_POOL_UNDER_VOICE : 1.0;
-      const [l, r] = this._muLevels(at, MU_POOL_GAIN * duck, MU_POOL_RANGE);
+      const [l, r] = this._muLevels(at, MU_POOL_GAIN, MU_POOL_RANGE);
       p.voice.setVolume(l, r, this._behind(at));
     });
     // The character warns you when the step straight ahead would take you in: as soon
@@ -1170,15 +1170,6 @@ const mixin = {
     this._muBegin({ chaos: false, museum: mu.museum + 1, count: memoriesFor(mu.museum + 1) });
   },
 
-  // ---------------------------------------------------------------- chaos
-  _muChaosTime(secs) {
-    this.timeLeft += secs;
-    this.thirtySecAnnounced = this.timeLeft <= 30.0;
-    const step = this._announceStep();
-    this.nextAnnounceTime = Math.floor((this.timeLeft - 1) / step) * step;
-    this.lastBeepSecond = -1;
-  },
-
   // ---------------------------------------------------------------- the frame
   updateMuseum(dt) {
     const mu = this.mu;
@@ -1300,7 +1291,7 @@ const HELP_SECTIONS = [
     { title: 'The Museum Creatures', sound: null, desc: 'Creatures sleep in the museum: one in the first museum, two in the second, and three from the third museum on. You hear them breathing softly. They wake only on noise, never because you walk near them. Smash a glass case (unless it holds a fiery memory, whose sparks wake them instead), and every creature wakes with a roar from where it sleeps, so you can tell which way it is coming, and charges you for about three seconds, growling, with a footstep for every step it runs. Run the other way: you are a little faster than they are. A smashed case leaves its broken glass on the floor, crunching under your feet: step on it while no creature is charging, and the noise wakes them for about two seconds; while they are already charging, it adds nothing. The glass stays only in that museum. A creature that reaches you knocks you toward the nearest bottomless pool and leaves you one step from its edge, so be careful which way you step next. Then it calms down and walks away, and the other creatures lose your trail for a moment, so you are never shoved twice in a row. You cannot shoot them.' },
     { title: 'The Museum Fiery Memories', sound: null, desc: 'About one memory in four is a fiery one. When you take it, you stop where you are, a firework bursts on your left or your right, and the character warns you; there are four different fireworks, all short. The burst releases four to six sparks: you do not have to find them, and they make no sound until you move. Every step you take pops one, whichever way you walk, with a firecracker pop just in front of you. The creatures sleep through the bang, but the first spark you pop wakes every one of them, each with a roar from where it sleeps, and they keep charging until the last spark has popped, so once you start, do not stop moving until the popping is over. Then the creatures calm down, and a few seconds later the character tells you about the memory.' },
     { title: 'The Museum Door and Score', sound: null, desc: 'When every memory is found, a buzzer sounds from the museum\'s door, on one of its walls, ten steps or more away. Walk to it. The door opens, and you walk through by yourself while the character says goodbye; the door closes behind you, and the next museum begins. Your score is the number of souls you free, the museums you complete, and The Museum has its own high score board.' },
-    { title: 'The Museum in Chaos Mode', sound: null, desc: 'Chaos Mode has museums too, one museum to a level, which you know by a character introducing themselves over their own world. A museum in chaos has three memories the first time in a run, and one more each time after, at most eight. Each memory puts twenty seconds on the chaos clock, and a fiery one thirty. When every memory is found the buzzer sounds, the chaos clock waits until you reach the door, and the door leads on to the next level. A fall into a bottomless pool ends the whole chaos run, however much health you have. There, double tap for the memories found, then your health, the clock and the points.' },
+    { title: 'The Museum in Chaos Mode', sound: null, desc: 'Chaos Mode has museums too, one museum to a level, which you know by a character introducing themselves over their own world. A museum in chaos has three memories the first time in a run, and one more each time after, at most eight. Finding a memory puts no time on the chaos clock: it keeps counting down through the whole museum, so be quick. When every memory is found the buzzer sounds, the chaos clock waits until you reach the door, and the door leads on to the next level. A fall into a bottomless pool ends the whole chaos run, however much health you have. There, double tap for the memories found, then your health, the clock and the points.' },
   ]],
 ];
 

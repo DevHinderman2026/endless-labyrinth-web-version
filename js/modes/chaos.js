@@ -583,7 +583,8 @@ const mixin = {
 
   // A museum (museum.js, web 7.2.0): one museum, three memories the first time in a run
   // and one more each time, at most eight; its pools and creatures as this many museums
-  // make them. Each memory is twenty seconds on the chaos clock, a fiery one thirty.
+  // make them. A memory puts no time on the chaos clock (7.2.15; it was twenty seconds,
+  // a fiery one thirty).
   _chaosSetupMuseum() {
     this.chaosMuseumCount += 1;
     const adopt = this.chaosAdopt;

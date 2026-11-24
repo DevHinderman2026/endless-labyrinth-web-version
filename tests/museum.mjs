@@ -509,6 +509,24 @@ const farDoor = await page.evaluate(async () => {
 check(farDoor.playing && farDoor.loud >= 0.29, `from the far corner the buzzer is heard at once, not silent (7.2.12): ${farDoor.loud}`);
 check(farDoor.voice >= 0.44, `and the character's voice too: ${farDoor.voice}`);
 
+const even = await page.evaluate(async () => {
+  const g = window.__el.game; const t = window.__t;
+  t.start('museum');
+  const mu = g.mu;
+  for (const c of mu.creatures) { c.x = 38; c.y = 38; c.mode = 'sleep'; }
+  g.playerPos = [0, 0]; g._face(0, true);
+  mu.pools = [{ pos: [10, 0], r: 3, voice: null }, { pos: [0, -10], r: 3, voice: null }];
+  await t.frames(0.3);
+  const lv = new Map();
+  for (const p of mu.pools) if (p.voice) { const sv = p.voice.setVolume.bind(p.voice); p.voice.setVolume = (l, r, b) => { lv.set(p, +(Math.max(l, r)).toFixed(3)); return sv(l, r, b); }; }
+  const talkingLevels = [];
+  for (let k = 0; k < 40; k++) { await t.frames(0.1); talkingLevels.push([g._muTalking(), ...mu.pools.map((p) => lv.get(p))]); }
+  const levels = new Set(talkingLevels.map((x) => x[1]));
+  return { both: mu.pools.every((p) => !!p.voice), talked: talkingLevels.some((x) => x[0]) && talkingLevels.some((x) => !x[0]), steady: levels.size === 1, same: talkingLevels.every((x) => x[1] === x[2]), keep: !!(mu.speaker.voice ? mu.speaker.voice.keep : true) };
+});
+check(even.both && even.steady && even.same, `two pools the same distance away sound the same, and stay the same while the character speaks and after (7.2.15): ${JSON.stringify(even)}`);
+check(even.keep, 'the character\'s line is kept when too many sounds play at once (7.2.15)');
+
 // ------------------------------------------------------------------ Chaos
 const chaos = await page.evaluate(async () => {
   const g = window.__el.game; const t = window.__t;
@@ -522,9 +540,9 @@ const chaos = await page.evaluate(async () => {
   t.calm();
   for (const m of mu.memories) { m.inCase = false; m.fiery = false; }
   const m = mu.memories[0];
-  // (The time a memory puts on the clock, measured across the very call that adds it.)
-  const add = g._muChaosTime.bind(g); r.time = null;
-  g._muChaosTime = (secs) => { const before = g.timeLeft; add(secs); r.time = Math.round(g.timeLeft - before); };
+  // (The time a memory puts on the clock, measured across the very call that takes it.)
+  const take = g._muTake.bind(g); r.time = null;
+  g._muTake = (mm, sm) => { const before = g.timeLeft; take(mm, sm); r.time = Math.max(r.time || 0, +(g.timeLeft - before).toFixed(2)); };
   await t.walkTo(m.pos, 1.0);
   for (let k = 0; k < 4 && !mu.door; k++) { const n = mu.speaker.target || mu.memories.find((x) => !x.taken); if (!n) break; await t.walkTo(n.pos, 1.0); await t.frames(14); }
   r.door = !!mu.door;
@@ -546,7 +564,7 @@ const chaos = await page.evaluate(async () => {
   return r;
 });
 check(chaos.state === 'museum' && chaos.chaos && chaos.count === 3, 'Chaos has museums: three memories the first time');
-check(chaos.time === 20, `each memory puts twenty seconds on the chaos clock (${chaos.time})`);
+check(chaos.time === 0, `a memory puts no time on the chaos clock (7.2.15): ${chaos.time}`);
 check(chaos.door && chaos.clockWaits, 'every memory found: the door, and the chaos clock waits');
 check(chaos.next && chaos.points === 10, 'the door leads on to the next level, for ten points');
 check(chaos.end === 'game_over' && /bottomless pool/.test(chaos.said || ''), 'a pool ends the whole chaos run, whatever the health: ' + chaos.said);
