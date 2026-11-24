@@ -36,6 +36,8 @@ const check = (ok, what) => { console.log((ok ? 'PASS ' : 'FAIL ') + what); if (
   const want = ['mu_pool', 'mu_firework', 'mu_stamp', 'mu_buzzer', 'mu_door_open', 'mu_door_close'];
   check(sounds.bytes && sounds.head.entries.length === 6 && want.every((n) => sounds.head.entries.some((e) => e.name === n)) && sounds.head.entries.filter((e) => e.loop).map((e) => e.name).join() === 'mu_pool',
     'the museum pack holds its six recordings, only the pool looping (7.2.3: a spark is the firecracker pop when you step)');
+  const buzz = sounds.head.entries.find((e) => e.name === 'mu_buzzer');
+  check(buzz && Math.abs(buzz.frames / sounds.head.rate - 2.0) < 0.01, `the buzzer is two seconds long (7.2.4): ${buzz && (buzz.frames / sounds.head.rate).toFixed(2)} s`);
 }
 
 const browser = await chromium.launch({ args: ['--autoplay-policy=no-user-gesture-required'] });
@@ -337,24 +339,26 @@ const fire = await page.evaluate(async () => {
   await t.frames(0.3);
   const r = { taken: m.taken, firework: t.played.includes('mu_firework'), warned: (g.muSaid || []).some((id) => /\.fiery\./.test(id)), notYet: c.mode === 'sleep' && mu.sparksLeft === 0 };
   await t.frames(4.2);
-  r.sparks = mu.sparksLeft; r.charging = c.mode === 'charge' && c.charge === Infinity;
+  r.sparks = mu.sparksLeft; r.asleepAtBang = c.mode === 'sleep';
   // Standing still: not a sound from them.
   const pops0 = t.played.filter((n) => n === 'mu_stamp').length;
   c.x = 38; c.y = 38;
   await t.frames(2.0);
   r.silentStill = t.played.filter((n) => n === 'mu_stamp').length === pops0 && mu.sparksLeft === r.sparks;
   r.storyHeld = !(g.muSaid || []).some((id) => /\.memory\./.test(id));
+  r.stillAsleep = c.mode === 'sleep';
   // Each step pops one, just ahead, whichever way you face.
   const placedBefore = t.placed.length;
   const faces = [0, Math.PI / 2, Math.PI, -Math.PI / 2, 0, Math.PI / 2];
   let k = 0;
   while (mu.sparksLeft > 0 && k < 10) {
-    c.x = 38; c.y = 38; c.mode = 'charge';
+    c.x = 38; c.y = 38;
     g._face(faces[k % faces.length], true);
     g.playerPos = [0, 0];
     const f = g._forward();
     g.input('up');
     await t.frames(0.15);
+    if (k === 0) r.wokeOnFirst = c.mode === 'charge' && c.charge === Infinity && mu.sparksLeft > 0;
     const pop = t.placed.slice(placedBefore).filter(([n]) => n === 'mu_stamp').slice(-1)[0];
     if (pop) { const dx = pop[1][0] - g.playerPos[0]; const dy = pop[1][1] - g.playerPos[1]; const d = Math.hypot(dx, dy) || 1; r.ahead = (r.ahead === undefined ? true : r.ahead) && (dx * f[0] + dy * f[1]) / d > 0.99; }
     k += 1;
@@ -369,8 +373,9 @@ const fire = await page.evaluate(async () => {
   return r;
 });
 check(fire.taken && fire.firework && fire.warned && fire.notYet, 'a fiery memory: its firework goes up and the character warns you');
-check(fire.sparks >= 4 && fire.sparks <= 6 && fire.charging, `at the bang ${fire.sparks} sparks are released, and the creature charges`);
-check(fire.silentStill, 'standing still, the sparks make no sound and none pops');
+check(fire.sparks >= 4 && fire.sparks <= 6 && fire.asleepAtBang, `at the bang ${fire.sparks} sparks are released, and the creature sleeps on`);
+check(fire.silentStill && fire.stillAsleep, 'standing still, the sparks make no sound, none pops, and the creature stays asleep');
+check(fire.wokeOnFirst, 'the first spark you pop wakes the creature, and it charges');
 check(fire.storyHeld, 'the memory\'s story waits');
 check(fire.steps === fire.sparks && fire.pops === fire.sparks && fire.ahead === true, `each step pops one spark with a firecracker pop just ahead of you, whichever way you face (${fire.pops} pops in ${fire.steps} steps)`);
 check(fire.calm, 'when the last has popped the creature calms down');

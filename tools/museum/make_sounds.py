@@ -31,12 +31,15 @@ SOUNDS = {
     # fizzle; from 7.2.3 the sparks are silent until you step, and each step pops one.)
     'mu_stamp':      ('museum_spark_106974.mp3', 0.0, 1.1, False, -18.0, False),
     # The exit's buzzer, Russell's choice: "Loud Buzzer" by freesound_community (100567).
-    'mu_buzzer':     ('museum_buzz_100567.mp3', 0.0, 3.29, False, -17.0, False),
+    # (Its first 2 seconds since 7.2.4; Russell found the whole 3.3 too long.)
+    'mu_buzzer':     ('museum_buzz_100567.mp3', 0.0, 2.0, False, -17.0, False),
     # The door: "Heavy Door Open and Closing" by HookedMedia (585113), cut in two.
     'mu_door_open':  ('museum_door_585113.mp3', 0.0, 2.3, False, -24.0, False),
     'mu_door_close': ('museum_door_585113.mp3', 2.3, 4.17, False, -18.0, False),
 }
 XFADE = 1.0     # seconds of a loop's end cross-faded into its start
+# A one-shot cut in the middle of a steady sound fades out over this long, not 0.01 s.
+FADE_OUT = {'museum_buzz_100567.mp3': 0.08}
 # Sounds made of two: (name, [parts], rms dB). The parts are not packed on their own.
 MIXES = []
 
@@ -60,7 +63,7 @@ def make(src, a, b, loop, rms_db, mono):
         y = body
     else:
         y = x[int(a * RATE):int(b * RATE)].copy()
-        edge = int(0.01 * RATE)
+        edge = int(FADE_OUT.get(os.path.basename(src), 0.01) * RATE)
         y[-edge:] *= np.linspace(1, 0, edge)[:, None]
     if mono:
         m = y.mean(axis=1)
