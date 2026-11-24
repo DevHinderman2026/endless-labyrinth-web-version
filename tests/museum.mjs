@@ -203,6 +203,19 @@ check(door.goodbye && door.closed, 'the character says goodbye, and the door clo
 check(door.next && door.next.museum === 2 && door.next.count === 4 && door.next.freed === 1 && door.next.creatures === 2, `then the next museum: 4 memories, 2 creatures: ${JSON.stringify(door.next)}`);
 check(door.next && door.next.ch !== door.prevCh, 'with another character');
 
+// ------------------------------------------------------------------ how loud the character is (7.2.1)
+const loud = await page.evaluate(async () => {
+  const m = await import('./js/modes/museum.js');
+  const g = window.__el.game;
+  const keep = g.playerPos; g.playerPos = [0, 0];
+  const far = Math.max(...g._muLevels([0, -80], m.MU_VOICE_LEVEL, m.MU_VOICE_RANGE, m.MU_VOICE_FLOOR).slice(0, 2));
+  const mid = Math.max(...g._muLevels([0, -40], m.MU_VOICE_LEVEL, m.MU_VOICE_RANGE, m.MU_VOICE_FLOOR).slice(0, 2));
+  g.playerPos = keep;
+  return { far: +far.toFixed(2), mid: +mid.toFixed(2), spark: m.MU_SPARK_GAIN, sparkFloor: m.MU_SPARK_FLOOR };
+});
+check(loud.far >= 0.45 && loud.mid >= 0.55, `the character is heard across the museum: ${loud.mid} at 40 units, ${loud.far} at 80`);
+check(loud.spark === 1.0 && loud.sparkFloor >= 0.4, 'sparks are loud wherever they land');
+
 // ------------------------------------------------------------------ the pools
 const pools = await page.evaluate(async () => {
   const g = window.__el.game; const t = window.__t;
@@ -222,12 +235,25 @@ const pools = await page.evaluate(async () => {
   g.input('up');           // to 6: 2 from the edge
   await t.frames(0.3);
   const warned = (g.muSaid || []).some((id) => /\.pool\./.test(id));
+  // Beside it, or with your back to it, however near: no warning; facing it: a warning.
+  g.muSaid = []; mu.warnCool = 0; mu.warnNear = false;
+  g.playerPos = [6.5, 0]; g._face(0, true);          // 2.5 from its edge, facing north, the pool to your left
+  await t.frames(0.5);
+  const besideQuiet = !(g.muSaid || []).some((id) => /\.pool\./.test(id));
+  g._face(Math.PI / 2, true);                         // facing east, your back to it
+  await t.frames(0.5);
+  const behindQuiet = !(g.muSaid || []).some((id) => /\.pool\./.test(id));
+  g._face(-Math.PI / 2, true);                        // facing west, toward it
+  await t.frames(0.5);
+  const facingWarned = (g.muSaid || []).some((id) => /\.pool\./.test(id));
+  g._face(0, true); g.playerPos = [0, 6];
   g.input('up');           // into the pool
   await t.frames(0.2);
-  return { heard, warnedEarly, warned, state: g.state, said: t.said.slice(-2) };
+  return { heard, warnedEarly, warned, besideQuiet, behindQuiet, facingWarned, state: g.state, said: t.said.slice(-2) };
 });
 check(pools.heard, 'a pool bubbles where it lies');
 check(!pools.warnedEarly && pools.warned, 'the character warns you a step from its edge, not before');
+check(pools.besideQuiet && pools.behindQuiet && pools.facingWarned, 'a pool beside you or behind you is not called ahead; facing it, it is (7.2.1)');
 check(pools.state === 'game_over', 'a step into a pool ends the run: ' + pools.said.join(' | '));
 check(pools.said.some((s) => /bottomless pool/.test(s) && /freed 0 souls/.test(s)), 'and the score is souls freed');
 

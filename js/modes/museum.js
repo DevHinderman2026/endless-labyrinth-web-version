@@ -80,7 +80,10 @@ export const MU_PATH = 2.5;                     // units: every way through is a
 export const MU_POOL_RANGE = 30.0;              // a pool's bubbling is heard within this many units (ten steps)
 export const MU_POOL_GAIN = 0.75;
 export const MU_POOLS_HEARD = 3;                // only the nearest few bubble at once
-export const MU_WARN = 3.5;                     // units from a pool's edge: one more step could take you in, and the character warns you
+// The character warns you when the step straight ahead of you (with half a unit to
+// spare) would take you into a pool: only then, so a pool beside you or behind you,
+// however near, is not called "ahead" (web 7.2.1, Russell).
+export const MU_WARN = MU_STEP + 0.5;
 export const MU_WARN_AGAIN = 6.0;               // seconds before another warning while you stay near
 // The creatures: one in the first museum, two in the second, three from the third on.
 export const MU_CREATURES = [1, 1, 3];
@@ -105,12 +108,16 @@ export const MU_SPARKS = [4, 6];
 export const MU_SPARK_NEAR = [6.0, 12.0];       // units from you that they land (two to four steps)
 export const MU_SPARK_APART = 4.0;
 export const MU_STAMP = 2.5;                    // units: a step this near a spark stamps it out
-export const MU_SPARK_GAIN = 0.8;
-export const MU_SPARK_RANGE = 30.0;
+export const MU_SPARK_GAIN = 1.0;               // (web 7.2.1: louder, and heard from where they land, 0.8 and 30 units before)
+export const MU_SPARK_RANGE = 45.0;
+export const MU_SPARK_FLOOR = 0.4;
 // The character.
 export const MU_VOICE_LEVEL = 1.0;              // beside them: the in-run voice's level
-export const MU_VOICE_RANGE = 60.0;             // they fade over this many units ...
-export const MU_VOICE_FLOOR = 0.18;             // ... and are never quieter than this, from across the museum
+// (Web 7.2.1, Russell: too quiet, above all from far off. Their recordings are 4 dB
+// louder in the museum-voice pack, and they fade far less: over 90 units, not 60, to
+// no less than 0.45, not 0.18.)
+export const MU_VOICE_RANGE = 90.0;             // they fade over this many units ...
+export const MU_VOICE_FLOOR = 0.45;             // ... and are never quieter than this, from across the museum
 export const MU_VOICE_SEND = 0.25;
 export const MU_CALL_GAP = [1.2, 2.2];          // seconds of quiet between two calls
 export const MU_FALLBACK_GAP = [2.2, 3.2];      // between two calls said by the device's voice
@@ -722,16 +729,24 @@ const mixin = {
       const [l, r] = this._muLevels(at, MU_POOL_GAIN, MU_POOL_RANGE);
       p.voice.setVolume(l, r, this._behind(at));
     });
-    // The character warns you near an edge: as you come near, and again while you stay.
+    // The character warns you when the step straight ahead would take you in: as soon
+    // as it would, and again while it still would.
     mu.warnCool = Math.max(0, mu.warnCool - dt);
-    const nearest = order.length ? order[0][1] : 1e9;
-    const isNear = nearest < MU_WARN;
+    const isNear = !!this._muPoolAhead();
     if (isNear && (!mu.warnNear || mu.warnCool <= 0) && !mu.walk && !mu.shove) {
       const ln = this._muLine('pool');
       if (ln) this._muSayNow(ln);
       mu.warnCool = MU_WARN_AGAIN;
     }
     mu.warnNear = isNear;
+  },
+
+  // The pool the step straight ahead of you would take you into (with half a unit to
+  // spare), or null. Only straight ahead, the way you face now.
+  _muPoolAhead() {
+    const f = this._forward();
+    const p = this.playerPos;
+    return this._muPoolOn(p, [p[0] + f[0] * MU_WARN, p[1] + f[1] * MU_WARN]);
   },
 
   // Whether a step from a to b goes into a pool: the pool, or null.
@@ -891,7 +906,7 @@ const mixin = {
       }
     }
     for (const s of mu.sparks) {
-      const [l, r] = this._muLevels(s.pos, MU_SPARK_GAIN, MU_SPARK_RANGE, 0.1);
+      const [l, r] = this._muLevels(s.pos, MU_SPARK_GAIN, MU_SPARK_RANGE, MU_SPARK_FLOOR);
       if (!s.voice && this.audio.has(MU_SPARK)) s.voice = this._muPlay(MU_SPARK, { loops: -1, volume: 0.0, fadeMs: 80 });
       if (s.voice) s.voice.setVolume(l, r, this._behind(s.pos));
     }
@@ -1148,7 +1163,7 @@ const HELP_SECTIONS = [
     { title: 'The Museum', sound: null, desc: 'The Museum is a mode of its own, new in 7.2.0, inspired by Papa Sangre. Each museum holds the soul of one of the characters of Ultimate Mode\'s safe zones, chosen at random, and you hear their own world playing softly through a great echoing hall. Their memories are scattered through the museum. Find every one, then walk out of the door, and their soul is free. Then you walk on into the next museum, with another character, and one more memory to find. There is no clock. You turn and walk as in every walking mode (see General Turning). Double tap for the level, the memories found and the way you are facing.' },
     { title: 'The Museum Memories', sound: null, desc: 'A memory sounds like music: each one plays a little tune of its own, over and over, where it lies, so you can tell them apart, and the one the character is calling you to plays louder than the rest. Walk onto a memory to take it, and its whole tune plays once. About one memory in three is locked in a glass case instead: it hums, and the nearest case knocks as you close in, faster as you come nearer; when you are beside it and facing it a bell rings: tap with two fingers to smash it, or press the spacebar, and the memory is yours at once. But smashing glass is loud. The first museum has three memories, and each museum after it has one more, up to eight.' },
     { title: 'The Museum Characters', sound: null, desc: 'The character whose museum it is guides you. They call to you from beside the memory they want you to find next, the nearest one, in their own voice, so walk toward their voice. Each memory you find gives them back a piece of their life, and they tell you about it; then they call from beside the next one. When every memory is found, they tell you the door is open. As you walk out, they say goodbye, and they are free. They also warn you whenever you come close to the edge of a bottomless pool.' },
-    { title: 'The Museum Bottomless Pools', sound: null, desc: 'The one danger in the museum is its bottomless pools, which dissolve memory. They lie all through the museum, many of them close around the memories, and sometimes you have to go around one to reach a memory. Each pool bubbles where it lies, louder as you come closer, and the nearest few are heard at once; when you are about one step from an edge, the character warns you, so stop, turn, and go another way. Fall into a pool, and the run is over at once. There are no lives. Every museum has more pools than the last, closer around the memories, but there is always a way through to every memory and to the door.' },
+    { title: 'The Museum Bottomless Pools', sound: null, desc: 'The one danger in the museum is its bottomless pools, which dissolve memory. They lie all through the museum, many of them close around the memories, and sometimes you have to go around one to reach a memory. Each pool bubbles where it lies, louder as you come closer, and the nearest few are heard at once. When the step straight ahead of you would take you into a pool, the character warns you, so stop, turn, and go another way; a pool beside you or behind you is not called ahead, so listen to its bubbling too. Fall into a pool, and the run is over at once. There are no lives. Every museum has more pools than the last, closer around the memories, but there is always a way through to every memory and to the door.' },
     { title: 'The Museum Creatures', sound: null, desc: 'Creatures sleep in the museum: one in the first museum, two in the second, and three from the third museum on. You hear them breathing softly. They wake only on noise, never because you walk near them. Smash a glass case, and every creature charges you for about three seconds, growling, with a footstep for every step it runs. A creature that reaches you shoves you three steps, the way it was running, and if a pool is there, you fall in. Then it calms down and walks away, and the other creatures lose your trail for a moment, so you are never shoved twice in a row. You cannot shoot them.' },
     { title: 'The Museum Fiery Memories', sound: null, desc: 'About one memory in four is a fiery one. When you take it, a firework goes up, whistling, and the character warns you. A few seconds later it bursts with a bang, every creature wakes, and sparks land on the floor around you, four to six of them, popping, two to four steps away. Run over every spark to stamp it out: each one goes out with a pop. The creatures charge you until the very last spark is out, so keep moving, and do not stand still. Sparks never land at the edge of a pool. When the last spark is out, the creatures calm down, and the character tells you about the memory.' },
     { title: 'The Museum Door and Score', sound: null, desc: 'When every memory is found, a buzzer sounds from the museum\'s door, on one of its walls, ten steps or more away. Walk to it. The door opens, and you walk through by yourself while the character says goodbye; the door closes behind you, and the next museum begins. Your score is the number of souls you free, the museums you complete, and The Museum has its own high score board.' },
