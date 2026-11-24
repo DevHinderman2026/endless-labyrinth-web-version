@@ -23,10 +23,10 @@
 // case and they charge you for about three seconds; collect a fiery memory (about one
 // in four) and a firework (one of four, all short) bursts on your left or right, the
 // character warns you, and the sparks are released: every step you take, whichever way,
-// pops one with a firecracker pop on the firework's side (silent until you move; 4 to 6
+// pops one with a firecracker pop just ahead of you (silent until you move; 4 to 6
 // of them); the creatures sleep on through the burst, wake with a roar at the first spark
 // you pop, and charge you until the last one has popped, so keep moving (web 7.2.3 to
-// 7.2.6, Russell's design). A creature that reaches you shoves you three steps the way it was
+// 7.2.7, Russell's design). A creature that reaches you shoves you three steps the way it was
 // running, and if a pool is there, you fall in. That creature then calms down and
 // wanders off, and the others lose your trail for a moment, so you are never shoved
 // twice running.
@@ -119,11 +119,11 @@ export const MU_CALM_AWAY = 30.0;               // after a shove it goes at leas
 // they are always straight ahead, whichever way you face, and each step pops the next.
 // Four short fireworks, one at random (7.2.6, Russell: the one long one was far too
 // long): each with the second, into its recording, that it bursts. The burst is heard on
-// your left or your right (at random), and so is every spark that pops after it.
+// your left or your right (at random); the sparks that pop after it are always ahead of you.
 export const MU_FIREWORKS = [['mu_firework_1', 0.15], ['mu_firework_2', 0.30], ['mu_firework_3', 0.17], ['mu_firework_4', 0.82]];
 export const MU_FIRE_SIDE = 3.0;                // units to your left or right that the firework bursts
 export const MU_SPARKS = [4, 6];                // sparks a firework releases: that many steps to pop them all
-export const MU_POP_AHEAD = 1.5;                // units from you, on the firework's side, that a spark pops
+export const MU_POP_AHEAD = 1.5;                // units straight ahead of you that a spark pops
 export const MU_POP_LEVEL = 1.0;
 // The character.
 export const MU_VOICE_LEVEL = 1.0;              // beside them: the in-run voice's level
@@ -941,16 +941,17 @@ const mixin = {
     mu.sparksLeft = randint(MU_SPARKS[0], MU_SPARKS[1]);
   },
 
-  // A step while sparks are out pops the next one, with a firecracker pop on the
-  // firework's side of you (left or right), whichever way you step. Popping them is the noise: every creature wakes and charges
+  // A step while sparks are out pops the next one, with a firecracker pop just ahead of
+  // you, whichever way you face. Popping them is the noise: every creature wakes and charges
   // until the last has popped.
   _muPopSpark() {
     const mu = this.mu;
     if (mu.firework) this._muBurst();          // a step before the burst still pops one: a step always does
     if (mu.sparksLeft <= 0) return;
     this._muWake(Infinity);
-    const f = this._forward(); const side = mu.sparkSide || 1;
-    const at = [this.playerPos[0] - f[1] * side * MU_POP_AHEAD, this.playerPos[1] + f[0] * side * MU_POP_AHEAD];
+    // Always just ahead of you, the way you face (7.2.7, Russell: only the firework is on a side).
+    const f = this._forward();
+    const at = [this.playerPos[0] + f[0] * MU_POP_AHEAD, this.playerPos[1] + f[1] * MU_POP_AHEAD];
     if (this.audio.has(MU_STAMP_SOUND)) this._muPlay(MU_STAMP_SOUND, { at, volume: MU_POP_LEVEL, keep: true });
     mu.sparksLeft -= 1;
     if (mu.sparksLeft <= 0) this._muSparksOut();
@@ -1180,7 +1181,7 @@ const HELP_SECTIONS = [
     { title: 'The Museum Characters', sound: null, desc: 'The character whose museum it is guides you. They call to you from beside the memory they want you to find next, the nearest one, in their own voice, so walk toward their voice. Each memory you find gives them back a piece of their life, and they tell you about it; then they call from beside the next one. When every memory is found, they say nothing of the door: listen for its buzzer. As you walk out, they say goodbye, and they are free. They also warn you whenever you come close to the edge of a bottomless pool.' },
     { title: 'The Museum Bottomless Pools', sound: null, desc: 'The one danger in the museum is its bottomless pools, which dissolve memory. They lie all through the museum, many of them close around the memories, and sometimes you have to go around one to reach a memory. Each pool bubbles where it lies, louder as you come closer, and the nearest few are heard at once. When the step straight ahead of you would take you into a pool, the character warns you, so stop, turn, and go another way; a pool beside you or behind you is not called ahead, so listen to its bubbling too. Fall into a pool, and the run is over at once. There are no lives. Every museum has more pools than the last, closer around the memories, but there is always a way through to every memory and to the door.' },
     { title: 'The Museum Creatures', sound: null, desc: 'Creatures sleep in the museum: one in the first museum, two in the second, and three from the third museum on. You hear them breathing softly. They wake only on noise, never because you walk near them. Smash a glass case, and every creature wakes with a roar from where it sleeps, so you can tell which way it is coming, and charges you for about three seconds, growling, with a footstep for every step it runs. Run the other way: you are a little faster than they are. A creature that reaches you shoves you three steps, the way it was running, and if a pool is there, you fall in. Then it calms down and walks away, and the other creatures lose your trail for a moment, so you are never shoved twice in a row. You cannot shoot them.' },
-    { title: 'The Museum Fiery Memories', sound: null, desc: 'About one memory in four is a fiery one. When you take it, a firework bursts on your left or your right, and the character warns you; there are four different fireworks, all short. The burst releases four to six sparks: you do not have to find them, and they make no sound until you move. Every step you take pops one, whichever way you walk, with a firecracker pop on the side the firework burst. The creatures sleep through the bang, but the first spark you pop wakes every one of them, each with a roar from where it sleeps, and they keep charging until the last spark has popped, so once you start, do not stop moving until the popping is over. Then the creatures calm down, and the character tells you about the memory.' },
+    { title: 'The Museum Fiery Memories', sound: null, desc: 'About one memory in four is a fiery one. When you take it, a firework bursts on your left or your right, and the character warns you; there are four different fireworks, all short. The burst releases four to six sparks: you do not have to find them, and they make no sound until you move. Every step you take pops one, whichever way you walk, with a firecracker pop just in front of you. The creatures sleep through the bang, but the first spark you pop wakes every one of them, each with a roar from where it sleeps, and they keep charging until the last spark has popped, so once you start, do not stop moving until the popping is over. Then the creatures calm down, and the character tells you about the memory.' },
     { title: 'The Museum Door and Score', sound: null, desc: 'When every memory is found, a buzzer sounds from the museum\'s door, on one of its walls, ten steps or more away. Walk to it. The door opens, and you walk through by yourself while the character says goodbye; the door closes behind you, and the next museum begins. Your score is the number of souls you free, the museums you complete, and The Museum has its own high score board.' },
     { title: 'The Museum in Chaos Mode', sound: null, desc: 'Chaos Mode has museums too, one museum to a level, which you know by a character introducing themselves over their own world. A museum in chaos has three memories the first time in a run, and one more each time after, at most eight. Each memory puts twenty seconds on the chaos clock, and a fiery one thirty. When every memory is found the buzzer sounds, the chaos clock waits until you reach the door, and the door leads on to the next level. A fall into a bottomless pool ends the whole chaos run, however much health you have. There, double tap for the memories found, then your health, the clock and the points.' },
   ]],
