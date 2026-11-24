@@ -9,7 +9,7 @@
   <link rel="icon" href="icons/icon-192.png">
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
   <meta name="theme-color" content="#0c0f14">
-  <link rel="stylesheet" href="css/site.css?v=7.1.6">
+  <link rel="stylesheet" href="css/site.css?v=7.2.0">
 </head>
 <body>
   <header class="site">
@@ -35,7 +35,7 @@
         <span id="faq-hint" class="sr-hint" data-open="Opens the {n} frequently asked questions, from {first} to {last}." data-close="Closes the frequently asked questions.">Opens the frequently asked questions.</span>
         <div id="faq-panel" class="topic-panel" hidden>
       <h3 id="faq-versions">What is the difference between the website version and the Windows version?</h3>
-      <p>They are the same game at heart, and they are developed side by side. Both have the six modes Standard, Battle, Driving, Tower, Island and Chaos, and both play the same events, read from the same signed event files. Compatibility between the two is maintained to the highest extent that both can allow. The differences come from what each can do. The website also has four modes of its own, Ultimate Mode, Find the Voice, The Abyss and Water Park, and its Chaos Mode can take you into each of them. The website is heard in binaural 3D sound and its walking modes turn with you (since web version 5.0.0); the Windows version is in stereo, with north always ahead. The website's numbers for Standard, Battle, Tower and Island have also moved on since the two last matched; the Update History and the Windows changelog list each version's changes. During a run the website speaks with its own voice, Bella; the Windows version speaks with the Windows voice, with the room's echo on it. The events are the same on both.</p>
+      <p>They are the same game at heart, and they are developed side by side. Both have the six modes Standard, Battle, Driving, Tower, Island and Chaos, and both play the same events, read from the same signed event files. Compatibility between the two is maintained to the highest extent that both can allow. The differences come from what each can do. The website also has five modes of its own, Ultimate Mode, Find the Voice, The Abyss, Water Park and The Museum, and its Chaos Mode can take you into each of them. The website is heard in binaural 3D sound and its walking modes turn with you (since web version 5.0.0); the Windows version is in stereo, with north always ahead. The website's numbers for Standard, Battle, Tower and Island have also moved on since the two last matched; the Update History and the Windows changelog list each version's changes. During a run the website speaks with its own voice, Bella; the Windows version speaks with the Windows voice, with the room's echo on it. The events are the same on both.</p>
       <ul>
         <li><strong>The website version</strong> plays in the browser of an iPhone, an iPad, an Android phone or tablet, a Chromebook, a Mac or a Linux computer, with nothing to install. On a phone or tablet it is played with touch gestures; on a computer, with the keyboard. It has the website's own extras: this site, the <a href="events.html">Events calendar</a>, <a href="stats.html">Game Stats</a>, <a href="backups.html">Score Backups</a> and the <a href="accessibility.html">display options</a>.</li>
         <li><strong>The Windows version</strong> is a program you download and run on a Windows PC. It works fully offline, supports a Braille display, puts its own room echo on the voice, and keeps its scores in its own folder. Download it from the <a href="https://github.com/DevHinderman2026/Endless-Labyrinth/releases/latest">Releases page of the game's GitHub repository</a>.</li>
@@ -49,7 +49,7 @@
       <p>Everything: from web version 5.0.0 a Windows computer plays every mode, the events and Ultimate Mode on the website, with the keyboard. (From 2.0.0 to 4.1.2 it played Ultimate Mode only.) The Windows version is still there to download, and it has things the website does not: it works offline. Scores are kept separately in each. The start screen says how to quiet NVDA's or JAWS's speech while you play: with NVDA, the NVDA key plus S cycles the speech mode; with JAWS, Insert plus Space, then S, switches between full speech and speech on demand. A Braille display and a Braille keyboard work there too, through NVDA or JAWS, as in the Windows version: the game keeps the keyboard focus in a game area of its own, shows what it says there for the display, turns contracted wordsigns back into letters, and has the Speech and Braille Key Test settings on its main menu.</p>
 
       <h3 id="faq-turning">How does turning work?</h3>
-      <p>The walking modes turn with you: Standard, Battle, Tower, Island, Find the Voice, The Abyss, Water Park, the walking levels of Chaos, and Ultimate Mode. The website has turned since version 5.0.0. (The Windows version does not turn: there north is always ahead.) You turn where you stand, and the whole world turns round you: every enemy, beacon and item, and the background too. On a touch screen, flick left or right for a quick turn of 30 degrees, so three flicks are a quarter turn; or slide left or right and keep your finger down to keep turning, and lift to stop exactly there. On a computer, press the left or right arrow for a quick turn, or hold it down to keep turning. Then swipe up, or press the up arrow, to walk the way you are facing; down takes one step straight back.</p>
+      <p>The walking modes turn with you: Standard, Battle, Tower, Island, Find the Voice, The Abyss, Water Park, The Museum, the walking levels of Chaos, and Ultimate Mode. The website has turned since version 5.0.0. (The Windows version does not turn: there north is always ahead.) You turn where you stand, and the whole world turns round you: every enemy, beacon and item, and the background too. On a touch screen, flick left or right for a quick turn of 30 degrees, so three flicks are a quarter turn; or slide left or right and keep your finger down to keep turning, and lift to stop exactly there. On a computer, press the left or right arrow for a quick turn, or hold it down to keep turning. Then swipe up, or press the up arrow, to walk the way you are facing; down takes one step straight back.</p>
       <h3 id="faq-turning-lost">How do I know which way I am facing?</h3>
       <p>As you turn, a soft tick marks east, south and west as you pass them or land on them, and a higher tick marks north, so there is always one fixed point to count from. A quick turn that lands between two of them gives a softer click. A double tap, or Enter, gives the report, which ends with the way you are facing, such as Facing north-east. Nothing but you turns you: you face the same way from one level to the next, and a new run begins facing north.</p>
       <h3 id="faq-turning-aim">How do I find things and aim now that I turn?</h3>
@@ -90,66 +90,67 @@
   <script type="importmap">
   {
     "imports": {
-      "./js/accessibility.js": "./js/accessibility.js?v=7.1.6",
-      "./js/audio.js": "./js/audio.js?v=7.1.6",
-      "./js/backup.js": "./js/backup.js?v=7.1.6",
-      "./js/backups-page.js": "./js/backups-page.js?v=7.1.6",
-      "./js/bella-lexicon.js": "./js/bella-lexicon.js?v=7.1.6",
-      "./js/bella-words.js": "./js/bella-words.js?v=7.1.6",
-      "./js/braille.js": "./js/braille.js?v=7.1.6",
-      "./js/calendar.js": "./js/calendar.js?v=7.1.6",
-      "./js/device.js": "./js/device.js?v=7.1.6",
-      "./js/display.js": "./js/display.js?v=7.1.6",
-      "./js/game.js": "./js/game.js?v=7.1.6",
-      "./js/gestures.js": "./js/gestures.js?v=7.1.6",
-      "./js/help-data.js": "./js/help-data.js?v=7.1.6",
-      "./js/help-page.js": "./js/help-page.js?v=7.1.6",
-      "./js/keywords.js": "./js/keywords.js?v=7.1.6",
-      "./js/main.js": "./js/main.js?v=7.1.6",
-      "./js/modes/abyss.js": "./js/modes/abyss.js?v=7.1.6",
-      "./js/modes/chaos.js": "./js/modes/chaos.js?v=7.1.6",
-      "./js/modes/driving.js": "./js/modes/driving.js?v=7.1.6",
-      "./js/modes/events/blocks.js": "./js/modes/events/blocks.js?v=7.1.6",
-      "./js/modes/events/engine.js": "./js/modes/events/engine.js?v=7.1.6",
-      "./js/modes/events/feed.js": "./js/modes/events/feed.js?v=7.1.6",
-      "./js/modes/events/help.js": "./js/modes/events/help.js?v=7.1.6",
-      "./js/modes/events/missions.js": "./js/modes/events/missions.js?v=7.1.6",
-      "./js/modes/events/more-spec.js": "./js/modes/events/more-spec.js?v=7.1.6",
-      "./js/modes/events/more.js": "./js/modes/events/more.js?v=7.1.6",
-      "./js/modes/events/py.js": "./js/modes/events/py.js?v=7.1.6",
-      "./js/modes/events/schema.js": "./js/modes/events/schema.js?v=7.1.6",
-      "./js/modes/events/sign.js": "./js/modes/events/sign.js?v=7.1.6",
-      "./js/modes/events/sounds.js": "./js/modes/events/sounds.js?v=7.1.6",
-      "./js/modes/events/tunes.js": "./js/modes/events/tunes.js?v=7.1.6",
-      "./js/modes/events/wording.js": "./js/modes/events/wording.js?v=7.1.6",
-      "./js/modes/events.js": "./js/modes/events.js?v=7.1.6",
-      "./js/modes/findvoice-guide.js": "./js/modes/findvoice-guide.js?v=7.1.6",
-      "./js/modes/findvoice.js": "./js/modes/findvoice.js?v=7.1.6",
-      "./js/modes/index.js": "./js/modes/index.js?v=7.1.6",
-      "./js/modes/island.js": "./js/modes/island.js?v=7.1.6",
-      "./js/modes/park.js": "./js/modes/park.js?v=7.1.6",
-      "./js/modes/tower.js": "./js/modes/tower.js?v=7.1.6",
-      "./js/modes/ultimate/cast.js": "./js/modes/ultimate/cast.js?v=7.1.6",
-      "./js/modes/ultimate/help.js": "./js/modes/ultimate/help.js?v=7.1.6",
-      "./js/modes/ultimate/world.js": "./js/modes/ultimate/world.js?v=7.1.6",
-      "./js/modes/ultimate.js": "./js/modes/ultimate.js?v=7.1.6",
-      "./js/packs.js": "./js/packs.js?v=7.1.6",
-      "./js/site.js": "./js/site.js?v=7.1.6",
-      "./js/sound-rules.js": "./js/sound-rules.js?v=7.1.6",
-      "./js/speech.js": "./js/speech.js?v=7.1.6",
-      "./js/stats.js": "./js/stats.js?v=7.1.6",
-      "./js/storage.js": "./js/storage.js?v=7.1.6",
-      "./js/turning.js": "./js/turning.js?v=7.1.6",
-      "./js/update-alert.js": "./js/update-alert.js?v=7.1.6",
-      "./js/version.js": "./js/version.js?v=7.1.6",
-      "./js/voice-text.js": "./js/voice-text.js?v=7.1.6",
-      "./js/voice.js": "./js/voice.js?v=7.1.6",
-      "./js/wetworker.js": "./js/wetworker.js?v=7.1.6"
+      "./js/accessibility.js": "./js/accessibility.js?v=7.2.0",
+      "./js/audio.js": "./js/audio.js?v=7.2.0",
+      "./js/backup.js": "./js/backup.js?v=7.2.0",
+      "./js/backups-page.js": "./js/backups-page.js?v=7.2.0",
+      "./js/bella-lexicon.js": "./js/bella-lexicon.js?v=7.2.0",
+      "./js/bella-words.js": "./js/bella-words.js?v=7.2.0",
+      "./js/braille.js": "./js/braille.js?v=7.2.0",
+      "./js/calendar.js": "./js/calendar.js?v=7.2.0",
+      "./js/device.js": "./js/device.js?v=7.2.0",
+      "./js/display.js": "./js/display.js?v=7.2.0",
+      "./js/game.js": "./js/game.js?v=7.2.0",
+      "./js/gestures.js": "./js/gestures.js?v=7.2.0",
+      "./js/help-data.js": "./js/help-data.js?v=7.2.0",
+      "./js/help-page.js": "./js/help-page.js?v=7.2.0",
+      "./js/keywords.js": "./js/keywords.js?v=7.2.0",
+      "./js/main.js": "./js/main.js?v=7.2.0",
+      "./js/modes/abyss.js": "./js/modes/abyss.js?v=7.2.0",
+      "./js/modes/chaos.js": "./js/modes/chaos.js?v=7.2.0",
+      "./js/modes/driving.js": "./js/modes/driving.js?v=7.2.0",
+      "./js/modes/events/blocks.js": "./js/modes/events/blocks.js?v=7.2.0",
+      "./js/modes/events/engine.js": "./js/modes/events/engine.js?v=7.2.0",
+      "./js/modes/events/feed.js": "./js/modes/events/feed.js?v=7.2.0",
+      "./js/modes/events/help.js": "./js/modes/events/help.js?v=7.2.0",
+      "./js/modes/events/missions.js": "./js/modes/events/missions.js?v=7.2.0",
+      "./js/modes/events/more-spec.js": "./js/modes/events/more-spec.js?v=7.2.0",
+      "./js/modes/events/more.js": "./js/modes/events/more.js?v=7.2.0",
+      "./js/modes/events/py.js": "./js/modes/events/py.js?v=7.2.0",
+      "./js/modes/events/schema.js": "./js/modes/events/schema.js?v=7.2.0",
+      "./js/modes/events/sign.js": "./js/modes/events/sign.js?v=7.2.0",
+      "./js/modes/events/sounds.js": "./js/modes/events/sounds.js?v=7.2.0",
+      "./js/modes/events/tunes.js": "./js/modes/events/tunes.js?v=7.2.0",
+      "./js/modes/events/wording.js": "./js/modes/events/wording.js?v=7.2.0",
+      "./js/modes/events.js": "./js/modes/events.js?v=7.2.0",
+      "./js/modes/findvoice-guide.js": "./js/modes/findvoice-guide.js?v=7.2.0",
+      "./js/modes/findvoice.js": "./js/modes/findvoice.js?v=7.2.0",
+      "./js/modes/index.js": "./js/modes/index.js?v=7.2.0",
+      "./js/modes/island.js": "./js/modes/island.js?v=7.2.0",
+      "./js/modes/museum.js": "./js/modes/museum.js?v=7.2.0",
+      "./js/modes/park.js": "./js/modes/park.js?v=7.2.0",
+      "./js/modes/tower.js": "./js/modes/tower.js?v=7.2.0",
+      "./js/modes/ultimate/cast.js": "./js/modes/ultimate/cast.js?v=7.2.0",
+      "./js/modes/ultimate/help.js": "./js/modes/ultimate/help.js?v=7.2.0",
+      "./js/modes/ultimate/world.js": "./js/modes/ultimate/world.js?v=7.2.0",
+      "./js/modes/ultimate.js": "./js/modes/ultimate.js?v=7.2.0",
+      "./js/packs.js": "./js/packs.js?v=7.2.0",
+      "./js/site.js": "./js/site.js?v=7.2.0",
+      "./js/sound-rules.js": "./js/sound-rules.js?v=7.2.0",
+      "./js/speech.js": "./js/speech.js?v=7.2.0",
+      "./js/stats.js": "./js/stats.js?v=7.2.0",
+      "./js/storage.js": "./js/storage.js?v=7.2.0",
+      "./js/turning.js": "./js/turning.js?v=7.2.0",
+      "./js/update-alert.js": "./js/update-alert.js?v=7.2.0",
+      "./js/version.js": "./js/version.js?v=7.2.0",
+      "./js/voice-text.js": "./js/voice-text.js?v=7.2.0",
+      "./js/voice.js": "./js/voice.js?v=7.2.0",
+      "./js/wetworker.js": "./js/wetworker.js?v=7.2.0"
     }
   }
   </script>
   <!-- end of versions -->
-  <script type="module" src="js/site.js?v=7.1.6"></script>
-  <script type="module" src="js/help-page.js?v=7.1.6"></script>
+  <script type="module" src="js/site.js?v=7.2.0"></script>
+  <script type="module" src="js/help-page.js?v=7.2.0"></script>
 </body>
 </html>

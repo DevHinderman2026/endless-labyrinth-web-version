@@ -61,9 +61,9 @@ const setup = await page.evaluate(async () => {
   };
 });
 // Web 6.0.0: Find the Voice, then Ultimate Mode, then Chaos Mode, the last mode (6.2.0: The Abyss after Find the Voice).
-check(setup.menu.indexOf('Ultimate Mode') === setup.menu.indexOf('Water Park') + 1 && setup.menu.indexOf('Chaos Mode') === setup.menu.indexOf('Ultimate Mode') + 1, 'main menu: Ultimate Mode between Water Park (7.0.0; The Abyss before it) and Chaos: ' + setup.menu.join(', '));
-check(setup.names.indexOf('Ultimate Mode') === setup.names.indexOf('Water Park') + 1 && setup.names.indexOf('Chaos Mode') === setup.names.indexOf('Ultimate Mode') + 1
-  && setup.names.indexOf('Demos, Ultimate Mode') === setup.names.indexOf('Demos, Water Park') + 1 && setup.names.indexOf('Demos, Chaos Mode') === setup.names.indexOf('Demos, Ultimate Mode') + 1, 'help sections in order: ' + setup.names.join(' | '));
+check(setup.menu.indexOf('Ultimate Mode') === setup.menu.indexOf('The Museum') + 1 && setup.menu.indexOf('Chaos Mode') === setup.menu.indexOf('Ultimate Mode') + 1, 'main menu: Ultimate Mode between Water Park (7.0.0; The Abyss before it) and Chaos: ' + setup.menu.join(', '));
+check(setup.names.indexOf('Ultimate Mode') === setup.names.indexOf('The Museum') + 1 && setup.names.indexOf('Chaos Mode') === setup.names.indexOf('Ultimate Mode') + 1
+  && setup.names.indexOf('Demos, Ultimate Mode') === setup.names.indexOf('Demos, The Museum') + 1 && setup.names.indexOf('Demos, Chaos Mode') === setup.names.indexOf('Demos, Ultimate Mode') + 1, 'help sections in order: ' + setup.names.join(' | '));
 check(setup.topics === 20 && setup.demos === 25, `help: ${setup.topics} topics, ${setup.demos} demos`);
 check(setup.silentBeforeRun.length === 0, 'every demo plays before any run' + (setup.silentBeforeRun.length ? ': silent ' + setup.silentBeforeRun.join(', ') : ''));
 check(setup.missingBeforeRun.length === 0, 'every demo sound exists before any run, for Help from the main menu' + (setup.missingBeforeRun.length ? ': missing ' + setup.missingBeforeRun.join(', ') : ''));

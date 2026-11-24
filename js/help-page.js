@@ -17,6 +17,7 @@ import { AudioEngine } from './audio.js';
 import { openPacks } from './packs.js';
 import { makeSounds as makeUltimateSounds } from './modes/ultimate.js';
 import { makeFindVoiceSounds } from './modes/findvoice.js';
+import { makeMuseumSounds } from './modes/museum.js';
 
 const $ = (id) => document.getElementById(id);
 const kind = deviceKind();
@@ -122,6 +123,8 @@ async function playDemo(button, section, item) {
     // Find the Voice's guide and charging creature are made from other recordings
     // (web 6.0.0): made only for their own demos, so no other demo reads their packs.
     if (/^fv_demo_/.test(item.sound)) await makeFindVoiceSounds(audio);
+    // (A memory's tune, The Museum's, web 7.2.0.)
+    if (item.sound === 'mu_tune_demo') makeMuseumSounds(audio);
     const room = helpRoomFor(section);
     if (room) await audio.prepareRoom(room);
     audio.setRoom(room);

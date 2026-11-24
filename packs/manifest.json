@@ -79,6 +79,14 @@
   "waterpark": {
    "file": "waterpark-6a89660b7e.elpack",
    "bytes": 1779555
+  },
+  "museum": {
+   "file": "museum-cf5aa959b9.elpack",
+   "bytes": 522920
+  },
+  "museum-voice": {
+   "file": "museum-voice-3c0beef540.elpack",
+   "bytes": 9404140
   }
  }
 }

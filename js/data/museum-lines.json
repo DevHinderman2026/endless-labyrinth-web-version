@@ -1,0 +1,4167 @@
+{
+ "format": 1,
+ "built": "web 7.2.0",
+ "about": "The Museum's character lines (tools/museum/lines.py). type: intro (as their museum begins), call (from beside the memory they want found), pool (near a bottomless pool's edge), fiery (a fiery memory's firework: stamp out the sparks), memory (said as the nth memory is found, n 1 to 8), open (every memory found: go to the door), goodbye (out of the door: they are free). phonemes: Misaki notation, British for gb characters. Each line is a recording in the character's own Kokoro voice, named vc_ plus its id, in the museum-voice pack.",
+ "lines": [
+  {
+   "id": "museum.witch.intro.1",
+   "character": "witch",
+   "type": "intro",
+   "n": 1,
+   "text": "Hello again, dearie. They put my soul in a glass jar, can you believe it? Find my memories, and let this old witch out.",
+   "phonemes": "həlˈO əɡˈɛn, dˈɪɹi. ðˈA pˈʊt mI sˈOl ɪn ə ɡlˈæs ʤˈɑɹ, kæn ju bəlˈiv ɪt? fˈInd mI mˈɛməɹiz, ænd lˈɛt ðˈɪs ˈOld wˈɪʧ ˈWt."
+  },
+  {
+   "id": "museum.witch.call.1",
+   "character": "witch",
+   "type": "call",
+   "n": 1,
+   "text": "Over here, dearie. This one smells of my cauldron.",
+   "phonemes": "ˈOvəɹ hˈɪɹ, dˈɪɹi. ðˈɪs wˈʌn smˈɛlz ʌv mI kˈɔldɹən."
+  },
+  {
+   "id": "museum.witch.call.2",
+   "character": "witch",
+   "type": "call",
+   "n": 2,
+   "text": "This way. Or was it that way? No, this way.",
+   "phonemes": "ðˈɪs wˈA. ɔɹ wʌz ɪt ðæt wˈA? nˈO, ðˈɪs wˈA."
+  },
+  {
+   "id": "museum.witch.call.3",
+   "character": "witch",
+   "type": "call",
+   "n": 3,
+   "text": "Come along, come along. Here it is.",
+   "phonemes": "kˈʌm əlˈɔŋ, kˈʌm əlˈɔŋ. hˈɪɹ ɪt ɪz."
+  },
+  {
+   "id": "museum.witch.call.4",
+   "character": "witch",
+   "type": "call",
+   "n": 4,
+   "text": "Follow my voice, dearie. It's right here with me.",
+   "phonemes": "fˈɑlO mI vˈYs, dˈɪɹi. ɪts ɹˈIt hˈɪɹ wɪð mi."
+  },
+  {
+   "id": "museum.witch.pool.1",
+   "character": "witch",
+   "type": "pool",
+   "n": 1,
+   "text": "Careful, dearie! That pool will drink you up.",
+   "phonemes": "kˈɛɹfəl, dˈɪɹi! ðæt pˈul wɪl dɹˈɪŋk ju ˈʌp."
+  },
+  {
+   "id": "museum.witch.pool.2",
+   "character": "witch",
+   "type": "pool",
+   "n": 2,
+   "text": "Stop! Water ahead, and not the friendly kind.",
+   "phonemes": "stˈɑp! wˈɔɾəɹ əhˈɛd, ænd nˈɑt ðə fɹˈɛndli kˈInd."
+  },
+  {
+   "id": "museum.witch.pool.3",
+   "character": "witch",
+   "type": "pool",
+   "n": 3,
+   "text": "Mind the pool, dearie. Go around it.",
+   "phonemes": "mˈInd ðə pˈul, dˈɪɹi. ɡˈO əɹˈWnd ɪt."
+  },
+  {
+   "id": "museum.witch.fiery.1",
+   "character": "witch",
+   "type": "fiery",
+   "n": 1,
+   "text": "Oh dear, that one was a hot one! Run over the sparks, quick, before the beasts come!",
+   "phonemes": "ˈO dˈɪɹ, ðæt wˈʌn wʌz ə hˈɑt wˈʌn! ɹˈʌn ˈOvəɹ ðə spˈɑɹks, kwˈɪk, bəfˈɔɹ ðə bˈists kˈʌm!"
+  },
+  {
+   "id": "museum.witch.fiery.2",
+   "character": "witch",
+   "type": "fiery",
+   "n": 2,
+   "text": "Fireworks! Stamp out every spark, dearie, and keep moving!",
+   "phonemes": "fˈIəɹwˌɜɹks! stˈæmp ˈWt ˈɛvɹi spˈɑɹk, dˈɪɹi, ænd kˈip mˈuvɪŋ!"
+  },
+  {
+   "id": "museum.witch.memory.1",
+   "character": "witch",
+   "type": "memory",
+   "n": 1,
+   "text": "Ah, I remember now. My first cauldron. It was a teapot, really. A very brave teapot.",
+   "phonemes": "ˈɑ, ˈI ɹəmˈɛmbəɹ nˈW. mI fˈɜɹst kˈɔldɹən. ɪt wʌz ə tˈipˌɑt, ɹˈili. ə vˈɛɹi bɹˈAv tˈipˌɑt."
+  },
+  {
+   "id": "museum.witch.memory.2",
+   "character": "witch",
+   "type": "memory",
+   "n": 2,
+   "text": "My mother taught me to brew. She said, never stir to the left on a Tuesday. I still don't know why.",
+   "phonemes": "mI mˈʌðəɹ tˈɔt mi tə bɹˈu. ʃi sˈɛd, nˈɛvəɹ stˈɜɹ tə ðə lˈɛft ˈɑn ə tˈuzdˌA. ˈI stˈɪl dˈOnt nˈO wˈI."
+  },
+  {
+   "id": "museum.witch.memory.3",
+   "character": "witch",
+   "type": "memory",
+   "n": 3,
+   "text": "I remember a little cottage with a crooked chimney. The smoke came out green on good days.",
+   "phonemes": "ˈI ɹəmˈɛmbəɹ ə lˈɪɾᵊl kˈɑɾɪʤ wɪð ə kɹˈʊkᵻd ʧˈɪmni. ðə smˈOk kˈAm ˈWt ɡɹˈin ˈɑn ɡˈʊd dˈAz."
+  },
+  {
+   "id": "museum.witch.memory.4",
+   "character": "witch",
+   "type": "memory",
+   "n": 4,
+   "text": "There was a cat. A black one, of course. He hated brooms. We never flew together.",
+   "phonemes": "ðɛɹ wʌz ə kˈæt. ə blˈæk wˈʌn, ʌv kˈɔɹs. hi hˈAtᵻd bɹˈumz. wi nˈɛvəɹ flˈu təɡˈɛðəɹ."
+  },
+  {
+   "id": "museum.witch.memory.5",
+   "character": "witch",
+   "type": "memory",
+   "n": 5,
+   "text": "I made a potion once that turned the whole village blue for a week. They loved it. Well, some of them.",
+   "phonemes": "ˈI mˈAd ə pˈOʃən wˈʌns ðæt tˈɜɹnd ðə hˈOl vˈɪlɪʤ blˈu fɔɹ ə wˈik. ðˈA lˈʌvd ɪt. wˈɛl, sʌm ʌv ðˈɛm."
+  },
+  {
+   "id": "museum.witch.memory.6",
+   "character": "witch",
+   "type": "memory",
+   "n": 6,
+   "text": "I remember the night I lost my best hat. The wind took it right off. I still miss that hat.",
+   "phonemes": "ˈI ɹəmˈɛmbəɹ ðə nˈIt ˈI lˈɔst mI bˈɛst hˈæt. ðə wˈɪnd tˈʊk ɪt ɹˈIt ˈɔf. ˈI stˈɪl mˈɪs ðæt hˈæt."
+  },
+  {
+   "id": "museum.witch.memory.7",
+   "character": "witch",
+   "type": "memory",
+   "n": 7,
+   "text": "I used to sing to the cauldron. The potions came out sweeter when I did.",
+   "phonemes": "ˈI jˈust tə sˈɪŋ tə ðə kˈɔldɹən. ðə pˈOʃənz kˈAm ˈWt swˈiɾəɹ wˌɛn ˈI dɪd."
+  },
+  {
+   "id": "museum.witch.memory.8",
+   "character": "witch",
+   "type": "memory",
+   "n": 8,
+   "text": "And this one. The day I found the world was a spell. I laughed and laughed. Thank you, dearie.",
+   "phonemes": "ænd ðˈɪs wˈʌn. ðə dˈA ˈI fˈWnd ðə wˈɜɹld wʌz ə spˈɛl. ˈI lˈæft ænd lˈæft. θˈæŋk ju, dˈɪɹi."
+  },
+  {
+   "id": "museum.witch.open.1",
+   "character": "witch",
+   "type": "open",
+   "n": 1,
+   "text": "That's all of me, dearie. The door is buzzing. Go on, walk out, and take me with you.",
+   "phonemes": "ðˈæts ˈɔl ʌv mi, dˈɪɹi. ðə dˈɔɹ ɪz bˈʌzɪŋ. ɡˈO ˈɑn, wˈɔk ˈWt, ænd tˈAk mi wɪð ju."
+  },
+  {
+   "id": "museum.witch.goodbye.1",
+   "character": "witch",
+   "type": "goodbye",
+   "n": 1,
+   "text": "Free! Oh, it's lovely out here. Thank you, dearie. Mind how you go.",
+   "phonemes": "fɹˈi! ˈO, ɪts lˈʌvli ˈWt hˈɪɹ. θˈæŋk ju, dˈɪɹi. mˈInd hˌW ju ɡˈO."
+  },
+  {
+   "id": "museum.gravekeeper.intro.1",
+   "character": "gravekeeper",
+   "type": "intro",
+   "n": 1,
+   "text": "Hello, friend. It's Mortimer. I seem to be kept in this museum now. If you could find my memories, I could rest at last.",
+   "phonemes": "həlˈO, fɹˈɛnd. ɪts mˈɔɹɾəməɹ. ˈI sˈim tə bi kˈɛpt ɪn ðˈɪs mjuzˈiəm nˈW. ɪf ju kʊd fˈInd mI mˈɛməɹiz, ˈI kʊd ɹˈɛst æt lˈæst."
+  },
+  {
+   "id": "museum.gravekeeper.call.1",
+   "character": "gravekeeper",
+   "type": "call",
+   "n": 1,
+   "text": "Over here, friend. Gently does it.",
+   "phonemes": "ˈOvəɹ hˈɪɹ, fɹˈɛnd. ʤˈɛntli dʌz ɪt."
+  },
+  {
+   "id": "museum.gravekeeper.call.2",
+   "character": "gravekeeper",
+   "type": "call",
+   "n": 2,
+   "text": "This way. Just here, by my voice.",
+   "phonemes": "ðˈɪs wˈA. ʤʌst hˈɪɹ, bI mI vˈYs."
+  },
+  {
+   "id": "museum.gravekeeper.call.3",
+   "character": "gravekeeper",
+   "type": "call",
+   "n": 3,
+   "text": "Here it is. Take your time.",
+   "phonemes": "hˈɪɹ ɪt ɪz. tˈAk jʊɹ tˈIm."
+  },
+  {
+   "id": "museum.gravekeeper.call.4",
+   "character": "gravekeeper",
+   "type": "call",
+   "n": 4,
+   "text": "Follow me, friend. It's close now.",
+   "phonemes": "fˈɑlO mi, fɹˈɛnd. ɪts klˈOs nˈW."
+  },
+  {
+   "id": "museum.gravekeeper.pool.1",
+   "character": "gravekeeper",
+   "type": "pool",
+   "n": 1,
+   "text": "Careful, friend. There's a deep pool there.",
+   "phonemes": "kˈɛɹfəl, fɹˈɛnd. ðˈɛɹz ə dˈip pˈul ðɛɹ."
+  },
+  {
+   "id": "museum.gravekeeper.pool.2",
+   "character": "gravekeeper",
+   "type": "pool",
+   "n": 2,
+   "text": "Slow down. A pool, just ahead.",
+   "phonemes": "slˈO dˈWn. ə pˈul, ʤʌst əhˈɛd."
+  },
+  {
+   "id": "museum.gravekeeper.pool.3",
+   "character": "gravekeeper",
+   "type": "pool",
+   "n": 3,
+   "text": "Mind your step. Go around the water.",
+   "phonemes": "mˈInd jʊɹ stˈɛp. ɡˈO əɹˈWnd ðə wˈɔɾəɹ."
+  },
+  {
+   "id": "museum.gravekeeper.fiery.1",
+   "character": "gravekeeper",
+   "type": "fiery",
+   "n": 1,
+   "text": "Oh my, that one burned! Run over the sparks, friend, before something hears!",
+   "phonemes": "ˈO mI, ðæt wˈʌn bˈɜɹnd! ɹˈʌn ˈOvəɹ ðə spˈɑɹks, fɹˈɛnd, bəfˈɔɹ sˈʌmθɪŋ hˈɪɹz!"
+  },
+  {
+   "id": "museum.gravekeeper.fiery.2",
+   "character": "gravekeeper",
+   "type": "fiery",
+   "n": 2,
+   "text": "Sparks everywhere! Stamp them out, and don't stand still!",
+   "phonemes": "spˈɑɹks ˈɛvɹiwˌɛɹ! stˈæmp ðˈɛm ˈWt, ænd dˈOnt stˈænd stˈɪl!"
+  },
+  {
+   "id": "museum.gravekeeper.memory.1",
+   "character": "gravekeeper",
+   "type": "memory",
+   "n": 1,
+   "text": "I remember my first rake. It had three teeth missing. I loved it anyway.",
+   "phonemes": "ˈI ɹəmˈɛmbəɹ mI fˈɜɹst ɹˈAk. ɪt hæd θɹˈi tˈiθ mˈɪsɪŋ. ˈI lˈʌvd ɪt ˈɛniwˌA."
+  },
+  {
+   "id": "museum.gravekeeper.memory.2",
+   "character": "gravekeeper",
+   "type": "memory",
+   "n": 2,
+   "text": "My father kept this graveyard before me. He used to say, every stone deserves a kind word.",
+   "phonemes": "mI fˈɑðəɹ kˈɛpt ðˈɪs ɡɹˈAvjˌɑɹd bəfˈɔɹ mi. hi jˈust tə sˈA, ˈɛvɹi stˈOn dəzˈɜɹvz ə kˈInd wˈɜɹd."
+  },
+  {
+   "id": "museum.gravekeeper.memory.3",
+   "character": "gravekeeper",
+   "type": "memory",
+   "n": 3,
+   "text": "There was an old oak by the gate. I sat under it every evening with my tea.",
+   "phonemes": "ðɛɹ wʌz ən ˈOld ˈOk bI ðə ɡˈAt. ˈI sˈæt ˈʌndəɹ ɪt ˈɛvɹi ˈivnɪŋ wɪð mI tˈi."
+  },
+  {
+   "id": "museum.gravekeeper.memory.4",
+   "character": "gravekeeper",
+   "type": "memory",
+   "n": 4,
+   "text": "I remember the ghosts humming on winter nights. Always the same soft tune.",
+   "phonemes": "ˈI ɹəmˈɛmbəɹ ðə ɡˈOsts hˈʌmɪŋ ˈɑn wˈɪntəɹ nˈIts. ˈɔlwˌAz ðə sˈAm sˈɔft tˈun."
+  },
+  {
+   "id": "museum.gravekeeper.memory.5",
+   "character": "gravekeeper",
+   "type": "memory",
+   "n": 5,
+   "text": "Once a little girl left flowers on every grave. I never learned her name. I still think of her.",
+   "phonemes": "wˈʌns ə lˈɪɾᵊl ɡˈɜɹl lˈɛft flˈWəɹz ˈɑn ˈɛvɹi ɡɹˈAv. ˈI nˈɛvəɹ lˈɜɹnd hɜɹ nˈAm. ˈI stˈɪl θˈɪŋk ʌv hɜɹ."
+  },
+  {
+   "id": "museum.gravekeeper.memory.6",
+   "character": "gravekeeper",
+   "type": "memory",
+   "n": 6,
+   "text": "I planted roses along the path. The ghosts said they smelled them. I believe them.",
+   "phonemes": "ˈI plˈæntᵻd ɹˈOzᵻz əlˈɔŋ ðə pˈæθ. ðə ɡˈOsts sˈɛd ðˈA smˈɛld ðˈɛm. ˈI bəlˈiv ðˈɛm."
+  },
+  {
+   "id": "museum.gravekeeper.memory.7",
+   "character": "gravekeeper",
+   "type": "memory",
+   "n": 7,
+   "text": "I remember sweeping leaves on a cold morning, and the sky going pink. A perfect day.",
+   "phonemes": "ˈI ɹəmˈɛmbəɹ swˈipɪŋ lˈivz ˈɑn ə kˈOld mˈɔɹnɪŋ, ænd ðə skˈI ɡˈOɪŋ pˈɪŋk. ə pˈɜɹfəkt dˈA."
+  },
+  {
+   "id": "museum.gravekeeper.memory.8",
+   "character": "gravekeeper",
+   "type": "memory",
+   "n": 8,
+   "text": "And here. The day I understood the world was a garden. Everything comes back. Thank you, friend.",
+   "phonemes": "ænd hˈɪɹ. ðə dˈA ˈI ˌʌndəɹstˈʊd ðə wˈɜɹld wʌz ə ɡˈɑɹdᵊn. ˈɛvɹiθˌɪŋ kˈʌmz bˈæk. θˈæŋk ju, fɹˈɛnd."
+  },
+  {
+   "id": "museum.gravekeeper.open.1",
+   "character": "gravekeeper",
+   "type": "open",
+   "n": 1,
+   "text": "That's every one, friend. Hear the buzzer? Walk out the door, and I'll be at peace.",
+   "phonemes": "ðˈæts ˈɛvɹi wˈʌn, fɹˈɛnd. hˈɪɹ ðə bˈʌzəɹ? wˈɔk ˈWt ðə dˈɔɹ, ænd ˈIl bi æt pˈis."
+  },
+  {
+   "id": "museum.gravekeeper.goodbye.1",
+   "character": "gravekeeper",
+   "type": "goodbye",
+   "n": 1,
+   "text": "I'm free. It feels like spring. Thank you, friend. Rest well.",
+   "phonemes": "ˈIm fɹˈi. ɪt fˈilz lˈIk spɹˈɪŋ. θˈæŋk ju, fɹˈɛnd. ɹˈɛst wˈɛl."
+  },
+  {
+   "id": "museum.ghost.intro.1",
+   "character": "ghost",
+   "type": "intro",
+   "n": 1,
+   "text": "Hi! It's Pell! Somebody locked me in a museum! I'm a ghost, I should be able to float out, but I can't. Find my memories? Please?",
+   "phonemes": "hˈI! ɪts pˈɛl! sˈʌmbˌɑdi lˈɑkt mi ɪn ə mjuzˈiəm! ˈIm ə ɡˈOst, ˈI ʃʊd bi ˈAbᵊl tə flˈOt ˈWt, bʌt ˈI kˈænt. fˈInd mI mˈɛməɹiz? plˈiz?"
+  },
+  {
+   "id": "museum.ghost.call.1",
+   "character": "ghost",
+   "type": "call",
+   "n": 1,
+   "text": "Over here! Over here!",
+   "phonemes": "ˈOvəɹ hˈɪɹ! ˈOvəɹ hˈɪɹ!"
+  },
+  {
+   "id": "museum.ghost.call.2",
+   "character": "ghost",
+   "type": "call",
+   "n": 2,
+   "text": "This way! I'm right next to it!",
+   "phonemes": "ðˈɪs wˈA! ˈIm ɹˈIt nˈɛkst tʊ ɪt!"
+  },
+  {
+   "id": "museum.ghost.call.3",
+   "character": "ghost",
+   "type": "call",
+   "n": 3,
+   "text": "Here! Can you hear me? Here!",
+   "phonemes": "hˈɪɹ! kæn ju hˈɪɹ mi? hˈɪɹ!"
+  },
+  {
+   "id": "museum.ghost.call.4",
+   "character": "ghost",
+   "type": "call",
+   "n": 4,
+   "text": "Follow me! It's this one!",
+   "phonemes": "fˈɑlO mi! ɪts ðˈɪs wˈʌn!"
+  },
+  {
+   "id": "museum.ghost.pool.1",
+   "character": "ghost",
+   "type": "pool",
+   "n": 1,
+   "text": "Look out! A pool! Even I wouldn't go in there!",
+   "phonemes": "lˈʊk ˈWt! ə pˈul! ˈivən ˈI wˈʊdᵊnt ɡˈO ɪn ðɛɹ!"
+  },
+  {
+   "id": "museum.ghost.pool.2",
+   "character": "ghost",
+   "type": "pool",
+   "n": 2,
+   "text": "Stop stop stop! Water!",
+   "phonemes": "stˈɑp stˈɑp stˈɑp! wˈɔɾəɹ!"
+  },
+  {
+   "id": "museum.ghost.pool.3",
+   "character": "ghost",
+   "type": "pool",
+   "n": 3,
+   "text": "Go around! That pool is scary!",
+   "phonemes": "ɡˈO əɹˈWnd! ðæt pˈul ɪz skˈɛɹi!"
+  },
+  {
+   "id": "museum.ghost.fiery.1",
+   "character": "ghost",
+   "type": "fiery",
+   "n": 1,
+   "text": "Whoa, fireworks! Run over the sparks, quick, quick!",
+   "phonemes": "wˈO, fˈIəɹwˌɜɹks! ɹˈʌn ˈOvəɹ ðə spˈɑɹks, kwˈɪk, kwˈɪk!"
+  },
+  {
+   "id": "museum.ghost.fiery.2",
+   "character": "ghost",
+   "type": "fiery",
+   "n": 2,
+   "text": "Sparks! Stamp on them all, and don't stop moving!",
+   "phonemes": "spˈɑɹks! stˈæmp ˈɑn ðˈɛm ˈɔl, ænd dˈOnt stˈɑp mˈuvɪŋ!"
+  },
+  {
+   "id": "museum.ghost.memory.1",
+   "character": "ghost",
+   "type": "memory",
+   "n": 1,
+   "text": "Oh! I remember my front door! It was red. Bright red, with a little bell.",
+   "phonemes": "ˈO! ˈI ɹəmˈɛmbəɹ mI fɹˈʌnt dˈɔɹ! ɪt wʌz ɹˈɛd. bɹˈIt ɹˈɛd, wɪð ə lˈɪɾᵊl bˈɛl."
+  },
+  {
+   "id": "museum.ghost.memory.2",
+   "character": "ghost",
+   "type": "memory",
+   "n": 2,
+   "text": "I had a dog called Biscuit. He chased his tail all day. He was very bad at it.",
+   "phonemes": "ˈI hæd ə dˈɔɡ kˈɔld bˈɪskət. hi ʧˈAst hɪz tˈAl ˈɔl dˈA. hi wʌz vˈɛɹi bˈæd æt ɪt."
+  },
+  {
+   "id": "museum.ghost.memory.3",
+   "character": "ghost",
+   "type": "memory",
+   "n": 3,
+   "text": "I remember my birthday cake. It had blue icing, and I ate the whole top.",
+   "phonemes": "ˈI ɹəmˈɛmbəɹ mI bˈɜɹθdˌA kˈAk. ɪt hæd blˈu ˈIsɪŋ, ænd ˈI ˈAt ðə hˈOl tˈɑp."
+  },
+  {
+   "id": "museum.ghost.memory.4",
+   "character": "ghost",
+   "type": "memory",
+   "n": 4,
+   "text": "My grandma used to tuck me in and say, sleep tight, little moon.",
+   "phonemes": "mI ɡɹˈændmˌɑ jˈust tə tˈʌk mi ɪn ænd sˈA, slˈip tˈIt, lˈɪɾᵊl mˈun."
+  },
+  {
+   "id": "museum.ghost.memory.5",
+   "character": "ghost",
+   "type": "memory",
+   "n": 5,
+   "text": "I remember climbing the big tree in the garden. I got stuck. Everybody came to watch.",
+   "phonemes": "ˈI ɹəmˈɛmbəɹ klˈImɪŋ ðə bˈɪɡ tɹˈi ɪn ðə ɡˈɑɹdᵊn. ˈI ɡˈɑt stˈʌk. ˈɛvɹibˌɑdi kˈAm tə wˈɑʧ."
+  },
+  {
+   "id": "museum.ghost.memory.6",
+   "character": "ghost",
+   "type": "memory",
+   "n": 6,
+   "text": "There was a music box on my shelf. It played a tune about a sailor. I still know it.",
+   "phonemes": "ðɛɹ wʌz ə mjˈuzɪk bˈɑks ˈɑn mI ʃˈɛlf. ɪt plˈAd ə tˈun əbˈWt ə sˈAləɹ. ˈI stˈɪl nˈO ɪt."
+  },
+  {
+   "id": "museum.ghost.memory.7",
+   "character": "ghost",
+   "type": "memory",
+   "n": 7,
+   "text": "I remember the first night I floated. I was so surprised I said boo to myself.",
+   "phonemes": "ˈI ɹəmˈɛmbəɹ ðə fˈɜɹst nˈIt ˈI flˈOɾᵻd. ˈI wʌz sˈO səɹpɹˈIzd ˈI sˈɛd bˈu tə mIsˈɛlf."
+  },
+  {
+   "id": "museum.ghost.memory.8",
+   "character": "ghost",
+   "type": "memory",
+   "n": 8,
+   "text": "And this one! I remember where my front door is now! Thank you, thank you!",
+   "phonemes": "ænd ðˈɪs wˈʌn! ˈI ɹəmˈɛmbəɹ wˌɛɹ mI fɹˈʌnt dˈɔɹ ɪz nˈW! θˈæŋk ju, θˈæŋk ju!"
+  },
+  {
+   "id": "museum.ghost.open.1",
+   "character": "ghost",
+   "type": "open",
+   "n": 1,
+   "text": "You found all of me! The door is buzzing! Go, go, go!",
+   "phonemes": "ju fˈWnd ˈɔl ʌv mi! ðə dˈɔɹ ɪz bˈʌzɪŋ! ɡˈO, ɡˈO, ɡˈO!"
+  },
+  {
+   "id": "museum.ghost.goodbye.1",
+   "character": "ghost",
+   "type": "goodbye",
+   "n": 1,
+   "text": "I'm free! I'm going home! Bye! You're the best!",
+   "phonemes": "ˈIm fɹˈi! ˈIm ɡˈOɪŋ hˈOm! bˈI! jʊɹ ðə bˈɛst!"
+  },
+  {
+   "id": "museum.fiddler.intro.1",
+   "character": "fiddler",
+   "type": "intro",
+   "n": 1,
+   "text": "Hey hey! It's Jangles! They hung me up in a museum like an old picture! Find my memories, friend, and let's get this skeleton dancing again!",
+   "phonemes": "hˈA hˈA! ɪts ʤˈæŋɡᵊlz! ðˈA hˈʌŋ mi ˈʌp ɪn ə mjuzˈiəm lˈIk ən ˈOld pˈɪkʧəɹ! fˈInd mI mˈɛməɹiz, fɹˈɛnd, ænd lˈɛts ɡˈɛt ðˈɪs skˈɛlətᵊn dˈænsɪŋ əɡˈɛn!"
+  },
+  {
+   "id": "museum.fiddler.call.1",
+   "character": "fiddler",
+   "type": "call",
+   "n": 1,
+   "text": "Over here, friend! Follow the tune!",
+   "phonemes": "ˈOvəɹ hˈɪɹ, fɹˈɛnd! fˈɑlO ðə tˈun!"
+  },
+  {
+   "id": "museum.fiddler.call.2",
+   "character": "fiddler",
+   "type": "call",
+   "n": 2,
+   "text": "This way! Right here, by the music!",
+   "phonemes": "ðˈɪs wˈA! ɹˈIt hˈɪɹ, bI ðə mjˈuzɪk!"
+  },
+  {
+   "id": "museum.fiddler.call.3",
+   "character": "fiddler",
+   "type": "call",
+   "n": 3,
+   "text": "Here it is! Rattle on over!",
+   "phonemes": "hˈɪɹ ɪt ɪz! ɹˈæɾᵊl ˈɑn ˈOvəɹ!"
+  },
+  {
+   "id": "museum.fiddler.call.4",
+   "character": "fiddler",
+   "type": "call",
+   "n": 4,
+   "text": "Come on, friend! It's this one!",
+   "phonemes": "kˈʌm ˈɑn, fɹˈɛnd! ɪts ðˈɪs wˈʌn!"
+  },
+  {
+   "id": "museum.fiddler.pool.1",
+   "character": "fiddler",
+   "type": "pool",
+   "n": 1,
+   "text": "Whoa there! A pool! My bones don't float!",
+   "phonemes": "wˈO ðɛɹ! ə pˈul! mI bˈOnz dˈOnt flˈOt!"
+  },
+  {
+   "id": "museum.fiddler.pool.2",
+   "character": "fiddler",
+   "type": "pool",
+   "n": 2,
+   "text": "Careful! Water ahead!",
+   "phonemes": "kˈɛɹfəl! wˈɔɾəɹ əhˈɛd!"
+  },
+  {
+   "id": "museum.fiddler.pool.3",
+   "character": "fiddler",
+   "type": "pool",
+   "n": 3,
+   "text": "Go around, friend! That pool is bad news!",
+   "phonemes": "ɡˈO əɹˈWnd, fɹˈɛnd! ðæt pˈul ɪz bˈæd nˈuz!"
+  },
+  {
+   "id": "museum.fiddler.fiery.1",
+   "character": "fiddler",
+   "type": "fiery",
+   "n": 1,
+   "text": "Ha! Fireworks! Dance on those sparks, friend, every last one!",
+   "phonemes": "hˈɑ! fˈIəɹwˌɜɹks! dˈæns ˈɑn ðˈOz spˈɑɹks, fɹˈɛnd, ˈɛvɹi lˈæst wˈʌn!"
+  },
+  {
+   "id": "museum.fiddler.fiery.2",
+   "character": "fiddler",
+   "type": "fiery",
+   "n": 2,
+   "text": "Hot hot hot! Stamp out the sparks, and keep those feet moving!",
+   "phonemes": "hˈɑt hˈɑt hˈɑt! stˈæmp ˈWt ðə spˈɑɹks, ænd kˈip ðˈOz fˈit mˈuvɪŋ!"
+  },
+  {
+   "id": "museum.fiddler.memory.1",
+   "character": "fiddler",
+   "type": "memory",
+   "n": 1,
+   "text": "I remember my first fiddle! It had two strings. I played it like it had ten.",
+   "phonemes": "ˈI ɹəmˈɛmbəɹ mI fˈɜɹst fˈɪdᵊl! ɪt hæd tˈu stɹˈɪŋz. ˈI plˈAd ɪt lˈIk ɪt hæd tˈɛn."
+  },
+  {
+   "id": "museum.fiddler.memory.2",
+   "character": "fiddler",
+   "type": "memory",
+   "n": 2,
+   "text": "My old band played every night at the barn dance. We never once finished on time.",
+   "phonemes": "mI ˈOld bˈænd plˈAd ˈɛvɹi nˈIt æt ðə bˈɑɹn dˈæns. wi nˈɛvəɹ wˈʌns fˈɪnɪʃt ˈɑn tˈIm."
+  },
+  {
+   "id": "museum.fiddler.memory.3",
+   "character": "fiddler",
+   "type": "memory",
+   "n": 3,
+   "text": "I remember a girl who danced so fast, her shoes caught fire. True story. Mostly.",
+   "phonemes": "ˈI ɹəmˈɛmbəɹ ə ɡˈɜɹl hˈu dˈænst sˈO fˈæst, hɜɹ ʃˈuz kˈɔt fˈIəɹ. tɹˈu stˈɔɹi. mˈOstli."
+  },
+  {
+   "id": "museum.fiddler.memory.4",
+   "character": "fiddler",
+   "type": "memory",
+   "n": 4,
+   "text": "I carved a pumpkin that looked just like me. Nobody could tell us apart.",
+   "phonemes": "ˈI kˈɑɹvd ə pˈʌmpkɪn ðæt lˈʊkt ʤʌst lˈIk mi. nˈObˌɑdi kʊd tˈɛl ʌs əpˈɑɹt."
+  },
+  {
+   "id": "museum.fiddler.memory.5",
+   "character": "fiddler",
+   "type": "memory",
+   "n": 5,
+   "text": "There was a storm one night, and I played so loud, the thunder joined in.",
+   "phonemes": "ðɛɹ wʌz ə stˈɔɹm wˈʌn nˈIt, ænd ˈI plˈAd sˈO lˈWd, ðə θˈʌndəɹ ʤˈYnd ɪn."
+  },
+  {
+   "id": "museum.fiddler.memory.6",
+   "character": "fiddler",
+   "type": "memory",
+   "n": 6,
+   "text": "I remember learning that a song can go back to the top. Best day of my life.",
+   "phonemes": "ˈI ɹəmˈɛmbəɹ lˈɜɹnɪŋ ðæt ə sˈɔŋ kæn ɡˈO bˈæk tə ðə tˈɑp. bˈɛst dˈA ʌv mI lˈIf."
+  },
+  {
+   "id": "museum.fiddler.memory.7",
+   "character": "fiddler",
+   "type": "memory",
+   "n": 7,
+   "text": "My knees used to keep the beat. Click, click, clack. They still do.",
+   "phonemes": "mI nˈiz jˈust tə kˈip ðə bˈit. klˈɪk, klˈɪk, klˈæk. ðˈA stˈɪl dˈu."
+  },
+  {
+   "id": "museum.fiddler.memory.8",
+   "character": "fiddler",
+   "type": "memory",
+   "n": 8,
+   "text": "And this! The last note of my favourite song. Thank you, friend! Take it from the top!",
+   "phonemes": "ænd ðˈɪs! ðə lˈæst nˈOt ʌv mI fˈAvəɹət sˈɔŋ. θˈæŋk ju, fɹˈɛnd! tˈAk ɪt fɹʌm ðə tˈɑp!"
+  },
+  {
+   "id": "museum.fiddler.open.1",
+   "character": "fiddler",
+   "type": "open",
+   "n": 1,
+   "text": "That's the whole song, friend! The door's buzzing! Dance on out!",
+   "phonemes": "ðˈæts ðə hˈOl sˈɔŋ, fɹˈɛnd! ðə dˈɔɹz bˈʌzɪŋ! dˈæns ˈɑn ˈWt!"
+  },
+  {
+   "id": "museum.fiddler.goodbye.1",
+   "character": "fiddler",
+   "type": "goodbye",
+   "n": 1,
+   "text": "I'm free! And the band plays on! Thanks, friend!",
+   "phonemes": "ˈIm fɹˈi! ænd ðə bˈænd plˈAz ˈɑn! θˈæŋks, fɹˈɛnd!"
+  },
+  {
+   "id": "museum.merchant.intro.1",
+   "character": "merchant",
+   "type": "intro",
+   "n": 1,
+   "text": "Hello, love! It's Marigold. Somebody's put me on display, would you believe it? Find my memories, and I'll give you the best rumour I know.",
+   "phonemes": "həlˈQ, lˈʌv! ɪts mˈaɹɪɡQld. sˈʌmbədiz pˈʊt mi ˈɒn dɪsplˈA, wʊd ju bəlˈiːv ɪt? fˈInd mI mˈɛməɹiz, and ˈIl ɡˈɪv ju ðə bˈɛst ɹˈuːmə ˈI nˈQ."
+  },
+  {
+   "id": "museum.merchant.call.1",
+   "character": "merchant",
+   "type": "call",
+   "n": 1,
+   "text": "Over here, love! Right here!",
+   "phonemes": "ˈQvə hˈɪə, lˈʌv! ɹˈIt hˈɪə!"
+  },
+  {
+   "id": "museum.merchant.call.2",
+   "character": "merchant",
+   "type": "call",
+   "n": 2,
+   "text": "This way, this way!",
+   "phonemes": "ðˈɪs wˈA, ðˈɪs wˈA!"
+  },
+  {
+   "id": "museum.merchant.call.3",
+   "character": "merchant",
+   "type": "call",
+   "n": 3,
+   "text": "Here it is, love! Come and have a look!",
+   "phonemes": "hˈɪə ɪt ɪz, lˈʌv! kˈʌm and hav ə lˈʊk!"
+  },
+  {
+   "id": "museum.merchant.call.4",
+   "character": "merchant",
+   "type": "call",
+   "n": 4,
+   "text": "Follow me, love! Not far now!",
+   "phonemes": "fˈɒlQ mi, lˈʌv! nˈɒt fˈɑː nˈW!"
+  },
+  {
+   "id": "museum.merchant.pool.1",
+   "character": "merchant",
+   "type": "pool",
+   "n": 1,
+   "text": "Careful, love! There's a pool there!",
+   "phonemes": "kˈɛəfəl, lˈʌv! ðˈɛəz ə pˈuːl ðɛə!"
+  },
+  {
+   "id": "museum.merchant.pool.2",
+   "character": "merchant",
+   "type": "pool",
+   "n": 2,
+   "text": "Oh, stop! Water ahead!",
+   "phonemes": "ˈQ, stˈɒp! wˈɔːtə əhˈɛd!"
+  },
+  {
+   "id": "museum.merchant.pool.3",
+   "character": "merchant",
+   "type": "pool",
+   "n": 3,
+   "text": "Go round it, love! That pool's no good!",
+   "phonemes": "ɡˈQ ɹˈWnd ɪt, lˈʌv! ðat pˈuːlz nˈQ ɡˈʊd!"
+  },
+  {
+   "id": "museum.merchant.fiery.1",
+   "character": "merchant",
+   "type": "fiery",
+   "n": 1,
+   "text": "Ooh, that one was hot! Run over the sparks, love, quick as you can!",
+   "phonemes": "ˈuː, ðat wˈʌn wɒz hˈɒt! ɹˈʌn ˈQvə ðə spˈɑːks, lˈʌv, kwˈɪk az ju kan!"
+  },
+  {
+   "id": "museum.merchant.fiery.2",
+   "character": "merchant",
+   "type": "fiery",
+   "n": 2,
+   "text": "Sparks! Stamp them all out, and don't you dare stand still!",
+   "phonemes": "spˈɑːks! stˈamp ðˈɛm ˈɔːl ˈWt, and dˈQnt ju dˈɛə stˈand stˈɪl!"
+  },
+  {
+   "id": "museum.merchant.memory.1",
+   "character": "merchant",
+   "type": "memory",
+   "n": 1,
+   "text": "I remember my first stall. One apple, one candle, and a very big smile.",
+   "phonemes": "ˈI ɹəmˈɛmbə mI fˈɜːst stˈɔːl. wˈʌn ˈapᵊl, wˈʌn kˈandᵊl, and ə vˈɛɹi bˈɪɡ smˈIl."
+  },
+  {
+   "id": "museum.merchant.memory.2",
+   "character": "merchant",
+   "type": "memory",
+   "n": 2,
+   "text": "My mum sold ribbons in the same market. She knew everyone's business, and so do I.",
+   "phonemes": "mI mˈʌm sˈQld ɹˈɪbənz ɪn ðə sˈAm mˈɑːkət. ʃi njˈuː ˈɛvɹiwˌʌnz bˈɪznəs, and sˈQ dˈuː ˈI."
+  },
+  {
+   "id": "museum.merchant.memory.3",
+   "character": "merchant",
+   "type": "memory",
+   "n": 3,
+   "text": "I remember a man who bought every candle I had, just to light his way home.",
+   "phonemes": "ˈI ɹəmˈɛmbə ə mˈan hˈuː bˈɔːt ˈɛvɹi kˈandᵊl ˈI had, ʤʌst tə lˈIt hɪz wˈA hˈQm."
+  },
+  {
+   "id": "museum.merchant.memory.4",
+   "character": "merchant",
+   "type": "memory",
+   "n": 4,
+   "text": "There was a rainy day when nobody came. So I sold rumours to the pigeons.",
+   "phonemes": "ðɛə wɒz ə ɹˈAni dˈA wˌɛn nˈQbədi kˈAm. sˈQ ˈI sˈQld ɹˈuːməz tə ðə pˈɪʤənz."
+  },
+  {
+   "id": "museum.merchant.memory.5",
+   "character": "merchant",
+   "type": "memory",
+   "n": 5,
+   "text": "I remember the market at night, all the lanterns, and the smell of baking bread.",
+   "phonemes": "ˈI ɹəmˈɛmbə ðə mˈɑːkət at nˈIt, ˈɔːl ðə lˈantənz, and ðə smˈɛl ɒv bˈAkɪŋ bɹˈɛd."
+  },
+  {
+   "id": "museum.merchant.memory.6",
+   "character": "merchant",
+   "type": "memory",
+   "n": 6,
+   "text": "A little boy gave me a button for an apple once. I kept that button for years.",
+   "phonemes": "ə lˈɪtᵊl bˈY ɡˈAv mi ə bˈʌtᵊn fɔː ən ˈapᵊl wˈʌns. ˈI kˈɛpt ðat bˈʌtᵊn fɔː jˈɪəz."
+  },
+  {
+   "id": "museum.merchant.memory.7",
+   "character": "merchant",
+   "type": "memory",
+   "n": 7,
+   "text": "I wrote every rumour in a book. The book got so heavy I needed a cart.",
+   "phonemes": "ˈI ɹˈQt ˈɛvɹi ɹˈuːmə ɪn ə bˈʊk. ðə bˈʊk ɡˈɒt sˈQ hˈɛvi ˈI nˈiːdɪd ə kˈɑːt."
+  },
+  {
+   "id": "museum.merchant.memory.8",
+   "character": "merchant",
+   "type": "memory",
+   "n": 8,
+   "text": "And this one, love. The best rumour of all: that I'd be free one day. Thank you!",
+   "phonemes": "and ðˈɪs wˈʌn, lˈʌv. ðə bˈɛst ɹˈuːmə ɒv ˈɔːl: ðat ˈId bi fɹˈiː wˈʌn dˈA. θˈaŋk ju!"
+  },
+  {
+   "id": "museum.merchant.open.1",
+   "character": "merchant",
+   "type": "open",
+   "n": 1,
+   "text": "That's me, all of me! Hear the buzzer, love? Out the door you go!",
+   "phonemes": "ðˈats mi, ˈɔːl ɒv mi! hˈɪə ðə bˈʌzə, lˈʌv? ˈWt ðə dˈɔː ju ɡˈQ!"
+  },
+  {
+   "id": "museum.merchant.goodbye.1",
+   "character": "merchant",
+   "type": "goodbye",
+   "n": 1,
+   "text": "Free as a bird! Thank you, love! Come by the stall any time!",
+   "phonemes": "fɹˈiː az ə bˈɜːd! θˈaŋk ju, lˈʌv! kˈʌm bI ðə stˈɔːl ˈɛni tˈIm!"
+  },
+  {
+   "id": "museum.watchman.intro.1",
+   "character": "watchman",
+   "type": "intro",
+   "n": 1,
+   "text": "Evening, young walker. Tobias here. Seems someone's locked the night watchman up for once. Find my memories, would you, and I'll be on my rounds again.",
+   "phonemes": "ˈiːvnɪŋ, jˈʌŋ wˈɔːkə. təbˈIəs hˈɪə. sˈiːmz sˈʌmwˌʌnz lˈɒkt ðə nˈIt wˈɒʧmən ˈʌp fɔː wˈʌns. fˈInd mI mˈɛməɹiz, wʊd ju, and ˈIl bi ˈɒn mI ɹˈWndz əɡˈɛn."
+  },
+  {
+   "id": "museum.watchman.call.1",
+   "character": "watchman",
+   "type": "call",
+   "n": 1,
+   "text": "Over here, young walker.",
+   "phonemes": "ˈQvə hˈɪə, jˈʌŋ wˈɔːkə."
+  },
+  {
+   "id": "museum.watchman.call.2",
+   "character": "watchman",
+   "type": "call",
+   "n": 2,
+   "text": "This way. Follow my voice.",
+   "phonemes": "ðˈɪs wˈA. fˈɒlQ mI vˈYs."
+  },
+  {
+   "id": "museum.watchman.call.3",
+   "character": "watchman",
+   "type": "call",
+   "n": 3,
+   "text": "Here it is. Steady now.",
+   "phonemes": "hˈɪə ɪt ɪz. stˈɛdi nˈW."
+  },
+  {
+   "id": "museum.watchman.call.4",
+   "character": "watchman",
+   "type": "call",
+   "n": 4,
+   "text": "Come along. It's just here.",
+   "phonemes": "kˈʌm əlˈɒŋ. ɪts ʤʌst hˈɪə."
+  },
+  {
+   "id": "museum.watchman.pool.1",
+   "character": "watchman",
+   "type": "pool",
+   "n": 1,
+   "text": "Careful! A pool ahead. Mind yourself.",
+   "phonemes": "kˈɛəfəl! ə pˈuːl əhˈɛd. mˈInd jʊəsˈɛlf."
+  },
+  {
+   "id": "museum.watchman.pool.2",
+   "character": "watchman",
+   "type": "pool",
+   "n": 2,
+   "text": "Hold up. Water there.",
+   "phonemes": "hˈQld ˈʌp. wˈɔːtə ðɛə."
+  },
+  {
+   "id": "museum.watchman.pool.3",
+   "character": "watchman",
+   "type": "pool",
+   "n": 3,
+   "text": "Go round it, friend. That pool's deep.",
+   "phonemes": "ɡˈQ ɹˈWnd ɪt, fɹˈɛnd. ðat pˈuːlz dˈiːp."
+  },
+  {
+   "id": "museum.watchman.fiery.1",
+   "character": "watchman",
+   "type": "fiery",
+   "n": 1,
+   "text": "That one was a hot one! Run across the sparks, quick now, before anything wakes!",
+   "phonemes": "ðat wˈʌn wɒz ə hˈɒt wˈʌn! ɹˈʌn əkɹˈɒs ðə spˈɑːks, kwˈɪk nˈW, bəfˈɔː ˈɛniθˌɪŋ wˈAks!"
+  },
+  {
+   "id": "museum.watchman.fiery.2",
+   "character": "watchman",
+   "type": "fiery",
+   "n": 2,
+   "text": "Sparks! Put them all out, and keep moving!",
+   "phonemes": "spˈɑːks! pˈʊt ðˈɛm ˈɔːl ˈWt, and kˈiːp mˈuːvɪŋ!"
+  },
+  {
+   "id": "museum.watchman.memory.1",
+   "character": "watchman",
+   "type": "memory",
+   "n": 1,
+   "text": "I remember my first lantern. It smoked something awful, but it never went out.",
+   "phonemes": "ˈI ɹəmˈɛmbə mI fˈɜːst lˈantən. ɪt smˈQkt sˈʌmθɪŋ ˈɒfᵊl, bʌt ɪt nˈɛvə wˈɛnt ˈWt."
+  },
+  {
+   "id": "museum.watchman.memory.2",
+   "character": "watchman",
+   "type": "memory",
+   "n": 2,
+   "text": "My first night on watch, I was so frightened of the dark I sang the whole way round.",
+   "phonemes": "mI fˈɜːst nˈIt ˈɒn wˈɒʧ, ˈI wɒz sˈQ fɹˈItᵊnd ɒv ðə dˈɑːk ˈI sˈaŋ ðə hˈQl wˈA ɹˈWnd."
+  },
+  {
+   "id": "museum.watchman.memory.3",
+   "character": "watchman",
+   "type": "memory",
+   "n": 3,
+   "text": "I remember the cocoa my wife made. Too sweet. Perfect.",
+   "phonemes": "ˈI ɹəmˈɛmbə ðə kˈQkQ mI wˈIf mˈAd. tˈuː swˈiːt. pˈɜːfəkt."
+  },
+  {
+   "id": "museum.watchman.memory.4",
+   "character": "watchman",
+   "type": "memory",
+   "n": 4,
+   "text": "There was a cat who walked my rounds with me every night for years.",
+   "phonemes": "ðɛə wɒz ə kˈat hˈuː wˈɔːkt mI ɹˈWndz wɪð mi ˈɛvɹi nˈIt fɔː jˈɪəz."
+  },
+  {
+   "id": "museum.watchman.memory.5",
+   "character": "watchman",
+   "type": "memory",
+   "n": 5,
+   "text": "I remember writing my first odd thing in the logbook. A street that wasn't there yesterday.",
+   "phonemes": "ˈI ɹəmˈɛmbə ɹˈItɪŋ mI fˈɜːst ˈɒd θˈɪŋ ɪn ðə lˈɒɡbˌʊk. ə stɹˈiːt ðat wˈɒzᵊnt ðɛə jˈɛstədˌA."
+  },
+  {
+   "id": "museum.watchman.memory.6",
+   "character": "watchman",
+   "type": "memory",
+   "n": 6,
+   "text": "One winter, the snow was so deep I lit the lamps from on top of it.",
+   "phonemes": "wˈʌn wˈɪntə, ðə snˈQ wɒz sˈQ dˈiːp ˈI lˈɪt ðə lˈamps fɹɒm ˈɒn tˈɒp ɒv ɪt."
+  },
+  {
+   "id": "museum.watchman.memory.7",
+   "character": "watchman",
+   "type": "memory",
+   "n": 7,
+   "text": "I remember sitting by the fire at dawn, my rounds done, the city waking up.",
+   "phonemes": "ˈI ɹəmˈɛmbə sˈɪtɪŋ bI ðə fˈIə at dˈɔːn, mI ɹˈWndz dˈʌn, ðə sˈɪti wˈAkɪŋ ˈʌp."
+  },
+  {
+   "id": "museum.watchman.memory.8",
+   "character": "watchman",
+   "type": "memory",
+   "n": 8,
+   "text": "And this one. The logbook's last page. It says, all is well. Thank you, friend.",
+   "phonemes": "and ðˈɪs wˈʌn. ðə lˈɒɡbˌʊks lˈɑːst pˈAʤ. ɪt sˈɛz, ˈɔːl ɪz wˈɛl. θˈaŋk ju, fɹˈɛnd."
+  },
+  {
+   "id": "museum.watchman.open.1",
+   "character": "watchman",
+   "type": "open",
+   "n": 1,
+   "text": "That's all of them. The door's buzzing. Out you go, and I'll be right behind you.",
+   "phonemes": "ðˈats ˈɔːl ɒv ðˈɛm. ðə dˈɔːz bˈʌzɪŋ. ˈWt ju ɡˈQ, and ˈIl bi ɹˈIt bəhˈInd ju."
+  },
+  {
+   "id": "museum.watchman.goodbye.1",
+   "character": "watchman",
+   "type": "goodbye",
+   "n": 1,
+   "text": "Free. The night's mine again. Thank you, young walker. All is well.",
+   "phonemes": "fɹˈiː. ðə nˈIts mˈIn əɡˈɛn. θˈaŋk ju, jˈʌŋ wˈɔːkə. ˈɔːl ɪz wˈɛl."
+  },
+  {
+   "id": "museum.clockmaker.intro.1",
+   "character": "clockmaker",
+   "type": "intro",
+   "n": 1,
+   "text": "Ah, you're here. Mister Pendle. I have been kept in this museum for exactly too long. Find my memories, quickly, and on time, please.",
+   "phonemes": "ˈɑː, jɔː hˈɪə. mˈɪstə pˈɛndᵊl. ˈI hav biːn kˈɛpt ɪn ðˈɪs mjuːzˈiːəm fɔː ɪɡzˈaktli tˈuː lˈɒŋ. fˈInd mI mˈɛməɹiz, kwˈɪkli, and ˈɒn tˈIm, plˈiːz."
+  },
+  {
+   "id": "museum.clockmaker.call.1",
+   "character": "clockmaker",
+   "type": "call",
+   "n": 1,
+   "text": "Over here! Right on time!",
+   "phonemes": "ˈQvə hˈɪə! ɹˈIt ˈɒn tˈIm!"
+  },
+  {
+   "id": "museum.clockmaker.call.2",
+   "character": "clockmaker",
+   "type": "call",
+   "n": 2,
+   "text": "This way, please! Precisely here!",
+   "phonemes": "ðˈɪs wˈA, plˈiːz! pɹəsˈIsli hˈɪə!"
+  },
+  {
+   "id": "museum.clockmaker.call.3",
+   "character": "clockmaker",
+   "type": "call",
+   "n": 3,
+   "text": "Here it is! Not a moment to lose!",
+   "phonemes": "hˈɪə ɪt ɪz! nˈɒt ə mˈQmənt tə lˈuːz!"
+  },
+  {
+   "id": "museum.clockmaker.call.4",
+   "character": "clockmaker",
+   "type": "call",
+   "n": 4,
+   "text": "Follow my voice, please! This one!",
+   "phonemes": "fˈɒlQ mI vˈYs, plˈiːz! ðˈɪs wˈʌn!"
+  },
+  {
+   "id": "museum.clockmaker.pool.1",
+   "character": "clockmaker",
+   "type": "pool",
+   "n": 1,
+   "text": "Careful! A pool, directly ahead!",
+   "phonemes": "kˈɛəfəl! ə pˈuːl, daɪɹˈɛktli əhˈɛd!"
+  },
+  {
+   "id": "museum.clockmaker.pool.2",
+   "character": "clockmaker",
+   "type": "pool",
+   "n": 2,
+   "text": "Stop, please! Water!",
+   "phonemes": "stˈɒp, plˈiːz! wˈɔːtə!"
+  },
+  {
+   "id": "museum.clockmaker.pool.3",
+   "character": "clockmaker",
+   "type": "pool",
+   "n": 3,
+   "text": "Go around it! That pool is not on the timetable!",
+   "phonemes": "ɡˈQ əˈWnd ɪt! ðat pˈuːl ɪz nˈɒt ˈɒn ðə tˈImtˌAbᵊl!"
+  },
+  {
+   "id": "museum.clockmaker.fiery.1",
+   "character": "clockmaker",
+   "type": "fiery",
+   "n": 1,
+   "text": "A firework! Most irregular! Run over every spark, quickly, quickly!",
+   "phonemes": "ə fˈIəwˌɜːk! mˈQst ɪɹˈɛɡjʊlə! ɹˈʌn ˈQvə ˈɛvɹi spˈɑːk, kwˈɪkli, kwˈɪkli!"
+  },
+  {
+   "id": "museum.clockmaker.fiery.2",
+   "character": "clockmaker",
+   "type": "fiery",
+   "n": 2,
+   "text": "Sparks! Stamp them out at once, and do not stop!",
+   "phonemes": "spˈɑːks! stˈamp ðˈɛm ˈWt at wˈʌns, and dˈuː nˈɒt stˈɒp!"
+  },
+  {
+   "id": "museum.clockmaker.memory.1",
+   "character": "clockmaker",
+   "type": "memory",
+   "n": 1,
+   "text": "I remember my first clock. I took it apart at six years old. I put it back together at seven.",
+   "phonemes": "ˈI ɹəmˈɛmbə mI fˈɜːst klˈɒk. ˈI tˈʊk ɪt əpˈɑːt at sˈɪks jˈɪəz ˈQld. ˈI pˈʊt ɪt bˈak təɡˈɛðə at sˈɛvən."
+  },
+  {
+   "id": "museum.clockmaker.memory.2",
+   "character": "clockmaker",
+   "type": "memory",
+   "n": 2,
+   "text": "My father said, a minute late is a minute lost. I have never been late since.",
+   "phonemes": "mI fˈɑːðə sˈɛd, ə mˈɪnət lˈAt ɪz ə mˈɪnət lˈɒst. ˈI hav nˈɛvə biːn lˈAt sˈɪns."
+  },
+  {
+   "id": "museum.clockmaker.memory.3",
+   "character": "clockmaker",
+   "type": "memory",
+   "n": 3,
+   "text": "I remember the station's opening day. The first train came in at nine exactly.",
+   "phonemes": "ˈI ɹəmˈɛmbə ðə stˈAʃənz ˈQpənɪŋ dˈA. ðə fˈɜːst tɹˈAn kˈAm ɪn at nˈIn ɪɡzˈaktli."
+  },
+  {
+   "id": "museum.clockmaker.memory.4",
+   "character": "clockmaker",
+   "type": "memory",
+   "n": 4,
+   "text": "There was a cuckoo clock that sang at the wrong hour. I loved it, secretly.",
+   "phonemes": "ðɛə wɒz ə kˈuːkˌuː klˈɒk ðat sˈaŋ at ðə ɹˈɒŋ ˈWə. ˈI lˈʌvd ɪt, sˈiːkɹətli."
+  },
+  {
+   "id": "museum.clockmaker.memory.5",
+   "character": "clockmaker",
+   "type": "memory",
+   "n": 5,
+   "text": "I remember timing the rain. Every drop, a small tick.",
+   "phonemes": "ˈI ɹəmˈɛmbə tˈImɪŋ ðə ɹˈAn. ˈɛvɹi dɹˈɒp, ə smˈɔːl tˈɪk."
+  },
+  {
+   "id": "museum.clockmaker.memory.6",
+   "character": "clockmaker",
+   "type": "memory",
+   "n": 6,
+   "text": "I built the great clock in the station hall. It took me twelve years and eleven months.",
+   "phonemes": "ˈI bˈɪlt ðə ɡɹˈAt klˈɒk ɪn ðə stˈAʃən hˈɔːl. ɪt tˈʊk mi twˈɛlv jˈɪəz and əlˈɛvən mˈʌnθs."
+  },
+  {
+   "id": "museum.clockmaker.memory.7",
+   "character": "clockmaker",
+   "type": "memory",
+   "n": 7,
+   "text": "I remember the only time I was surprised. A cake, for my birthday. I nearly cried.",
+   "phonemes": "ˈI ɹəmˈɛmbə ði ˈQnli tˈIm ˈI wɒz səpɹˈIzd. ə kˈAk, fɔː mI bˈɜːθdˌA. ˈI nˈɪəli kɹˈId."
+  },
+  {
+   "id": "museum.clockmaker.memory.8",
+   "character": "clockmaker",
+   "type": "memory",
+   "n": 8,
+   "text": "And this one. The moment I learned that some things cannot be timed. Thank you, truly.",
+   "phonemes": "and ðˈɪs wˈʌn. ðə mˈQmənt ˈI lˈɜːnd ðat sʌm θˈɪŋz kˈanɒt bi tˈImd. θˈaŋk ju, tɹˈuːli."
+  },
+  {
+   "id": "museum.clockmaker.open.1",
+   "character": "clockmaker",
+   "type": "open",
+   "n": 1,
+   "text": "That is all of them! The door is buzzing! Off you go, and do not be late!",
+   "phonemes": "ðat ɪz ˈɔːl ɒv ðˈɛm! ðə dˈɔː ɪz bˈʌzɪŋ! ˈɒf ju ɡˈQ, and dˈuː nˈɒt bi lˈAt!"
+  },
+  {
+   "id": "museum.clockmaker.goodbye.1",
+   "character": "clockmaker",
+   "type": "goodbye",
+   "n": 1,
+   "text": "Free, and exactly on time! Thank you! Thank you very much!",
+   "phonemes": "fɹˈiː, and ɪɡzˈaktli ˈɒn tˈIm! θˈaŋk ju! θˈaŋk ju vˈɛɹi mˈʌʧ!"
+  },
+  {
+   "id": "museum.chef.intro.1",
+   "character": "chef",
+   "type": "intro",
+   "n": 1,
+   "text": "Hey, hon! It's Chef Rosalind! They put me in a museum, can you believe it? No kitchen! Find my memories and get me back to my stove!",
+   "phonemes": "hˈA, hˈʌn! ɪts ʃˈɛf ɹˈɑzəlɪnd! ðˈA pˈʊt mi ɪn ə mjuzˈiəm, kæn ju bəlˈiv ɪt? nˈO kˈɪʧən! fˈInd mI mˈɛməɹiz ænd ɡˈɛt mi bˈæk tə mI stˈOv!"
+  },
+  {
+   "id": "museum.chef.call.1",
+   "character": "chef",
+   "type": "call",
+   "n": 1,
+   "text": "Over here, hon! Follow the sizzle!",
+   "phonemes": "ˈOvəɹ hˈɪɹ, hˈʌn! fˈɑlO ðə sˈɪzᵊl!"
+  },
+  {
+   "id": "museum.chef.call.2",
+   "character": "chef",
+   "type": "call",
+   "n": 2,
+   "text": "This way! Right here!",
+   "phonemes": "ðˈɪs wˈA! ɹˈIt hˈɪɹ!"
+  },
+  {
+   "id": "museum.chef.call.3",
+   "character": "chef",
+   "type": "call",
+   "n": 3,
+   "text": "Here it is, hon! Come and get it!",
+   "phonemes": "hˈɪɹ ɪt ɪz, hˈʌn! kˈʌm ænd ɡˈɛt ɪt!"
+  },
+  {
+   "id": "museum.chef.call.4",
+   "character": "chef",
+   "type": "call",
+   "n": 4,
+   "text": "Come on! It's right next to me!",
+   "phonemes": "kˈʌm ˈɑn! ɪts ɹˈIt nˈɛkst tə mi!"
+  },
+  {
+   "id": "museum.chef.pool.1",
+   "character": "chef",
+   "type": "pool",
+   "n": 1,
+   "text": "Careful, hon! There's a pool!",
+   "phonemes": "kˈɛɹfəl, hˈʌn! ðˈɛɹz ə pˈul!"
+  },
+  {
+   "id": "museum.chef.pool.2",
+   "character": "chef",
+   "type": "pool",
+   "n": 2,
+   "text": "Stop! Water, right there!",
+   "phonemes": "stˈɑp! wˈɔɾəɹ, ɹˈIt ðɛɹ!"
+  },
+  {
+   "id": "museum.chef.pool.3",
+   "character": "chef",
+   "type": "pool",
+   "n": 3,
+   "text": "Go around it, hon! That pool is not on the menu!",
+   "phonemes": "ɡˈO əɹˈWnd ɪt, hˈʌn! ðæt pˈul ɪz nˈɑt ˈɑn ðə mˈɛnjˌu!"
+  },
+  {
+   "id": "museum.chef.fiery.1",
+   "character": "chef",
+   "type": "fiery",
+   "n": 1,
+   "text": "Oh, that one burned! Run over the sparks, hon, all of them, fast!",
+   "phonemes": "ˈO, ðæt wˈʌn bˈɜɹnd! ɹˈʌn ˈOvəɹ ðə spˈɑɹks, hˈʌn, ˈɔl ʌv ðˈɛm, fˈæst!"
+  },
+  {
+   "id": "museum.chef.fiery.2",
+   "character": "chef",
+   "type": "fiery",
+   "n": 2,
+   "text": "Sparks! Stamp them out and keep moving! Don't you stand still!",
+   "phonemes": "spˈɑɹks! stˈæmp ðˈɛm ˈWt ænd kˈip mˈuvɪŋ! dˈOnt ju stˈænd stˈɪl!"
+  },
+  {
+   "id": "museum.chef.memory.1",
+   "character": "chef",
+   "type": "memory",
+   "n": 1,
+   "text": "I remember my first pancake. It stuck to the ceiling. My mother left it there for a year.",
+   "phonemes": "ˈI ɹəmˈɛmbəɹ mI fˈɜɹst pˈænkˌAk. ɪt stˈʌk tə ðə sˈilɪŋ. mI mˈʌðəɹ lˈɛft ɪt ðɛɹ fɔɹ ə jˈɪɹ."
+  },
+  {
+   "id": "museum.chef.memory.2",
+   "character": "chef",
+   "type": "memory",
+   "n": 2,
+   "text": "My grandmother taught me soup. She said, taste it, then taste it again.",
+   "phonemes": "mI ɡɹˈændmˌʌðəɹ tˈɔt mi sˈup. ʃi sˈɛd, tˈAst ɪt, ðˈɛn tˈAst ɪt əɡˈɛn."
+  },
+  {
+   "id": "museum.chef.memory.3",
+   "character": "chef",
+   "type": "memory",
+   "n": 3,
+   "text": "I remember the day my kitchen opened. Three customers. One of them was my dog.",
+   "phonemes": "ˈI ɹəmˈɛmbəɹ ðə dˈA mI kˈɪʧən ˈOpənd. θɹˈi kˈʌstəməɹz. wˈʌn ʌv ðˈɛm wʌz mI dˈɔɡ."
+  },
+  {
+   "id": "museum.chef.memory.4",
+   "character": "chef",
+   "type": "memory",
+   "n": 4,
+   "text": "There was a pie I made so good, a man cried into it. It was a lemon pie.",
+   "phonemes": "ðɛɹ wʌz ə pˈI ˈI mˈAd sˈO ɡˈʊd, ə mˈæn kɹˈId ˈɪntu ɪt. ɪt wʌz ə lˈɛmən pˈI."
+  },
+  {
+   "id": "museum.chef.memory.5",
+   "character": "chef",
+   "type": "memory",
+   "n": 5,
+   "text": "I remember burning a whole pan of bread, and the smell filling the street.",
+   "phonemes": "ˈI ɹəmˈɛmbəɹ bˈɜɹnɪŋ ə hˈOl pˈæn ʌv bɹˈɛd, ænd ðə smˈɛl fˈɪlɪŋ ðə stɹˈit."
+  },
+  {
+   "id": "museum.chef.memory.6",
+   "character": "chef",
+   "type": "memory",
+   "n": 6,
+   "text": "I cooked for a wedding once. Two hundred plates, and not one came back.",
+   "phonemes": "ˈI kˈʊkt fɔɹ ə wˈɛdɪŋ wˈʌns. tˈu hˈʌndɹəd plˈAts, ænd nˈɑt wˈʌn kˈAm bˈæk."
+  },
+  {
+   "id": "museum.chef.memory.7",
+   "character": "chef",
+   "type": "memory",
+   "n": 7,
+   "text": "I remember a quiet night, just me and a pot of stew, and the radio playing.",
+   "phonemes": "ˈI ɹəmˈɛmbəɹ ə kwˈIət nˈIt, ʤʌst mi ænd ə pˈɑt ʌv stˈu, ænd ðə ɹˈAdiˌO plˈAɪŋ."
+  },
+  {
+   "id": "museum.chef.memory.8",
+   "character": "chef",
+   "type": "memory",
+   "n": 8,
+   "text": "And this one, hon. My secret recipe. It's love. It was always love. Thank you!",
+   "phonemes": "ænd ðˈɪs wˈʌn, hˈʌn. mI sˈikɹət ɹˈɛsəpi. ɪts lˈʌv. ɪt wʌz ˈɔlwˌAz lˈʌv. θˈæŋk ju!"
+  },
+  {
+   "id": "museum.chef.open.1",
+   "character": "chef",
+   "type": "open",
+   "n": 1,
+   "text": "That's everything, hon! The door's buzzing! Out you go, I've got cooking to do!",
+   "phonemes": "ðˈæts ˈɛvɹiθˌɪŋ, hˈʌn! ðə dˈɔɹz bˈʌzɪŋ! ˈWt ju ɡˈO, ˈIv ɡˈɑt kˈʊkɪŋ tə dˈu!"
+  },
+  {
+   "id": "museum.chef.goodbye.1",
+   "character": "chef",
+   "type": "goodbye",
+   "n": 1,
+   "text": "Free! Kitchen's open! Thanks, hon! Come by for pie!",
+   "phonemes": "fɹˈi! kˈɪʧənz ˈOpən! θˈæŋks, hˈʌn! kˈʌm bI fɔɹ pˈI!"
+  },
+  {
+   "id": "museum.barista.intro.1",
+   "character": "barista",
+   "type": "intro",
+   "n": 1,
+   "text": "Hi! It's Juniper! Somebody put me on a shelf in this museum! Can you find my memories? I'll make you the best coffee ever!",
+   "phonemes": "hˈI! ɪts ʤˈunəpəɹ! sˈʌmbˌɑdi pˈʊt mi ˈɑn ə ʃˈɛlf ɪn ðˈɪs mjuzˈiəm! kæn ju fˈInd mI mˈɛməɹiz? ˈIl mˈAk ju ðə bˈɛst kˈɔfi ˈɛvəɹ!"
+  },
+  {
+   "id": "museum.barista.call.1",
+   "character": "barista",
+   "type": "call",
+   "n": 1,
+   "text": "Hi! Over here!",
+   "phonemes": "hˈI! ˈOvəɹ hˈɪɹ!"
+  },
+  {
+   "id": "museum.barista.call.2",
+   "character": "barista",
+   "type": "call",
+   "n": 2,
+   "text": "This way! Right here!",
+   "phonemes": "ðˈɪs wˈA! ɹˈIt hˈɪɹ!"
+  },
+  {
+   "id": "museum.barista.call.3",
+   "character": "barista",
+   "type": "call",
+   "n": 3,
+   "text": "Here it is! Come on!",
+   "phonemes": "hˈɪɹ ɪt ɪz! kˈʌm ˈɑn!"
+  },
+  {
+   "id": "museum.barista.call.4",
+   "character": "barista",
+   "type": "call",
+   "n": 4,
+   "text": "Follow me! It's this one!",
+   "phonemes": "fˈɑlO mi! ɪts ðˈɪs wˈʌn!"
+  },
+  {
+   "id": "museum.barista.pool.1",
+   "character": "barista",
+   "type": "pool",
+   "n": 1,
+   "text": "Look out! A pool!",
+   "phonemes": "lˈʊk ˈWt! ə pˈul!"
+  },
+  {
+   "id": "museum.barista.pool.2",
+   "character": "barista",
+   "type": "pool",
+   "n": 2,
+   "text": "Stop! Water right there!",
+   "phonemes": "stˈɑp! wˈɔɾəɹ ɹˈIt ðɛɹ!"
+  },
+  {
+   "id": "museum.barista.pool.3",
+   "character": "barista",
+   "type": "pool",
+   "n": 3,
+   "text": "Go around it! That pool is scary deep!",
+   "phonemes": "ɡˈO əɹˈWnd ɪt! ðæt pˈul ɪz skˈɛɹi dˈip!"
+  },
+  {
+   "id": "museum.barista.fiery.1",
+   "character": "barista",
+   "type": "fiery",
+   "n": 1,
+   "text": "Whoa! Fireworks! Run over the sparks, quick, quick!",
+   "phonemes": "wˈO! fˈIəɹwˌɜɹks! ɹˈʌn ˈOvəɹ ðə spˈɑɹks, kwˈɪk, kwˈɪk!"
+  },
+  {
+   "id": "museum.barista.fiery.2",
+   "character": "barista",
+   "type": "fiery",
+   "n": 2,
+   "text": "Sparks everywhere! Stamp them out, and keep going!",
+   "phonemes": "spˈɑɹks ˈɛvɹiwˌɛɹ! stˈæmp ðˈɛm ˈWt, ænd kˈip ɡˈOɪŋ!"
+  },
+  {
+   "id": "museum.barista.memory.1",
+   "character": "barista",
+   "type": "memory",
+   "n": 1,
+   "text": "I remember my first cup of coffee. I made it way too strong. I didn't sleep for a day.",
+   "phonemes": "ˈI ɹəmˈɛmbəɹ mI fˈɜɹst kˈʌp ʌv kˈɔfi. ˈI mˈAd ɪt wˈA tˈu stɹˈɔŋ. ˈI dˈɪdᵊnt slˈip fɔɹ ə dˈA."
+  },
+  {
+   "id": "museum.barista.memory.2",
+   "character": "barista",
+   "type": "memory",
+   "n": 2,
+   "text": "My first regular was a man with a hat. He always ordered the same thing, and never drank it.",
+   "phonemes": "mI fˈɜɹst ɹˈɛɡjələɹ wʌz ə mˈæn wɪð ə hˈæt. hi ˈɔlwˌAz ˈɔɹdəɹd ðə sˈAm θˈɪŋ, ænd nˈɛvəɹ dɹˈæŋk ɪt."
+  },
+  {
+   "id": "museum.barista.memory.3",
+   "character": "barista",
+   "type": "memory",
+   "n": 3,
+   "text": "I remember writing theories on napkins. I filled a whole drawer.",
+   "phonemes": "ˈI ɹəmˈɛmbəɹ ɹˈIɾɪŋ θˈɪɹiz ˈɑn nˈæpkənz. ˈI fˈɪld ə hˈOl dɹˈɔɹ."
+  },
+  {
+   "id": "museum.barista.memory.4",
+   "character": "barista",
+   "type": "memory",
+   "n": 4,
+   "text": "There was a lady who tipped me in buttons. I still have every one.",
+   "phonemes": "ðɛɹ wʌz ə lˈAdi hˈu tˈɪpt mi ɪn bˈʌtᵊnz. ˈI stˈɪl hæv ˈɛvɹi wˈʌn."
+  },
+  {
+   "id": "museum.barista.memory.5",
+   "character": "barista",
+   "type": "memory",
+   "n": 5,
+   "text": "I remember the busy morning when the machine broke. I made coffee in a pot on the stove.",
+   "phonemes": "ˈI ɹəmˈɛmbəɹ ðə bˈɪzi mˈɔɹnɪŋ wˌɛn ðə məʃˈin bɹˈOk. ˈI mˈAd kˈɔfi ɪn ə pˈɑt ˈɑn ðə stˈOv."
+  },
+  {
+   "id": "museum.barista.memory.6",
+   "character": "barista",
+   "type": "memory",
+   "n": 6,
+   "text": "I drew a heart in the milk once, and it actually looked like a heart. I screamed.",
+   "phonemes": "ˈI dɹˈu ə hˈɑɹt ɪn ðə mˈɪlk wˈʌns, ænd ɪt ˈækʧuəli lˈʊkt lˈIk ə hˈɑɹt. ˈI skɹˈimd."
+  },
+  {
+   "id": "museum.barista.memory.7",
+   "character": "barista",
+   "type": "memory",
+   "n": 7,
+   "text": "I remember closing up at night, counting the chairs, and the street going quiet.",
+   "phonemes": "ˈI ɹəmˈɛmbəɹ klˈOzɪŋ ˈʌp æt nˈIt, kˈWnɾɪŋ ðə ʧˈɛɹz, ænd ðə stɹˈit ɡˈOɪŋ kwˈIət."
+  },
+  {
+   "id": "museum.barista.memory.8",
+   "character": "barista",
+   "type": "memory",
+   "n": 8,
+   "text": "And this one! The day I started my own place. Thank you, so much!",
+   "phonemes": "ænd ðˈɪs wˈʌn! ðə dˈA ˈI stˈɑɹɾᵻd mI ˈOn plˈAs. θˈæŋk ju, sˈO mˈʌʧ!"
+  },
+  {
+   "id": "museum.barista.open.1",
+   "character": "barista",
+   "type": "open",
+   "n": 1,
+   "text": "You found them all! The door's buzzing! Go on out!",
+   "phonemes": "ju fˈWnd ðˈɛm ˈɔl! ðə dˈɔɹz bˈʌzɪŋ! ɡˈO ˈɑn ˈWt!"
+  },
+  {
+   "id": "museum.barista.goodbye.1",
+   "character": "barista",
+   "type": "goodbye",
+   "n": 1,
+   "text": "I'm free! Coffee's on me! Thank you!",
+   "phonemes": "ˈIm fɹˈi! kˈɔfiz ˈɑn mi! θˈæŋk ju!"
+  },
+  {
+   "id": "museum.storyteller.intro.1",
+   "character": "storyteller",
+   "type": "intro",
+   "n": 1,
+   "text": "Ho ho! Hello, young one. It's Grandpa Hollis. Here's a story for you. An old man, locked in a museum. Will he ever get out? Find my memories, and we'll see.",
+   "phonemes": "hˈO hˈO! həlˈO, jˈʌŋ wˈʌn. ɪts ɡɹˈændpˌɑ hˈɑlɪs. hˈɪɹz ə stˈɔɹi fɔɹ ju. ən ˈOld mˈæn, lˈɑkt ɪn ə mjuzˈiəm. wɪl hi ˈɛvəɹ ɡˈɛt ˈWt? fˈInd mI mˈɛməɹiz, ænd wil sˈi."
+  },
+  {
+   "id": "museum.storyteller.call.1",
+   "character": "storyteller",
+   "type": "call",
+   "n": 1,
+   "text": "Ho ho! Over here!",
+   "phonemes": "hˈO hˈO! ˈOvəɹ hˈɪɹ!"
+  },
+  {
+   "id": "museum.storyteller.call.2",
+   "character": "storyteller",
+   "type": "call",
+   "n": 2,
+   "text": "This way, young one!",
+   "phonemes": "ðˈɪs wˈA, jˈʌŋ wˈʌn!"
+  },
+  {
+   "id": "museum.storyteller.call.3",
+   "character": "storyteller",
+   "type": "call",
+   "n": 3,
+   "text": "Here it is! Come and see!",
+   "phonemes": "hˈɪɹ ɪt ɪz! kˈʌm ænd sˈi!"
+  },
+  {
+   "id": "museum.storyteller.call.4",
+   "character": "storyteller",
+   "type": "call",
+   "n": 4,
+   "text": "Follow my voice, young one. Right here.",
+   "phonemes": "fˈɑlO mI vˈYs, jˈʌŋ wˈʌn. ɹˈIt hˈɪɹ."
+  },
+  {
+   "id": "museum.storyteller.pool.1",
+   "character": "storyteller",
+   "type": "pool",
+   "n": 1,
+   "text": "Careful, young one! A pool!",
+   "phonemes": "kˈɛɹfəl, jˈʌŋ wˈʌn! ə pˈul!"
+  },
+  {
+   "id": "museum.storyteller.pool.2",
+   "character": "storyteller",
+   "type": "pool",
+   "n": 2,
+   "text": "Ho, stop there! Water ahead!",
+   "phonemes": "hˈO, stˈɑp ðɛɹ! wˈɔɾəɹ əhˈɛd!"
+  },
+  {
+   "id": "museum.storyteller.pool.3",
+   "character": "storyteller",
+   "type": "pool",
+   "n": 3,
+   "text": "Go around it, young one. That pool is no story.",
+   "phonemes": "ɡˈO əɹˈWnd ɪt, jˈʌŋ wˈʌn. ðæt pˈul ɪz nˈO stˈɔɹi."
+  },
+  {
+   "id": "museum.storyteller.fiery.1",
+   "character": "storyteller",
+   "type": "fiery",
+   "n": 1,
+   "text": "Ho ho! A firework! Run over the sparks, young one, every one!",
+   "phonemes": "hˈO hˈO! ə fˈIəɹwˌɜɹk! ɹˈʌn ˈOvəɹ ðə spˈɑɹks, jˈʌŋ wˈʌn, ˈɛvɹi wˈʌn!"
+  },
+  {
+   "id": "museum.storyteller.fiery.2",
+   "character": "storyteller",
+   "type": "fiery",
+   "n": 2,
+   "text": "Sparks! Stamp them out, and keep those feet going!",
+   "phonemes": "spˈɑɹks! stˈæmp ðˈɛm ˈWt, ænd kˈip ðˈOz fˈit ɡˈOɪŋ!"
+  },
+  {
+   "id": "museum.storyteller.memory.1",
+   "character": "storyteller",
+   "type": "memory",
+   "n": 1,
+   "text": "Ah, I remember my first story. I told it to my little sister. She fell asleep in the middle.",
+   "phonemes": "ˈɑ, ˈI ɹəmˈɛmbəɹ mI fˈɜɹst stˈɔɹi. ˈI tˈOld ɪt tə mI lˈɪɾᵊl sˈɪstəɹ. ʃi fˈɛl əslˈip ɪn ðə mˈɪdᵊl."
+  },
+  {
+   "id": "museum.storyteller.memory.2",
+   "character": "storyteller",
+   "type": "memory",
+   "n": 2,
+   "text": "My own grandfather sat by this very kind of fire. He told the same story ten different ways.",
+   "phonemes": "mI ˈOn ɡɹˈændfˌɑðəɹ sˈæt bI ðˈɪs vˈɛɹi kˈInd ʌv fˈIəɹ. hi tˈOld ðə sˈAm stˈɔɹi tˈɛn dˈɪfəɹənt wˈAz."
+  },
+  {
+   "id": "museum.storyteller.memory.3",
+   "character": "storyteller",
+   "type": "memory",
+   "n": 3,
+   "text": "I remember a winter so cold, the whole village sat round my fire to keep warm.",
+   "phonemes": "ˈI ɹəmˈɛmbəɹ ə wˈɪntəɹ sˈO kˈOld, ðə hˈOl vˈɪlɪʤ sˈæt ɹˈWnd mI fˈIəɹ tə kˈip wˈɔɹm."
+  },
+  {
+   "id": "museum.storyteller.memory.4",
+   "character": "storyteller",
+   "type": "memory",
+   "n": 4,
+   "text": "There was a boy who asked me for a story every night. He's a grandfather now.",
+   "phonemes": "ðɛɹ wʌz ə bˈY hˈu ˈæskt mi fɔɹ ə stˈɔɹi ˈɛvɹi nˈIt. hiz ə ɡɹˈændfˌɑðəɹ nˈW."
+  },
+  {
+   "id": "museum.storyteller.memory.5",
+   "character": "storyteller",
+   "type": "memory",
+   "n": 5,
+   "text": "I remember the night I forgot how a story ended. So I made up a better one.",
+   "phonemes": "ˈI ɹəmˈɛmbəɹ ðə nˈIt ˈI fəɹɡˈɑt hˌW ə stˈɔɹi ˈɛndᵻd. sˈO ˈI mˈAd ˈʌp ə bˈɛɾəɹ wˈʌn."
+  },
+  {
+   "id": "museum.storyteller.memory.6",
+   "character": "storyteller",
+   "type": "memory",
+   "n": 6,
+   "text": "I lost my glasses in the fire once. Well, near the fire. They were on my head.",
+   "phonemes": "ˈI lˈɔst mI ɡlˈæsᵻz ɪn ðə fˈIəɹ wˈʌns. wˈɛl, nˈɪɹ ðə fˈIəɹ. ðˈA wɜɹ ˈɑn mI hˈɛd."
+  },
+  {
+   "id": "museum.storyteller.memory.7",
+   "character": "storyteller",
+   "type": "memory",
+   "n": 7,
+   "text": "I remember a summer evening, the fire crackling, and everyone laughing at once.",
+   "phonemes": "ˈI ɹəmˈɛmbəɹ ə sˈʌməɹ ˈivnɪŋ, ðə fˈIəɹ kɹˈæklɪŋ, ænd ˈɛvɹiwˌʌn lˈæfɪŋ æt wˈʌns."
+  },
+  {
+   "id": "museum.storyteller.memory.8",
+   "character": "storyteller",
+   "type": "memory",
+   "n": 8,
+   "text": "And here's the end of my story. The old man was set free. Thank you, young one.",
+   "phonemes": "ænd hˈɪɹz ði ˈɛnd ʌv mI stˈɔɹi. ði ˈOld mˈæn wʌz sˈɛt fɹˈi. θˈæŋk ju, jˈʌŋ wˈʌn."
+  },
+  {
+   "id": "museum.storyteller.open.1",
+   "character": "storyteller",
+   "type": "open",
+   "n": 1,
+   "text": "That's the whole story, young one! The door's buzzing! Off you go!",
+   "phonemes": "ðˈæts ðə hˈOl stˈɔɹi, jˈʌŋ wˈʌn! ðə dˈɔɹz bˈʌzɪŋ! ˈɔf ju ɡˈO!"
+  },
+  {
+   "id": "museum.storyteller.goodbye.1",
+   "character": "storyteller",
+   "type": "goodbye",
+   "n": 1,
+   "text": "Ho ho! Free! And they all lived happily ever after. Thank you!",
+   "phonemes": "hˈO hˈO! fɹˈi! ænd ðˈA ˈɔl lˈɪvd hˈæpəli ˈɛvəɹ ˈæftəɹ. θˈæŋk ju!"
+  },
+  {
+   "id": "museum.cinder.intro.1",
+   "character": "cinder",
+   "type": "intro",
+   "n": 1,
+   "text": "Name's Cinder. Somebody stuck me in a museum. Me! Find my memories, walker, and I'll put on a show you'll never forget.",
+   "phonemes": "nˈAmz sˈɪndəɹ. sˈʌmbˌɑdi stˈʌk mi ɪn ə mjuzˈiəm. mi! fˈInd mI mˈɛməɹiz, wˈɔkəɹ, ænd ˈIl pˈʊt ˈɑn ə ʃˈO jul nˈɛvəɹ fəɹɡˈɛt."
+  },
+  {
+   "id": "museum.cinder.call.1",
+   "character": "cinder",
+   "type": "call",
+   "n": 1,
+   "text": "Over here! This way!",
+   "phonemes": "ˈOvəɹ hˈɪɹ! ðˈɪs wˈA!"
+  },
+  {
+   "id": "museum.cinder.call.2",
+   "character": "cinder",
+   "type": "call",
+   "n": 2,
+   "text": "Here it is! Move it!",
+   "phonemes": "hˈɪɹ ɪt ɪz! mˈuv ɪt!"
+  },
+  {
+   "id": "museum.cinder.call.3",
+   "character": "cinder",
+   "type": "call",
+   "n": 3,
+   "text": "This one! Right here!",
+   "phonemes": "ðˈɪs wˈʌn! ɹˈIt hˈɪɹ!"
+  },
+  {
+   "id": "museum.cinder.call.4",
+   "character": "cinder",
+   "type": "call",
+   "n": 4,
+   "text": "Follow my voice! Come on!",
+   "phonemes": "fˈɑlO mI vˈYs! kˈʌm ˈɑn!"
+  },
+  {
+   "id": "museum.cinder.pool.1",
+   "character": "cinder",
+   "type": "pool",
+   "n": 1,
+   "text": "Watch it! Pool ahead!",
+   "phonemes": "wˈɑʧ ɪt! pˈul əhˈɛd!"
+  },
+  {
+   "id": "museum.cinder.pool.2",
+   "character": "cinder",
+   "type": "pool",
+   "n": 2,
+   "text": "Stop! Water!",
+   "phonemes": "stˈɑp! wˈɔɾəɹ!"
+  },
+  {
+   "id": "museum.cinder.pool.3",
+   "character": "cinder",
+   "type": "pool",
+   "n": 3,
+   "text": "Go round it! That pool will finish you!",
+   "phonemes": "ɡˈO ɹˈWnd ɪt! ðæt pˈul wɪl fˈɪnɪʃ ju!"
+  },
+  {
+   "id": "museum.cinder.fiery.1",
+   "character": "cinder",
+   "type": "fiery",
+   "n": 1,
+   "text": "Ha! That's one of mine! Run over the sparks, walker, every last one!",
+   "phonemes": "hˈɑ! ðˈæts wˈʌn ʌv mˈIn! ɹˈʌn ˈOvəɹ ðə spˈɑɹks, wˈɔkəɹ, ˈɛvɹi lˈæst wˈʌn!"
+  },
+  {
+   "id": "museum.cinder.fiery.2",
+   "character": "cinder",
+   "type": "fiery",
+   "n": 2,
+   "text": "Sparks! Stamp them out, and don't you stop!",
+   "phonemes": "spˈɑɹks! stˈæmp ðˈɛm ˈWt, ænd dˈOnt ju stˈɑp!"
+  },
+  {
+   "id": "museum.cinder.memory.1",
+   "character": "cinder",
+   "type": "memory",
+   "n": 1,
+   "text": "I remember my first firework. It went sideways, into the baker's window. Worth it.",
+   "phonemes": "ˈI ɹəmˈɛmbəɹ mI fˈɜɹst fˈIəɹwˌɜɹk. ɪt wˈɛnt sˈIdwˌAz, ˈɪntu ðə bˈAkəɹz wˈɪndO. wˈɜɹθ ɪt."
+  },
+  {
+   "id": "museum.cinder.memory.2",
+   "character": "cinder",
+   "type": "memory",
+   "n": 2,
+   "text": "My old man worked the forge. He said, fire listens if you shout at it.",
+   "phonemes": "mI ˈOld mˈæn wˈɜɹkt ðə fˈɔɹʤ. hi sˈɛd, fˈIəɹ lˈɪsᵊnz ɪf ju ʃˈWt æt ɪt."
+  },
+  {
+   "id": "museum.cinder.memory.3",
+   "character": "cinder",
+   "type": "memory",
+   "n": 3,
+   "text": "I remember finding the lava. Hot, bright, and loud. Like me.",
+   "phonemes": "ˈI ɹəmˈɛmbəɹ fˈIndɪŋ ðə lˈɑvə. hˈɑt, bɹˈIt, ænd lˈWd. lˈIk mi."
+  },
+  {
+   "id": "museum.cinder.memory.4",
+   "character": "cinder",
+   "type": "memory",
+   "n": 4,
+   "text": "There was a festival where I lit the whole sky at once. People are still talking about it.",
+   "phonemes": "ðɛɹ wʌz ə fˈɛstəvəl wˌɛɹ ˈI lˈɪt ðə hˈOl skˈI æt wˈʌns. pˈipᵊl ɑɹ stˈɪl tˈɔkɪŋ əbˈWt ɪt."
+  },
+  {
+   "id": "museum.cinder.memory.5",
+   "character": "cinder",
+   "type": "memory",
+   "n": 5,
+   "text": "I remember burning my eyebrows off. Twice. Same week.",
+   "phonemes": "ˈI ɹəmˈɛmbəɹ bˈɜɹnɪŋ mI ˈIbɹˌWz ˈɔf. twˈIs. sˈAm wˈik."
+  },
+  {
+   "id": "museum.cinder.memory.6",
+   "character": "cinder",
+   "type": "memory",
+   "n": 6,
+   "text": "I made a firework that sounded like a song. Just once. Never again.",
+   "phonemes": "ˈI mˈAd ə fˈIəɹwˌɜɹk ðæt sˈWndᵻd lˈIk ə sˈɔŋ. ʤʌst wˈʌns. nˈɛvəɹ əɡˈɛn."
+  },
+  {
+   "id": "museum.cinder.memory.7",
+   "character": "cinder",
+   "type": "memory",
+   "n": 7,
+   "text": "I remember the quiet after a show. Smoke in the air, and my ears ringing.",
+   "phonemes": "ˈI ɹəmˈɛmbəɹ ðə kwˈIət ˈæftəɹ ə ʃˈO. smˈOk ɪn ði ˈɛɹ, ænd mI ˈɪɹz ɹˈɪŋɪŋ."
+  },
+  {
+   "id": "museum.cinder.memory.8",
+   "character": "cinder",
+   "type": "memory",
+   "n": 8,
+   "text": "And this one. The biggest bang I ever made. Thanks, walker. You did good.",
+   "phonemes": "ænd ðˈɪs wˈʌn. ðə bˈɪɡəst bˈæŋ ˈI ˈɛvəɹ mˈAd. θˈæŋks, wˈɔkəɹ. ju dɪd ɡˈʊd."
+  },
+  {
+   "id": "museum.cinder.open.1",
+   "character": "cinder",
+   "type": "open",
+   "n": 1,
+   "text": "That's all of them! Hear the buzzer? Get out that door!",
+   "phonemes": "ðˈæts ˈɔl ʌv ðˈɛm! hˈɪɹ ðə bˈʌzəɹ? ɡˈɛt ˈWt ðæt dˈɔɹ!"
+  },
+  {
+   "id": "museum.cinder.goodbye.1",
+   "character": "cinder",
+   "type": "goodbye",
+   "n": 1,
+   "text": "Free! Time for the big show! Thanks, walker!",
+   "phonemes": "fɹˈi! tˈIm fɔɹ ðə bˈɪɡ ʃˈO! θˈæŋks, wˈɔkəɹ!"
+  },
+  {
+   "id": "museum.organist.intro.1",
+   "character": "organist",
+   "type": "intro",
+   "n": 1,
+   "text": "Hello. It's Ambrose. I am held in this museum, with no music at all. If you would find my memories, I might play again.",
+   "phonemes": "həlˈQ. ɪts ˈambɹQz. ˈI am hˈɛld ɪn ðˈɪs mjuːzˈiːəm, wɪð nˈQ mjˈuːzɪk at ˈɔːl. ɪf ju wʊd fˈInd mI mˈɛməɹiz, ˈI mˈIt plˈA əɡˈɛn."
+  },
+  {
+   "id": "museum.organist.call.1",
+   "character": "organist",
+   "type": "call",
+   "n": 1,
+   "text": "Over here, please.",
+   "phonemes": "ˈQvə hˈɪə, plˈiːz."
+  },
+  {
+   "id": "museum.organist.call.2",
+   "character": "organist",
+   "type": "call",
+   "n": 2,
+   "text": "This way. Follow my voice.",
+   "phonemes": "ðˈɪs wˈA. fˈɒlQ mI vˈYs."
+  },
+  {
+   "id": "museum.organist.call.3",
+   "character": "organist",
+   "type": "call",
+   "n": 3,
+   "text": "Here it is. Gently.",
+   "phonemes": "hˈɪə ɪt ɪz. ʤˈɛntli."
+  },
+  {
+   "id": "museum.organist.call.4",
+   "character": "organist",
+   "type": "call",
+   "n": 4,
+   "text": "Come. It is just here.",
+   "phonemes": "kˈʌm. ɪt ɪz ʤʌst hˈɪə."
+  },
+  {
+   "id": "museum.organist.pool.1",
+   "character": "organist",
+   "type": "pool",
+   "n": 1,
+   "text": "Careful. A pool, ahead of you.",
+   "phonemes": "kˈɛəfəl. ə pˈuːl, əhˈɛd ɒv ju."
+  },
+  {
+   "id": "museum.organist.pool.2",
+   "character": "organist",
+   "type": "pool",
+   "n": 2,
+   "text": "Please, stop. Water there.",
+   "phonemes": "plˈiːz, stˈɒp. wˈɔːtə ðɛə."
+  },
+  {
+   "id": "museum.organist.pool.3",
+   "character": "organist",
+   "type": "pool",
+   "n": 3,
+   "text": "Go around it, please. That pool is very deep.",
+   "phonemes": "ɡˈQ əˈWnd ɪt, plˈiːz. ðat pˈuːl ɪz vˈɛɹi dˈiːp."
+  },
+  {
+   "id": "museum.organist.fiery.1",
+   "character": "organist",
+   "type": "fiery",
+   "n": 1,
+   "text": "Oh, a firework! Please, run over the sparks, all of them!",
+   "phonemes": "ˈQ, ə fˈIəwˌɜːk! plˈiːz, ɹˈʌn ˈQvə ðə spˈɑːks, ˈɔːl ɒv ðˈɛm!"
+  },
+  {
+   "id": "museum.organist.fiery.2",
+   "character": "organist",
+   "type": "fiery",
+   "n": 2,
+   "text": "Sparks! Put them out, quickly, and do not stand still!",
+   "phonemes": "spˈɑːks! pˈʊt ðˈɛm ˈWt, kwˈɪkli, and dˈuː nˈɒt stˈand stˈɪl!"
+  },
+  {
+   "id": "museum.organist.memory.1",
+   "character": "organist",
+   "type": "memory",
+   "n": 1,
+   "text": "I remember the first time I heard an organ. I was very small. I thought the building was singing.",
+   "phonemes": "ˈI ɹəmˈɛmbə ðə fˈɜːst tˈIm ˈI hˈɜːd ən ˈɔːɡən. ˈI wɒz vˈɛɹi smˈɔːl. ˈI θˈɔːt ðə bˈɪldɪŋ wɒz sˈɪŋɪŋ."
+  },
+  {
+   "id": "museum.organist.memory.2",
+   "character": "organist",
+   "type": "memory",
+   "n": 2,
+   "text": "My teacher said, every note is a door. Choose which ones to open.",
+   "phonemes": "mI tˈiːʧə sˈɛd, ˈɛvɹi nˈQt ɪz ə dˈɔː. ʧˈuːz wɪʧ wˈʌnz tʊ ˈQpən."
+  },
+  {
+   "id": "museum.organist.memory.3",
+   "character": "organist",
+   "type": "memory",
+   "n": 3,
+   "text": "I remember my first wedding. I played so softly, nobody knew I was there.",
+   "phonemes": "ˈI ɹəmˈɛmbə mI fˈɜːst wˈɛdɪŋ. ˈI plˈAd sˈQ sˈɒftli, nˈQbədi njˈuː ˈI wɒz ðɛə."
+  },
+  {
+   "id": "museum.organist.memory.4",
+   "character": "organist",
+   "type": "memory",
+   "n": 4,
+   "text": "There was a choir boy who sang one note so pure, the candles flickered.",
+   "phonemes": "ðɛə wɒz ə kwˈIə bˈY hˈuː sˈaŋ wˈʌn nˈQt sˈQ pjˈʊə, ðə kˈandᵊlz flˈɪkəd."
+  },
+  {
+   "id": "museum.organist.memory.5",
+   "character": "organist",
+   "type": "memory",
+   "n": 5,
+   "text": "I remember practising alone at night, the great hall dark, the music filling it.",
+   "phonemes": "ˈI ɹəmˈɛmbə pɹˈaktəsɪŋ əlˈQn at nˈIt, ðə ɡɹˈAt hˈɔːl dˈɑːk, ðə mjˈuːzɪk fˈɪlɪŋ ɪt."
+  },
+  {
+   "id": "museum.organist.memory.6",
+   "character": "organist",
+   "type": "memory",
+   "n": 6,
+   "text": "I wrote a piece once that I never finished. I hear it still.",
+   "phonemes": "ˈI ɹˈQt ə pˈiːs wˈʌns ðat ˈI nˈɛvə fˈɪnɪʃt. ˈI hˈɪə ɪt stˈɪl."
+  },
+  {
+   "id": "museum.organist.memory.7",
+   "character": "organist",
+   "type": "memory",
+   "n": 7,
+   "text": "I remember the morning the bells rang for no reason, and I played along.",
+   "phonemes": "ˈI ɹəmˈɛmbə ðə mˈɔːnɪŋ ðə bˈɛlz ɹˈaŋ fɔː nˈQ ɹˈiːzᵊn, and ˈI plˈAd əlˈɒŋ."
+  },
+  {
+   "id": "museum.organist.memory.8",
+   "character": "organist",
+   "type": "memory",
+   "n": 8,
+   "text": "And this one. The last bars of my unfinished piece. They were here all along. Thank you.",
+   "phonemes": "and ðˈɪs wˈʌn. ðə lˈɑːst bˈɑːz ɒv mI ʌnfˈɪnɪʃt pˈiːs. ðˈA wɜː hˈɪə ˈɔːl əlˈɒŋ. θˈaŋk ju."
+  },
+  {
+   "id": "museum.organist.open.1",
+   "character": "organist",
+   "type": "open",
+   "n": 1,
+   "text": "That is all of me. The door is buzzing. Please, walk out, and I will follow.",
+   "phonemes": "ðat ɪz ˈɔːl ɒv mi. ðə dˈɔː ɪz bˈʌzɪŋ. plˈiːz, wˈɔːk ˈWt, and ˈI wɪl fˈɒlQ."
+  },
+  {
+   "id": "museum.organist.goodbye.1",
+   "character": "organist",
+   "type": "goodbye",
+   "n": 1,
+   "text": "I am free. The music is back. Thank you, truly.",
+   "phonemes": "ˈI am fɹˈiː. ðə mjˈuːzɪk ɪz bˈak. θˈaŋk ju, tɹˈuːli."
+  },
+  {
+   "id": "museum.librarian.intro.1",
+   "character": "librarian",
+   "type": "intro",
+   "n": 1,
+   "text": "Hello. Prudence Quill. I appear to have been filed in this museum. Most improper. If you would find my memories, quietly, I could leave.",
+   "phonemes": "həlˈQ. pɹˈuːdᵊns kwˈɪl. ˈI əpˈɪə tə hav biːn fˈIld ɪn ðˈɪs mjuːzˈiːəm. mˈQst ɪmpɹˈɒpə. ɪf ju wʊd fˈInd mI mˈɛməɹiz, kwˈIətli, ˈI kʊd lˈiːv."
+  },
+  {
+   "id": "museum.librarian.call.1",
+   "character": "librarian",
+   "type": "call",
+   "n": 1,
+   "text": "Over here, please. Quietly.",
+   "phonemes": "ˈQvə hˈɪə, plˈiːz. kwˈIətli."
+  },
+  {
+   "id": "museum.librarian.call.2",
+   "character": "librarian",
+   "type": "call",
+   "n": 2,
+   "text": "This way. Just here.",
+   "phonemes": "ðˈɪs wˈA. ʤʌst hˈɪə."
+  },
+  {
+   "id": "museum.librarian.call.3",
+   "character": "librarian",
+   "type": "call",
+   "n": 3,
+   "text": "Here it is. Shh.",
+   "phonemes": "hˈɪə ɪt ɪz. ʃ."
+  },
+  {
+   "id": "museum.librarian.call.4",
+   "character": "librarian",
+   "type": "call",
+   "n": 4,
+   "text": "Follow my voice, please.",
+   "phonemes": "fˈɒlQ mI vˈYs, plˈiːz."
+  },
+  {
+   "id": "museum.librarian.pool.1",
+   "character": "librarian",
+   "type": "pool",
+   "n": 1,
+   "text": "Careful. There is a pool there.",
+   "phonemes": "kˈɛəfəl. ðɛə ɪz ə pˈuːl ðɛə."
+  },
+  {
+   "id": "museum.librarian.pool.2",
+   "character": "librarian",
+   "type": "pool",
+   "n": 2,
+   "text": "Stop, please. Water ahead.",
+   "phonemes": "stˈɒp, plˈiːz. wˈɔːtə əhˈɛd."
+  },
+  {
+   "id": "museum.librarian.pool.3",
+   "character": "librarian",
+   "type": "pool",
+   "n": 3,
+   "text": "Go around it. That pool is not in the catalogue.",
+   "phonemes": "ɡˈQ əˈWnd ɪt. ðat pˈuːl ɪz nˈɒt ɪn ðə kˈatəlˌɒɡ."
+  },
+  {
+   "id": "museum.librarian.fiery.1",
+   "character": "librarian",
+   "type": "fiery",
+   "n": 1,
+   "text": "Oh! A firework! In a museum! Run over the sparks, please, all of them!",
+   "phonemes": "ˈQ! ə fˈIəwˌɜːk! ɪn ə mjuːzˈiːəm! ɹˈʌn ˈQvə ðə spˈɑːks, plˈiːz, ˈɔːl ɒv ðˈɛm!"
+  },
+  {
+   "id": "museum.librarian.fiery.2",
+   "character": "librarian",
+   "type": "fiery",
+   "n": 2,
+   "text": "Sparks! Put every one out, and keep moving!",
+   "phonemes": "spˈɑːks! pˈʊt ˈɛvɹi wˈʌn ˈWt, and kˈiːp mˈuːvɪŋ!"
+  },
+  {
+   "id": "museum.librarian.memory.1",
+   "character": "librarian",
+   "type": "memory",
+   "n": 1,
+   "text": "I remember my first library card. I read every book on the bottom shelf in one summer.",
+   "phonemes": "ˈI ɹəmˈɛmbə mI fˈɜːst lˈIbɹəɹi kˈɑːd. ˈI ɹˈɛd ˈɛvɹi bˈʊk ˈɒn ðə bˈɒtəm ʃˈɛlf ɪn wˈʌn sˈʌmə."
+  },
+  {
+   "id": "museum.librarian.memory.2",
+   "character": "librarian",
+   "type": "memory",
+   "n": 2,
+   "text": "My mother read to me by candlelight. She did all the voices. Even the dragons.",
+   "phonemes": "mI mˈʌðə ɹˈɛd tə mi bI kˈandᵊllˌIt. ʃi dɪd ˈɔːl ðə vˈYsɪz. ˈiːvən ðə dɹˈaɡənz."
+  },
+  {
+   "id": "museum.librarian.memory.3",
+   "character": "librarian",
+   "type": "memory",
+   "n": 3,
+   "text": "I remember the day I was given the keys to the library. I didn't sleep for a week.",
+   "phonemes": "ˈI ɹəmˈɛmbə ðə dˈA ˈI wɒz ɡˈɪvən ðə kˈiːz tə ðə lˈIbɹəɹi. ˈI dˈɪdᵊnt slˈiːp fɔː ə wˈiːk."
+  },
+  {
+   "id": "museum.librarian.memory.4",
+   "character": "librarian",
+   "type": "memory",
+   "n": 4,
+   "text": "There was a book that never ended. Every time I turned the last page, there was another.",
+   "phonemes": "ðɛə wɒz ə bˈʊk ðat nˈɛvə ˈɛndɪd. ˈɛvɹi tˈIm ˈI tˈɜːnd ðə lˈɑːst pˈAʤ, ðɛə wɒz ənˈʌðə."
+  },
+  {
+   "id": "museum.librarian.memory.5",
+   "character": "librarian",
+   "type": "memory",
+   "n": 5,
+   "text": "I remember a boy who returned a book forty years late. I forgave him.",
+   "phonemes": "ˈI ɹəmˈɛmbə ə bˈY hˈuː ɹətˈɜːnd ə bˈʊk fˈɔːti jˈɪəz lˈAt. ˈI fəɡˈAv hɪm."
+  },
+  {
+   "id": "museum.librarian.memory.6",
+   "character": "librarian",
+   "type": "memory",
+   "n": 6,
+   "text": "I kept a record of every world. Every entry ends in the middle of a sentence.",
+   "phonemes": "ˈI kˈɛpt ə ɹˈɛkəd ɒv ˈɛvɹi wˈɜːld. ˈɛvɹi ˈɛntɹi ˈɛndz ɪn ðə mˈɪdᵊl ɒv ə sˈɛntᵊns."
+  },
+  {
+   "id": "museum.librarian.memory.7",
+   "character": "librarian",
+   "type": "memory",
+   "n": 7,
+   "text": "I remember the sound of rain on the library roof. The best sound there is.",
+   "phonemes": "ˈI ɹəmˈɛmbə ðə sˈWnd ɒv ɹˈAn ˈɒn ðə lˈIbɹəɹi ɹˈuːf. ðə bˈɛst sˈWnd ðɛə ɪz."
+  },
+  {
+   "id": "museum.librarian.memory.8",
+   "character": "librarian",
+   "type": "memory",
+   "n": 8,
+   "text": "And this one. The end of the sentence, at last. Thank you. Very much.",
+   "phonemes": "and ðˈɪs wˈʌn. ði ˈɛnd ɒv ðə sˈɛntᵊns, at lˈɑːst. θˈaŋk ju. vˈɛɹi mˈʌʧ."
+  },
+  {
+   "id": "museum.librarian.open.1",
+   "character": "librarian",
+   "type": "open",
+   "n": 1,
+   "text": "That is everything. The door is buzzing. You may go, and so may I.",
+   "phonemes": "ðat ɪz ˈɛvɹiθˌɪŋ. ðə dˈɔː ɪz bˈʌzɪŋ. ju mˈA ɡˈQ, and sˈQ mˈA ˈI."
+  },
+  {
+   "id": "museum.librarian.goodbye.1",
+   "character": "librarian",
+   "type": "goodbye",
+   "n": 1,
+   "text": "Free. How lovely. Thank you. Do return your books.",
+   "phonemes": "fɹˈiː. hˌW lˈʌvli. θˈaŋk ju. dˈuː ɹətˈɜːn jɔː bˈʊks."
+  },
+  {
+   "id": "museum.captain.intro.1",
+   "character": "captain",
+   "type": "intro",
+   "n": 1,
+   "text": "Ahoy, sailor. Captain Brine here. Some landlubber's put me in a museum. Find my memories, and I'll be back on the open sea.",
+   "phonemes": "əhˈY, sˈAləɹ. kˈæptən bɹˈIn hˈɪɹ. sʌm lˈændlˌʌbəɹz pˈʊt mi ɪn ə mjuzˈiəm. fˈInd mI mˈɛməɹiz, ænd ˈIl bi bˈæk ˈɑn ði ˈOpən sˈi."
+  },
+  {
+   "id": "museum.captain.call.1",
+   "character": "captain",
+   "type": "call",
+   "n": 1,
+   "text": "Ahoy! Over here, sailor!",
+   "phonemes": "əhˈY! ˈOvəɹ hˈɪɹ, sˈAləɹ!"
+  },
+  {
+   "id": "museum.captain.call.2",
+   "character": "captain",
+   "type": "call",
+   "n": 2,
+   "text": "This way, matey!",
+   "phonemes": "ðˈɪs wˈA, mˈAɾi!"
+  },
+  {
+   "id": "museum.captain.call.3",
+   "character": "captain",
+   "type": "call",
+   "n": 3,
+   "text": "Here it is! Steady as she goes!",
+   "phonemes": "hˈɪɹ ɪt ɪz! stˈɛdi æz ʃi ɡˈOz!"
+  },
+  {
+   "id": "museum.captain.call.4",
+   "character": "captain",
+   "type": "call",
+   "n": 4,
+   "text": "Follow my voice, sailor!",
+   "phonemes": "fˈɑlO mI vˈYs, sˈAləɹ!"
+  },
+  {
+   "id": "museum.captain.pool.1",
+   "character": "captain",
+   "type": "pool",
+   "n": 1,
+   "text": "Hard about! A pool ahead!",
+   "phonemes": "hˈɑɹd əbˈWt! ə pˈul əhˈɛd!"
+  },
+  {
+   "id": "museum.captain.pool.2",
+   "character": "captain",
+   "type": "pool",
+   "n": 2,
+   "text": "Stop, sailor! Deep water!",
+   "phonemes": "stˈɑp, sˈAləɹ! dˈip wˈɔɾəɹ!"
+  },
+  {
+   "id": "museum.captain.pool.3",
+   "character": "captain",
+   "type": "pool",
+   "n": 3,
+   "text": "Steer round it! That pool has no bottom!",
+   "phonemes": "stˈɪɹ ɹˈWnd ɪt! ðæt pˈul hæz nˈO bˈɑɾəm!"
+  },
+  {
+   "id": "museum.captain.fiery.1",
+   "character": "captain",
+   "type": "fiery",
+   "n": 1,
+   "text": "Fire on deck! Run over the sparks, sailor, every one!",
+   "phonemes": "fˈIəɹ ˈɑn dˈɛk! ɹˈʌn ˈOvəɹ ðə spˈɑɹks, sˈAləɹ, ˈɛvɹi wˈʌn!"
+  },
+  {
+   "id": "museum.captain.fiery.2",
+   "character": "captain",
+   "type": "fiery",
+   "n": 2,
+   "text": "Sparks! Stamp them out, and keep moving, matey!",
+   "phonemes": "spˈɑɹks! stˈæmp ðˈɛm ˈWt, ænd kˈip mˈuvɪŋ, mˈAɾi!"
+  },
+  {
+   "id": "museum.captain.memory.1",
+   "character": "captain",
+   "type": "memory",
+   "n": 1,
+   "text": "I remember my first boat. A rowing boat, with a hole in it. I rowed and bailed, rowed and bailed.",
+   "phonemes": "ˈI ɹəmˈɛmbəɹ mI fˈɜɹst bˈOt. ə ɹˈOɪŋ bˈOt, wɪð ə hˈOl ɪn ɪt. ˈI ɹˈOd ænd bˈAld, ɹˈOd ænd bˈAld."
+  },
+  {
+   "id": "museum.captain.memory.2",
+   "character": "captain",
+   "type": "memory",
+   "n": 2,
+   "text": "My father was a sailor too. He said, the sea is always right, even when it's wrong.",
+   "phonemes": "mI fˈɑðəɹ wʌz ə sˈAləɹ tˈu. hi sˈɛd, ðə sˈi ɪz ˈɔlwˌAz ɹˈIt, ˈivən wˌɛn ɪts ɹˈɔŋ."
+  },
+  {
+   "id": "museum.captain.memory.3",
+   "character": "captain",
+   "type": "memory",
+   "n": 3,
+   "text": "I remember the night the tide took my first ship. I stood on the shore and saluted her.",
+   "phonemes": "ˈI ɹəmˈɛmbəɹ ðə nˈIt ðə tˈId tˈʊk mI fˈɜɹst ʃˈɪp. ˈI stˈʊd ˈɑn ðə ʃˈɔɹ ænd səlˈuɾᵻd hɜɹ."
+  },
+  {
+   "id": "museum.captain.memory.4",
+   "character": "captain",
+   "type": "memory",
+   "n": 4,
+   "text": "There was a storm so big, the waves were taller than the mast. We sang the whole way through.",
+   "phonemes": "ðɛɹ wʌz ə stˈɔɹm sˈO bˈɪɡ, ðə wˈAvz wɜɹ tˈɔləɹ ðæn ðə mˈæst. wi sˈæŋ ðə hˈOl wˈA θɹu."
+  },
+  {
+   "id": "museum.captain.memory.5",
+   "character": "captain",
+   "type": "memory",
+   "n": 5,
+   "text": "I remember a whale swimming beside us for a whole day. I named him Gerald.",
+   "phonemes": "ˈI ɹəmˈɛmbəɹ ə wˈAl swˈɪmɪŋ bəsˈId ʌs fɔɹ ə hˈOl dˈA. ˈI nˈAmd hɪm ʤˈɛɹəld."
+  },
+  {
+   "id": "museum.captain.memory.6",
+   "character": "captain",
+   "type": "memory",
+   "n": 6,
+   "text": "I found a bottle once, with a letter inside. It was from me. I don't remember writing it.",
+   "phonemes": "ˈI fˈWnd ə bˈɑɾᵊl wˈʌns, wɪð ə lˈɛɾəɹ ˌɪnsˈId. ɪt wʌz fɹʌm mi. ˈI dˈOnt ɹəmˈɛmbəɹ ɹˈIɾɪŋ ɪt."
+  },
+  {
+   "id": "museum.captain.memory.7",
+   "character": "captain",
+   "type": "memory",
+   "n": 7,
+   "text": "I remember a calm night, the stars on the water, and the old ship creaking.",
+   "phonemes": "ˈI ɹəmˈɛmbəɹ ə kˈɑm nˈIt, ðə stˈɑɹz ˈɑn ðə wˈɔɾəɹ, ænd ði ˈOld ʃˈɪp kɹˈikɪŋ."
+  },
+  {
+   "id": "museum.captain.memory.8",
+   "character": "captain",
+   "type": "memory",
+   "n": 8,
+   "text": "And this one. The day I first heard the knock at the bottom of the sea. Thank you, sailor.",
+   "phonemes": "ænd ðˈɪs wˈʌn. ðə dˈA ˈI fˈɜɹst hˈɜɹd ðə nˈɑk æt ðə bˈɑɾəm ʌv ðə sˈi. θˈæŋk ju, sˈAləɹ."
+  },
+  {
+   "id": "museum.captain.open.1",
+   "character": "captain",
+   "type": "open",
+   "n": 1,
+   "text": "That's all of them, sailor! The door's buzzing! Off you go, and fair winds!",
+   "phonemes": "ðˈæts ˈɔl ʌv ðˈɛm, sˈAləɹ! ðə dˈɔɹz bˈʌzɪŋ! ˈɔf ju ɡˈO, ænd fˈɛɹ wˈɪndz!"
+  },
+  {
+   "id": "museum.captain.goodbye.1",
+   "character": "captain",
+   "type": "goodbye",
+   "n": 1,
+   "text": "Free! Back to the sea! Thank you, sailor. Fair winds!",
+   "phonemes": "fɹˈi! bˈæk tə ðə sˈi! θˈæŋk ju, sˈAləɹ. fˈɛɹ wˈɪndz!"
+  },
+  {
+   "id": "museum.ferry.intro.1",
+   "character": "ferry",
+   "type": "intro",
+   "n": 1,
+   "text": "Hey there! It's Willa. I've washed up in a museum, of all places. Find my memories, and I'll float right out of here.",
+   "phonemes": "hˈA ðɛɹ! ɪts wˈɪlə. ˈIv wˈɑʃt ˈʌp ɪn ə mjuzˈiəm, ʌv ˈɔl plˈAsᵻz. fˈInd mI mˈɛməɹiz, ænd ˈIl flˈOt ɹˈIt ˈWt ʌv hˈɪɹ."
+  },
+  {
+   "id": "museum.ferry.call.1",
+   "character": "ferry",
+   "type": "call",
+   "n": 1,
+   "text": "Over here! Follow my voice!",
+   "phonemes": "ˈOvəɹ hˈɪɹ! fˈɑlO mI vˈYs!"
+  },
+  {
+   "id": "museum.ferry.call.2",
+   "character": "ferry",
+   "type": "call",
+   "n": 2,
+   "text": "This way!",
+   "phonemes": "ðˈɪs wˈA!"
+  },
+  {
+   "id": "museum.ferry.call.3",
+   "character": "ferry",
+   "type": "call",
+   "n": 3,
+   "text": "Here it is!",
+   "phonemes": "hˈɪɹ ɪt ɪz!"
+  },
+  {
+   "id": "museum.ferry.call.4",
+   "character": "ferry",
+   "type": "call",
+   "n": 4,
+   "text": "Come on, it's right here!",
+   "phonemes": "kˈʌm ˈɑn, ɪts ɹˈIt hˈɪɹ!"
+  },
+  {
+   "id": "museum.ferry.pool.1",
+   "character": "ferry",
+   "type": "pool",
+   "n": 1,
+   "text": "Careful! A pool!",
+   "phonemes": "kˈɛɹfəl! ə pˈul!"
+  },
+  {
+   "id": "museum.ferry.pool.2",
+   "character": "ferry",
+   "type": "pool",
+   "n": 2,
+   "text": "Stop! That water's not like my river.",
+   "phonemes": "stˈɑp! ðæt wˈɔɾəɹz nˈɑt lˈIk mI ɹˈɪvəɹ."
+  },
+  {
+   "id": "museum.ferry.pool.3",
+   "character": "ferry",
+   "type": "pool",
+   "n": 3,
+   "text": "Go around it! That pool doesn't flow anywhere.",
+   "phonemes": "ɡˈO əɹˈWnd ɪt! ðæt pˈul dˈʌzᵊnt flˈO ˈɛniwˌɛɹ."
+  },
+  {
+   "id": "museum.ferry.fiery.1",
+   "character": "ferry",
+   "type": "fiery",
+   "n": 1,
+   "text": "Whoa, fireworks! Run over the sparks, quick!",
+   "phonemes": "wˈO, fˈIəɹwˌɜɹks! ɹˈʌn ˈOvəɹ ðə spˈɑɹks, kwˈɪk!"
+  },
+  {
+   "id": "museum.ferry.fiery.2",
+   "character": "ferry",
+   "type": "fiery",
+   "n": 2,
+   "text": "Sparks! Stamp them out, and keep going!",
+   "phonemes": "spˈɑɹks! stˈæmp ðˈɛm ˈWt, ænd kˈip ɡˈOɪŋ!"
+  },
+  {
+   "id": "museum.ferry.memory.1",
+   "character": "ferry",
+   "type": "memory",
+   "n": 1,
+   "text": "I remember my first boat ride. I was three. I tried to drink the river.",
+   "phonemes": "ˈI ɹəmˈɛmbəɹ mI fˈɜɹst bˈOt ɹˈId. ˈI wʌz θɹˈi. ˈI tɹˈId tə dɹˈɪŋk ðə ɹˈɪvəɹ."
+  },
+  {
+   "id": "museum.ferry.memory.2",
+   "character": "ferry",
+   "type": "memory",
+   "n": 2,
+   "text": "My uncle built the ferry. He let me steer it when I was ten.",
+   "phonemes": "mI ˈʌŋkᵊl bˈɪlt ðə fˈɛɹi. hi lˈɛt mi stˈɪɹ ɪt wˌɛn ˈI wʌz tˈɛn."
+  },
+  {
+   "id": "museum.ferry.memory.3",
+   "character": "ferry",
+   "type": "memory",
+   "n": 3,
+   "text": "I remember the first thing I found floating down. A little wooden horse.",
+   "phonemes": "ˈI ɹəmˈɛmbəɹ ðə fˈɜɹst θˈɪŋ ˈI fˈWnd flˈOɾɪŋ dˈWn. ə lˈɪɾᵊl wˈʊdᵊn hˈɔɹs."
+  },
+  {
+   "id": "museum.ferry.memory.4",
+   "character": "ferry",
+   "type": "memory",
+   "n": 4,
+   "text": "There was a family of ducks that rode the ferry every morning. They never paid.",
+   "phonemes": "ðɛɹ wʌz ə fˈæməli ʌv dˈʌks ðæt ɹˈOd ðə fˈɛɹi ˈɛvɹi mˈɔɹnɪŋ. ðˈA nˈɛvəɹ pˈAd."
+  },
+  {
+   "id": "museum.ferry.memory.5",
+   "character": "ferry",
+   "type": "memory",
+   "n": 5,
+   "text": "I remember the river freezing over, and skating all the way to the waterfall.",
+   "phonemes": "ˈI ɹəmˈɛmbəɹ ðə ɹˈɪvəɹ fɹˈizɪŋ ˈOvəɹ, ænd skˈAɾɪŋ ˈɔl ðə wˈA tə ðə wˈɔɾəɹfˌɔl."
+  },
+  {
+   "id": "museum.ferry.memory.6",
+   "character": "ferry",
+   "type": "memory",
+   "n": 6,
+   "text": "I found a key in the water once. It opened nothing. I still have it.",
+   "phonemes": "ˈI fˈWnd ə kˈi ɪn ðə wˈɔɾəɹ wˈʌns. ɪt ˈOpənd nˈʌθɪŋ. ˈI stˈɪl hæv ɪt."
+  },
+  {
+   "id": "museum.ferry.memory.7",
+   "character": "ferry",
+   "type": "memory",
+   "n": 7,
+   "text": "I remember sitting on the dock at sunset, feet in the water, listening.",
+   "phonemes": "ˈI ɹəmˈɛmbəɹ sˈɪɾɪŋ ˈɑn ðə dˈɑk æt sˈʌnsˌɛt, fˈit ɪn ðə wˈɔɾəɹ, lˈɪsᵊnɪŋ."
+  },
+  {
+   "id": "museum.ferry.memory.8",
+   "character": "ferry",
+   "type": "memory",
+   "n": 8,
+   "text": "And this one! The day I followed the river all the way down. Thank you!",
+   "phonemes": "ænd ðˈɪs wˈʌn! ðə dˈA ˈI fˈɑlOd ðə ɹˈɪvəɹ ˈɔl ðə wˈA dˈWn. θˈæŋk ju!"
+  },
+  {
+   "id": "museum.ferry.open.1",
+   "character": "ferry",
+   "type": "open",
+   "n": 1,
+   "text": "That's all of them! Hear the buzzer? Out the door!",
+   "phonemes": "ðˈæts ˈɔl ʌv ðˈɛm! hˈɪɹ ðə bˈʌzəɹ? ˈWt ðə dˈɔɹ!"
+  },
+  {
+   "id": "museum.ferry.goodbye.1",
+   "character": "ferry",
+   "type": "goodbye",
+   "n": 1,
+   "text": "I'm free! Back to the river! Thanks!",
+   "phonemes": "ˈIm fɹˈi! bˈæk tə ðə ɹˈɪvəɹ! θˈæŋks!"
+  },
+  {
+   "id": "museum.marsh.intro.1",
+   "character": "marsh",
+   "type": "intro",
+   "n": 1,
+   "text": "Hey! It's Fennick! Someone's put me in a museum, and there's not a single frog in here! Find my memories, and let's get back to the marsh!",
+   "phonemes": "hˈA! ɪts fˈɛnɪk! sˈʌmwˌʌnz pˈʊt mi ɪn ə mjuzˈiəm, ænd ðˈɛɹz nˈɑt ə sˈɪŋɡᵊl fɹˈɔɡ ɪn hˈɪɹ! fˈInd mI mˈɛməɹiz, ænd lˈɛts ɡˈɛt bˈæk tə ðə mˈɑɹʃ!"
+  },
+  {
+   "id": "museum.marsh.call.1",
+   "character": "marsh",
+   "type": "call",
+   "n": 1,
+   "text": "Hey! Over here!",
+   "phonemes": "hˈA! ˈOvəɹ hˈɪɹ!"
+  },
+  {
+   "id": "museum.marsh.call.2",
+   "character": "marsh",
+   "type": "call",
+   "n": 2,
+   "text": "This way! Right here!",
+   "phonemes": "ðˈɪs wˈA! ɹˈIt hˈɪɹ!"
+  },
+  {
+   "id": "museum.marsh.call.3",
+   "character": "marsh",
+   "type": "call",
+   "n": 3,
+   "text": "Here it is!",
+   "phonemes": "hˈɪɹ ɪt ɪz!"
+  },
+  {
+   "id": "museum.marsh.call.4",
+   "character": "marsh",
+   "type": "call",
+   "n": 4,
+   "text": "Follow me! It's this one!",
+   "phonemes": "fˈɑlO mi! ɪts ðˈɪs wˈʌn!"
+  },
+  {
+   "id": "museum.marsh.pool.1",
+   "character": "marsh",
+   "type": "pool",
+   "n": 1,
+   "text": "Look out! A pool! Even the frogs won't go in!",
+   "phonemes": "lˈʊk ˈWt! ə pˈul! ˈivən ðə fɹˈɔɡz wˈOnt ɡˈO ɪn!"
+  },
+  {
+   "id": "museum.marsh.pool.2",
+   "character": "marsh",
+   "type": "pool",
+   "n": 2,
+   "text": "Stop! Water!",
+   "phonemes": "stˈɑp! wˈɔɾəɹ!"
+  },
+  {
+   "id": "museum.marsh.pool.3",
+   "character": "marsh",
+   "type": "pool",
+   "n": 3,
+   "text": "Go around it! That pool is bad!",
+   "phonemes": "ɡˈO əɹˈWnd ɪt! ðæt pˈul ɪz bˈæd!"
+  },
+  {
+   "id": "museum.marsh.fiery.1",
+   "character": "marsh",
+   "type": "fiery",
+   "n": 1,
+   "text": "Whoa! Fireworks! Run over the sparks, quick, quick!",
+   "phonemes": "wˈO! fˈIəɹwˌɜɹks! ɹˈʌn ˈOvəɹ ðə spˈɑɹks, kwˈɪk, kwˈɪk!"
+  },
+  {
+   "id": "museum.marsh.fiery.2",
+   "character": "marsh",
+   "type": "fiery",
+   "n": 2,
+   "text": "Sparks! Stamp them all out, and keep jumping!",
+   "phonemes": "spˈɑɹks! stˈæmp ðˈɛm ˈɔl ˈWt, ænd kˈip ʤˈʌmpɪŋ!"
+  },
+  {
+   "id": "museum.marsh.memory.1",
+   "character": "marsh",
+   "type": "memory",
+   "n": 1,
+   "text": "I remember my first frog! I caught him in a cup. I named him Admiral.",
+   "phonemes": "ˈI ɹəmˈɛmbəɹ mI fˈɜɹst fɹˈɔɡ! ˈI kˈɔt hɪm ɪn ə kˈʌp. ˈI nˈAmd hɪm ˈædməɹəl."
+  },
+  {
+   "id": "museum.marsh.memory.2",
+   "character": "marsh",
+   "type": "memory",
+   "n": 2,
+   "text": "My mum used to say, Fennick, you're more frog than boy.",
+   "phonemes": "mI mˈʌm jˈust tə sˈA, fˈɛnɪk, jʊɹ mˈɔɹ fɹˈɔɡ ðæn bˈY."
+  },
+  {
+   "id": "museum.marsh.memory.3",
+   "character": "marsh",
+   "type": "memory",
+   "n": 3,
+   "text": "I remember the first rain of spring. I danced in it until dark.",
+   "phonemes": "ˈI ɹəmˈɛmbəɹ ðə fˈɜɹst ɹˈAn ʌv spɹˈɪŋ. ˈI dˈænst ɪn ɪt ʌntˈɪl dˈɑɹk."
+  },
+  {
+   "id": "museum.marsh.memory.4",
+   "character": "marsh",
+   "type": "memory",
+   "n": 4,
+   "text": "There was a frog who could jump over my head. I trained him myself.",
+   "phonemes": "ðɛɹ wʌz ə fɹˈɔɡ hˈu kʊd ʤˈʌmp ˈOvəɹ mI hˈɛd. ˈI tɹˈAnd hɪm mIsˈɛlf."
+  },
+  {
+   "id": "museum.marsh.memory.5",
+   "character": "marsh",
+   "type": "memory",
+   "n": 5,
+   "text": "I remember the whole marsh singing at night. Every frog, all together.",
+   "phonemes": "ˈI ɹəmˈɛmbəɹ ðə hˈOl mˈɑɹʃ sˈɪŋɪŋ æt nˈIt. ˈɛvɹi fɹˈɔɡ, ˈɔl təɡˈɛðəɹ."
+  },
+  {
+   "id": "museum.marsh.memory.6",
+   "character": "marsh",
+   "type": "memory",
+   "n": 6,
+   "text": "I fell in the pond once. Admiral looked very disappointed.",
+   "phonemes": "ˈI fˈɛl ɪn ðə pˈɑnd wˈʌns. ˈædməɹəl lˈʊkt vˈɛɹi dˌɪsəpˈYntᵻd."
+  },
+  {
+   "id": "museum.marsh.memory.7",
+   "character": "marsh",
+   "type": "memory",
+   "n": 7,
+   "text": "I remember naming every frog in the marsh. Some of them twice.",
+   "phonemes": "ˈI ɹəmˈɛmbəɹ nˈAmɪŋ ˈɛvɹi fɹˈɔɡ ɪn ðə mˈɑɹʃ. sʌm ʌv ðˈɛm twˈIs."
+  },
+  {
+   "id": "museum.marsh.memory.8",
+   "character": "marsh",
+   "type": "memory",
+   "n": 8,
+   "text": "And this one! Admiral, waiting for me by the pond. Thank you!",
+   "phonemes": "ænd ðˈɪs wˈʌn! ˈædməɹəl, wˈAɾɪŋ fɔɹ mi bI ðə pˈɑnd. θˈæŋk ju!"
+  },
+  {
+   "id": "museum.marsh.open.1",
+   "character": "marsh",
+   "type": "open",
+   "n": 1,
+   "text": "You found them all! The door's buzzing! Go, go!",
+   "phonemes": "ju fˈWnd ðˈɛm ˈɔl! ðə dˈɔɹz bˈʌzɪŋ! ɡˈO, ɡˈO!"
+  },
+  {
+   "id": "museum.marsh.goodbye.1",
+   "character": "marsh",
+   "type": "goodbye",
+   "n": 1,
+   "text": "I'm free! Admiral, I'm coming! Thank you!",
+   "phonemes": "ˈIm fɹˈi! ˈædməɹəl, ˈIm kˈʌmɪŋ! θˈæŋk ju!"
+  },
+  {
+   "id": "museum.caver.intro.1",
+   "character": "caver",
+   "type": "intro",
+   "n": 1,
+   "text": "Hello. It's Petra. I'm held in this museum. It's quiet, like a cave, but I can't find the way out. Find my memories, and I can.",
+   "phonemes": "həlˈO. ɪts pˈɛtɹə. ˈIm hˈɛld ɪn ðˈɪs mjuzˈiəm. ɪts kwˈIət, lˈIk ə kˈAv, bʌt ˈI kˈænt fˈInd ðə wˈA ˈWt. fˈInd mI mˈɛməɹiz, ænd ˈI kæn."
+  },
+  {
+   "id": "museum.caver.call.1",
+   "character": "caver",
+   "type": "call",
+   "n": 1,
+   "text": "Over here. Follow my voice.",
+   "phonemes": "ˈOvəɹ hˈɪɹ. fˈɑlO mI vˈYs."
+  },
+  {
+   "id": "museum.caver.call.2",
+   "character": "caver",
+   "type": "call",
+   "n": 2,
+   "text": "This way.",
+   "phonemes": "ðˈɪs wˈA."
+  },
+  {
+   "id": "museum.caver.call.3",
+   "character": "caver",
+   "type": "call",
+   "n": 3,
+   "text": "Here it is.",
+   "phonemes": "hˈɪɹ ɪt ɪz."
+  },
+  {
+   "id": "museum.caver.call.4",
+   "character": "caver",
+   "type": "call",
+   "n": 4,
+   "text": "Come closer. It's just here.",
+   "phonemes": "kˈʌm klˈOsəɹ. ɪts ʤʌst hˈɪɹ."
+  },
+  {
+   "id": "museum.caver.pool.1",
+   "character": "caver",
+   "type": "pool",
+   "n": 1,
+   "text": "Careful. A pool, right there.",
+   "phonemes": "kˈɛɹfəl. ə pˈul, ɹˈIt ðɛɹ."
+  },
+  {
+   "id": "museum.caver.pool.2",
+   "character": "caver",
+   "type": "pool",
+   "n": 2,
+   "text": "Stop. Water ahead.",
+   "phonemes": "stˈɑp. wˈɔɾəɹ əhˈɛd."
+  },
+  {
+   "id": "museum.caver.pool.3",
+   "character": "caver",
+   "type": "pool",
+   "n": 3,
+   "text": "Go around it. That pool is very deep.",
+   "phonemes": "ɡˈO əɹˈWnd ɪt. ðæt pˈul ɪz vˈɛɹi dˈip."
+  },
+  {
+   "id": "museum.caver.fiery.1",
+   "character": "caver",
+   "type": "fiery",
+   "n": 1,
+   "text": "A firework! Run over the sparks, quickly!",
+   "phonemes": "ə fˈIəɹwˌɜɹk! ɹˈʌn ˈOvəɹ ðə spˈɑɹks, kwˈɪkli!"
+  },
+  {
+   "id": "museum.caver.fiery.2",
+   "character": "caver",
+   "type": "fiery",
+   "n": 2,
+   "text": "Sparks! Stamp them out, and keep moving!",
+   "phonemes": "spˈɑɹks! stˈæmp ðˈɛm ˈWt, ænd kˈip mˈuvɪŋ!"
+  },
+  {
+   "id": "museum.caver.memory.1",
+   "character": "caver",
+   "type": "memory",
+   "n": 1,
+   "text": "I remember my first cave. A tiny one, behind my house. I thought it went forever.",
+   "phonemes": "ˈI ɹəmˈɛmbəɹ mI fˈɜɹst kˈAv. ə tˈIni wˈʌn, bəhˈInd mI hˈWs. ˈI θˈɔt ɪt wˈɛnt fəɹˈɛvəɹ."
+  },
+  {
+   "id": "museum.caver.memory.2",
+   "character": "caver",
+   "type": "memory",
+   "n": 2,
+   "text": "My father gave me a lamp and said, the dark is only a room you haven't seen yet.",
+   "phonemes": "mI fˈɑðəɹ ɡˈAv mi ə lˈæmp ænd sˈɛd, ðə dˈɑɹk ɪz ˈOnli ə ɹˈum ju hˈævᵊnt sˈin jˈɛt."
+  },
+  {
+   "id": "museum.caver.memory.3",
+   "character": "caver",
+   "type": "memory",
+   "n": 3,
+   "text": "I remember counting drips for the first time. I got to a thousand, then I lost count.",
+   "phonemes": "ˈI ɹəmˈɛmbəɹ kˈWnɾɪŋ dɹˈɪps fɔɹ ðə fˈɜɹst tˈIm. ˈI ɡˈɑt tʊ ə θˈWzənd, ðˈɛn ˈI lˈɔst kˈWnt."
+  },
+  {
+   "id": "museum.caver.memory.4",
+   "character": "caver",
+   "type": "memory",
+   "n": 4,
+   "text": "There was a cave full of crystals. When I sang, they sang back.",
+   "phonemes": "ðɛɹ wʌz ə kˈAv fˈʊl ʌv kɹˈɪstᵊlz. wˌɛn ˈI sˈæŋ, ðˈA sˈæŋ bˈæk."
+  },
+  {
+   "id": "museum.caver.memory.5",
+   "character": "caver",
+   "type": "memory",
+   "n": 5,
+   "text": "I remember being lost underground for a whole day. I followed the drips home.",
+   "phonemes": "ˈI ɹəmˈɛmbəɹ bˈiɪŋ lˈɔst ˈʌndəɹɡɹˌWnd fɔɹ ə hˈOl dˈA. ˈI fˈɑlOd ðə dɹˈɪps hˈOm."
+  },
+  {
+   "id": "museum.caver.memory.6",
+   "character": "caver",
+   "type": "memory",
+   "n": 6,
+   "text": "I found an underground lake once. Perfectly still. Perfectly quiet.",
+   "phonemes": "ˈI fˈWnd ən ˈʌndəɹɡɹˌWnd lˈAk wˈʌns. pˈɜɹfəktli stˈɪl. pˈɜɹfəktli kwˈIət."
+  },
+  {
+   "id": "museum.caver.memory.7",
+   "character": "caver",
+   "type": "memory",
+   "n": 7,
+   "text": "I remember coming out of a cave at dawn, and the light hurting my eyes, in a good way.",
+   "phonemes": "ˈI ɹəmˈɛmbəɹ kˈʌmɪŋ ˈWt ʌv ə kˈAv æt dˈɔn, ænd ðə lˈIt hˈɜɹɾɪŋ mI ˈIz, ɪn ə ɡˈʊd wˈA."
+  },
+  {
+   "id": "museum.caver.memory.8",
+   "character": "caver",
+   "type": "memory",
+   "n": 8,
+   "text": "And this one. The very bottom of the world. Thank you.",
+   "phonemes": "ænd ðˈɪs wˈʌn. ðə vˈɛɹi bˈɑɾəm ʌv ðə wˈɜɹld. θˈæŋk ju."
+  },
+  {
+   "id": "museum.caver.open.1",
+   "character": "caver",
+   "type": "open",
+   "n": 1,
+   "text": "That's all of them. The door is buzzing. Walk out, and I'll be free.",
+   "phonemes": "ðˈæts ˈɔl ʌv ðˈɛm. ðə dˈɔɹ ɪz bˈʌzɪŋ. wˈɔk ˈWt, ænd ˈIl bi fɹˈi."
+  },
+  {
+   "id": "museum.caver.goodbye.1",
+   "character": "caver",
+   "type": "goodbye",
+   "n": 1,
+   "text": "I'm free. I can see the light. Thank you.",
+   "phonemes": "ˈIm fɹˈi. ˈI kæn sˈi ðə lˈIt. θˈæŋk ju."
+  },
+  {
+   "id": "museum.ranger.intro.1",
+   "character": "ranger",
+   "type": "intro",
+   "n": 1,
+   "text": "Hey there, friend. Rowan here. Somebody planted me in this museum. Find my memories, and I'll get back to my trees.",
+   "phonemes": "hˈA ðɛɹ, fɹˈɛnd. ɹˈOən hˈɪɹ. sˈʌmbˌɑdi plˈæntᵻd mi ɪn ðˈɪs mjuzˈiəm. fˈInd mI mˈɛməɹiz, ænd ˈIl ɡˈɛt bˈæk tə mI tɹˈiz."
+  },
+  {
+   "id": "museum.ranger.call.1",
+   "character": "ranger",
+   "type": "call",
+   "n": 1,
+   "text": "Over here, friend.",
+   "phonemes": "ˈOvəɹ hˈɪɹ, fɹˈɛnd."
+  },
+  {
+   "id": "museum.ranger.call.2",
+   "character": "ranger",
+   "type": "call",
+   "n": 2,
+   "text": "This way.",
+   "phonemes": "ðˈɪs wˈA."
+  },
+  {
+   "id": "museum.ranger.call.3",
+   "character": "ranger",
+   "type": "call",
+   "n": 3,
+   "text": "Here it is. Easy now.",
+   "phonemes": "hˈɪɹ ɪt ɪz. ˈizi nˈW."
+  },
+  {
+   "id": "museum.ranger.call.4",
+   "character": "ranger",
+   "type": "call",
+   "n": 4,
+   "text": "Follow my voice. Just here.",
+   "phonemes": "fˈɑlO mI vˈYs. ʤʌst hˈɪɹ."
+  },
+  {
+   "id": "museum.ranger.pool.1",
+   "character": "ranger",
+   "type": "pool",
+   "n": 1,
+   "text": "Careful, friend. A pool ahead.",
+   "phonemes": "kˈɛɹfəl, fɹˈɛnd. ə pˈul əhˈɛd."
+  },
+  {
+   "id": "museum.ranger.pool.2",
+   "character": "ranger",
+   "type": "pool",
+   "n": 2,
+   "text": "Hold on. Water there.",
+   "phonemes": "hˈOld ˈɑn. wˈɔɾəɹ ðɛɹ."
+  },
+  {
+   "id": "museum.ranger.pool.3",
+   "character": "ranger",
+   "type": "pool",
+   "n": 3,
+   "text": "Go around it. That pool is deep.",
+   "phonemes": "ɡˈO əɹˈWnd ɪt. ðæt pˈul ɪz dˈip."
+  },
+  {
+   "id": "museum.ranger.fiery.1",
+   "character": "ranger",
+   "type": "fiery",
+   "n": 1,
+   "text": "That one burned! Run over the sparks, friend, every one!",
+   "phonemes": "ðæt wˈʌn bˈɜɹnd! ɹˈʌn ˈOvəɹ ðə spˈɑɹks, fɹˈɛnd, ˈɛvɹi wˈʌn!"
+  },
+  {
+   "id": "museum.ranger.fiery.2",
+   "character": "ranger",
+   "type": "fiery",
+   "n": 2,
+   "text": "Sparks! Stamp them out, and keep moving!",
+   "phonemes": "spˈɑɹks! stˈæmp ðˈɛm ˈWt, ænd kˈip mˈuvɪŋ!"
+  },
+  {
+   "id": "museum.ranger.memory.1",
+   "character": "ranger",
+   "type": "memory",
+   "n": 1,
+   "text": "I remember planting my first tree. A little pine. It's taller than a house now.",
+   "phonemes": "ˈI ɹəmˈɛmbəɹ plˈæntɪŋ mI fˈɜɹst tɹˈi. ə lˈɪɾᵊl pˈIn. ɪts tˈɔləɹ ðæn ə hˈWs nˈW."
+  },
+  {
+   "id": "museum.ranger.memory.2",
+   "character": "ranger",
+   "type": "memory",
+   "n": 2,
+   "text": "My grandmother was a ranger too. She said, listen to the forest, and it will talk.",
+   "phonemes": "mI ɡɹˈændmˌʌðəɹ wʌz ə ɹˈAnʤəɹ tˈu. ʃi sˈɛd, lˈɪsᵊn tə ðə fˈɔɹəst, ænd ɪt wɪl tˈɔk."
+  },
+  {
+   "id": "museum.ranger.memory.3",
+   "character": "ranger",
+   "type": "memory",
+   "n": 3,
+   "text": "I remember the first time I heard the crickets all stop at once. Something was coming.",
+   "phonemes": "ˈI ɹəmˈɛmbəɹ ðə fˈɜɹst tˈIm ˈI hˈɜɹd ðə kɹˈɪkəts ˈɔl stˈɑp æt wˈʌns. sˈʌmθɪŋ wʌz kˈʌmɪŋ."
+  },
+  {
+   "id": "museum.ranger.memory.4",
+   "character": "ranger",
+   "type": "memory",
+   "n": 4,
+   "text": "There was a deer who followed me on my rounds. Every day for a whole summer.",
+   "phonemes": "ðɛɹ wʌz ə dˈɪɹ hˈu fˈɑlOd mi ˈɑn mI ɹˈWndz. ˈɛvɹi dˈA fɔɹ ə hˈOl sˈʌməɹ."
+  },
+  {
+   "id": "museum.ranger.memory.5",
+   "character": "ranger",
+   "type": "memory",
+   "n": 5,
+   "text": "I remember a fire in the forest, and the rain that came just in time.",
+   "phonemes": "ˈI ɹəmˈɛmbəɹ ə fˈIəɹ ɪn ðə fˈɔɹəst, ænd ðə ɹˈAn ðæt kˈAm ʤʌst ɪn tˈIm."
+  },
+  {
+   "id": "museum.ranger.memory.6",
+   "character": "ranger",
+   "type": "memory",
+   "n": 6,
+   "text": "I counted the rings of the oldest pine once. I lost count after four hundred.",
+   "phonemes": "ˈI kˈWnɾᵻd ðə ɹˈɪŋz ʌv ði ˈOldəst pˈIn wˈʌns. ˈI lˈɔst kˈWnt ˈæftəɹ fˈɔɹ hˈʌndɹəd."
+  },
+  {
+   "id": "museum.ranger.memory.7",
+   "character": "ranger",
+   "type": "memory",
+   "n": 7,
+   "text": "I remember a quiet morning, mist in the trees, birds just waking.",
+   "phonemes": "ˈI ɹəmˈɛmbəɹ ə kwˈIət mˈɔɹnɪŋ, mˈɪst ɪn ðə tɹˈiz, bˈɜɹdz ʤʌst wˈAkɪŋ."
+  },
+  {
+   "id": "museum.ranger.memory.8",
+   "character": "ranger",
+   "type": "memory",
+   "n": 8,
+   "text": "And this one. The forest growing back, green and new. Thank you, friend.",
+   "phonemes": "ænd ðˈɪs wˈʌn. ðə fˈɔɹəst ɡɹˈOɪŋ bˈæk, ɡɹˈin ænd nˈu. θˈæŋk ju, fɹˈɛnd."
+  },
+  {
+   "id": "museum.ranger.open.1",
+   "character": "ranger",
+   "type": "open",
+   "n": 1,
+   "text": "That's all of them, friend. The door's buzzing. Head on out.",
+   "phonemes": "ðˈæts ˈɔl ʌv ðˈɛm, fɹˈɛnd. ðə dˈɔɹz bˈʌzɪŋ. hˈɛd ˈɑn ˈWt."
+  },
+  {
+   "id": "museum.ranger.goodbye.1",
+   "character": "ranger",
+   "type": "goodbye",
+   "n": 1,
+   "text": "Free. I can smell the pines. Thank you, friend.",
+   "phonemes": "fɹˈi. ˈI kæn smˈɛl ðə pˈInz. θˈæŋk ju, fɹˈɛnd."
+  },
+  {
+   "id": "museum.explorer.intro.1",
+   "character": "explorer",
+   "type": "intro",
+   "n": 1,
+   "text": "Hello, explorer! It's Ivy! I've been found and put in a museum! Me! Find my memories, and I'll get back to the edge of the map!",
+   "phonemes": "həlˈO, ɪksplˈɔɹəɹ! ɪts ˈIvi! ˈIv bɪn fˈWnd ænd pˈʊt ɪn ə mjuzˈiəm! mi! fˈInd mI mˈɛməɹiz, ænd ˈIl ɡˈɛt bˈæk tə ði ˈɛʤ ʌv ðə mˈæp!"
+  },
+  {
+   "id": "museum.explorer.call.1",
+   "character": "explorer",
+   "type": "call",
+   "n": 1,
+   "text": "Over here, explorer!",
+   "phonemes": "ˈOvəɹ hˈɪɹ, ɪksplˈɔɹəɹ!"
+  },
+  {
+   "id": "museum.explorer.call.2",
+   "character": "explorer",
+   "type": "call",
+   "n": 2,
+   "text": "This way!",
+   "phonemes": "ðˈɪs wˈA!"
+  },
+  {
+   "id": "museum.explorer.call.3",
+   "character": "explorer",
+   "type": "call",
+   "n": 3,
+   "text": "Here it is!",
+   "phonemes": "hˈɪɹ ɪt ɪz!"
+  },
+  {
+   "id": "museum.explorer.call.4",
+   "character": "explorer",
+   "type": "call",
+   "n": 4,
+   "text": "Follow me! It's right here!",
+   "phonemes": "fˈɑlO mi! ɪts ɹˈIt hˈɪɹ!"
+  },
+  {
+   "id": "museum.explorer.pool.1",
+   "character": "explorer",
+   "type": "pool",
+   "n": 1,
+   "text": "Look out! A pool!",
+   "phonemes": "lˈʊk ˈWt! ə pˈul!"
+  },
+  {
+   "id": "museum.explorer.pool.2",
+   "character": "explorer",
+   "type": "pool",
+   "n": 2,
+   "text": "Stop! Water ahead!",
+   "phonemes": "stˈɑp! wˈɔɾəɹ əhˈɛd!"
+  },
+  {
+   "id": "museum.explorer.pool.3",
+   "character": "explorer",
+   "type": "pool",
+   "n": 3,
+   "text": "Go around it! That pool goes all the way down!",
+   "phonemes": "ɡˈO əɹˈWnd ɪt! ðæt pˈul ɡˈOz ˈɔl ðə wˈA dˈWn!"
+  },
+  {
+   "id": "museum.explorer.fiery.1",
+   "character": "explorer",
+   "type": "fiery",
+   "n": 1,
+   "text": "Whoa, fireworks! Run over the sparks, quick!",
+   "phonemes": "wˈO, fˈIəɹwˌɜɹks! ɹˈʌn ˈOvəɹ ðə spˈɑɹks, kwˈɪk!"
+  },
+  {
+   "id": "museum.explorer.fiery.2",
+   "character": "explorer",
+   "type": "fiery",
+   "n": 2,
+   "text": "Sparks! Stamp them out, and keep going!",
+   "phonemes": "spˈɑɹks! stˈæmp ðˈɛm ˈWt, ænd kˈip ɡˈOɪŋ!"
+  },
+  {
+   "id": "museum.explorer.memory.1",
+   "character": "explorer",
+   "type": "memory",
+   "n": 1,
+   "text": "I remember my first map! I drew it of my garden. It had a dragon on it.",
+   "phonemes": "ˈI ɹəmˈɛmbəɹ mI fˈɜɹst mˈæp! ˈI dɹˈu ɪt ʌv mI ɡˈɑɹdᵊn. ɪt hæd ə dɹˈæɡən ˈɑn ɪt."
+  },
+  {
+   "id": "museum.explorer.memory.2",
+   "character": "explorer",
+   "type": "memory",
+   "n": 2,
+   "text": "My father was an explorer. He said, the best places are never on the map.",
+   "phonemes": "mI fˈɑðəɹ wʌz ən ɪksplˈɔɹəɹ. hi sˈɛd, ðə bˈɛst plˈAsᵻz ɑɹ nˈɛvəɹ ˈɑn ðə mˈæp."
+  },
+  {
+   "id": "museum.explorer.memory.3",
+   "character": "explorer",
+   "type": "memory",
+   "n": 3,
+   "text": "I remember the first time I heard the cicadas. I thought the jungle was screaming.",
+   "phonemes": "ˈI ɹəmˈɛmbəɹ ðə fˈɜɹst tˈIm ˈI hˈɜɹd ðə sɪkˈAdəz. ˈI θˈɔt ðə ʤˈʌŋɡᵊl wʌz skɹˈimɪŋ."
+  },
+  {
+   "id": "museum.explorer.memory.4",
+   "character": "explorer",
+   "type": "memory",
+   "n": 4,
+   "text": "There was a river so wide, I couldn't see the other side. I crossed it anyway.",
+   "phonemes": "ðɛɹ wʌz ə ɹˈɪvəɹ sˈO wˈId, ˈI kˈʊdᵊnt sˈi ði ˈʌðəɹ sˈId. ˈI kɹˈɔst ɪt ˈɛniwˌA."
+  },
+  {
+   "id": "museum.explorer.memory.5",
+   "character": "explorer",
+   "type": "memory",
+   "n": 5,
+   "text": "I remember being chased by a very angry bird. I still don't know what I did.",
+   "phonemes": "ˈI ɹəmˈɛmbəɹ bˈiɪŋ ʧˈAst bI ə vˈɛɹi ˈæŋɡɹi bˈɜɹd. ˈI stˈɪl dˈOnt nˈO wˌʌt ˈI dɪd."
+  },
+  {
+   "id": "museum.explorer.memory.6",
+   "character": "explorer",
+   "type": "memory",
+   "n": 6,
+   "text": "I found a stone door in the jungle once. It had my name on it.",
+   "phonemes": "ˈI fˈWnd ə stˈOn dˈɔɹ ɪn ðə ʤˈʌŋɡᵊl wˈʌns. ɪt hæd mI nˈAm ˈɑn ɪt."
+  },
+  {
+   "id": "museum.explorer.memory.7",
+   "character": "explorer",
+   "type": "memory",
+   "n": 7,
+   "text": "I remember climbing the tallest tree, and seeing the whole jungle at sunset.",
+   "phonemes": "ˈI ɹəmˈɛmbəɹ klˈImɪŋ ðə tˈɔləst tɹˈi, ænd sˈiɪŋ ðə hˈOl ʤˈʌŋɡᵊl æt sˈʌnsˌɛt."
+  },
+  {
+   "id": "museum.explorer.memory.8",
+   "character": "explorer",
+   "type": "memory",
+   "n": 8,
+   "text": "And this one! The edge of the map! There's more! Thank you, explorer!",
+   "phonemes": "ænd ðˈɪs wˈʌn! ði ˈɛʤ ʌv ðə mˈæp! ðˈɛɹz mˈɔɹ! θˈæŋk ju, ɪksplˈɔɹəɹ!"
+  },
+  {
+   "id": "museum.explorer.open.1",
+   "character": "explorer",
+   "type": "open",
+   "n": 1,
+   "text": "You found them all! The door's buzzing! Let's go!",
+   "phonemes": "ju fˈWnd ðˈɛm ˈɔl! ðə dˈɔɹz bˈʌzɪŋ! lˈɛts ɡˈO!"
+  },
+  {
+   "id": "museum.explorer.goodbye.1",
+   "character": "explorer",
+   "type": "goodbye",
+   "n": 1,
+   "text": "Free! New places to find! Thank you, explorer!",
+   "phonemes": "fɹˈi! nˈu plˈAsᵻz tə fˈInd! θˈæŋk ju, ɪksplˈɔɹəɹ!"
+  },
+  {
+   "id": "museum.birdwatcher.intro.1",
+   "character": "birdwatcher",
+   "type": "intro",
+   "n": 1,
+   "text": "Hello! It's Wren! I've been put in a museum, like a stuffed bird! Find my memories, please, and I'll fly out of here!",
+   "phonemes": "həlˈQ! ɪts ɹˈɛn! ˈIv biːn pˈʊt ɪn ə mjuːzˈiːəm, lˈIk ə stˈʌft bˈɜːd! fˈInd mI mˈɛməɹiz, plˈiːz, and ˈIl flˈI ˈWt ɒv hˈɪə!"
+  },
+  {
+   "id": "museum.birdwatcher.call.1",
+   "character": "birdwatcher",
+   "type": "call",
+   "n": 1,
+   "text": "Over here!",
+   "phonemes": "ˈQvə hˈɪə!"
+  },
+  {
+   "id": "museum.birdwatcher.call.2",
+   "character": "birdwatcher",
+   "type": "call",
+   "n": 2,
+   "text": "This way!",
+   "phonemes": "ðˈɪs wˈA!"
+  },
+  {
+   "id": "museum.birdwatcher.call.3",
+   "character": "birdwatcher",
+   "type": "call",
+   "n": 3,
+   "text": "Here it is!",
+   "phonemes": "hˈɪə ɪt ɪz!"
+  },
+  {
+   "id": "museum.birdwatcher.call.4",
+   "character": "birdwatcher",
+   "type": "call",
+   "n": 4,
+   "text": "Follow my voice! It's just here!",
+   "phonemes": "fˈɒlQ mI vˈYs! ɪts ʤʌst hˈɪə!"
+  },
+  {
+   "id": "museum.birdwatcher.pool.1",
+   "character": "birdwatcher",
+   "type": "pool",
+   "n": 1,
+   "text": "Careful! A pool!",
+   "phonemes": "kˈɛəfəl! ə pˈuːl!"
+  },
+  {
+   "id": "museum.birdwatcher.pool.2",
+   "character": "birdwatcher",
+   "type": "pool",
+   "n": 2,
+   "text": "Stop! Water!",
+   "phonemes": "stˈɒp! wˈɔːtə!"
+  },
+  {
+   "id": "museum.birdwatcher.pool.3",
+   "character": "birdwatcher",
+   "type": "pool",
+   "n": 3,
+   "text": "Go round it! That pool's awfully deep!",
+   "phonemes": "ɡˈQ ɹˈWnd ɪt! ðat pˈuːlz ˈɔːfli dˈiːp!"
+  },
+  {
+   "id": "museum.birdwatcher.fiery.1",
+   "character": "birdwatcher",
+   "type": "fiery",
+   "n": 1,
+   "text": "Oh! Fireworks! Run over the sparks, quick!",
+   "phonemes": "ˈQ! fˈIəwˌɜːks! ɹˈʌn ˈQvə ðə spˈɑːks, kwˈɪk!"
+  },
+  {
+   "id": "museum.birdwatcher.fiery.2",
+   "character": "birdwatcher",
+   "type": "fiery",
+   "n": 2,
+   "text": "Sparks! Stamp them out, and keep moving!",
+   "phonemes": "spˈɑːks! stˈamp ðˈɛm ˈWt, and kˈiːp mˈuːvɪŋ!"
+  },
+  {
+   "id": "museum.birdwatcher.memory.1",
+   "character": "birdwatcher",
+   "type": "memory",
+   "n": 1,
+   "text": "I remember my first bird! A robin, on my window. He sang to me every morning.",
+   "phonemes": "ˈI ɹəmˈɛmbə mI fˈɜːst bˈɜːd! ə ɹˈɒbən, ˈɒn mI wˈɪndQ. hi sˈaŋ tə mi ˈɛvɹi mˈɔːnɪŋ."
+  },
+  {
+   "id": "museum.birdwatcher.memory.2",
+   "character": "birdwatcher",
+   "type": "memory",
+   "n": 2,
+   "text": "My grandad gave me his old notebook. Every bird he'd ever heard, in his best writing.",
+   "phonemes": "mI ɡɹˈandad ɡˈAv mi hɪz ˈQld nˈQtbˌʊk. ˈɛvɹi bˈɜːd hid ˈɛvə hˈɜːd, ɪn hɪz bˈɛst ɹˈItɪŋ."
+  },
+  {
+   "id": "museum.birdwatcher.memory.3",
+   "character": "birdwatcher",
+   "type": "memory",
+   "n": 3,
+   "text": "I remember the first blackbird song I ever learned. I can still whistle it.",
+   "phonemes": "ˈI ɹəmˈɛmbə ðə fˈɜːst blˈakbˌɜːd sˈɒŋ ˈI ˈɛvə lˈɜːnd. ˈI kan stˈɪl wˈɪsᵊl ɪt."
+  },
+  {
+   "id": "museum.birdwatcher.memory.4",
+   "character": "birdwatcher",
+   "type": "memory",
+   "n": 4,
+   "text": "There was an owl in the garden who hooted the moment I turned out my light.",
+   "phonemes": "ðɛə wɒz ən ˈWl ɪn ðə ɡˈɑːdᵊn hˈuː hˈuːtɪd ðə mˈQmənt ˈI tˈɜːnd ˈWt mI lˈIt."
+  },
+  {
+   "id": "museum.birdwatcher.memory.5",
+   "character": "birdwatcher",
+   "type": "memory",
+   "n": 5,
+   "text": "I remember lying in a field, the larks singing so high I couldn't see them.",
+   "phonemes": "ˈI ɹəmˈɛmbə lˈIɪŋ ɪn ə fˈiːld, ðə lˈɑːks sˈɪŋɪŋ sˈQ hˈI ˈI kˈʊdᵊnt sˈiː ðˈɛm."
+  },
+  {
+   "id": "museum.birdwatcher.memory.6",
+   "character": "birdwatcher",
+   "type": "memory",
+   "n": 6,
+   "text": "I heard the same blackbird in two different worlds. Same little wobble at the end.",
+   "phonemes": "ˈI hˈɜːd ðə sˈAm blˈakbˌɜːd ɪn tˈuː dˈɪfəɹənt wˈɜːldz. sˈAm lˈɪtᵊl wˈɒbᵊl at ði ˈɛnd."
+  },
+  {
+   "id": "museum.birdwatcher.memory.7",
+   "character": "birdwatcher",
+   "type": "memory",
+   "n": 7,
+   "text": "I remember the dawn chorus, every bird at once, and me with my eyes closed.",
+   "phonemes": "ˈI ɹəmˈɛmbə ðə dˈɔːn kˈɔːɹəs, ˈɛvɹi bˈɜːd at wˈʌns, and mi wɪð mI ˈIz klˈQzd."
+  },
+  {
+   "id": "museum.birdwatcher.memory.8",
+   "character": "birdwatcher",
+   "type": "memory",
+   "n": 8,
+   "text": "And this one! The song the birds sing too fast. I understand it now! Thank you!",
+   "phonemes": "and ðˈɪs wˈʌn! ðə sˈɒŋ ðə bˈɜːdz sˈɪŋ tˈuː fˈɑːst. ˈI ˌʌndəstˈand ɪt nˈW! θˈaŋk ju!"
+  },
+  {
+   "id": "museum.birdwatcher.open.1",
+   "character": "birdwatcher",
+   "type": "open",
+   "n": 1,
+   "text": "That's all of them! The door's buzzing! Off you go!",
+   "phonemes": "ðˈats ˈɔːl ɒv ðˈɛm! ðə dˈɔːz bˈʌzɪŋ! ˈɒf ju ɡˈQ!"
+  },
+  {
+   "id": "museum.birdwatcher.goodbye.1",
+   "character": "birdwatcher",
+   "type": "goodbye",
+   "n": 1,
+   "text": "Free! I can hear the birds! Thank you!",
+   "phonemes": "fɹˈiː! ˈI kan hˈɪə ðə bˈɜːdz! θˈaŋk ju!"
+  },
+  {
+   "id": "museum.beekeeper.intro.1",
+   "character": "beekeeper",
+   "type": "intro",
+   "n": 1,
+   "text": "Hey there, sugar! It's Clover! Somebody put me in a museum, and my bees must be missing me something awful. Find my memories, sugar?",
+   "phonemes": "hˈA ðɛɹ, ʃˈʊɡəɹ! ɪts klˈOvəɹ! sˈʌmbˌɑdi pˈʊt mi ɪn ə mjuzˈiəm, ænd mI bˈiz mʌst bi mˈɪsɪŋ mi sˈʌmθɪŋ ˈɔfᵊl. fˈInd mI mˈɛməɹiz, ʃˈʊɡəɹ?"
+  },
+  {
+   "id": "museum.beekeeper.call.1",
+   "character": "beekeeper",
+   "type": "call",
+   "n": 1,
+   "text": "Over here, sugar!",
+   "phonemes": "ˈOvəɹ hˈɪɹ, ʃˈʊɡəɹ!"
+  },
+  {
+   "id": "museum.beekeeper.call.2",
+   "character": "beekeeper",
+   "type": "call",
+   "n": 2,
+   "text": "This way!",
+   "phonemes": "ðˈɪs wˈA!"
+  },
+  {
+   "id": "museum.beekeeper.call.3",
+   "character": "beekeeper",
+   "type": "call",
+   "n": 3,
+   "text": "Here it is, sugar!",
+   "phonemes": "hˈɪɹ ɪt ɪz, ʃˈʊɡəɹ!"
+  },
+  {
+   "id": "museum.beekeeper.call.4",
+   "character": "beekeeper",
+   "type": "call",
+   "n": 4,
+   "text": "Follow my voice! It's right here!",
+   "phonemes": "fˈɑlO mI vˈYs! ɪts ɹˈIt hˈɪɹ!"
+  },
+  {
+   "id": "museum.beekeeper.pool.1",
+   "character": "beekeeper",
+   "type": "pool",
+   "n": 1,
+   "text": "Careful, sugar! A pool!",
+   "phonemes": "kˈɛɹfəl, ʃˈʊɡəɹ! ə pˈul!"
+  },
+  {
+   "id": "museum.beekeeper.pool.2",
+   "character": "beekeeper",
+   "type": "pool",
+   "n": 2,
+   "text": "Stop! Water there!",
+   "phonemes": "stˈɑp! wˈɔɾəɹ ðɛɹ!"
+  },
+  {
+   "id": "museum.beekeeper.pool.3",
+   "character": "beekeeper",
+   "type": "pool",
+   "n": 3,
+   "text": "Go around it, sugar! That pool's no good!",
+   "phonemes": "ɡˈO əɹˈWnd ɪt, ʃˈʊɡəɹ! ðæt pˈulz nˈO ɡˈʊd!"
+  },
+  {
+   "id": "museum.beekeeper.fiery.1",
+   "character": "beekeeper",
+   "type": "fiery",
+   "n": 1,
+   "text": "Ooh, fireworks! Run over the sparks, sugar, quick!",
+   "phonemes": "ˈu, fˈIəɹwˌɜɹks! ɹˈʌn ˈOvəɹ ðə spˈɑɹks, ʃˈʊɡəɹ, kwˈɪk!"
+  },
+  {
+   "id": "museum.beekeeper.fiery.2",
+   "character": "beekeeper",
+   "type": "fiery",
+   "n": 2,
+   "text": "Sparks! Stamp them out, and keep moving, sugar!",
+   "phonemes": "spˈɑɹks! stˈæmp ðˈɛm ˈWt, ænd kˈip mˈuvɪŋ, ʃˈʊɡəɹ!"
+  },
+  {
+   "id": "museum.beekeeper.memory.1",
+   "character": "beekeeper",
+   "type": "memory",
+   "n": 1,
+   "text": "I remember my first hive! The bees chose me, really. I just stood there.",
+   "phonemes": "ˈI ɹəmˈɛmbəɹ mI fˈɜɹst hˈIv! ðə bˈiz ʧˈOz mi, ɹˈili. ˈI ʤʌst stˈʊd ðɛɹ."
+  },
+  {
+   "id": "museum.beekeeper.memory.2",
+   "character": "beekeeper",
+   "type": "memory",
+   "n": 2,
+   "text": "My mama said, be kind to the bees, and they'll be kind to you.",
+   "phonemes": "mI mˈɑmə sˈɛd, bi kˈInd tə ðə bˈiz, ænd ðˈAl bi kˈInd tə ju."
+  },
+  {
+   "id": "museum.beekeeper.memory.3",
+   "character": "beekeeper",
+   "type": "memory",
+   "n": 3,
+   "text": "I remember my first jar of honey. I ate it all with a spoon. In one day.",
+   "phonemes": "ˈI ɹəmˈɛmbəɹ mI fˈɜɹst ʤˈɑɹ ʌv hˈʌni. ˈI ˈAt ɪt ˈɔl wɪð ə spˈun. ɪn wˈʌn dˈA."
+  },
+  {
+   "id": "museum.beekeeper.memory.4",
+   "character": "beekeeper",
+   "type": "memory",
+   "n": 4,
+   "text": "There was a queen bee who followed me into the house once. She liked the kitchen.",
+   "phonemes": "ðɛɹ wʌz ə kwˈin bˈi hˈu fˈɑlOd mi ˈɪntu ðə hˈWs wˈʌns. ʃi lˈIkt ðə kˈɪʧən."
+  },
+  {
+   "id": "museum.beekeeper.memory.5",
+   "character": "beekeeper",
+   "type": "memory",
+   "n": 5,
+   "text": "I remember a summer so hot, the honey ran right out of the hives.",
+   "phonemes": "ˈI ɹəmˈɛmbəɹ ə sˈʌməɹ sˈO hˈɑt, ðə hˈʌni ɹˈæn ɹˈIt ˈWt ʌv ðə hˈIvz."
+  },
+  {
+   "id": "museum.beekeeper.memory.6",
+   "character": "beekeeper",
+   "type": "memory",
+   "n": 6,
+   "text": "I got stung on the nose once. I sounded funny for a week.",
+   "phonemes": "ˈI ɡˈɑt stˈʌŋ ˈɑn ðə nˈOz wˈʌns. ˈI sˈWndᵻd fˈʌni fɔɹ ə wˈik."
+  },
+  {
+   "id": "museum.beekeeper.memory.7",
+   "character": "beekeeper",
+   "type": "memory",
+   "n": 7,
+   "text": "I remember lying in the clover, the bees buzzing all around, and the sun so warm.",
+   "phonemes": "ˈI ɹəmˈɛmbəɹ lˈIɪŋ ɪn ðə klˈOvəɹ, ðə bˈiz bˈʌzɪŋ ˈɔl əɹˈWnd, ænd ðə sˈʌn sˈO wˈɔɹm."
+  },
+  {
+   "id": "museum.beekeeper.memory.8",
+   "character": "beekeeper",
+   "type": "memory",
+   "n": 8,
+   "text": "And this one, sugar. My bees, flying straight home. Thank you!",
+   "phonemes": "ænd ðˈɪs wˈʌn, ʃˈʊɡəɹ. mI bˈiz, flˈIɪŋ stɹˈAt hˈOm. θˈæŋk ju!"
+  },
+  {
+   "id": "museum.beekeeper.open.1",
+   "character": "beekeeper",
+   "type": "open",
+   "n": 1,
+   "text": "That's all of them, sugar! The door's buzzing! Out you go!",
+   "phonemes": "ðˈæts ˈɔl ʌv ðˈɛm, ʃˈʊɡəɹ! ðə dˈɔɹz bˈʌzɪŋ! ˈWt ju ɡˈO!"
+  },
+  {
+   "id": "museum.beekeeper.goodbye.1",
+   "character": "beekeeper",
+   "type": "goodbye",
+   "n": 1,
+   "text": "I'm free! Back to my bees! Thank you, sugar!",
+   "phonemes": "ˈIm fɹˈi! bˈæk tə mI bˈiz! θˈæŋk ju, ʃˈʊɡəɹ!"
+  },
+  {
+   "id": "museum.wanderer.intro.1",
+   "character": "wanderer",
+   "type": "intro",
+   "n": 1,
+   "text": "Hey, traveler. It's Sol. I walked into this museum, and I can't walk out. Find my memories, and I'll be on the road again.",
+   "phonemes": "hˈA, tɹˈævᵊləɹ. ɪts sˈɑl. ˈI wˈɔkt ˈɪntu ðˈɪs mjuzˈiəm, ænd ˈI kˈænt wˈɔk ˈWt. fˈInd mI mˈɛməɹiz, ænd ˈIl bi ˈɑn ðə ɹˈOd əɡˈɛn."
+  },
+  {
+   "id": "museum.wanderer.call.1",
+   "character": "wanderer",
+   "type": "call",
+   "n": 1,
+   "text": "Over here, traveler.",
+   "phonemes": "ˈOvəɹ hˈɪɹ, tɹˈævᵊləɹ."
+  },
+  {
+   "id": "museum.wanderer.call.2",
+   "character": "wanderer",
+   "type": "call",
+   "n": 2,
+   "text": "This way.",
+   "phonemes": "ðˈɪs wˈA."
+  },
+  {
+   "id": "museum.wanderer.call.3",
+   "character": "wanderer",
+   "type": "call",
+   "n": 3,
+   "text": "Here it is.",
+   "phonemes": "hˈɪɹ ɪt ɪz."
+  },
+  {
+   "id": "museum.wanderer.call.4",
+   "character": "wanderer",
+   "type": "call",
+   "n": 4,
+   "text": "Follow my voice.",
+   "phonemes": "fˈɑlO mI vˈYs."
+  },
+  {
+   "id": "museum.wanderer.pool.1",
+   "character": "wanderer",
+   "type": "pool",
+   "n": 1,
+   "text": "Careful, traveler. A pool.",
+   "phonemes": "kˈɛɹfəl, tɹˈævᵊləɹ. ə pˈul."
+  },
+  {
+   "id": "museum.wanderer.pool.2",
+   "character": "wanderer",
+   "type": "pool",
+   "n": 2,
+   "text": "Stop. Water ahead.",
+   "phonemes": "stˈɑp. wˈɔɾəɹ əhˈɛd."
+  },
+  {
+   "id": "museum.wanderer.pool.3",
+   "character": "wanderer",
+   "type": "pool",
+   "n": 3,
+   "text": "Go around it. That pool has no end.",
+   "phonemes": "ɡˈO əɹˈWnd ɪt. ðæt pˈul hæz nˈO ˈɛnd."
+  },
+  {
+   "id": "museum.wanderer.fiery.1",
+   "character": "wanderer",
+   "type": "fiery",
+   "n": 1,
+   "text": "A firework. Run over the sparks, traveler, every one.",
+   "phonemes": "ə fˈIəɹwˌɜɹk. ɹˈʌn ˈOvəɹ ðə spˈɑɹks, tɹˈævᵊləɹ, ˈɛvɹi wˈʌn."
+  },
+  {
+   "id": "museum.wanderer.fiery.2",
+   "character": "wanderer",
+   "type": "fiery",
+   "n": 2,
+   "text": "Sparks. Stamp them out, and keep walking.",
+   "phonemes": "spˈɑɹks. stˈæmp ðˈɛm ˈWt, ænd kˈip wˈɔkɪŋ."
+  },
+  {
+   "id": "museum.wanderer.memory.1",
+   "character": "wanderer",
+   "type": "memory",
+   "n": 1,
+   "text": "I remember my first step on the road. I didn't plan to go far.",
+   "phonemes": "ˈI ɹəmˈɛmbəɹ mI fˈɜɹst stˈɛp ˈɑn ðə ɹˈOd. ˈI dˈɪdᵊnt plˈæn tə ɡˈO fˈɑɹ."
+  },
+  {
+   "id": "museum.wanderer.memory.2",
+   "character": "wanderer",
+   "type": "memory",
+   "n": 2,
+   "text": "My mother said, if you walk long enough, the road walks with you.",
+   "phonemes": "mI mˈʌðəɹ sˈɛd, ɪf ju wˈɔk lˈɔŋ ənˈʌf, ðə ɹˈOd wˈɔks wɪð ju."
+  },
+  {
+   "id": "museum.wanderer.memory.3",
+   "character": "wanderer",
+   "type": "memory",
+   "n": 3,
+   "text": "I remember sleeping under the stars in the desert. So many stars.",
+   "phonemes": "ˈI ɹəmˈɛmbəɹ slˈipɪŋ ˈʌndəɹ ðə stˈɑɹz ɪn ðə dˈɛzəɹt. sˈO mˈɛni stˈɑɹz."
+  },
+  {
+   "id": "museum.wanderer.memory.4",
+   "character": "wanderer",
+   "type": "memory",
+   "n": 4,
+   "text": "There was a traveler who walked beside me for a whole day, and never said a word.",
+   "phonemes": "ðɛɹ wʌz ə tɹˈævᵊləɹ hˈu wˈɔkt bəsˈId mi fɔɹ ə hˈOl dˈA, ænd nˈɛvəɹ sˈɛd ə wˈɜɹd."
+  },
+  {
+   "id": "museum.wanderer.memory.5",
+   "character": "wanderer",
+   "type": "memory",
+   "n": 5,
+   "text": "I remember the wind telling me a story. I didn't understand it. I listened anyway.",
+   "phonemes": "ˈI ɹəmˈɛmbəɹ ðə wˈɪnd tˈɛlɪŋ mi ə stˈɔɹi. ˈI dˈɪdᵊnt ˌʌndəɹstˈænd ɪt. ˈI lˈɪsᵊnd ˈɛniwˌA."
+  },
+  {
+   "id": "museum.wanderer.memory.6",
+   "character": "wanderer",
+   "type": "memory",
+   "n": 6,
+   "text": "I walked to the edge of the world once. There was more sand.",
+   "phonemes": "ˈI wˈɔkt tə ði ˈɛʤ ʌv ðə wˈɜɹld wˈʌns. ðɛɹ wʌz mˈɔɹ sˈænd."
+  },
+  {
+   "id": "museum.wanderer.memory.7",
+   "character": "wanderer",
+   "type": "memory",
+   "n": 7,
+   "text": "I remember sitting under this same tree, after a long walk, in a new world.",
+   "phonemes": "ˈI ɹəmˈɛmbəɹ sˈɪɾɪŋ ˈʌndəɹ ðˈɪs sˈAm tɹˈi, ˈæftəɹ ə lˈɔŋ wˈɔk, ɪn ə nˈu wˈɜɹld."
+  },
+  {
+   "id": "museum.wanderer.memory.8",
+   "character": "wanderer",
+   "type": "memory",
+   "n": 8,
+   "text": "And this one. The road, going on forever. Thank you, traveler.",
+   "phonemes": "ænd ðˈɪs wˈʌn. ðə ɹˈOd, ɡˈOɪŋ ˈɑn fəɹˈɛvəɹ. θˈæŋk ju, tɹˈævᵊləɹ."
+  },
+  {
+   "id": "museum.wanderer.open.1",
+   "character": "wanderer",
+   "type": "open",
+   "n": 1,
+   "text": "That's all of them. The door's buzzing. Walk on out.",
+   "phonemes": "ðˈæts ˈɔl ʌv ðˈɛm. ðə dˈɔɹz bˈʌzɪŋ. wˈɔk ˈɑn ˈWt."
+  },
+  {
+   "id": "museum.wanderer.goodbye.1",
+   "character": "wanderer",
+   "type": "goodbye",
+   "n": 1,
+   "text": "Free. The road is waiting. Thank you, traveler.",
+   "phonemes": "fɹˈi. ðə ɹˈOd ɪz wˈAɾɪŋ. θˈæŋk ju, tɹˈævᵊləɹ."
+  },
+  {
+   "id": "museum.icelady.intro.1",
+   "character": "icelady",
+   "type": "intro",
+   "n": 1,
+   "text": "Hello, little traveller. I am Lady Rime. Someone has frozen me in this museum. Find my memories, my dear, and I shall thaw.",
+   "phonemes": "həlˈQ, lˈɪtᵊl tɹˈavᵊlə. ˈI am lˈAdi ɹˈIm. sˈʌmwˌʌn haz fɹˈQzən mi ɪn ðˈɪs mjuːzˈiːəm. fˈInd mI mˈɛməɹiz, mI dˈɪə, and ˈI ʃal θˈɔː."
+  },
+  {
+   "id": "museum.icelady.call.1",
+   "character": "icelady",
+   "type": "call",
+   "n": 1,
+   "text": "Over here, my dear.",
+   "phonemes": "ˈQvə hˈɪə, mI dˈɪə."
+  },
+  {
+   "id": "museum.icelady.call.2",
+   "character": "icelady",
+   "type": "call",
+   "n": 2,
+   "text": "This way.",
+   "phonemes": "ðˈɪs wˈA."
+  },
+  {
+   "id": "museum.icelady.call.3",
+   "character": "icelady",
+   "type": "call",
+   "n": 3,
+   "text": "Here it is. Gently.",
+   "phonemes": "hˈɪə ɪt ɪz. ʤˈɛntli."
+  },
+  {
+   "id": "museum.icelady.call.4",
+   "character": "icelady",
+   "type": "call",
+   "n": 4,
+   "text": "Follow my voice, my dear.",
+   "phonemes": "fˈɒlQ mI vˈYs, mI dˈɪə."
+  },
+  {
+   "id": "museum.icelady.pool.1",
+   "character": "icelady",
+   "type": "pool",
+   "n": 1,
+   "text": "Careful, my dear. A pool.",
+   "phonemes": "kˈɛəfəl, mI dˈɪə. ə pˈuːl."
+  },
+  {
+   "id": "museum.icelady.pool.2",
+   "character": "icelady",
+   "type": "pool",
+   "n": 2,
+   "text": "Stop. Water ahead.",
+   "phonemes": "stˈɒp. wˈɔːtə əhˈɛd."
+  },
+  {
+   "id": "museum.icelady.pool.3",
+   "character": "icelady",
+   "type": "pool",
+   "n": 3,
+   "text": "Go around it. That pool is colder than me.",
+   "phonemes": "ɡˈQ əˈWnd ɪt. ðat pˈuːl ɪz kˈQldə ðan mi."
+  },
+  {
+   "id": "museum.icelady.fiery.1",
+   "character": "icelady",
+   "type": "fiery",
+   "n": 1,
+   "text": "Oh, a firework! Run over the sparks, my dear, quickly!",
+   "phonemes": "ˈQ, ə fˈIəwˌɜːk! ɹˈʌn ˈQvə ðə spˈɑːks, mI dˈɪə, kwˈɪkli!"
+  },
+  {
+   "id": "museum.icelady.fiery.2",
+   "character": "icelady",
+   "type": "fiery",
+   "n": 2,
+   "text": "Sparks! Put them all out, and keep moving!",
+   "phonemes": "spˈɑːks! pˈʊt ðˈɛm ˈɔːl ˈWt, and kˈiːp mˈuːvɪŋ!"
+  },
+  {
+   "id": "museum.icelady.memory.1",
+   "character": "icelady",
+   "type": "memory",
+   "n": 1,
+   "text": "I remember my first snowflake. It landed on my hand and did not melt.",
+   "phonemes": "ˈI ɹəmˈɛmbə mI fˈɜːst snˈQflˌAk. ɪt lˈandɪd ˈɒn mI hˈand and dɪd nˈɒt mˈɛlt."
+  },
+  {
+   "id": "museum.icelady.memory.2",
+   "character": "icelady",
+   "type": "memory",
+   "n": 2,
+   "text": "My mother lived in the ice before me. She said, the cold keeps what the world forgets.",
+   "phonemes": "mI mˈʌðə lˈɪvd ɪn ði ˈIs bəfˈɔː mi. ʃi sˈɛd, ðə kˈQld kˈiːps wˌɒt ðə wˈɜːld fəɡˈɛts."
+  },
+  {
+   "id": "museum.icelady.memory.3",
+   "character": "icelady",
+   "type": "memory",
+   "n": 3,
+   "text": "I remember finding a feather frozen in my wall. From a bird I had never seen.",
+   "phonemes": "ˈI ɹəmˈɛmbə fˈIndɪŋ ə fˈɛðə fɹˈQzən ɪn mI wˈɔːl. fɹɒm ə bˈɜːd ˈI had nˈɛvə sˈiːn."
+  },
+  {
+   "id": "museum.icelady.memory.4",
+   "character": "icelady",
+   "type": "memory",
+   "n": 4,
+   "text": "There was a winter that lasted a whole world. I loved every moment.",
+   "phonemes": "ðɛə wɒz ə wˈɪntə ðat lˈɑːstɪd ə hˈQl wˈɜːld. ˈI lˈʌvd ˈɛvɹi mˈQmənt."
+  },
+  {
+   "id": "museum.icelady.memory.5",
+   "character": "icelady",
+   "type": "memory",
+   "n": 5,
+   "text": "I remember a little boy who built a snowman just for me. I kept it for years.",
+   "phonemes": "ˈI ɹəmˈɛmbə ə lˈɪtᵊl bˈY hˈuː bˈɪlt ə snˈQman ʤʌst fɔː mi. ˈI kˈɛpt ɪt fɔː jˈɪəz."
+  },
+  {
+   "id": "museum.icelady.memory.6",
+   "character": "icelady",
+   "type": "memory",
+   "n": 6,
+   "text": "I found something frozen deep in the ice that hums. I still hear it.",
+   "phonemes": "ˈI fˈWnd sˈʌmθɪŋ fɹˈQzən dˈiːp ɪn ði ˈIs ðat hˈʌmz. ˈI stˈɪl hˈɪə ɪt."
+  },
+  {
+   "id": "museum.icelady.memory.7",
+   "character": "icelady",
+   "type": "memory",
+   "n": 7,
+   "text": "I remember the northern lights over my cave. Green and blue and silent.",
+   "phonemes": "ˈI ɹəmˈɛmbə ðə nˈɔːðən lˈIts ˈQvə mI kˈAv. ɡɹˈiːn and blˈuː and sˈIlənt."
+  },
+  {
+   "id": "museum.icelady.memory.8",
+   "character": "icelady",
+   "type": "memory",
+   "n": 8,
+   "text": "And this one. The humming tune, at last. Thank you, my dear.",
+   "phonemes": "and ðˈɪs wˈʌn. ðə hˈʌmɪŋ tjˈuːn, at lˈɑːst. θˈaŋk ju, mI dˈɪə."
+  },
+  {
+   "id": "museum.icelady.open.1",
+   "character": "icelady",
+   "type": "open",
+   "n": 1,
+   "text": "That is all of me. The door is buzzing. Go, my dear, and I shall follow.",
+   "phonemes": "ðat ɪz ˈɔːl ɒv mi. ðə dˈɔː ɪz bˈʌzɪŋ. ɡˈQ, mI dˈɪə, and ˈI ʃal fˈɒlQ."
+  },
+  {
+   "id": "museum.icelady.goodbye.1",
+   "character": "icelady",
+   "type": "goodbye",
+   "n": 1,
+   "text": "I am free. How warm it is. Thank you, little traveller.",
+   "phonemes": "ˈI am fɹˈiː. hˌW wˈɔːm ɪt ɪz. θˈaŋk ju, lˈɪtᵊl tɹˈavᵊlə."
+  },
+  {
+   "id": "museum.mountain.intro.1",
+   "character": "mountain",
+   "type": "intro",
+   "n": 1,
+   "text": "Oi! Corbin here. Some fool has penned me up in a museum like a lost sheep. Find my memories, and I'll get back up my mountain.",
+   "phonemes": "ˈY! kˈɔːbɪn hˈɪə. sʌm fˈuːl haz pˈɛnd mi ˈʌp ɪn ə mjuːzˈiːəm lˈIk ə lˈɒst ʃˈiːp. fˈInd mI mˈɛməɹiz, and ˈIl ɡˈɛt bˈak ˈʌp mI mˈWntᵊn."
+  },
+  {
+   "id": "museum.mountain.call.1",
+   "character": "mountain",
+   "type": "call",
+   "n": 1,
+   "text": "Oi! Over here!",
+   "phonemes": "ˈY! ˈQvə hˈɪə!"
+  },
+  {
+   "id": "museum.mountain.call.2",
+   "character": "mountain",
+   "type": "call",
+   "n": 2,
+   "text": "This way!",
+   "phonemes": "ðˈɪs wˈA!"
+  },
+  {
+   "id": "museum.mountain.call.3",
+   "character": "mountain",
+   "type": "call",
+   "n": 3,
+   "text": "Here it is!",
+   "phonemes": "hˈɪə ɪt ɪz!"
+  },
+  {
+   "id": "museum.mountain.call.4",
+   "character": "mountain",
+   "type": "call",
+   "n": 4,
+   "text": "Follow my shout!",
+   "phonemes": "fˈɒlQ mI ʃˈWt!"
+  },
+  {
+   "id": "museum.mountain.pool.1",
+   "character": "mountain",
+   "type": "pool",
+   "n": 1,
+   "text": "Careful! A pool!",
+   "phonemes": "kˈɛəfəl! ə pˈuːl!"
+  },
+  {
+   "id": "museum.mountain.pool.2",
+   "character": "mountain",
+   "type": "pool",
+   "n": 2,
+   "text": "Stop there! Water!",
+   "phonemes": "stˈɒp ðɛə! wˈɔːtə!"
+  },
+  {
+   "id": "museum.mountain.pool.3",
+   "character": "mountain",
+   "type": "pool",
+   "n": 3,
+   "text": "Go round it! That pool's deeper than the mountain is tall!",
+   "phonemes": "ɡˈQ ɹˈWnd ɪt! ðat pˈuːlz dˈiːpə ðan ðə mˈWntᵊn ɪz tˈɔːl!"
+  },
+  {
+   "id": "museum.mountain.fiery.1",
+   "character": "mountain",
+   "type": "fiery",
+   "n": 1,
+   "text": "A firework! Run over the sparks, quick, every one!",
+   "phonemes": "ə fˈIəwˌɜːk! ɹˈʌn ˈQvə ðə spˈɑːks, kwˈɪk, ˈɛvɹi wˈʌn!"
+  },
+  {
+   "id": "museum.mountain.fiery.2",
+   "character": "mountain",
+   "type": "fiery",
+   "n": 2,
+   "text": "Sparks! Stamp them out, and keep moving!",
+   "phonemes": "spˈɑːks! stˈamp ðˈɛm ˈWt, and kˈiːp mˈuːvɪŋ!"
+  },
+  {
+   "id": "museum.mountain.memory.1",
+   "character": "mountain",
+   "type": "memory",
+   "n": 1,
+   "text": "I remember my first sheep. A little black one. She followed me everywhere.",
+   "phonemes": "ˈI ɹəmˈɛmbə mI fˈɜːst ʃˈiːp. ə lˈɪtᵊl blˈak wˈʌn. ʃi fˈɒlQd mi ˈɛvɹiwˌɛə."
+  },
+  {
+   "id": "museum.mountain.memory.2",
+   "character": "mountain",
+   "type": "memory",
+   "n": 2,
+   "text": "My father said, count your sheep every night, and you'll never sleep. He was right.",
+   "phonemes": "mI fˈɑːðə sˈɛd, kˈWnt jɔː ʃˈiːp ˈɛvɹi nˈIt, and jul nˈɛvə slˈiːp. hi wɒz ɹˈIt."
+  },
+  {
+   "id": "museum.mountain.memory.3",
+   "character": "mountain",
+   "type": "memory",
+   "n": 3,
+   "text": "I remember the first time I reached the top of the mountain. The wind nearly took me off.",
+   "phonemes": "ˈI ɹəmˈɛmbə ðə fˈɜːst tˈIm ˈI ɹˈiːʧt ðə tˈɒp ɒv ðə mˈWntᵊn. ðə wˈɪnd nˈɪəli tˈʊk mi ˈɒf."
+  },
+  {
+   "id": "museum.mountain.memory.4",
+   "character": "mountain",
+   "type": "memory",
+   "n": 4,
+   "text": "There was a storm that kept me in my hut for a week. Just me and forty sheep.",
+   "phonemes": "ðɛə wɒz ə stˈɔːm ðat kˈɛpt mi ɪn mI hˈʌt fɔː ə wˈiːk. ʤʌst mi and fˈɔːti ʃˈiːp."
+  },
+  {
+   "id": "museum.mountain.memory.5",
+   "character": "mountain",
+   "type": "memory",
+   "n": 5,
+   "text": "I remember a lamb born in the snow. I carried her home inside my coat.",
+   "phonemes": "ˈI ɹəmˈɛmbə ə lˈam bˈɔːn ɪn ðə snˈQ. ˈI kˈaɹid hɜː hˈQm ˌɪnsˈId mI kˈQt."
+  },
+  {
+   "id": "museum.mountain.memory.6",
+   "character": "mountain",
+   "type": "memory",
+   "n": 6,
+   "text": "I lost a sheep once, and found her a world later. Same sheep. I'd know her anywhere.",
+   "phonemes": "ˈI lˈɒst ə ʃˈiːp wˈʌns, and fˈWnd hɜː ə wˈɜːld lˈAtə. sˈAm ʃˈiːp. ˈId nˈQ hɜː ˈɛniwˌɛə."
+  },
+  {
+   "id": "museum.mountain.memory.7",
+   "character": "mountain",
+   "type": "memory",
+   "n": 7,
+   "text": "I remember a still night on the mountain, no wind at all, the world holding its breath.",
+   "phonemes": "ˈI ɹəmˈɛmbə ə stˈɪl nˈIt ˈɒn ðə mˈWntᵊn, nˈQ wˈɪnd at ˈɔːl, ðə wˈɜːld hˈQldɪŋ ɪts bɹˈɛθ."
+  },
+  {
+   "id": "museum.mountain.memory.8",
+   "character": "mountain",
+   "type": "memory",
+   "n": 8,
+   "text": "And this one. The wind, breathing in again. Thank you, friend.",
+   "phonemes": "and ðˈɪs wˈʌn. ðə wˈɪnd, bɹˈiːðɪŋ ɪn əɡˈɛn. θˈaŋk ju, fɹˈɛnd."
+  },
+  {
+   "id": "museum.mountain.open.1",
+   "character": "mountain",
+   "type": "open",
+   "n": 1,
+   "text": "That's all of them! The door's buzzing! Off you go!",
+   "phonemes": "ðˈats ˈɔːl ɒv ðˈɛm! ðə dˈɔːz bˈʌzɪŋ! ˈɒf ju ɡˈQ!"
+  },
+  {
+   "id": "museum.mountain.goodbye.1",
+   "character": "mountain",
+   "type": "goodbye",
+   "n": 1,
+   "text": "Free! Back up the mountain! Thank you, friend!",
+   "phonemes": "fɹˈiː! bˈak ˈʌp ðə mˈWntᵊn! θˈaŋk ju, fɹˈɛnd!"
+  },
+  {
+   "id": "museum.engineer.intro.1",
+   "character": "engineer",
+   "type": "intro",
+   "n": 1,
+   "text": "Hey! Mister Sprocket here! Somebody switched me off and put me in a museum! Find my memories, walker, and switch me back on!",
+   "phonemes": "hˈA! mˈɪstəɹ spɹˈɑkət hˈɪɹ! sˈʌmbˌɑdi swˈɪʧt mi ˈɔf ænd pˈʊt mi ɪn ə mjuzˈiəm! fˈInd mI mˈɛməɹiz, wˈɔkəɹ, ænd swˈɪʧ mi bˈæk ˈɑn!"
+  },
+  {
+   "id": "museum.engineer.call.1",
+   "character": "engineer",
+   "type": "call",
+   "n": 1,
+   "text": "Over here! Follow my voice!",
+   "phonemes": "ˈOvəɹ hˈɪɹ! fˈɑlO mI vˈYs!"
+  },
+  {
+   "id": "museum.engineer.call.2",
+   "character": "engineer",
+   "type": "call",
+   "n": 2,
+   "text": "This way!",
+   "phonemes": "ðˈɪs wˈA!"
+  },
+  {
+   "id": "museum.engineer.call.3",
+   "character": "engineer",
+   "type": "call",
+   "n": 3,
+   "text": "Here it is!",
+   "phonemes": "hˈɪɹ ɪt ɪz!"
+  },
+  {
+   "id": "museum.engineer.call.4",
+   "character": "engineer",
+   "type": "call",
+   "n": 4,
+   "text": "Right here, walker! This one!",
+   "phonemes": "ɹˈIt hˈɪɹ, wˈɔkəɹ! ðˈɪs wˈʌn!"
+  },
+  {
+   "id": "museum.engineer.pool.1",
+   "character": "engineer",
+   "type": "pool",
+   "n": 1,
+   "text": "Look out! A pool!",
+   "phonemes": "lˈʊk ˈWt! ə pˈul!"
+  },
+  {
+   "id": "museum.engineer.pool.2",
+   "character": "engineer",
+   "type": "pool",
+   "n": 2,
+   "text": "Stop! Water!",
+   "phonemes": "stˈɑp! wˈɔɾəɹ!"
+  },
+  {
+   "id": "museum.engineer.pool.3",
+   "character": "engineer",
+   "type": "pool",
+   "n": 3,
+   "text": "Go around it! That pool is not safe!",
+   "phonemes": "ɡˈO əɹˈWnd ɪt! ðæt pˈul ɪz nˈɑt sˈAf!"
+  },
+  {
+   "id": "museum.engineer.fiery.1",
+   "character": "engineer",
+   "type": "fiery",
+   "n": 1,
+   "text": "A firework! Run over the sparks, walker, quick!",
+   "phonemes": "ə fˈIəɹwˌɜɹk! ɹˈʌn ˈOvəɹ ðə spˈɑɹks, wˈɔkəɹ, kwˈɪk!"
+  },
+  {
+   "id": "museum.engineer.fiery.2",
+   "character": "engineer",
+   "type": "fiery",
+   "n": 2,
+   "text": "Sparks! Stamp them all out, and keep moving!",
+   "phonemes": "spˈɑɹks! stˈæmp ðˈɛm ˈɔl ˈWt, ænd kˈip mˈuvɪŋ!"
+  },
+  {
+   "id": "museum.engineer.memory.1",
+   "character": "engineer",
+   "type": "memory",
+   "n": 1,
+   "text": "I remember my first machine! A toaster that made toast and played music. Badly.",
+   "phonemes": "ˈI ɹəmˈɛmbəɹ mI fˈɜɹst məʃˈin! ə tˈOstəɹ ðæt mˈAd tˈOst ænd plˈAd mjˈuzɪk. bˈædli."
+  },
+  {
+   "id": "museum.engineer.memory.2",
+   "character": "engineer",
+   "type": "memory",
+   "n": 2,
+   "text": "My mother fixed everything in our house with string. I learned from the best.",
+   "phonemes": "mI mˈʌðəɹ fˈɪkst ˈɛvɹiθˌɪŋ ɪn ˈWəɹ hˈWs wɪð stɹˈɪŋ. ˈI lˈɜɹnd fɹʌm ðə bˈɛst."
+  },
+  {
+   "id": "museum.engineer.memory.3",
+   "character": "engineer",
+   "type": "memory",
+   "n": 3,
+   "text": "I remember catching my first lightning in a jar. My hair stood up for a week.",
+   "phonemes": "ˈI ɹəmˈɛmbəɹ kˈæʧɪŋ mI fˈɜɹst lˈItnɪŋ ɪn ə ʤˈɑɹ. mI hˈɛɹ stˈʊd ˈʌp fɔɹ ə wˈik."
+  },
+  {
+   "id": "museum.engineer.memory.4",
+   "character": "engineer",
+   "type": "memory",
+   "n": 4,
+   "text": "There was a robot I built that only wanted to dance. So we danced.",
+   "phonemes": "ðɛɹ wʌz ə ɹˈObˌɑt ˈI bˈɪlt ðæt ˈOnli wˈɑntᵻd tə dˈæns. sˈO wi dˈænst."
+  },
+  {
+   "id": "museum.engineer.memory.5",
+   "character": "engineer",
+   "type": "memory",
+   "n": 5,
+   "text": "I remember the great machine starting up for the first time. The whole town shook.",
+   "phonemes": "ˈI ɹəmˈɛmbəɹ ðə ɡɹˈAt məʃˈin stˈɑɹɾɪŋ ˈʌp fɔɹ ðə fˈɜɹst tˈIm. ðə hˈOl tˈWn ʃˈʊk."
+  },
+  {
+   "id": "museum.engineer.memory.6",
+   "character": "engineer",
+   "type": "memory",
+   "n": 6,
+   "text": "I blew up my workshop once. Twice. Well, a few times.",
+   "phonemes": "ˈI blˈu ˈʌp mI wˈɜɹkʃˌɑp wˈʌns. twˈIs. wˈɛl, ə fjˈu tˈImz."
+  },
+  {
+   "id": "museum.engineer.memory.7",
+   "character": "engineer",
+   "type": "memory",
+   "n": 7,
+   "text": "I remember a quiet night, the machines humming, and the stars through the roof.",
+   "phonemes": "ˈI ɹəmˈɛmbəɹ ə kwˈIət nˈIt, ðə məʃˈinz hˈʌmɪŋ, ænd ðə stˈɑɹz θɹu ðə ɹˈuf."
+  },
+  {
+   "id": "museum.engineer.memory.8",
+   "character": "engineer",
+   "type": "memory",
+   "n": 8,
+   "text": "And this one! The day I switched the world off and on again. Thank you, walker!",
+   "phonemes": "ænd ðˈɪs wˈʌn! ðə dˈA ˈI swˈɪʧt ðə wˈɜɹld ˈɔf ænd ˈɑn əɡˈɛn. θˈæŋk ju, wˈɔkəɹ!"
+  },
+  {
+   "id": "museum.engineer.open.1",
+   "character": "engineer",
+   "type": "open",
+   "n": 1,
+   "text": "That's all of them! The door's buzzing! Out you go!",
+   "phonemes": "ðˈæts ˈɔl ʌv ðˈɛm! ðə dˈɔɹz bˈʌzɪŋ! ˈWt ju ɡˈO!"
+  },
+  {
+   "id": "museum.engineer.goodbye.1",
+   "character": "engineer",
+   "type": "goodbye",
+   "n": 1,
+   "text": "Switched back on! Free! Thank you, walker!",
+   "phonemes": "swˈɪʧt bˈæk ˈɑn! fɹˈi! θˈæŋk ju, wˈɔkəɹ!"
+  },
+  {
+   "id": "museum.astronaut.intro.1",
+   "character": "astronaut",
+   "type": "intro",
+   "n": 1,
+   "text": "Hello, cadet! Commander Vega here! I've landed in a museum, and I can't take off! Find my memories, cadet, and we'll get this mission going!",
+   "phonemes": "həlˈO, kədˈɛt! kəmˈændəɹ vˈAɡə hˈɪɹ! ˈIv lˈændᵻd ɪn ə mjuzˈiəm, ænd ˈI kˈænt tˈAk ˈɔf! fˈInd mI mˈɛməɹiz, kədˈɛt, ænd wil ɡˈɛt ðˈɪs mˈɪʃən ɡˈOɪŋ!"
+  },
+  {
+   "id": "museum.astronaut.call.1",
+   "character": "astronaut",
+   "type": "call",
+   "n": 1,
+   "text": "Over here, cadet!",
+   "phonemes": "ˈOvəɹ hˈɪɹ, kədˈɛt!"
+  },
+  {
+   "id": "museum.astronaut.call.2",
+   "character": "astronaut",
+   "type": "call",
+   "n": 2,
+   "text": "This way!",
+   "phonemes": "ðˈɪs wˈA!"
+  },
+  {
+   "id": "museum.astronaut.call.3",
+   "character": "astronaut",
+   "type": "call",
+   "n": 3,
+   "text": "Here it is, cadet!",
+   "phonemes": "hˈɪɹ ɪt ɪz, kədˈɛt!"
+  },
+  {
+   "id": "museum.astronaut.call.4",
+   "character": "astronaut",
+   "type": "call",
+   "n": 4,
+   "text": "Follow my signal! Right here!",
+   "phonemes": "fˈɑlO mI sˈɪɡnᵊl! ɹˈIt hˈɪɹ!"
+  },
+  {
+   "id": "museum.astronaut.pool.1",
+   "character": "astronaut",
+   "type": "pool",
+   "n": 1,
+   "text": "Warning, cadet! A pool ahead!",
+   "phonemes": "wˈɔɹnɪŋ, kədˈɛt! ə pˈul əhˈɛd!"
+  },
+  {
+   "id": "museum.astronaut.pool.2",
+   "character": "astronaut",
+   "type": "pool",
+   "n": 2,
+   "text": "Stop! Water!",
+   "phonemes": "stˈɑp! wˈɔɾəɹ!"
+  },
+  {
+   "id": "museum.astronaut.pool.3",
+   "character": "astronaut",
+   "type": "pool",
+   "n": 3,
+   "text": "Go around it, cadet! That pool has no bottom!",
+   "phonemes": "ɡˈO əɹˈWnd ɪt, kədˈɛt! ðæt pˈul hæz nˈO bˈɑɾəm!"
+  },
+  {
+   "id": "museum.astronaut.fiery.1",
+   "character": "astronaut",
+   "type": "fiery",
+   "n": 1,
+   "text": "A firework! Run over the sparks, cadet, every one!",
+   "phonemes": "ə fˈIəɹwˌɜɹk! ɹˈʌn ˈOvəɹ ðə spˈɑɹks, kədˈɛt, ˈɛvɹi wˈʌn!"
+  },
+  {
+   "id": "museum.astronaut.fiery.2",
+   "character": "astronaut",
+   "type": "fiery",
+   "n": 2,
+   "text": "Sparks! Stamp them out, and keep moving!",
+   "phonemes": "spˈɑɹks! stˈæmp ðˈɛm ˈWt, ænd kˈip mˈuvɪŋ!"
+  },
+  {
+   "id": "museum.astronaut.memory.1",
+   "character": "astronaut",
+   "type": "memory",
+   "n": 1,
+   "text": "I remember my first rocket! It was made of a box, and it flew all the way to the kitchen.",
+   "phonemes": "ˈI ɹəmˈɛmbəɹ mI fˈɜɹst ɹˈɑkət! ɪt wʌz mˈAd ʌv ə bˈɑks, ænd ɪt flˈu ˈɔl ðə wˈA tə ðə kˈɪʧən."
+  },
+  {
+   "id": "museum.astronaut.memory.2",
+   "character": "astronaut",
+   "type": "memory",
+   "n": 2,
+   "text": "My father pointed at the moon and said, one day, you'll wave to me from there.",
+   "phonemes": "mI fˈɑðəɹ pˈYntᵻd æt ðə mˈun ænd sˈɛd, wˈʌn dˈA, jul wˈAv tə mi fɹʌm ðɛɹ."
+  },
+  {
+   "id": "museum.astronaut.memory.3",
+   "character": "astronaut",
+   "type": "memory",
+   "n": 3,
+   "text": "I remember my first launch. The whole world shook, and then it went so quiet.",
+   "phonemes": "ˈI ɹəmˈɛmbəɹ mI fˈɜɹst lˈɔnʧ. ðə hˈOl wˈɜɹld ʃˈʊk, ænd ðˈɛn ɪt wˈɛnt sˈO kwˈIət."
+  },
+  {
+   "id": "museum.astronaut.memory.4",
+   "character": "astronaut",
+   "type": "memory",
+   "n": 4,
+   "text": "There was a star that blinked at me every night. I blinked back.",
+   "phonemes": "ðɛɹ wʌz ə stˈɑɹ ðæt blˈɪŋkt æt mi ˈɛvɹi nˈIt. ˈI blˈɪŋkt bˈæk."
+  },
+  {
+   "id": "museum.astronaut.memory.5",
+   "character": "astronaut",
+   "type": "memory",
+   "n": 5,
+   "text": "I remember floating in my ship for the first time. I laughed for an hour.",
+   "phonemes": "ˈI ɹəmˈɛmbəɹ flˈOɾɪŋ ɪn mI ʃˈɪp fɔɹ ðə fˈɜɹst tˈIm. ˈI lˈæft fɔɹ ən ˈWəɹ."
+  },
+  {
+   "id": "museum.astronaut.memory.6",
+   "character": "astronaut",
+   "type": "memory",
+   "n": 6,
+   "text": "I saw the whole world ripple from orbit once. Like a wave of light.",
+   "phonemes": "ˈI sˈɔ ðə hˈOl wˈɜɹld ɹˈɪpᵊl fɹʌm ˈɔɹbət wˈʌns. lˈIk ə wˈAv ʌv lˈIt."
+  },
+  {
+   "id": "museum.astronaut.memory.7",
+   "character": "astronaut",
+   "type": "memory",
+   "n": 7,
+   "text": "I remember looking down at night, all the little lights, and feeling at home.",
+   "phonemes": "ˈI ɹəmˈɛmbəɹ lˈʊkɪŋ dˈWn æt nˈIt, ˈɔl ðə lˈɪɾᵊl lˈIts, ænd fˈilɪŋ æt hˈOm."
+  },
+  {
+   "id": "museum.astronaut.memory.8",
+   "character": "astronaut",
+   "type": "memory",
+   "n": 8,
+   "text": "And this one, cadet. Coming home. Thank you!",
+   "phonemes": "ænd ðˈɪs wˈʌn, kədˈɛt. kˈʌmɪŋ hˈOm. θˈæŋk ju!"
+  },
+  {
+   "id": "museum.astronaut.open.1",
+   "character": "astronaut",
+   "type": "open",
+   "n": 1,
+   "text": "That's all of them, cadet! The door's buzzing! Go, go, go!",
+   "phonemes": "ðˈæts ˈɔl ʌv ðˈɛm, kədˈɛt! ðə dˈɔɹz bˈʌzɪŋ! ɡˈO, ɡˈO, ɡˈO!"
+  },
+  {
+   "id": "museum.astronaut.goodbye.1",
+   "character": "astronaut",
+   "type": "goodbye",
+   "n": 1,
+   "text": "Free! Mission complete! Thank you, cadet!",
+   "phonemes": "fɹˈi! mˈɪʃən kəmplˈit! θˈæŋk ju, kədˈɛt!"
+  }
+ ]
+}

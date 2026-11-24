@@ -80,7 +80,8 @@ const setup = await page.evaluate(async () => {
 check(setup.menu.indexOf('Find the Voice') === setup.menu.indexOf('Island Mode') + 1
   && setup.menu.indexOf('The Abyss') === setup.menu.indexOf('Find the Voice') + 1
   && setup.menu.indexOf('Water Park') === setup.menu.indexOf('The Abyss') + 1
-  && setup.menu.indexOf('Ultimate Mode') === setup.menu.indexOf('Water Park') + 1
+  && setup.menu.indexOf('The Museum') === setup.menu.indexOf('Water Park') + 1
+  && setup.menu.indexOf('Ultimate Mode') === setup.menu.indexOf('The Museum') + 1
   && setup.menu.indexOf('Chaos Mode') === setup.menu.indexOf('Ultimate Mode') + 1
   && setup.menu.findIndex((m) => /^Events\b(?!.*High)/.test(m)) === setup.menu.indexOf('Chaos Mode') + 1
   && setup.menu.findIndex((m) => /^Event High Scores/.test(m)) === setup.menu.indexOf('Chaos Mode') + 2
