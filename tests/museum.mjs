@@ -548,10 +548,16 @@ const chaos = await page.evaluate(async () => {
   r.door = !!mu.door;
   const c1 = g.timeLeft; await t.frames(2); r.clockWaits = Math.abs(g.timeLeft - c1) < 0.01;
   const points = g.chaosPoints;
+  const addT = g._muChaosTime.bind(g); r.done = null;
+  g._muChaosTime = (secs) => { const before = g.timeLeft; addT(secs); r.done = Math.round(g.timeLeft - before); };
+  g.towerHp = 145;
   await t.walkTo(mu.door.pos, 2.0);
   await t.frames(14);
   r.next = g.state !== 'museum' || g.mu !== mu;
   r.points = g.chaosPoints - points;
+  r.doneSaid = t.said.some((x) => /^60 more seconds\.$/.test(x));
+  r.hp = g.towerHp;
+  r.room = [g._utHpRoom({ chaos: true, hp: 145 }), g._utHpRoom({ chaos: true, hp: 150 }), g._utHpCap({ chaos: true, hp: 120 }, 180), g._utHpRoom({ chaos: false, hp: 400 })];
   // A pool ends the whole run.
   g._chaosClearEverything(); g.chaosNext = 'museum'; g._setupChaosLevel();
   await t.frames(0.5);
@@ -565,6 +571,9 @@ const chaos = await page.evaluate(async () => {
 });
 check(chaos.state === 'museum' && chaos.chaos && chaos.count === 3, 'Chaos has museums: three memories the first time');
 check(chaos.time === 0, `a memory puts no time on the chaos clock (7.2.15): ${chaos.time}`);
+check(chaos.done === 60 && chaos.doneSaid, `completing the museum puts sixty seconds on the chaos clock, and says so (7.2.16): ${chaos.done}`);
+check(chaos.hp === 150, `chaos health stops at 150: 145 and a level's ten make 150 (7.2.16): ${chaos.hp}`);
+check(JSON.stringify(chaos.room) === JSON.stringify([5, 0, 150, null]), `a chaos world stage's health gains stop at 150 too, and Ultimate Mode's do not (7.2.16): ${JSON.stringify(chaos.room)}`);
 check(chaos.door && chaos.clockWaits, 'every memory found: the door, and the chaos clock waits');
 check(chaos.next && chaos.points === 10, 'the door leads on to the next level, for ten points');
 check(chaos.end === 'game_over' && /bottomless pool/.test(chaos.said || ''), 'a pool ends the whole chaos run, whatever the health: ' + chaos.said);

@@ -378,6 +378,9 @@ export const SWIM_STROKES = ['ut_swim_1', 'ut_swim_2', 'ut_swim_3', 'ut_swim_4']
 export const CASE_KINDS = ['battle', 'island', 'labyrinth'];   // never a safe zone (nothing can hurt you there), never a tower area (no laser there)
 export const CASE_CHANCE = 0.5;                 // each such area, until the world has CASE_MAX
 export const CASE_MAX = 3;
+// The most health a chaos run can hold (7.2.16, Russell: there was no cap); here, not in
+// chaos.js, so this file need not import chaos.js (which would make a loop of imports).
+export const CHAOS_HEALTH_MAX = 150;
 export const CASE_SOUND = 'evt_crystal_hum';    // its own sound: a humming crystal (already in the game, for events)
 export const CASE_CHIME = 'evt_chime_clear';    // within reach of it: a clear bell (already in the game too)
 export const CASE_SMASH = 'ut_glass_smash';
@@ -733,6 +736,11 @@ const mixin = {
     this.ut = null;
   },
 
+  // Health in a chaos world stage stops at CHAOS_HEALTH_MAX (7.2.16, Russell); in
+  // Ultimate Mode itself there is no ceiling.
+  _utHpRoom(u) { return u.chaos ? Math.max(0, CHAOS_HEALTH_MAX - u.hp) : Infinity; },
+  _utHpCap(u, hp) { return u.chaos ? Math.min(hp, Math.max(CHAOS_HEALTH_MAX, u.hp)) : hp; },
+
   // A chaos time credit (from a glass case in a world stage): onto the chaos clock,
   // its announcements put right as every chaos credit does.
   _utChaosTime(seconds) {
@@ -884,7 +892,8 @@ const mixin = {
   _utCastGive(a) {
     const u = this.ut; const w = a.who;
     const rint = (r) => randint(r[0], r[1]);
-    const health = (n) => { u.hp += n; if (u.hp > 35) u.lowWarned = false; };
+    const health = (n) => { const got = Math.min(n, this._utHpRoom(u)); u.hp += got; if (u.hp > 35) u.lowWarned = false; return got; };
+    const gotWords = (n) => (n > 0 ? `You've just received ${n} health.` : 'Your health is already full.');
     let words = null; let sound = 'ammo';
     const roll = () => GIFT_DICE.roll();
     if (roll() < GIFT_RARE_CHANCE) {
@@ -903,16 +912,16 @@ const mixin = {
       const g = w.ch.group;
       if (g === 1) {
         const r = roll();
-        if (r < GIFT_SPOOKY_LUCKY) { const before = u.hp; u.hp = Math.max(u.hp, START_HP) + rint(GIFT_SPOOKY_SURPLUS); u.lowWarned = false; sound = 'potion_drink'; words = `You've just received ${u.hp - before} health.`; }
+        if (r < GIFT_SPOOKY_LUCKY) { const before = u.hp; u.hp = this._utHpCap(u, Math.max(u.hp, START_HP) + rint(GIFT_SPOOKY_SURPLUS)); u.lowWarned = false; sound = 'potion_drink'; words = gotWords(u.hp - before); }
         else if (r < 0.5 + GIFT_SPOOKY_LUCKY / 2) { const n = rint(GIFT_SPOOKY_AMMO); u.ammo += n; words = `You've just received ${n} shots of ammo.`; }
-        else { const n = rint(GIFT_SPOOKY_HEALTH); health(n); sound = 'potion_drink'; words = `You've just received ${n} health.`; }
+        else { const n = health(rint(GIFT_SPOOKY_HEALTH)); sound = 'potion_drink'; words = gotWords(n); }
       } else if (g === 2) { const n = GIFT_FULL_CARTRIDGE; u.ammo += n; words = `You've just received ${n} shots of ammo.`; }
-      else if (g === 3) { const n = rint(GIFT_MEAL); health(n); sound = 'potion_drink'; words = `You've just received ${n} health.`; }
+      else if (g === 3) { const n = health(rint(GIFT_MEAL)); sound = 'potion_drink'; words = gotWords(n); }
       else if (g === 4) { const n = rint(GIFT_BIG_CARTRIDGE); u.ammo += n; words = `You've just received ${n} shots of ammo.`; }
       else if (g === 5) {
         const before = u.hp; health(rint(GIFT_HOLY_HEALTH));
-        if (roll() < GIFT_HOLY_SURPLUS) u.hp = Math.max(u.hp, START_HP + rint(GIFT_HOLY_OVER));
-        sound = 'potion_drink'; words = `You've just received ${u.hp - before} health.`;
+        if (roll() < GIFT_HOLY_SURPLUS) u.hp = this._utHpCap(u, Math.max(u.hp, START_HP + rint(GIFT_HOLY_OVER)));
+        sound = 'potion_drink'; words = gotWords(u.hp - before);
       } else if (g === 6) {
         const s = rint(GIFT_WATER.shots); const h = rint(GIFT_WATER.health);
         u.ammo += s; health(h);
@@ -2330,10 +2339,10 @@ const mixin = {
         // over 100 is yours until hits take it down). A full heal, now and then,
         // only where it is worth more than that: from under 60, up to 100.
         const full = rand() < CHEST_FULL_HEAL && u.hp < START_HP - CHEST_HEALTH;
-        const got = full ? START_HP - u.hp : CHEST_HEALTH;
+        const got = Math.min(full ? START_HP - u.hp : CHEST_HEALTH, this._utHpRoom(u));
         u.hp += got;
         if (u.hp > 35) u.lowWarned = false;
-        words.push(full ? 'full health' : `${got} health`);
+        words.push(full || got <= 0 ? 'full health' : `${got} health`);
       } else { u.worldTime += CHEST_TIME; words.push(`${CHEST_TIME} more seconds in this world`); }
     }
     u.chests = (u.chests || 0) + 1;
@@ -2683,10 +2692,10 @@ const mixin = {
       u.items += got;
       words = `${got} tower ${plural(got, 'item')}`;
     } else {
-      const got = CASE_HEALTH;
+      const got = Math.min(CASE_HEALTH, this._utHpRoom(u));
       u.hp += got;
       if (u.hp > 35) u.lowWarned = false;
-      words = `${got} health`;
+      words = got > 0 ? `${got} health` : 'full health';
     }
     u.lastCase = { kind, came };
     this.tts.speak(`${words[0].toUpperCase()}${words.slice(1)}.`, { interrupt: true });   // (the reward alone: web 4.1.2, Russell)
