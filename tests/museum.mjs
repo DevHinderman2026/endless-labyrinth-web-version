@@ -194,7 +194,7 @@ const door = await page.evaluate(async () => {
   await t.frames(12);
   r.goodbye = t.lines().some((id) => id === `museum.${ch}.goodbye.1`);
   r.closed = t.played.includes('mu_door_close');
-  r.next = g.mu && g.mu !== mu ? { museum: g.mu.museum, count: g.mu.count, ch: g.mu.ch.id, freed: g.mu.freed, creatures: g.mu.creatures.length } : null;
+  r.next = g.mu && g.mu !== mu ? { museum: g.mu.museum, count: g.mu.count, ch: g.mu.ch.id, freed: g.mu.freed, creatures: g.mu.creatures.length, glass: g.mu.glass.length } : null;
   r.prevCh = ch;
   return r;
 });
@@ -204,7 +204,7 @@ check(door.buzzer, 'the buzzer sounds from the door');
 check(door.doorFar, 'the door is on a wall');
 check(door.walk && door.doorOpen && door.freed === 1, 'at the door it opens, you walk through by yourself, and a soul is freed');
 check(door.goodbye && door.closed, 'the character says goodbye, and the door closes behind you');
-check(door.next && door.next.museum === 2 && door.next.count === 4 && door.next.freed === 1 && door.next.creatures === 2, `then the next museum: 4 memories, 2 creatures: ${JSON.stringify(door.next)}`);
+check(door.next && door.next.museum === 2 && door.next.count === 4 && door.next.freed === 1 && door.next.creatures === 2 && door.next.glass === 0, `then the next museum: 4 memories, 2 creatures: ${JSON.stringify(door.next)}`);
 check(door.next && door.next.ch !== door.prevCh, 'with another character');
 
 // ------------------------------------------------------------------ how loud the character is (7.2.1)
@@ -437,6 +437,42 @@ const fieryCase = await page.evaluate(async () => {
   return { taken: m.taken, asleep: mu.creatures.every((c) => c.mode === 'sleep'), sparks: mu.sparksLeft };
 });
 check(fieryCase.taken && fieryCase.asleep && fieryCase.sparks >= 4, 'smashing a fiery memory\'s case does not wake the creatures: only its sparks do, when you step (7.2.10)');
+
+const glass = await page.evaluate(async () => {
+  const g = window.__el.game; const t = window.__t;
+  t.start('museum');
+  await t.frames(3);
+  const mu = g.mu; t.calm(); mu.pools = [];
+  const c = mu.creatures[0];
+  for (const o of mu.creatures) { o.x = -38; o.y = -38; o.mode = 'sleep'; o.charge = 0; }
+  const m = mu.memories.find((x) => !x.taken); m.inCase = true; m.fiery = false; m.pos = [0, 20];
+  g.playerPos = [0, 22]; g._face(0, true);
+  await t.frames(0.2);
+  g.input('space');
+  await t.frames(0.1);
+  const r = { glass: mu.glass.length === 1, charging: c.mode === 'charge' };
+  // Over the glass while they charge: a crunch, and no more time.
+  const charge0 = c.charge;
+  const crunch0 = t.played.filter((n) => /^ut_glass_step_/.test(n)).length;
+  g.input('up');
+  await t.frames(0.1);
+  r.crunch = t.played.filter((n) => /^ut_glass_step_/.test(n)).length > crunch0;
+  r.noMore = c.charge <= charge0;
+  // Their charge over, back the other way over the glass: they wake for about two seconds.
+  for (const o of mu.creatures) { o.x = -38; o.y = -38; }
+  await t.frames(3.5);
+  r.asleep = c.mode === 'sleep';
+  g._face(Math.PI, true);
+  const placed0 = t.placed.length;
+  g.input('up');
+  await t.frames(0.1);
+  r.woke = c.mode === 'charge' && c.charge > 1.5 && c.charge <= 2.0;
+  r.roar = t.placed.slice(placed0).some(([n]) => n === 'creature_roar');
+  return r;
+});
+check(glass.glass && glass.charging, 'a smashed case leaves its broken glass, and the smash wakes the creature');
+check(glass.crunch && glass.noMore, 'walking over the glass while it charges crunches, and adds no time to the charge (7.2.11)');
+check(glass.asleep && glass.woke && glass.roar, 'stepping on the glass once it sleeps again wakes it, with a roar, for about two seconds (7.2.11)');
 
 // ------------------------------------------------------------------ Enter's report and the score board
 const report = await page.evaluate(async () => {

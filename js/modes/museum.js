@@ -51,7 +51,7 @@ import {
   CASE_KNOCK, CASE_KNOCK_RANGE, CASE_KNOCK_EVERY, CASE_KNOCK_LEVEL, AMBIENCE_LEVEL, BACKGROUND_SEND,
   makeSounds as makeUltimateSounds,
 } from './ultimate.js';
-import { AB_IDLE, AB_GROWL } from './abyss.js';
+import { AB_IDLE, AB_GROWL, AB_STEPS_GLASS } from './abyss.js';
 import { loadCast, castList, CastVoices } from './ultimate/cast.js';
 import { sayLocatable, FALLBACK_PHRASES } from './findvoice-guide.js';
 import { RULES } from '../sound-rules.js';
@@ -96,6 +96,11 @@ export const MU_CREATURES = [1, 1, 3];
 export const MU_CHARGE_SPM = 220;               // steps a minute, charging (your run is 280)
 export const MU_CALM_SPM = 60;                  // walking off after a shove
 export const MU_SMASH_CHARGE = 3.0;             // seconds every creature charges after a smash
+// A smashed case leaves its broken glass on the floor (this museum only). A step over it
+// crunches, and if no creature is charging already, wakes them for MU_GLASS_CHARGE; it
+// never adds time to a charge that is going (7.2.11, Russell).
+export const MU_GLASS_R = 2.0;                  // units round where the case stood
+export const MU_GLASS_CHARGE = 2.0;
 export const MU_CATCH = 1.5;                    // units: this near while charging, it has you
 // A creature that reaches you knocks you toward the nearest bottomless pool, step by
 // step, and leaves you one step from its edge (7.2.10, Russell: three steps the way it
@@ -403,7 +408,7 @@ const mixin = {
     const freed = prev && !chaos ? prev.freed : 0;
     const memoriesTotal = prev && !chaos ? prev.memoriesTotal : 0;
     if (prev) this._muSilence(prev, false);
-    for (const name of [MU_POOL, MU_STAMP_SOUND, ...MU_FIREWORKS.map(([n]) => n), MU_BUZZER, MU_DOOR_OPEN, MU_DOOR_CLOSE, CREATURE_ROAR]) if (this.audio.has(name)) this.audio.prepare(name, `museum:${name}`);
+    for (const name of [MU_POOL, MU_STAMP_SOUND, ...MU_FIREWORKS.map(([n]) => n), MU_BUZZER, MU_DOOR_OPEN, MU_DOOR_CLOSE, CREATURE_ROAR, ...AB_STEPS_GLASS]) if (this.audio.has(name)) this.audio.prepare(name, `museum:${name}`);
     this.muCreatureNames = [[AB_IDLE, aliasRecording(this.audio, AB_IDLE, `event_beacon_hazard_file_${AB_IDLE}`)],
       [AB_GROWL, aliasRecording(this.audio, AB_GROWL, `event_beacon_hazard_file_${AB_GROWL}`)]];
     for (const [, n] of this.muCreatureNames) if (n) this.audio.prepare(n, `museum:${n}`);
@@ -425,7 +430,7 @@ const mixin = {
       ch: who, lines: (lines && who && lines.get(who.id)) || null,
       memories, pools: lay.pools, can: lay.can,
       creatures: lay.beds.map((p) => ({ x: p[0], y: p[1], mode: 'sleep', charge: 0, voice: null, note: null, knock: MU_STEP, dir: [0, 1], calmTo: null })),
-      sparksLeft: 0, firework: null, fireMemory: null, storyIn: 0, storyLater: null, warnIn: 0, warnLine: null,
+      sparksLeft: 0, firework: null, fireMemory: null, storyIn: 0, storyLater: null, warnIn: 0, warnLine: null, glass: [],
       lost: 0, shove: null, shoveGrace: 0,
       speaker: { pos: null, voice: null, beacon: null, until: chaos ? 0.3 : 1.0, wait: 0.6, phase: 'intro', target: null, line: null, queue: [], lastCall: null, waitSince: 0, pause: 0, loadWait: 0 },
       warnCool: 0, warnNear: false,
@@ -1203,8 +1208,11 @@ const mixin = {
       this.playerPos = round; w[1] = [...round];
     }
     mu.steps.push(w);
-    const bank = MU_STEPS.filter((n) => this.audio.has(n));
+    // Over broken glass: a crunch, and the noise may wake the creatures (7.2.11).
+    const onGlass = mu.glass.some((gp) => pointToSegment(gp, w[0], w[1]) < MU_GLASS_R);
+    const bank = (onGlass ? AB_STEPS_GLASS : MU_STEPS).filter((n) => this.audio.has(n));
     if (bank.length) this.audio.play(choice(bank));
+    if (onGlass && !mu.creatures.some((c) => c.mode === 'charge')) this._muWake(MU_GLASS_CHARGE);
     const fireBefore = mu.firework;                 // (not the firework this very step sets off)
     this._muCheckUnderfoot(w[0], w[1]);
     // (A step while a firework's sparks are out, or before it has burst, always pops one.)
@@ -1221,6 +1229,7 @@ const mixin = {
     if (m.voice) { m.voice.stop(); m.voice = null; }
     const smash = this.audio.has(CASE_SMASH) ? CASE_SMASH : aliasRecording(this.audio, 'evt_glass_smash', 'event_sfx_file_evt_glass_smash');
     if (smash) this._muPlay(smash, { at: m.pos, keep: true });
+    mu.glass.push([...m.pos]);                 // its broken glass stays on the floor
     // (A fiery one's case: its sparks wake them, when you step on them, not the glass. 7.2.10.)
     if (!m.fiery) this._muWake(MU_SMASH_CHARGE);
     this._muTake(m);
@@ -1259,7 +1268,7 @@ const mixin = {
     this._muSilence(mu, true);
     mu.door = null;
     mu.stopped = true;
-    for (const name of [MU_POOL, MU_STAMP_SOUND, ...MU_FIREWORKS.map(([n]) => n), MU_BUZZER, MU_DOOR_OPEN, MU_DOOR_CLOSE, CREATURE_ROAR]) this.audio.pins.delete(`museum:${name}`);
+    for (const name of [MU_POOL, MU_STAMP_SOUND, ...MU_FIREWORKS.map(([n]) => n), MU_BUZZER, MU_DOOR_OPEN, MU_DOOR_CLOSE, CREATURE_ROAR, ...AB_STEPS_GLASS]) this.audio.pins.delete(`museum:${name}`);
     for (const [, n] of this.muCreatureNames || []) if (n) this.audio.pins.delete(`museum:${n}`);
   },
 };
@@ -1271,7 +1280,7 @@ const HELP_SECTIONS = [
     { title: 'The Museum Memories', sound: null, desc: 'A memory sounds like music: each one plays a little tune of its own, over and over, where it lies, so you can tell them apart, and the one the character is calling you to plays louder than the rest. Walk onto a memory to take it, and its whole tune plays once. About one memory in three is locked in a glass case instead: it hums, and the nearest case knocks as you close in, faster as you come nearer; when you are beside it and facing it a bell rings: tap with two fingers to smash it, or press the spacebar, and the memory is yours at once. But smashing glass is loud. The first museum has three memories, and each museum after it has one more, up to eight.' },
     { title: 'The Museum Characters', sound: null, desc: 'The character whose museum it is guides you. They call to you from beside the memory they want you to find next, the nearest one, in their own voice, so walk toward their voice. Each memory you find gives them back a piece of their life, and they tell you about it; then they call from beside the next one. When every memory is found, they say nothing of the door: listen for its buzzer. As you walk out, they say goodbye, and they are free. They also warn you whenever you come close to the edge of a bottomless pool.' },
     { title: 'The Museum Bottomless Pools', sound: null, desc: 'The one danger in the museum is its bottomless pools, which dissolve memory. They lie all through the museum, many of them close around the memories, and sometimes you have to go around one to reach a memory. Each pool bubbles where it lies, louder as you come closer, and the nearest few are heard at once. When the step straight ahead of you would take you into a pool, the character warns you, so stop, turn, and go another way; a pool beside you or behind you is not called ahead, so listen to its bubbling too. You fall in only walking straight at a pool: one off to your side you simply walk round. Fall into a pool, and the run is over at once. There are no lives. Every museum has more pools than the last, closer around the memories, but there is always a way through to every memory and to the door.' },
-    { title: 'The Museum Creatures', sound: null, desc: 'Creatures sleep in the museum: one in the first museum, two in the second, and three from the third museum on. You hear them breathing softly. They wake only on noise, never because you walk near them. Smash a glass case (unless it holds a fiery memory, whose sparks wake them instead), and every creature wakes with a roar from where it sleeps, so you can tell which way it is coming, and charges you for about three seconds, growling, with a footstep for every step it runs. Run the other way: you are a little faster than they are. A creature that reaches you knocks you toward the nearest bottomless pool and leaves you one step from its edge, so be careful which way you step next. Then it calms down and walks away, and the other creatures lose your trail for a moment, so you are never shoved twice in a row. You cannot shoot them.' },
+    { title: 'The Museum Creatures', sound: null, desc: 'Creatures sleep in the museum: one in the first museum, two in the second, and three from the third museum on. You hear them breathing softly. They wake only on noise, never because you walk near them. Smash a glass case (unless it holds a fiery memory, whose sparks wake them instead), and every creature wakes with a roar from where it sleeps, so you can tell which way it is coming, and charges you for about three seconds, growling, with a footstep for every step it runs. Run the other way: you are a little faster than they are. A smashed case leaves its broken glass on the floor, crunching under your feet: step on it while no creature is charging, and the noise wakes them for about two seconds; while they are already charging, it adds nothing. The glass stays only in that museum. A creature that reaches you knocks you toward the nearest bottomless pool and leaves you one step from its edge, so be careful which way you step next. Then it calms down and walks away, and the other creatures lose your trail for a moment, so you are never shoved twice in a row. You cannot shoot them.' },
     { title: 'The Museum Fiery Memories', sound: null, desc: 'About one memory in four is a fiery one. When you take it, you stop where you are, a firework bursts on your left or your right, and the character warns you; there are four different fireworks, all short. The burst releases four to six sparks: you do not have to find them, and they make no sound until you move. Every step you take pops one, whichever way you walk, with a firecracker pop just in front of you. The creatures sleep through the bang, but the first spark you pop wakes every one of them, each with a roar from where it sleeps, and they keep charging until the last spark has popped, so once you start, do not stop moving until the popping is over. Then the creatures calm down, and a few seconds later the character tells you about the memory.' },
     { title: 'The Museum Door and Score', sound: null, desc: 'When every memory is found, a buzzer sounds from the museum\'s door, on one of its walls, ten steps or more away. Walk to it. The door opens, and you walk through by yourself while the character says goodbye; the door closes behind you, and the next museum begins. Your score is the number of souls you free, the museums you complete, and The Museum has its own high score board.' },
     { title: 'The Museum in Chaos Mode', sound: null, desc: 'Chaos Mode has museums too, one museum to a level, which you know by a character introducing themselves over their own world. A museum in chaos has three memories the first time in a run, and one more each time after, at most eight. Each memory puts twenty seconds on the chaos clock, and a fiery one thirty. When every memory is found the buzzer sounds, the chaos clock waits until you reach the door, and the door leads on to the next level. A fall into a bottomless pool ends the whole chaos run, however much health you have. There, double tap for the memories found, then your health, the clock and the points.' },
