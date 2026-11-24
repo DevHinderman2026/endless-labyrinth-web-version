@@ -104,10 +104,13 @@ const moves = await page.evaluate(() => {
   out.notHunting = !a.moving && !b.moving && a.wandering;
   t.put(a, 0, 24); t.put(b, 0, -45);
   // One walking step (north): a creeps toward it for 0.6 s, b does not hear it.
+  t.at.length = 0;
   g.input('down');                                     // a step back, to the south
+  { const roar = t.at.filter(([n]) => n === 'creature_roar'); out.roar = roar.length === 1 && Math.hypot(roar[0][1][0] - 0, roar[0][1][1] - 24) < 0.01; }
   const a0 = [a.x, a.y]; const b0 = [b.x, b.y];
   t.frames(0.3); out.aMoving = a.moving; out.creep = Math.hypot(a.x - a0[0], a.y - a0[1]) / 0.3;
   out.bStayed = !b.moving;
+  t.at.length = 0; g._abHeard(false); out.noSecondRoar = !t.at.some(([n]) => n === 'creature_roar');
   t.frames(0.5); const a1 = [a.x, a.y]; t.frames(1.0);
   out.aFrozen = !a.moving && Math.hypot(a.x - a1[0], a.y - a1[1]) <= 1.5 + 1e-6;
   // A run's step (as the game marks one): b hears it now, and charges.
@@ -122,6 +125,8 @@ const moves = await page.evaluate(() => {
 });
 check(moves.wanderSpeed > 0.5 && moves.wanderSpeed <= 1.5 + 1e-6 && moves.neverCloser && moves.notHunting, 'while you stand still they only wander, 30 steps a minute, never toward you: ' + moves.wanderSpeed.toFixed(2));
 check(moves.aMoving && Math.abs(moves.creep - 4.5) < 0.3 && moves.bStayed, 'a walking step: creatures within ten steps creep toward it (90 steps a minute); one further off does not hear it: ' + moves.creep.toFixed(2));
+check(moves.roar, 'a creature that hears you roars once, from where it is (7.2.5)');
+check(moves.noSecondRoar, 'and not again with your next step while it hunts you');
 check(moves.aFrozen && moves.bFrozen, 'then they stop hunting, and only wander, until they hear you again (6.3.5: back as before 6.3.4)');
 check(Math.abs(moves.charge - 11) < 0.3, 'a running step is heard from twenty steps, and they charge, 220 steps a minute (your run is 280): ' + moves.charge.toFixed(2));
 check(moves.footsteps >= 2, 'a moving creature makes a footstep on the glass from where it is');

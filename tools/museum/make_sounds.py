@@ -36,15 +36,37 @@ SOUNDS = {
     # The door: "Heavy Door Open and Closing" by HookedMedia (585113), cut in two.
     'mu_door_open':  ('museum_door_585113.mp3', 0.0, 2.3, False, -24.0, False),
     'mu_door_close': ('museum_door_585113.mp3', 2.3, 4.17, False, -18.0, False),
+    # A creature's roar as it wakes or first hears you, in The Museum and The Abyss (7.2.5):
+    # "Dinosaur Growl" by DRAGON-STUDIO (Pixabay 487679), taken from the events2 pack, where
+    # it already is, its first 2.2 seconds.
+    'creature_roar': ('pack:events2:evt_dinosaur_growl', 0.0, 2.2, False, -15.0, False),
 }
 XFADE = 1.0     # seconds of a loop's end cross-faded into its start
 # A one-shot cut in the middle of a steady sound fades out over this long, not 0.01 s.
-FADE_OUT = {'museum_buzz_100567.mp3': 0.08}
+FADE_OUT = {'museum_buzz_100567.mp3': 0.08, 'pack:events2:evt_dinosaur_growl': 0.4}
 # Sounds made of two: (name, [parts], rms dB). The parts are not packed on their own.
 MIXES = []
 
 
+REPO = None
+
+
+def from_pack(ref):
+    # 'pack:<pack>:<entry>': the entry's Ogg data, from the repository's own pack file.
+    _, pack, name = ref.split(':')
+    man = json.load(open(os.path.join(REPO, 'packs', 'manifest.json')))
+    buf = open(os.path.join(REPO, 'packs', man['packs'][pack]['file']), 'rb').read()
+    n = struct.unpack('<I', buf[8:12])[0]
+    head = json.loads(buf[12:12 + n]); base = 12 + n
+    e = next(e for e in head['entries'] if e['name'] == name and e['kind'] == 'dry')
+    return buf[base + e['offset']:base + e['offset'] + e['length']]
+
+
 def decode(path):
+    if path.startswith('pack:'):
+        raw = subprocess.run(['ffmpeg', '-v', 'error', '-i', 'pipe:0', '-ac', '2', '-ar', str(RATE), '-f', 'f32le', '-'],
+                             input=from_pack(path), capture_output=True, check=True).stdout
+        return np.frombuffer(raw, np.float32).reshape(-1, 2).astype(np.float64)
     raw = subprocess.run(['ffmpeg', '-v', 'error', '-i', path, '-ac', '2', '-ar', str(RATE), '-f', 'f32le', '-'],
                          capture_output=True, check=True).stdout
     return np.frombuffer(raw, np.float32).reshape(-1, 2).astype(np.float64)
@@ -63,7 +85,7 @@ def make(src, a, b, loop, rms_db, mono):
         y = body
     else:
         y = x[int(a * RATE):int(b * RATE)].copy()
-        edge = int(FADE_OUT.get(os.path.basename(src), 0.01) * RATE)
+        edge = int(FADE_OUT.get(src if src.startswith('pack:') else os.path.basename(src), 0.01) * RATE)
         y[-edge:] *= np.linspace(1, 0, edge)[:, None]
     if mono:
         m = y.mean(axis=1)
@@ -91,7 +113,9 @@ def main():
     work = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'finished')
     os.makedirs(work, exist_ok=True)
     entries = []; blobs = []; off = 0
-    made = {name: make(os.path.join(src_dir, f), a, b, loop, rms, mono) for name, (f, a, b, loop, rms, mono) in SOUNDS.items()}
+    global REPO
+    REPO = repo
+    made = {name: make(f if f.startswith('pack:') else os.path.join(src_dir, f), a, b, loop, rms, mono) for name, (f, a, b, loop, rms, mono) in SOUNDS.items()}
     parts = set()
     for name, ps, rms in MIXES:
         n = min(len(made[q]) for q in ps)

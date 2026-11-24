@@ -33,9 +33,9 @@ const check = (ok, what) => { console.log((ok ? 'PASS ' : 'FAIL ') + what); if (
   check(cast.every((c) => per(c.id, 'intro') === 1 && per(c.id, 'call') === 4 && per(c.id, 'pool') === 3 && per(c.id, 'fiery') === 2 && per(c.id, 'memory') === 8 && per(c.id, 'open') === 1 && per(c.id, 'goodbye') === 1),
     'every one of the 26 characters has an introduction, 4 calls, 3 pool warnings, 2 fiery warnings, 8 memories, the door and a goodbye');
   const sounds = pack('museum');
-  const want = ['mu_pool', 'mu_firework', 'mu_stamp', 'mu_buzzer', 'mu_door_open', 'mu_door_close'];
-  check(sounds.bytes && sounds.head.entries.length === 6 && want.every((n) => sounds.head.entries.some((e) => e.name === n)) && sounds.head.entries.filter((e) => e.loop).map((e) => e.name).join() === 'mu_pool',
-    'the museum pack holds its six recordings, only the pool looping (7.2.3: a spark is the firecracker pop when you step)');
+  const want = ['mu_pool', 'mu_firework', 'mu_stamp', 'mu_buzzer', 'mu_door_open', 'mu_door_close', 'creature_roar'];
+  check(sounds.bytes && sounds.head.entries.length === 7 && want.every((n) => sounds.head.entries.some((e) => e.name === n)) && sounds.head.entries.filter((e) => e.loop).map((e) => e.name).join() === 'mu_pool',
+    'the museum pack holds its seven recordings, only the pool looping (7.2.5: and the creatures\' roar)');
   const buzz = sounds.head.entries.find((e) => e.name === 'mu_buzzer');
   check(buzz && Math.abs(buzz.frames / sounds.head.rate - 2.0) < 0.01, `the buzzer is two seconds long (7.2.4): ${buzz && (buzz.frames / sounds.head.rate).toFixed(2)} s`);
 }
@@ -276,9 +276,11 @@ const crs = await page.evaluate(async () => {
   const m = mu.memories.find((x) => !x.taken); m.inCase = true; m.fiery = false; m.pos = [0, 20];
   g.playerPos = [0, 22]; g._face(0, true); c.x = -38; c.y = -38;
   await t.frames(0.2);
+  const placed0 = t.placed.length;
   g.input('space');
   await t.frames(0.2);
   r.smashTaken = m.taken; r.charging = c.mode === 'charge';
+  { const roar = t.placed.slice(placed0).filter(([n]) => n === 'creature_roar'); r.roar = roar.length === 1 && Math.hypot(roar[0][1][0] + 38, roar[0][1][1] + 38) < 0.01; }
   r.smashSound = t.played.includes('ut_glass_smash');
   await t.frames(3.2);
   r.stopped = c.mode === 'sleep';
@@ -292,6 +294,7 @@ const crs = await page.evaluate(async () => {
 });
 check(crs.asleep && crs.walkNear, 'a creature sleeps, and walking near does not wake it');
 check(crs.smashTaken && crs.smashSound && crs.charging, 'smashing a case takes its memory, and the creature charges');
+check(crs.roar, 'as it wakes it roars once, from where it was sleeping (7.2.5)');
 check(crs.stopped, 'and stops after about three seconds');
 check(crs.state === 'game_over', 'a creature shoves you three steps: into the pool behind you, and the run is over');
 
@@ -358,12 +361,13 @@ const fire = await page.evaluate(async () => {
     const f = g._forward();
     g.input('up');
     await t.frames(0.15);
-    if (k === 0) r.wokeOnFirst = c.mode === 'charge' && c.charge === Infinity && mu.sparksLeft > 0;
+    if (k === 0) { r.wokeOnFirst = c.mode === 'charge' && c.charge === Infinity && mu.sparksLeft > 0; r.roar1 = t.placed.slice(placedBefore).filter(([n]) => n === 'creature_roar').length; }
     const pop = t.placed.slice(placedBefore).filter(([n]) => n === 'mu_stamp').slice(-1)[0];
     if (pop) { const dx = pop[1][0] - g.playerPos[0]; const dy = pop[1][1] - g.playerPos[1]; const d = Math.hypot(dx, dy) || 1; r.ahead = (r.ahead === undefined ? true : r.ahead) && (dx * f[0] + dy * f[1]) / d > 0.99; }
     k += 1;
   }
   r.steps = k;
+  r.roars = t.placed.slice(placedBefore).filter(([n]) => n === 'creature_roar').length;
   r.pops = t.played.filter((n) => n === 'mu_stamp').length - pops0;
   await t.frames(0.3);
   r.calm = c.mode !== 'charge';
@@ -376,6 +380,7 @@ check(fire.taken && fire.firework && fire.warned && fire.notYet, 'a fiery memory
 check(fire.sparks >= 4 && fire.sparks <= 6 && fire.asleepAtBang, `at the bang ${fire.sparks} sparks are released, and the creature sleeps on`);
 check(fire.silentStill && fire.stillAsleep, 'standing still, the sparks make no sound, none pops, and the creature stays asleep');
 check(fire.wokeOnFirst, 'the first spark you pop wakes the creature, and it charges');
+check(fire.roar1 === 1 && fire.roars === 1, `it roars as it wakes, once, not with every pop (${fire.roars})`);
 check(fire.storyHeld, 'the memory\'s story waits');
 check(fire.steps === fire.sparks && fire.pops === fire.sparks && fire.ahead === true, `each step pops one spark with a firecracker pop just ahead of you, whichever way you face (${fire.pops} pops in ${fire.steps} steps)`);
 check(fire.calm, 'when the last has popped the creature calms down');
