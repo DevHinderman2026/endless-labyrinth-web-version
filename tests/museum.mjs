@@ -377,6 +377,8 @@ const fire = await page.evaluate(async () => {
   r.pops = t.played.filter((n) => n === 'mu_stamp').length - pops0;
   await t.frames(0.3);
   r.calm = c.mode !== 'charge';
+  await t.frames(2.3);
+  r.storyNotYet = !(g.muSaid || []).some((id) => /\.memory\./.test(id));
   await t.frames(9);
   r.story = (g.muSaid || []).some((id) => /\.memory\.1$/.test(id));
   r.noSizzle = !t.played.some((n) => /mu_spark|mu_sizzle|mu_fizzle/.test(n));
@@ -391,6 +393,7 @@ check(fire.roar1 === 1 && fire.roars === 1, `it roars as it wakes, once, not wit
 check(fire.storyHeld, 'the memory\'s story waits');
 check(fire.steps === fire.sparks && fire.pops === fire.sparks && fire.ahead === true, `each step pops one spark with a firecracker pop just ahead of you, whichever way you face, though the firework burst on a side (7.2.7: ${fire.pops} pops in ${fire.steps} steps)`);
 check(fire.calm, 'when the last has popped the creature calms down');
+check(fire.storyNotYet, 'the story waits a few seconds after the last spark pops (7.2.8)');
 check(fire.story, 'and then the character tells the memory\'s story');
 check(fire.noSizzle, 'no sizzle, no fizzle, no spark loop');
 
