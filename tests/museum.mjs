@@ -249,15 +249,21 @@ const pools = await page.evaluate(async () => {
   g._face(-Math.PI / 2, true);                        // facing west, toward it
   await t.frames(0.5);
   const facingWarned = (g.muSaid || []).some((id) => /\.pool\./.test(id));
-  g._face(0, true); g.playerPos = [0, 6];
-  g.input('up');           // into the pool
+  // Off to a side, its edge across your way (its middle 34 degrees to your left): you walk round it.
+  g._face(0, true); g.playerPos = [3, 4.5];
+  g.input('up');
   await t.frames(0.2);
-  return { heard, warnedEarly, warned, besideQuiet, behindQuiet, facingWarned, state: g.state, said: t.said.slice(-2) };
+  const round = { state: g.state, out: Math.hypot(g.playerPos[0], g.playerPos[1]) > 4, moved: g.playerPos[1] < 4.4 };
+  g._face(0, true); g.playerPos = [0, 6];
+  g.input('up');           // straight at it: into the pool
+  await t.frames(0.2);
+  return { heard, warnedEarly, warned, besideQuiet, behindQuiet, facingWarned, round, state: g.state, said: t.said.slice(-2) };
 });
 check(pools.heard, 'a pool bubbles where it lies');
 check(!pools.warnedEarly && pools.warned, 'the character warns you a step from its edge, not before');
 check(pools.besideQuiet && pools.behindQuiet && pools.facingWarned, 'a pool beside you or behind you is not called ahead; facing it, it is (7.2.1)');
-check(pools.state === 'game_over', 'a step into a pool ends the run: ' + pools.said.join(' | '));
+check(pools.round.state === 'museum' && pools.round.out && pools.round.moved, 'a pool off to your side, its edge across your way: you walk round it (7.2.10)');
+check(pools.state === 'game_over', 'a step straight into a pool ends the run: ' + pools.said.join(' | '));
 check(pools.said.some((s) => /bottomless pool/.test(s) && /freed 0 souls/.test(s)), 'and the score is souls freed');
 
 // ------------------------------------------------------------------ the creatures
@@ -286,19 +292,20 @@ const crs = await page.evaluate(async () => {
   r.smashSound = t.played.includes('ut_glass_smash');
   await t.frames(3.2);
   r.stopped = c.mode === 'sleep';
-  // A shove: three steps the way it ran, then it calms; the others lose your trail.
+  // A hit: it knocks you toward the nearest pool and leaves you one step from its edge (7.2.10).
   const pool = { pos: [0, -12.5], r: 4, voice: null }; mu.pools = [pool];
   g.playerPos = [0, 0]; c.x = 0; c.y = 6; c.mode = 'charge'; c.charge = 5;
   if (mu.creatures[1]) mu.creatures[1].mode = 'sleep';
-  await t.frames(1.2);
+  await t.frames(1.5);
   r.state = g.state;
+  r.edge = +(Math.hypot(g.playerPos[0] - pool.pos[0], g.playerPos[1] - pool.pos[1]) - pool.r).toFixed(2);
   return r;
 });
 check(crs.asleep && crs.walkNear, 'a creature sleeps, and walking near does not wake it');
 check(crs.smashTaken && crs.smashSound && crs.charging, 'smashing a case takes its memory, and the creature charges');
 check(crs.roar, 'as it wakes it roars once, from where it was sleeping (7.2.5)');
 check(crs.stopped, 'and stops after about three seconds');
-check(crs.state === 'game_over', 'a creature shoves you three steps: into the pool behind you, and the run is over');
+check(crs.state === 'museum' && Math.abs(crs.edge - 3) < 0.05, `a creature knocks you toward the nearest pool and leaves you one step from its edge (7.2.10): ${crs.edge} units`);
 
 const shove = await page.evaluate(async () => {
   const g = window.__el.game; const t = window.__t;
@@ -309,13 +316,15 @@ const shove = await page.evaluate(async () => {
   const mu = g.mu; t.calm();
   mu.creatures = [0, 1, 2].map((i) => ({ x: -10 + 10 * i, y: 20, mode: 'sleep', charge: 0, voice: null, note: null, knock: 3, dir: [0, 1], calmTo: null }));
   g.playerPos = [0, 0];
+  mu.pools = [{ pos: [20, 0], r: 4, voice: null }];
   const a = mu.creatures[1]; a.y = 6; a.mode = 'charge'; a.charge = 9;
   for (const o of [mu.creatures[0], mu.creatures[2]]) { o.mode = 'charge'; o.charge = 9; }
   for (let i = 0; i < 90 && !mu.shove; i++) await t.frames(1 / 30);
   const from = [...g.playerPos];
-  const r = { shoved: !!mu.shove, dir: mu.shove && mu.shove.dir.map((v) => +v.toFixed(2)) };
-  await t.frames(0.6);
+  const r = { shoved: !!mu.shove };
+  await t.frames(1.0);
   r.moved = +Math.hypot(g.playerPos[0] - from[0], g.playerPos[1] - from[1]).toFixed(2);
+  r.edge = +(Math.hypot(g.playerPos[0] - 20, g.playerPos[1]) - 4).toFixed(2);
   r.calm = a.mode === 'calm' || a.mode === 'sleep';
   const before = mu.creatures.filter((o) => o !== a).map((o) => [o.x, o.y]);
   await t.frames(1.0);
@@ -325,7 +334,7 @@ const shove = await page.evaluate(async () => {
   r.chaseAgain = mu.creatures.filter((o) => o !== a).some((o) => o.mode === 'charge');
   return r;
 });
-check(shove.shoved && shove.moved > 8.5 && shove.moved < 9.5, `a creature that reaches you shoves you three steps (${shove.moved} units, the way it ran ${shove.dir})`);
+check(shove.shoved && shove.moved > 10 && Math.abs(shove.edge - 3) < 0.05, `knocked toward the pool, ${shove.moved} units, to one step from its edge (${shove.edge})`);
 check(shove.calm, 'then it calms down');
 check(shove.othersHeld && shove.lost, 'the others lose your trail for a moment');
 check(shove.chaseAgain, 'and then come on again while their charge lasts');
@@ -413,6 +422,21 @@ const early = await page.evaluate(async () => {
   return r;
 });
 check(early.popped === 1 && early.burst && early.left >= 3, 'a step taken before the burst still pops a spark: every step does (7.2.6)');
+
+const fieryCase = await page.evaluate(async () => {
+  const g = window.__el.game; const t = window.__t;
+  t.start('museum');
+  await t.frames(3);
+  const mu = g.mu; t.calm(); mu.pools = [];
+  for (const c of mu.creatures) { c.x = -38; c.y = -38; c.mode = 'sleep'; c.charge = 0; }
+  const m = mu.memories.find((x) => !x.taken); m.inCase = true; m.fiery = true; m.pos = [0, 20];
+  g.playerPos = [0, 22]; g._face(0, true);
+  await t.frames(0.2);
+  g.input('space');
+  await t.frames(1.5);
+  return { taken: m.taken, asleep: mu.creatures.every((c) => c.mode === 'sleep'), sparks: mu.sparksLeft };
+});
+check(fieryCase.taken && fieryCase.asleep && fieryCase.sparks >= 4, 'smashing a fiery memory\'s case does not wake the creatures: only its sparks do, when you step (7.2.10)');
 
 // ------------------------------------------------------------------ Enter's report and the score board
 const report = await page.evaluate(async () => {

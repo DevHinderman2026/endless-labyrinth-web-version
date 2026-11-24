@@ -26,10 +26,11 @@
 // pops one with a firecracker pop just ahead of you (silent until you move; 4 to 6
 // of them); the creatures sleep on through the burst, wake with a roar at the first spark
 // you pop, and charge you until the last one has popped, so keep moving (web 7.2.3 to
-// 7.2.7, Russell's design). A creature that reaches you shoves you three steps the way it was
-// running, and if a pool is there, you fall in. That creature then calms down and
-// wanders off, and the others lose your trail for a moment, so you are never shoved
-// twice running.
+// 7.2.7, Russell's design). A creature that reaches you knocks you toward the nearest
+// bottomless pool and leaves you one step from its edge (7.2.10). That creature then
+// calms down and wanders off, and the others lose your trail for a moment, so you are
+// never shoved twice running. You fall into a pool only walking straight at it; one
+// off to a side you walk round (7.2.10).
 //
 // No clock. The score is souls freed: the museums you complete.
 //
@@ -96,8 +97,16 @@ export const MU_CHARGE_SPM = 220;               // steps a minute, charging (you
 export const MU_CALM_SPM = 60;                  // walking off after a shove
 export const MU_SMASH_CHARGE = 3.0;             // seconds every creature charges after a smash
 export const MU_CATCH = 1.5;                    // units: this near while charging, it has you
-export const MU_SHOVE_STEPS = 3;                // a shove: three steps the way it ran
+// A creature that reaches you knocks you toward the nearest bottomless pool, step by
+// step, and leaves you one step from its edge (7.2.10, Russell: three steps the way it
+// ran barely did anything; its goal is to knock you in). The way there is clear of every
+// other pool; with no clear way to any pool, it shoves you three steps as before.
+export const MU_SHOVE_STEPS = 3;                // the old shove, when no pool can be reached
+export const MU_KNOCK_FROM_EDGE = 3.0;          // units (one step) from the pool's edge that it leaves you
 export const MU_SHOVE_EVERY = 0.14;             // seconds between the steps of a shove
+// You fall into a pool only walking straight at it: within this angle of its middle.
+// One off to a side, even with its edge across your way, you walk round (7.2.10, Russell).
+export const MU_STRAIGHT_ON = 30;               // degrees
 export const MU_LOST = 3.0;                     // seconds the other creatures lose your trail after a shove
 export const MU_CREATURE_FROM_START = 24.0;     // units (eight steps): no creature sleeps nearer where you come in
 export const MU_CREATURE_FROM_MEMORY = 12.0;
@@ -713,6 +722,7 @@ const mixin = {
       if (this.audio.has(name)) this._muPlay(name, { at, volume: 1.0, keep: true });
       mu.pendingStory = story;
       sp.queue = [];
+      this.stride = null;                 // you stop at the firework: the sparks pop only when you step again (7.2.10)
       // The warning comes half a second into the firework, cutting in at once (7.2.9,
       // Russell); its recording starts decoding now so it is ready then.
       const warn = this._muLine('fiery');
@@ -775,13 +785,35 @@ const mixin = {
   _muPoolAhead() {
     const f = this._forward();
     const p = this.playerPos;
-    return this._muPoolOn(p, [p[0] + f[0] * MU_WARN, p[1] + f[1] * MU_WARN]);
+    return this._muPoolOn(p, [p[0] + f[0] * MU_WARN, p[1] + f[1] * MU_WARN], true);
   },
 
   // Whether a step from a to b goes into a pool: the pool, or null.
-  _muPoolOn(a, b) {
-    for (const p of this.mu.pools) if (pointToSegment(p.pos, a, b) < p.r) return p;
+  // With `straight`, only a pool you are heading straight at (MU_STRAIGHT_ON).
+  _muPoolOn(a, b, straight = false) {
+    const sx = b[0] - a[0]; const sy = b[1] - a[1]; const sl = Math.hypot(sx, sy) || 1;
+    const cos = Math.cos(MU_STRAIGHT_ON * Math.PI / 180);
+    for (const p of this.mu.pools) {
+      if (pointToSegment(p.pos, a, b) >= p.r) continue;
+      if (straight) {
+        const cx = p.pos[0] - a[0]; const cy = p.pos[1] - a[1]; const cl = Math.hypot(cx, cy) || 1;
+        if ((sx * cx + sy * cy) / (sl * cl) < cos) continue;
+      }
+      return p;
+    }
     return null;
+  },
+
+  // A spot moved just out of every pool it is in (round a pool's side), or null.
+  _muOutOfPools(p) {
+    let q = [...p];
+    for (let k = 0; k < 4; k++) {
+      const inn = this.mu.pools.find((o) => dist2(q, o.pos) < o.r + 0.3);
+      if (!inn) return q;
+      const dx = q[0] - inn.pos[0]; const dy = q[1] - inn.pos[1]; const d = Math.hypot(dx, dy) || 1;
+      q = [inn.pos[0] + dx / d * (inn.r + 0.35), inn.pos[1] + dy / d * (inn.r + 0.35)];
+    }
+    return this.mu.pools.some((o) => dist2(q, o.pos) < o.r) ? null : q;
   },
 
   // Into a bottomless pool: the run is over.
@@ -891,7 +923,9 @@ const mixin = {
     this.stride = null;
     const dir = Math.hypot(c.dir[0], c.dir[1]) > 0.5 ? c.dir
       : (() => { const dx = this.playerPos[0] - c.x; const dy = this.playerPos[1] - c.y; const d = Math.hypot(dx, dy) || 1; return [dx / d, dy / d]; })();
-    mu.shove = { dir: [...dir], left: MU_SHOVE_STEPS, t: 0 };
+    // Toward the nearest pool it can knock you to, one step from its edge.
+    const to = this._muKnockSpot();
+    mu.shove = to ? { to, t: 0 } : { dir: [...dir], left: MU_SHOVE_STEPS, t: 0 };
     c.mode = 'calm';
     c.charge = 0;
     // Away from you, at least MU_CALM_AWAY, then it sleeps again.
@@ -908,12 +942,42 @@ const mixin = {
     mu.shoveGrace = MU_LOST;
   },
 
+  // The spot one step from the nearest pool's edge (on your side of it) that you can be
+  // knocked to in a straight line clear of every pool, or null.
+  _muKnockSpot() {
+    const p = this.playerPos; const lim = MU_HALF - 1.0;
+    const order = this.mu.pools.map((q) => [q, dist2(p, q.pos) - q.r]).sort((a, b) => a[1] - b[1]);
+    for (const [q] of order) {
+      const dx = p[0] - q.pos[0]; const dy = p[1] - q.pos[1]; const d = Math.hypot(dx, dy) || 1;
+      const to = [q.pos[0] + dx / d * (q.r + MU_KNOCK_FROM_EDGE), q.pos[1] + dy / d * (q.r + MU_KNOCK_FROM_EDGE)];
+      if (Math.abs(to[0]) > lim || Math.abs(to[1]) > lim) continue;
+      if (this._muPoolOn(p, to)) continue;
+      if (this.mu.pools.some((o) => dist2(to, o.pos) < o.r + MU_KNOCK_FROM_EDGE - 0.01 && o !== q)) continue;
+      return to;
+    }
+    return null;
+  },
+
   _muUpdateShove(dt) {
     const mu = this.mu; const s = mu.shove;
     s.t -= dt;
     if (s.t > 0) return;
     s.t = MU_SHOVE_EVERY;
     const from = [...this.playerPos];
+    if (s.to) {
+      // A step at a time toward the spot beside the pool.
+      const dx = s.to[0] - from[0]; const dy = s.to[1] - from[1]; const d = Math.hypot(dx, dy);
+      const step = Math.min(MU_STEP, d);
+      const to = d < 1e-6 ? [...s.to] : [from[0] + dx / d * step, from[1] + dy / d * step];
+      const pool = this._muPoolOn(from, to);
+      if (pool) { this._muFall(pool, to); return; }
+      this.playerPos = to;
+      const bank = MU_STEPS.filter((n) => this.audio.has(n));
+      if (bank.length && step > 0.2) this.audio.play(choice(bank));
+      this._muCheckUnderfoot(from, to);
+      if (dist2(to, s.to) < 0.01) mu.shove = null;
+      return;
+    }
     const lim = MU_HALF - 1.0;
     const to = [Math.max(-lim, Math.min(lim, from[0] + s.dir[0] * MU_STEP)), Math.max(-lim, Math.min(lim, from[1] + s.dir[1] * MU_STEP))];
     const pool = this._muPoolOn(from, to);
@@ -1122,14 +1186,22 @@ const mixin = {
     const from = [...this.playerPos];
     const want = [from[0] + dir[0] * MU_STEP, from[1] + dir[1] * MU_STEP];
     // (Into a pool before the wall stops anything: the water is checked on the step you meant.)
-    const pool = this._muPoolOn(from, want);
+    // Only a pool you walk straight at takes you (7.2.10).
+    const pool = this._muPoolOn(from, want, true);
     if (pool) {
       const lim = MU_HALF;
       if (Math.abs(want[0]) <= lim && Math.abs(want[1]) <= lim) { this._muFall(pool, want); return; }
     }
     const w = this._walkArena(dir, MU_STEP, MU_HALF, { sound: false });
     if (!w) return;
-    if (this._muPoolOn(w[0], w[1])) { this._muFall(pool || this._muPoolOn(w[0], w[1]), w[1]); return; }
+    const ahead = this._muPoolOn(w[0], w[1], true);
+    if (ahead) { this._muFall(ahead, w[1]); return; }
+    // One off to a side: you walk round its edge instead.
+    if (this._muPoolOn(w[0], w[1])) {
+      const round = this._muOutOfPools(w[1]);
+      if (!round) { this.playerPos = [...w[0]]; this.audio.play('boundary'); return; }
+      this.playerPos = round; w[1] = [...round];
+    }
     mu.steps.push(w);
     const bank = MU_STEPS.filter((n) => this.audio.has(n));
     if (bank.length) this.audio.play(choice(bank));
@@ -1149,7 +1221,8 @@ const mixin = {
     if (m.voice) { m.voice.stop(); m.voice = null; }
     const smash = this.audio.has(CASE_SMASH) ? CASE_SMASH : aliasRecording(this.audio, 'evt_glass_smash', 'event_sfx_file_evt_glass_smash');
     if (smash) this._muPlay(smash, { at: m.pos, keep: true });
-    this._muWake(MU_SMASH_CHARGE);
+    // (A fiery one's case: its sparks wake them, when you step on them, not the glass. 7.2.10.)
+    if (!m.fiery) this._muWake(MU_SMASH_CHARGE);
     this._muTake(m);
   },
 
@@ -1197,9 +1270,9 @@ const HELP_SECTIONS = [
     { title: 'The Museum', sound: null, desc: 'The Museum is a mode of its own, new in 7.2.0, inspired by Papa Sangre. Each museum holds the soul of one of the characters of Ultimate Mode\'s safe zones, chosen at random, and you hear their own world playing softly through a great echoing hall. Their memories are scattered through the museum. Find every one, then walk out of the door, and their soul is free. Then you walk on into the next museum, with another character, and one more memory to find. There is no clock. You turn and walk as in every walking mode (see General Turning). Double tap for the level, the memories found and the way you are facing.' },
     { title: 'The Museum Memories', sound: null, desc: 'A memory sounds like music: each one plays a little tune of its own, over and over, where it lies, so you can tell them apart, and the one the character is calling you to plays louder than the rest. Walk onto a memory to take it, and its whole tune plays once. About one memory in three is locked in a glass case instead: it hums, and the nearest case knocks as you close in, faster as you come nearer; when you are beside it and facing it a bell rings: tap with two fingers to smash it, or press the spacebar, and the memory is yours at once. But smashing glass is loud. The first museum has three memories, and each museum after it has one more, up to eight.' },
     { title: 'The Museum Characters', sound: null, desc: 'The character whose museum it is guides you. They call to you from beside the memory they want you to find next, the nearest one, in their own voice, so walk toward their voice. Each memory you find gives them back a piece of their life, and they tell you about it; then they call from beside the next one. When every memory is found, they say nothing of the door: listen for its buzzer. As you walk out, they say goodbye, and they are free. They also warn you whenever you come close to the edge of a bottomless pool.' },
-    { title: 'The Museum Bottomless Pools', sound: null, desc: 'The one danger in the museum is its bottomless pools, which dissolve memory. They lie all through the museum, many of them close around the memories, and sometimes you have to go around one to reach a memory. Each pool bubbles where it lies, louder as you come closer, and the nearest few are heard at once. When the step straight ahead of you would take you into a pool, the character warns you, so stop, turn, and go another way; a pool beside you or behind you is not called ahead, so listen to its bubbling too. Fall into a pool, and the run is over at once. There are no lives. Every museum has more pools than the last, closer around the memories, but there is always a way through to every memory and to the door.' },
-    { title: 'The Museum Creatures', sound: null, desc: 'Creatures sleep in the museum: one in the first museum, two in the second, and three from the third museum on. You hear them breathing softly. They wake only on noise, never because you walk near them. Smash a glass case, and every creature wakes with a roar from where it sleeps, so you can tell which way it is coming, and charges you for about three seconds, growling, with a footstep for every step it runs. Run the other way: you are a little faster than they are. A creature that reaches you shoves you three steps, the way it was running, and if a pool is there, you fall in. Then it calms down and walks away, and the other creatures lose your trail for a moment, so you are never shoved twice in a row. You cannot shoot them.' },
-    { title: 'The Museum Fiery Memories', sound: null, desc: 'About one memory in four is a fiery one. When you take it, a firework bursts on your left or your right, and the character warns you; there are four different fireworks, all short. The burst releases four to six sparks: you do not have to find them, and they make no sound until you move. Every step you take pops one, whichever way you walk, with a firecracker pop just in front of you. The creatures sleep through the bang, but the first spark you pop wakes every one of them, each with a roar from where it sleeps, and they keep charging until the last spark has popped, so once you start, do not stop moving until the popping is over. Then the creatures calm down, and a few seconds later the character tells you about the memory.' },
+    { title: 'The Museum Bottomless Pools', sound: null, desc: 'The one danger in the museum is its bottomless pools, which dissolve memory. They lie all through the museum, many of them close around the memories, and sometimes you have to go around one to reach a memory. Each pool bubbles where it lies, louder as you come closer, and the nearest few are heard at once. When the step straight ahead of you would take you into a pool, the character warns you, so stop, turn, and go another way; a pool beside you or behind you is not called ahead, so listen to its bubbling too. You fall in only walking straight at a pool: one off to your side you simply walk round. Fall into a pool, and the run is over at once. There are no lives. Every museum has more pools than the last, closer around the memories, but there is always a way through to every memory and to the door.' },
+    { title: 'The Museum Creatures', sound: null, desc: 'Creatures sleep in the museum: one in the first museum, two in the second, and three from the third museum on. You hear them breathing softly. They wake only on noise, never because you walk near them. Smash a glass case (unless it holds a fiery memory, whose sparks wake them instead), and every creature wakes with a roar from where it sleeps, so you can tell which way it is coming, and charges you for about three seconds, growling, with a footstep for every step it runs. Run the other way: you are a little faster than they are. A creature that reaches you knocks you toward the nearest bottomless pool and leaves you one step from its edge, so be careful which way you step next. Then it calms down and walks away, and the other creatures lose your trail for a moment, so you are never shoved twice in a row. You cannot shoot them.' },
+    { title: 'The Museum Fiery Memories', sound: null, desc: 'About one memory in four is a fiery one. When you take it, you stop where you are, a firework bursts on your left or your right, and the character warns you; there are four different fireworks, all short. The burst releases four to six sparks: you do not have to find them, and they make no sound until you move. Every step you take pops one, whichever way you walk, with a firecracker pop just in front of you. The creatures sleep through the bang, but the first spark you pop wakes every one of them, each with a roar from where it sleeps, and they keep charging until the last spark has popped, so once you start, do not stop moving until the popping is over. Then the creatures calm down, and a few seconds later the character tells you about the memory.' },
     { title: 'The Museum Door and Score', sound: null, desc: 'When every memory is found, a buzzer sounds from the museum\'s door, on one of its walls, ten steps or more away. Walk to it. The door opens, and you walk through by yourself while the character says goodbye; the door closes behind you, and the next museum begins. Your score is the number of souls you free, the museums you complete, and The Museum has its own high score board.' },
     { title: 'The Museum in Chaos Mode', sound: null, desc: 'Chaos Mode has museums too, one museum to a level, which you know by a character introducing themselves over their own world. A museum in chaos has three memories the first time in a run, and one more each time after, at most eight. Each memory puts twenty seconds on the chaos clock, and a fiery one thirty. When every memory is found the buzzer sounds, the chaos clock waits until you reach the door, and the door leads on to the next level. A fall into a bottomless pool ends the whole chaos run, however much health you have. There, double tap for the memories found, then your health, the clock and the points.' },
   ]],
