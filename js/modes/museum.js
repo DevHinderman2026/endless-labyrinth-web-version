@@ -496,11 +496,15 @@ const mixin = {
   },
 
   // How loud a thing is from where you are: [left, right, distance].
-  _muLevels(pos, gain, range, floor = 0) {
+  // With `always`, never quieter than the floor however far off, even past the range
+  // (the door's buzzer and the character's voice: 7.2.12. The museum is about 119 units
+  // corner to corner; past 90 they had gone silent, so the buzzer could not be heard
+  // from the far corner until you took a few steps.)
+  _muLevels(pos, gain, range, floor = 0, always = false) {
     const dx = pos[0] - this.playerPos[0]; const dy = pos[1] - this.playerPos[1];
     const d = Math.hypot(dx, dy);
     const pan = d > 0 ? dx / d : 0.0;
-    const v = d > range ? 0 : Math.min(1.0, Math.max(floor, 1.0 - d / range) * gain);
+    const v = d > range ? (always ? Math.min(1.0, floor * gain) : 0) : Math.min(1.0, Math.max(floor, 1.0 - d / range) * gain);
     return [v * (1.0 - Math.max(0.0, pan)), v * (1.0 - Math.max(0.0, -pan)), d];
   },
 
@@ -586,7 +590,7 @@ const mixin = {
   _muLevelSpeaker() {
     const sp = this.mu.speaker;
     if (!sp.pos) return;
-    const [l, r] = this._muLevels(sp.pos, MU_VOICE_LEVEL, MU_VOICE_RANGE, MU_VOICE_FLOOR);
+    const [l, r] = this._muLevels(sp.pos, MU_VOICE_LEVEL, MU_VOICE_RANGE, MU_VOICE_FLOOR, true);
     const behind = this._behind(sp.pos);
     if (sp.voice && sp.voice.busy) sp.voice.setVolume(l, r, behind);
     if (sp.beacon && sp.beacon.busy) sp.beacon.setVolume(l * 0.7, r * 0.7, behind);
@@ -1097,7 +1101,7 @@ const mixin = {
       dr.voice = this._muPlay(MU_BUZZER, { volume: 0.0, keep: true });
       dr.t = MU_BUZZ_GAP + MU_BUZZ_LEN;
     }
-    const [l, r, d] = this._muLevels(dr.pos, MU_DOOR_GAIN, MU_DOOR_RANGE, MU_DOOR_FLOOR);
+    const [l, r, d] = this._muLevels(dr.pos, MU_DOOR_GAIN, MU_DOOR_RANGE, MU_DOOR_FLOOR, true);
     if (dr.voice) dr.voice.setVolume(l, r, this._behind(dr.pos));
     if (d < MU_DOOR_REACH) this._muThroughDoor();
   },

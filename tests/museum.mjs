@@ -486,6 +486,25 @@ check(/^Level 1\. [1-3] of 3 found\./.test(report || ''), 'double tap: the level
 const board = await page.evaluate(() => window.__el.game._scoreLines().find((l) => /Museum/.test(l)));
 check(/^The Museum: /.test(board || ''), 'The Museum has its own high score board: ' + board);
 
+const farDoor = await page.evaluate(async () => {
+  const g = window.__el.game; const t = window.__t;
+  t.start('museum');
+  await t.frames(3);
+  const mu = g.mu; t.calm(); mu.pools = [];
+  for (const c of mu.creatures) { c.x = 0; c.y = 0; c.mode = 'sleep'; }
+  g.playerPos = [-41, -41];
+  mu.speaker.queue = []; mu.speaker.target = null;
+  mu.door = { pos: [40.5, 40.5], voice: null, t: 0 };
+  await t.frames(0.2);
+  const v = mu.door.voice; let loud = 0;
+  if (v) { const sv = v.setVolume.bind(v); v.setVolume = (l, r, b) => { loud = Math.max(l, r); return sv(l, r, b); }; }
+  await t.frames(0.2);
+  const voice = g._muLevels([40, 40], 1.0, 90, 0.45, true);
+  return { playing: !!v, loud: +loud.toFixed(2), voice: +Math.max(voice[0], voice[1]).toFixed(2) };
+});
+check(farDoor.playing && farDoor.loud >= 0.29, `from the far corner the buzzer is heard at once, not silent (7.2.12): ${farDoor.loud}`);
+check(farDoor.voice >= 0.44, `and the character's voice too: ${farDoor.voice}`);
+
 // ------------------------------------------------------------------ Chaos
 const chaos = await page.evaluate(async () => {
   const g = window.__el.game; const t = window.__t;
