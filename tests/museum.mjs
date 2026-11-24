@@ -448,9 +448,11 @@ const glass = await page.evaluate(async () => {
   const m = mu.memories.find((x) => !x.taken); m.inCase = true; m.fiery = false; m.pos = [0, 20];
   g.playerPos = [0, 22]; g._face(0, true);
   await t.frames(0.2);
+  const said0 = (g.muSaid || []).length;
   g.input('space');
   await t.frames(0.1);
   const r = { glass: mu.glass.length === 1, charging: c.mode === 'charge' };
+  r.storyWaits = mu.storyIn > 2 && !!mu.storyLater && !(g.muSaid || []).slice(said0).some((id) => /\.memory\./.test(id));
   // Over the glass while they charge: a crunch, and no more time.
   const charge0 = c.charge;
   const crunch0 = t.played.filter((n) => /^ut_glass_step_/.test(n)).length;
@@ -462,6 +464,7 @@ const glass = await page.evaluate(async () => {
   for (const o of mu.creatures) { o.x = -38; o.y = -38; }
   await t.frames(3.5);
   r.asleep = c.mode === 'sleep';
+  r.storyTold = (g.muSaid || []).slice(said0).some((id) => /\.memory\./.test(id));
   g._face(Math.PI, true);
   const placed0 = t.placed.length;
   g.input('up');
@@ -471,6 +474,7 @@ const glass = await page.evaluate(async () => {
   return r;
 });
 check(glass.glass && glass.charging, 'a smashed case leaves its broken glass, and the smash wakes the creature');
+check(glass.storyWaits && glass.storyTold, 'the smashed memory\'s story waits a few seconds, then is told (7.2.14)');
 check(glass.crunch && glass.noMore, 'walking over the glass while it charges crunches, and adds no time to the charge (7.2.11)');
 check(glass.asleep && glass.woke && glass.roar, 'stepping on the glass once it sleeps again wakes it, with a roar, for about two seconds (7.2.11)');
 

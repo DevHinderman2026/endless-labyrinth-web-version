@@ -84,8 +84,12 @@ export const MU_POOL_NEAR_MEMORY = [[6.0, 9.0], [3.0, 4.5]];   // a guarding poo
 export const MU_GUARD_CHANCE = [0.35, 0.85];    // the chance a memory has a pool beside it: first museum, most
 export const MU_PATH = 2.5;                     // units: every way through is at least this clear of a pool's edge, either side
 export const MU_POOL_RANGE = 30.0;              // a pool's bubbling is heard within this many units (ten steps)
-export const MU_POOL_GAIN = 0.75;
-export const MU_POOLS_HEARD = 3;                // only the nearest few bubble at once
+// Quieter, and only the nearest two, from 7.2.14 (Russell: by museums 3 and 4 the pools
+// drowned everything; they were 0.75 and three): and while the character speaks they
+// sink lower still, so the voice is always clear.
+export const MU_POOL_GAIN = 0.45;
+export const MU_POOLS_HEARD = 2;                // only the nearest few bubble at once
+export const MU_POOL_UNDER_VOICE = 0.55;        // the pools' level while the character speaks
 // The character warns you when the step straight ahead of you (with half a unit to
 // spare) would take you into a pool: only then, so a pool beside you or behind you,
 // however near, is not called "ahead" (web 7.2.1, Russell).
@@ -706,7 +710,7 @@ const mixin = {
 
   // A memory found: its tune plays once, whole; the character remembers (a fiery one
   // first sets off its firework, and the story waits until the sparks are out).
-  _muTake(m) {
+  _muTake(m, smashed = false) {
     const mu = this.mu;
     if (mu.storyIn > 0) this._muTellStory();      // (another memory before the last one's story: that story first)
     m.taken = true;
@@ -737,6 +741,14 @@ const mixin = {
       const warn = this._muLine('fiery');
       mu.warnLine = warn; mu.warnIn = warn ? MU_WARN_AFTER : 0;
       if (warn && !this._muSilent()) { const cv = this._muVoices(); if (cv.has(warn)) cv.peek(warn); }
+      return;
+    }
+    // A smashed case's memory: its story waits a few seconds, as after a fiery one's
+    // sparks (7.2.14, Russell).
+    if (smashed && story) {
+      sp.queue = [];
+      mu.storyLater = story;
+      mu.storyIn = MU_STORY_AFTER;
       return;
     }
     sp.queue = story ? [story] : [];
@@ -774,7 +786,8 @@ const mixin = {
       const dx = this.playerPos[0] - p.pos[0]; const dy = this.playerPos[1] - p.pos[1];
       const d = Math.hypot(dx, dy) || 1;
       const at = [p.pos[0] + dx / d * Math.min(p.r, d), p.pos[1] + dy / d * Math.min(p.r, d)];
-      const [l, r] = this._muLevels(at, MU_POOL_GAIN, MU_POOL_RANGE);
+      const duck = (mu.speaker.voice && mu.speaker.voice.busy) ? MU_POOL_UNDER_VOICE : 1.0;
+      const [l, r] = this._muLevels(at, MU_POOL_GAIN * duck, MU_POOL_RANGE);
       p.voice.setVolume(l, r, this._behind(at));
     });
     // The character warns you when the step straight ahead would take you in: as soon
@@ -1236,7 +1249,7 @@ const mixin = {
     mu.glass.push([...m.pos]);                 // its broken glass stays on the floor
     // (A fiery one's case: its sparks wake them, when you step on them, not the glass. 7.2.10.)
     if (!m.fiery) this._muWake(MU_SMASH_CHARGE);
-    this._muTake(m);
+    this._muTake(m, true);
   },
 
   // Enter's report: the level and the memories found (in chaos: the memories, then the
@@ -1281,7 +1294,7 @@ const mixin = {
 const HELP_SECTIONS = [
   ['The Museum', [
     { title: 'The Museum', sound: null, desc: 'The Museum is a mode of its own, new in 7.2.0, inspired by Papa Sangre, where you must save a soul in the land of the dead, and by Papa Sangre II, which has a Museum of Memories of its own. Each museum holds the soul of one of the characters of Ultimate Mode\'s safe zones, chosen at random, and you hear their own world playing softly through a great echoing hall. Their memories are scattered through the museum. Find every one, then walk out of the door, and their soul is free. Then you walk on into the next museum, with another character, and one more memory to find. There is no clock. You turn and walk as in every walking mode (see General Turning). Double tap for the level, the memories found and the way you are facing.' },
-    { title: 'The Museum Memories', sound: null, desc: 'A memory sounds like music: each one plays a little tune of its own, over and over, where it lies, so you can tell them apart, and the one the character is calling you to plays louder than the rest. Walk onto a memory to take it, and its whole tune plays once. About one memory in three is locked in a glass case instead: it hums, and the nearest case knocks as you close in, faster as you come nearer; when you are beside it and facing it a bell rings: tap with two fingers to smash it, or press the spacebar, and the memory is yours at once. But smashing glass is loud. The first museum has three memories, and each museum after it has one more, up to eight.' },
+    { title: 'The Museum Memories', sound: null, desc: 'A memory sounds like music: each one plays a little tune of its own, over and over, where it lies, so you can tell them apart, and the one the character is calling you to plays louder than the rest. Walk onto a memory to take it, and its whole tune plays once. About one memory in three is locked in a glass case instead: it hums, and the nearest case knocks as you close in, faster as you come nearer; when you are beside it and facing it a bell rings: tap with two fingers to smash it, or press the spacebar, and the memory is yours at once; a few seconds later the character tells you about it. But smashing glass is loud. The first museum has three memories, and each museum after it has one more, up to eight.' },
     { title: 'The Museum Characters', sound: null, desc: 'The character whose museum it is guides you. They call to you from beside the memory they want you to find next, the nearest one, in their own voice, so walk toward their voice. Each memory you find gives them back a piece of their life, and they tell you about it; then they call from beside the next one. When every memory is found, they say nothing of the door: listen for its buzzer. As you walk out, they say goodbye, and they are free. They also warn you whenever you come close to the edge of a bottomless pool.' },
     { title: 'The Museum Bottomless Pools', sound: null, desc: 'The one danger in the museum is its bottomless pools, which dissolve memory. They lie all through the museum, many of them close around the memories, and sometimes you have to go around one to reach a memory. Each pool bubbles where it lies, louder as you come closer, and the nearest few are heard at once. When the step straight ahead of you would take you into a pool, the character warns you, so stop, turn, and go another way; a pool beside you or behind you is not called ahead, so listen to its bubbling too. You fall in only walking straight at a pool: one off to your side you simply walk round. Fall into a pool, and the run is over at once. There are no lives. Every museum has more pools than the last, closer around the memories, but there is always a way through to every memory and to the door.' },
     { title: 'The Museum Creatures', sound: null, desc: 'Creatures sleep in the museum: one in the first museum, two in the second, and three from the third museum on. You hear them breathing softly. They wake only on noise, never because you walk near them. Smash a glass case (unless it holds a fiery memory, whose sparks wake them instead), and every creature wakes with a roar from where it sleeps, so you can tell which way it is coming, and charges you for about three seconds, growling, with a footstep for every step it runs. Run the other way: you are a little faster than they are. A smashed case leaves its broken glass on the floor, crunching under your feet: step on it while no creature is charging, and the noise wakes them for about two seconds; while they are already charging, it adds nothing. The glass stays only in that museum. A creature that reaches you knocks you toward the nearest bottomless pool and leaves you one step from its edge, so be careful which way you step next. Then it calms down and walks away, and the other creatures lose your trail for a moment, so you are never shoved twice in a row. You cannot shoot them.' },
