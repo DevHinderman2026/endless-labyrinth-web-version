@@ -24,8 +24,16 @@ MAGIC = b'ELPACK1\n'
 SOUNDS = {
     # The bottomless pools: "Rapid Bubbling" by DRAGON-STUDIO (Pixabay 584722).
     'mu_pool':       ('museum_pool_584722.mp3', 10.0, 30.0, True, -21.0, True),
-    # A fiery memory's firework: "Firework Explosion With Echo" by Alex_Jauk (147321): the launch, then the burst.
-    'mu_firework':   ('museum_fw_147321.mp3', 0.0, 6.0, False, -17.0, False),
+    # A fiery memory's firework, one of four at random, each short (7.2.6, Russell: the
+    # 6 s whistle and burst of 7.2.0 to 7.2.5 was far too long, and he wanted more than one):
+    # the burst of "Firework Explosion With Echo" by Alex_Jauk (147321), with its echo;
+    'mu_firework_1': ('museum_fw_147321.mp3', 3.30, 4.90, False, -17.0, False),
+    # "Single Firework Sound" by Alex_Jauk (190315): its first burst;
+    'mu_firework_2': ('museum_fw_190315.mp3', 0.4, 1.8, False, -17.0, False),
+    # and two single bursts from "fireworks" by freesound_community (29629), the events'
+    # fireworks background, taken from the events pack where it already is.
+    'mu_firework_3': ('pack:events:evt_amb_fireworks', 13.0, 14.4, False, -17.0, False),
+    'mu_firework_4': ('pack:events:evt_amb_fireworks', 26.9, 28.3, False, -17.0, False),
     # A spark popping as you step on it: "Firecracker" by freesound_community (106974).
     # (7.2.2 tried a loop of "Firecrackers" by Alex_Jauk over "Sparkler" by Dawnton, and a
     # fizzle; from 7.2.3 the sparks are silent until you step, and each step pops one.)
@@ -43,7 +51,8 @@ SOUNDS = {
 }
 XFADE = 1.0     # seconds of a loop's end cross-faded into its start
 # A one-shot cut in the middle of a steady sound fades out over this long, not 0.01 s.
-FADE_OUT = {'museum_buzz_100567.mp3': 0.08, 'pack:events2:evt_dinosaur_growl': 0.4}
+FADE_OUT = {'museum_buzz_100567.mp3': 0.08, 'pack:events2:evt_dinosaur_growl': 0.4,
+            'museum_fw_147321.mp3': 0.3, 'museum_fw_190315.mp3': 0.3, 'pack:events:evt_amb_fireworks': 0.3}
 # Sounds made of two: (name, [parts], rms dB). The parts are not packed on their own.
 MIXES = []
 
@@ -87,6 +96,9 @@ def make(src, a, b, loop, rms_db, mono):
         y = x[int(a * RATE):int(b * RATE)].copy()
         edge = int(FADE_OUT.get(src if src.startswith('pack:') else os.path.basename(src), 0.01) * RATE)
         y[-edge:] *= np.linspace(1, 0, edge)[:, None]
+        if a > 0:                         # cut from the middle: a short fade in, so it does not click
+            fin = int(0.01 * RATE)
+            y[:fin] *= np.linspace(0, 1, fin)[:, None]
     if mono:
         m = y.mean(axis=1)
         y = np.stack([m, m], axis=1)
@@ -134,7 +146,9 @@ def main():
         data = open(ogg, 'rb').read()
         entries.append({'kind': 'dry', 'name': name, 'frames': len(y), 'loop': loop, 'offset': off, 'length': len(data)})
         blobs.append(data); off += len(data)
-        print(f'{name}: {len(y) / RATE:.2f} s, {len(data)} bytes')
+        w = int(0.05 * RATE); e = (y.astype(np.float64) ** 2).mean(axis=1)
+        peak = max(range(0, max(1, len(e) - w), w // 2), key=lambda i: e[i:i + w].mean()) / RATE
+        print(f'{name}: {len(y) / RATE:.2f} s, {len(data)} bytes, loudest at {peak:.2f} s')
     header = json.dumps({'pack': 'museum', 'rate': RATE, 'entries': entries}, separators=(',', ':')).encode('utf-8')
     body = MAGIC + struct.pack('<I', len(header)) + header + b''.join(blobs)
     fname = 'museum-' + hashlib.sha1(body).hexdigest()[:10] + '.elpack'

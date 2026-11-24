@@ -33,9 +33,11 @@ const check = (ok, what) => { console.log((ok ? 'PASS ' : 'FAIL ') + what); if (
   check(cast.every((c) => per(c.id, 'intro') === 1 && per(c.id, 'call') === 4 && per(c.id, 'pool') === 3 && per(c.id, 'fiery') === 2 && per(c.id, 'memory') === 8 && per(c.id, 'open') === 1 && per(c.id, 'goodbye') === 1),
     'every one of the 26 characters has an introduction, 4 calls, 3 pool warnings, 2 fiery warnings, 8 memories, the door and a goodbye');
   const sounds = pack('museum');
-  const want = ['mu_pool', 'mu_firework', 'mu_stamp', 'mu_buzzer', 'mu_door_open', 'mu_door_close', 'creature_roar'];
-  check(sounds.bytes && sounds.head.entries.length === 7 && want.every((n) => sounds.head.entries.some((e) => e.name === n)) && sounds.head.entries.filter((e) => e.loop).map((e) => e.name).join() === 'mu_pool',
-    'the museum pack holds its seven recordings, only the pool looping (7.2.5: and the creatures\' roar)');
+  const want = ['mu_pool', 'mu_firework_1', 'mu_firework_2', 'mu_firework_3', 'mu_firework_4', 'mu_stamp', 'mu_buzzer', 'mu_door_open', 'mu_door_close', 'creature_roar'];
+  check(sounds.bytes && sounds.head.entries.length === 10 && want.every((n) => sounds.head.entries.some((e) => e.name === n)) && sounds.head.entries.filter((e) => e.loop).map((e) => e.name).join() === 'mu_pool',
+    'the museum pack holds its ten recordings, only the pool looping (7.2.6: four short fireworks)');
+  const fws = sounds.head.entries.filter((e) => /^mu_firework_/.test(e.name));
+  check(fws.every((e) => e.frames / sounds.head.rate <= 2.0), `every firework is short: ${fws.map((e) => (e.frames / sounds.head.rate).toFixed(2)).join(', ')} s`);
   const buzz = sounds.head.entries.find((e) => e.name === 'mu_buzzer');
   check(buzz && Math.abs(buzz.frames / sounds.head.rate - 2.0) < 0.01, `the buzzer is two seconds long (7.2.4): ${buzz && (buzz.frames / sounds.head.rate).toFixed(2)} s`);
 }
@@ -124,11 +126,11 @@ const sizes = await page.evaluate(async () => {
     startClear: lay.every((l) => l.pools.every((p) => Math.hypot(l.start[0] - p.pos[0], l.start[1] - p.pos[1]) > p.r + 6)),
     bedsFar: lay.every((l) => l.beds.every((b) => Math.hypot(b[0] - l.start[0], b[1] - l.start[1]) >= m.MU_CREATURE_FROM_START)),
     tunes: (() => { const d = m.dealTunes(8); return new Set(d.map((x) => x.join())).size === 8 && d.every((x) => x.length >= 3 && x.length <= 5); })(),
-    museum10Pools: m.layMuseum(10).pools.length,
+    museum10Pools: m.layMuseum(10).pools.length, pool10: m.poolsFor(10), pool11: m.poolsFor(11),
   };
 });
 check(sizes.mem.join() === '3,4,5,8,8,8', `memories: 3, then one more each museum, at most 8: ${sizes.mem.join()}`);
-check(sizes.pools[0] === 3 && sizes.pools[4] === 14 && sizes.pools[1] > 3, `pools grow from 3 to at most 14: ${sizes.pools.join()}`);
+check(sizes.pools.join() === '3,3,4,6,8' && sizes.pool10 === 7 && sizes.pool11 === 8, `pools: 3, then one more every second museum, at most 8 (7.2.6): ${sizes.pools.join()}`);
 check(sizes.cr.join() === '1,2,3,3', `creatures: 1, 2, then 3: ${sizes.cr.join()}`);
 check(sizes.allReach, 'in 40 museums of every size, every memory can always be reached');
 check(sizes.poolsApart, 'no memory lies in a pool');
@@ -197,7 +199,7 @@ const door = await page.evaluate(async () => {
   return r;
 });
 check(door.found === 3 && door.door, 'every memory found: the door');
-check(door.open, 'the character says the door is open');
+check(!door.open, 'the character does not say the door is open: the buzzer tells you (7.2.6)');
 check(door.buzzer, 'the buzzer sounds from the door');
 check(door.doorFar, 'the door is on a wall');
 check(door.walk && door.doorOpen && door.freed === 1, 'at the door it opens, you walk through by yourself, and a soul is freed');
@@ -338,9 +340,13 @@ const fire = await page.evaluate(async () => {
   const m = mu.memories.find((x) => !x.taken); m.inCase = false; m.fiery = true; m.pos = [0, 10];
   g.playerPos = [0, 13]; g._face(0, true);
   g.muSaid = [];
+  const placedF = t.placed.length;
   g.input('up');
+  const fw = t.placed.slice(placedF).find(([n]) => /^mu_firework_[1-4]$/.test(n));
   await t.frames(0.3);
-  const r = { taken: m.taken, firework: t.played.includes('mu_firework'), warned: (g.muSaid || []).some((id) => /\.fiery\./.test(id)), notYet: c.mode === 'sleep' && mu.sparksLeft === 0 };
+  const r = { taken: m.taken, firework: !!fw, warned: (g.muSaid || []).some((id) => /\.fiery\./.test(id)), notYet: c.mode === 'sleep' };
+  // It bursts on your left or right (you face north, so east or west of you).
+  r.side = fw ? (fw[1][0] - g.playerPos[0]) * mu.sparkSide > 2.5 && Math.abs(fw[1][1] - g.playerPos[1]) < 0.5 : false;
   await t.frames(4.2);
   r.sparks = mu.sparksLeft; r.asleepAtBang = c.mode === 'sleep';
   // Standing still: not a sound from them.
@@ -363,7 +369,7 @@ const fire = await page.evaluate(async () => {
     await t.frames(0.15);
     if (k === 0) { r.wokeOnFirst = c.mode === 'charge' && c.charge === Infinity && mu.sparksLeft > 0; r.roar1 = t.placed.slice(placedBefore).filter(([n]) => n === 'creature_roar').length; }
     const pop = t.placed.slice(placedBefore).filter(([n]) => n === 'mu_stamp').slice(-1)[0];
-    if (pop) { const dx = pop[1][0] - g.playerPos[0]; const dy = pop[1][1] - g.playerPos[1]; const d = Math.hypot(dx, dy) || 1; r.ahead = (r.ahead === undefined ? true : r.ahead) && (dx * f[0] + dy * f[1]) / d > 0.99; }
+    if (pop) { const dx = pop[1][0] - g.playerPos[0]; const dy = pop[1][1] - g.playerPos[1]; const d = Math.hypot(dx, dy) || 1; const sd = mu.sparkSide; r.ahead = (r.ahead === undefined ? true : r.ahead) && (dx * -f[1] * sd + dy * f[0] * sd) / d > 0.99; }
     k += 1;
   }
   r.steps = k;
@@ -376,16 +382,31 @@ const fire = await page.evaluate(async () => {
   r.noSizzle = !t.played.some((n) => /mu_spark|mu_sizzle|mu_fizzle/.test(n));
   return r;
 });
-check(fire.taken && fire.firework && fire.warned && fire.notYet, 'a fiery memory: its firework goes up and the character warns you');
+check(fire.taken && fire.firework && fire.warned && fire.notYet, 'a fiery memory: one of its four fireworks goes off and the character warns you');
+check(fire.side, 'it bursts on your left or right (7.2.6)');
 check(fire.sparks >= 4 && fire.sparks <= 6 && fire.asleepAtBang, `at the bang ${fire.sparks} sparks are released, and the creature sleeps on`);
 check(fire.silentStill && fire.stillAsleep, 'standing still, the sparks make no sound, none pops, and the creature stays asleep');
 check(fire.wokeOnFirst, 'the first spark you pop wakes the creature, and it charges');
 check(fire.roar1 === 1 && fire.roars === 1, `it roars as it wakes, once, not with every pop (${fire.roars})`);
 check(fire.storyHeld, 'the memory\'s story waits');
-check(fire.steps === fire.sparks && fire.pops === fire.sparks && fire.ahead === true, `each step pops one spark with a firecracker pop just ahead of you, whichever way you face (${fire.pops} pops in ${fire.steps} steps)`);
+check(fire.steps === fire.sparks && fire.pops === fire.sparks && fire.ahead === true, `each step pops one spark with a firecracker pop on the firework\'s side of you, whichever way you face (${fire.pops} pops in ${fire.steps} steps)`);
 check(fire.calm, 'when the last has popped the creature calms down');
 check(fire.story, 'and then the character tells the memory\'s story');
 check(fire.noSizzle, 'no sizzle, no fizzle, no spark loop');
+
+const early = await page.evaluate(async () => {
+  const g = window.__el.game; const t = window.__t; const mu = g.mu; t.calm();
+  for (const c of mu.creatures) { c.x = 38; c.y = 38; c.mode = 'sleep'; }
+  mu.sparksLeft = 0; mu.firework = { t: 0.01, burst: 0.8, name: 'mu_firework_4', pos: [...g.playerPos] }; mu.sparkSide = -1;
+  g.playerPos = [0, 0]; g._face(0, true);
+  const pops0 = t.played.filter((n) => n === 'mu_stamp').length;
+  g.input('up');
+  await t.frames(0.1);
+  const r = { popped: t.played.filter((n) => n === 'mu_stamp').length - pops0, burst: !mu.firework, left: mu.sparksLeft };
+  while (mu.sparksLeft > 0) { g.input('up'); await t.frames(0.1); }
+  return r;
+});
+check(early.popped === 1 && early.burst && early.left >= 3, 'a step taken before the burst still pops a spark: every step does (7.2.6)');
 
 // ------------------------------------------------------------------ Enter's report and the score board
 const report = await page.evaluate(async () => {

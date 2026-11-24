@@ -147,13 +147,6 @@ export const AB_THUNDERS = ['ab_thunder_1', 'ab_thunder_3', 'ab_thunder_4'];
 export const AB_THUNDER = AB_THUNDERS[0];
 export const AB_IDLE = 'ab_creature_still';     // a wandering creature: sniffing, deep breathing
 export const AB_GROWL = 'ab_creature_hunt';     // a hunting creature: a hungry growl
-// The roar of a creature that has just heard you, from where it is, before it moves, so
-// you know which way it is coming (web 7.2.4, Russell; The Museum's creatures too). It is
-// in the museum pack: "Dinosaur Growl" by DRAGON-STUDIO, its first 2.2 seconds.
-export const CREATURE_ROAR = 'creature_roar';
-export const ROAR_GAIN = 1.0;
-export const ROAR_FLOOR = 0.35;                 // never quieter than this, however far off it is
-export const AB_ROAR_AGAIN = 4.0;               // seconds a creature must have stopped hunting you before it roars again
 export const AB_STEPS_GLASS = ['ut_glass_step_1', 'ut_glass_step_2', 'ut_glass_step_3', 'ut_glass_step_4'];
 // No echo at all (Russell, 20 November 2026: with the battle arena's echo it sounded
 // like a large hall, not an endless space with no walls): open air, as the events'
@@ -224,7 +217,6 @@ const mixin = {
     // Held in memory for the whole run (unpinned in _abStopAll), so no strike or
     // creature waits for its recording to be decoded again.
     for (const [stem, name] of this.abNames) if (name) this.audio.prepare(name, stem === AB_BACKGROUND ? null : `abyss:${stem}`);
-    if (this.audio.has(CREATURE_ROAR)) this.audio.prepare(CREATURE_ROAR, 'abyss:roar');
     this.playerPos = [0.0, 0.0];
     this.arenaLimit = 1e9;
     this.stride = null;
@@ -349,22 +341,10 @@ const mixin = {
     for (const c of ab.creatures) {
       if (c.storm > 0 || c.charge > 0) continue;
       if (dist2([c.x, c.y], this.playerPos) > range) continue;
-      this._abRoar(c);
       c.move = running ? AB_RUN_MOVE : AB_WALK_MOVE;
       c.moveSpeed = stepsPerSecond(running ? AB_CHARGE_SPM : AB_CREEP_SPM);
       c.target = [...this.playerPos];
     }
-  },
-
-  // A creature that has just heard you roars, from where it is, unless it was already
-  // hunting you (or stopped less than AB_ROAR_AGAIN seconds ago).
-  _abRoar(c) {
-    if ((c.roarWait || 0) > 0 || c.move > 0 || c.charge > 0) return;
-    c.roarWait = AB_ROAR_AGAIN;
-    if (!this.audio.has(CREATURE_ROAR)) return;
-    const d = dist2([c.x, c.y], this.playerPos);
-    const v = Math.min(1.0, Math.max(ROAR_FLOOR, 1.0 - d / AB_CREATURE_RANGE) * ROAR_GAIN);
-    this.audio.play(CREATURE_ROAR, { at: [c.x, c.y], volume: v, keep: true });
   },
 
   // A wandering creature's next little move: along its own heading, turned now and
@@ -408,9 +388,6 @@ const mixin = {
       }
       c.moving = moved > 0;
       c.wandering = false;
-      // While it hunts you its roar waits; once it stops, the wait runs down.
-      if (c.move > 0 || c.charge > 0) c.roarWait = AB_ROAR_AGAIN;
-      else c.roarWait = Math.max(0, (c.roarWait || 0) - dt);
       if (!target) { moved = this._abWander(c, dt); c.wandering = moved > 0; }
       // A footstep on the glass for every step it takes, from where it is (faint
       // while it only wanders).
@@ -672,7 +649,7 @@ const mixin = {
     if (c.lightning) this._abStrike();
     else if (ab.cover <= 0) {
       for (const x of ab.creatures) {
-        if (dist2([x.x, x.y], this.playerPos) <= AB_SMASH_HEAR) { this._abRoar(x); x.charge = AB_SMASH_CHARGE; x.storm = 0; x.move = 0; }
+        if (dist2([x.x, x.y], this.playerPos) <= AB_SMASH_HEAR) { x.charge = AB_SMASH_CHARGE; x.storm = 0; x.move = 0; }
       }
     }
     if (ab.chaos && ab.smashed >= ab.quota) { this._abOpenExit(); return; }
@@ -788,7 +765,6 @@ const mixin = {
     ab.exit = null;
     ab.stopped = true;
     for (const stem of [...AB_THUNDERS, AB_IDLE, AB_GROWL]) this.audio.pins.delete(`abyss:${stem}`);
-    this.audio.pins.delete('abyss:roar');
   },
 };
 
@@ -796,9 +772,9 @@ const mixin = {
 const HELP_SECTIONS = [
   ['The Abyss', [
     { title: 'The Abyss', sound: null, desc: 'The Abyss is a mode of its own, new in 6.2.0. You are in a huge, endless abyss, with no walls and no edge, and the whole floor is broken glass: every step you take can be heard. Creatures live all through it. Your goal is to smash as many glass cases as you can before the clock runs out. You turn and walk as in every walking mode (see General Turning). Double tap for the cases you have smashed, your lives, the seconds left and the way you are facing.' },
-    { title: 'The Abyss The Creatures', sound: null, desc: 'The creatures are blind, just like you, and they hunt by sound, so they come for you only while you move. Walk, and the ones within about ten steps creep toward the sound of your steps. Run, and the ones within about twenty steps charge you, a little slower than you can run. A creature that has just heard you roars from where it is, before it moves, so you know which way it is coming; it roars again only after it has stopped hunting you for a few seconds. Stop, and they stop hunting you: each one goes back to wandering the abyss very slowly, in no particular direction, never toward you, and it always turns away before it comes within three steps of you, so a creature that has not heard you can never stumble into you. Standing still never gets you away from them; it only holds them off, while the clock runs on. A wandering creature makes a quieter sound and faint footsteps; a hunting one growls, with a footstep on the glass for every step it takes. The creatures always keep about three steps apart from one another, and a creature that wakes does so fifteen to twenty-five steps from you, never right beside another. You cannot shoot them. If one catches you, you lose a life, and it is thrown far away.' },
+    { title: 'The Abyss The Creatures', sound: null, desc: 'The creatures are blind, just like you, and they hunt by sound, so they come for you only while you move. Walk, and the ones within about ten steps creep toward the sound of your steps. Run, and the ones within about twenty steps charge you, a little slower than you can run. Stop, and they stop hunting you: each one goes back to wandering the abyss very slowly, in no particular direction, never toward you, and it always turns away before it comes within three steps of you, so a creature that has not heard you can never stumble into you. Standing still never gets you away from them; it only holds them off, while the clock runs on. A wandering creature makes a quieter sound and faint footsteps; a hunting one growls, with a footstep on the glass for every step it takes. The creatures always keep about three steps apart from one another, and a creature that wakes does so fifteen to twenty-five steps from you, never right beside another. You cannot shoot them. If one catches you, you lose a life, and it is thrown far away.' },
     { title: 'The Abyss Lightning', sound: null, desc: 'Lightning is your cover. Every few seconds it strikes somewhere in the abyss, really loud: a thunderclap from where it strikes, while the wind and the hum of the cases dip under it. It lands fifteen to twenty-five steps from you, and every creature in the abyss runs toward it, each to its own spot around the strike, so they spread out instead of crowding into one pack. For five seconds after a strike your steps are not heard, so that is the moment to move. At first it strikes every six to ten seconds; as you smash more cases it comes less often, but never more than twenty seconds apart.' },
-    { title: 'The Abyss Glass Cases', sound: null, desc: 'A glass case hums where it stands. Three stand around you at a time, but only one knocks: the nearest, from about fifteen steps away, faster and louder as you close in, so you can turn until the knocking is centred between your ears. The others only hum, more softly, and the knocking moves to another case only when you smash this one or come two steps nearer to another. When you are beside a case and facing it, a bell rings: tap with two fingers to smash it, or press the spacebar. Smashing glass is loud: every creature that hears it roars and charges you for about three seconds, unless the five seconds after a lightning strike have not yet run out, so a case is best smashed just after the lightning. Each case gives you time: usually ten seconds, sometimes twenty. About one case in four also holds lightning: as it breaks, lightning strikes somewhere in the abyss and the creatures run to it instead of to you. And about one case in twenty also holds an extra life: you hear the heart, and the voice says it with your lives, such as 10 more seconds. Extra life, 4 lives. There is no limit to how many lives you can have. (Not in Chaos Mode, where the run has its one health bar.)' },
+    { title: 'The Abyss Glass Cases', sound: null, desc: 'A glass case hums where it stands. Three stand around you at a time, but only one knocks: the nearest, from about fifteen steps away, faster and louder as you close in, so you can turn until the knocking is centred between your ears. The others only hum, more softly, and the knocking moves to another case only when you smash this one or come two steps nearer to another. When you are beside a case and facing it, a bell rings: tap with two fingers to smash it, or press the spacebar. Smashing glass is loud: every creature that hears it charges you for about three seconds, unless the five seconds after a lightning strike have not yet run out, so a case is best smashed just after the lightning. Each case gives you time: usually ten seconds, sometimes twenty. About one case in four also holds lightning: as it breaks, lightning strikes somewhere in the abyss and the creatures run to it instead of to you. And about one case in twenty also holds an extra life: you hear the heart, and the voice says it with your lives, such as 10 more seconds. Extra life, 4 lives. There is no limit to how many lives you can have. (Not in Chaos Mode, where the run has its one health bar.)' },
     { title: 'The Abyss Clock, Lives and Score', sound: null, desc: 'The clock starts at forty-five seconds, and only glass cases add to it. You start with three lives, and a rare case gives you another, with no limit: when the clock runs out, or a creature catches you when you have one life left, the run is over. Every three cases you smash, one more creature wakes in the abyss, up to seven, and the lightning comes a little less often, never more than twenty seconds apart. Your score is the number of cases you smash, and The Abyss has its own high score board.' },
     { title: 'The Abyss in Chaos Mode', sound: null, desc: 'Chaos Mode has Abyss levels too. You know you are in one at once: lightning strikes the moment you arrive, so move. There you must smash a set number of cases: three or four the first time in a run, and one more each time after, at most eight. Each case adds its time to the chaos clock: usually ten seconds, sometimes twenty or thirty, and very rarely sixty. When you have smashed enough, the creatures, the cases and the lightning all go, and over the wind of the abyss, which plays on, an exit is heard, the battle exit\'s Morse signal; the chaos clock waits until you walk through it. There a catch costs 25 health from the one health bar of the chaos run (see Chaos Health) instead of a life. There, double tap for the cases smashed, then your health, the clock and the points.' },
   ]],
@@ -810,7 +786,6 @@ const HELP_DEMOS = [
     { title: 'Lightning', sound: AB_THUNDER, desc: 'A lightning strike: one of three thunderclaps. For five seconds after a strike, the creatures cannot hear your steps.' },
     { title: 'Creature, Wandering', sound: AB_IDLE, desc: 'A creature wandering the abyss. It has not heard you, but it is listening.' },
     { title: 'Creature, Hunting', sound: AB_GROWL, desc: 'A creature hunting you: it growls while it moves.' },
-    { title: 'Creature, Hearing You', sound: CREATURE_ROAR, desc: 'A creature roaring as it hears you, from where it is, just before it comes for you.' },
     { title: 'Footstep on Glass', sound: AB_STEPS_GLASS[0], desc: 'A step on the broken glass that covers the whole abyss.' },
     { title: 'Glass Case', sound: CASE_SOUND, desc: 'The hum of a glass case.' },
     { title: 'Glass Case Knocking', sound: 'ut_case_knock_demo', desc: 'The knocking of a glass case, faster as you come closer. Centre it between your ears.' },
