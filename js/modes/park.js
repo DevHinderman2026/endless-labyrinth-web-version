@@ -3,7 +3,7 @@
 // A water park on a summer's day, open ground with no walls, heard by its own air: a
 // busy outdoor pool, children splashing and playing. Each park has a number of
 // attractions, and each attraction holds one token. Win every token before closing
-// time and a gate opens to the next park, which is bigger: one more attraction, and a
+// time and you go straight on to the next park (7.2.17: no gate), which is bigger: one more attraction, and a
 // little less time for each. Nothing in the park can hurt you; only closing time ends
 // a visit. A mistake at an attraction brings the lifeguard's whistle: you are put back
 // at the edge of that attraction, and it costs you five seconds.
@@ -36,7 +36,9 @@
 // second less for each attraction in every new park, never under eighteen (7.1.0 made
 // it firmer, 7.1.1 put it back: Russell found the firmer clock too strict). Left-over
 // time is not carried on. When the last token is won the clock stops, the bell rings
-// and the gate is heard (the battle exit's Morse signal); walk through it.
+// and the gate is heard (the battle exit's Morse signal); walk through it. (7.2.17, Russell:
+// that was so until 7.2.16; now a park of a run of its own goes straight on to the next,
+// and only Chaos has the bell and the exit, with nothing said.)
 //
 // Chaos Mode has water parks too (js/modes/chaos.js): one park per level, with three
 // attractions the first time in a run and one more each time, at most six. Each token
@@ -53,7 +55,9 @@
 import { BACKGROUND_SEND, makeSounds as makeUltimateSounds } from './ultimate.js';
 
 export const STATE = 'park';
-export const BOARD = 'park';
+// The score is the tokens won (7.2.17, Russell); until then it was the parks finished,
+// on the board 'park', which is left as it was: these are counted on a board of their own.
+export const BOARD = 'park_tokens';
 
 // ------------------------------------------------------------------ constants
 export const PK_STEP = 3.0;                   // one step, in the game's units
@@ -98,10 +102,17 @@ export const PK_FILL = [6.0, 3.5];            // seconds it fills: first park, l
 export const PK_DUMP = 1.2;                   // seconds the dump comes down
 export const PK_DRENCH = 4.5;                 // units: caught under the dump within this
 export const PK_GRAB = 1.0;                   // seconds under it to take the token
+// Under it: within this of the bucket (7.2.17, Russell: lining it up dead centre by ear
+// was too hard; it was PK_TAKE, 2.5, and a step is 3, so a step had to land almost
+// exactly on it).
+export const PK_UNDER = 4.0;
 // The duck stand (7.1.0, Russell's design, 23 November 2026).
 export const PK_DUCKS = [4, 10];              // ducks to shoot down: first park, most (one more each park)
 export const PK_DUCK_AIR = 2;                 // ducks in the air at once
-export const PK_DUCK_TIME = [6.0, 3.5];       // seconds a duck takes to reach you: first park, least (0.3 less each park)
+// Seconds a duck takes to reach you, the same in every park (7.2.17, Russell: a little
+// slower to start, and never faster; it was 6.0 in the first park, 0.3 less each park
+// down to 3.5).
+export const PK_DUCK_TIME = 7.0;
 export const PK_DUCK_FROM = 24.0;             // units away a duck sets off from
 export const PK_DUCK_START = 1.2;             // seconds from the ding to the first duck
 export const PK_DUCK_GAP = 0.6;               // seconds before another duck sets off
@@ -176,7 +187,7 @@ export function waveLongFor(park) { return Math.min(PK_WAVE_LONG[1], PK_WAVE_LON
 export function waveEveryFor(park) { return Math.max(PK_WAVE_EVERY[1], PK_WAVE_EVERY[0] - 0.15 * Math.max(0, park - 1)); }
 export function fillFor(park) { return Math.max(PK_FILL[1], PK_FILL[0] - 0.2 * Math.max(0, park - 1)); }
 export function ducksFor(park) { return Math.min(PK_DUCKS[1], PK_DUCKS[0] + Math.max(0, park - 1)); }
-export function duckTimeFor(park) { return Math.max(PK_DUCK_TIME[1], PK_DUCK_TIME[0] - 0.3 * Math.max(0, park - 1)); }
+export function duckTimeFor(park) { return PK_DUCK_TIME; }
 
 // The kinds of a park's attractions: every kind once before any comes twice, in no
 // fixed order.
@@ -234,7 +245,8 @@ const mixin = {
       this.nextAnnounceTime = Math.floor((this.timeLeft - 1) / 30.0) * 30.0;
       this.thirtySecAnnounced = this.timeLeft <= 30.0;
       this.lastBeepSecond = -1;
-      if (this.audio.has(PK_BELL)) this._pkPlay(PK_BELL, { keep: true });
+      // The bell opens the visit; between parks there is none (7.2.17, Russell).
+      if (park === 1 && this.audio.has(PK_BELL)) this._pkPlay(PK_BELL, { keep: true });
       this.tts.speak(`Level ${park}.`, { interrupt: true });
     }
   },
@@ -574,7 +586,7 @@ const mixin = {
         if (at.voice) at.voice.setVolume(l, r, this._behind(at.pos));
       }
       // Under it: the token is taken after a moment there.
-      if (d < PK_TAKE) {
+      if (d < PK_UNDER) {
         at.under += dt;
         if (at.under >= PK_GRAB) { this._pkQuiet(at); this._pkToken(at); return; }
       } else at.under = 0;
@@ -726,10 +738,17 @@ const mixin = {
     this.lastBeepSecond = -1;
   },
 
-  // Every token won: the bell, and the gate (in Chaos, the exit) over the park's air.
+  // Every token won. In a run of its own, straight on to the next park: no gate and no
+  // bell (7.2.17, Russell). In Chaos, the bell, and the exit over the park's air: the
+  // bell is the sign the exit is open, and nothing is said.
   _pkOpenExit() {
     const pk = this.pk;
     for (const at of pk.attractions) this._pkQuiet(at);
+    if (!pk.chaos) {
+      pk.parks += 1;
+      this._pkBegin({ chaos: false, park: pk.park + 1, count: attractionsFor(pk.park + 1) });
+      return;
+    }
     if (this.audio.has(PK_BELL)) this._pkPlay(PK_BELL, { keep: true });
     let pos = null;
     for (let i = 0; i < 40 && !pos; i++) {
@@ -741,7 +760,6 @@ const mixin = {
     }
     pk.exit = { pos, voice: this._pkPlay('exit_morse', { loops: -1, volume: 0.0 }) };
     this._pkLevelExit();
-    this.tts.speak('The exit is open.', { interrupt: true });
   },
 
   _pkLevelExit() {
@@ -869,14 +887,14 @@ const mixin = {
 // ------------------------------------------------------------------ help
 const HELP_SECTIONS = [
   ['Water Park', [
-    { title: 'Water Park', sound: null, desc: 'Water Park is a mode of its own, new in 7.0.0. You are in a water park on a summer\'s day, a big one that rings like a huge hall, and its attractions are all around you, each found by its own sound, which you can hear from anywhere in the park. Every attraction holds one token. Win every token before closing time, and a gate opens to the next park, which is bigger. Nothing in the park can hurt you: only closing time ends your visit. The park has a fence all round it, a little beyond its farthest attraction: walk into it and it buzzes, as the edge of Battle Mode\'s arena does, and you stay put; meet it at a slant and you carry on along it. You turn and walk as in every walking mode (see General Turning). Double tap for the level, the tokens you have found, the seconds left and the way you are facing.' },
+    { title: 'Water Park', sound: null, desc: 'Water Park is a mode of its own, new in 7.0.0. You are in a water park on a summer\'s day, a big one that rings like a huge hall, and its attractions are all around you, each found by its own sound, which you can hear from anywhere in the park. Every attraction holds one token. Win every token before closing time, and you go straight on to the next park, which is bigger. Nothing in the park can hurt you: only closing time ends your visit. The park has a fence all round it, a little beyond its farthest attraction: walk into it and it buzzes, as the edge of Battle Mode\'s arena does, and you stay put; meet it at a slant and you carry on along it. You turn and walk as in every walking mode (see General Turning). Double tap for the level, the tokens you have found, the seconds left and the way you are facing.' },
     { title: 'Water Park Water Slide', sound: null, desc: 'The water slide is found by its staircase beacon, Tower Mode\'s stairs: three short chimes rising, each with a footstep on metal stairs under it. Walk up to it and you climb the stairs by yourself, then ride straight down, the rush of the water building to the splash. The token is yours at the splash at the bottom, and you come up beside the slide. While you are on the slide you cannot walk or pause.' },
     { title: 'Water Park Diving Pool', sound: null, desc: 'The diving pool is found by someone bouncing on its diving board, again and again, about once a second. Walk onto the board and you dive in. Under the water you hold your breath for fifteen seconds. The token lies on the bottom, well out across the pool, five to seven strokes away: you hear its bell ringing, so turn until it is centred and swim to it, each step a swimming stroke. Reach it and you come back up with it. With six seconds of breath left, the voice says Low air and the high beeps begin, faster and faster. Run out of breath and the lifeguard blows the whistle: you come back up at the board without the token, and it costs five seconds. Dive again to try once more.' },
     { title: 'Water Park Wave Pool', sound: null, desc: 'The wave pool is found by its waves: you hear them rolling, and a wave breaking at its edge every few seconds. Walk into it at its edge, and the token\'s bell rings from its far side. Wade toward it, one step at a time. Every few seconds a wave comes: you hear it rise ahead of you, and then break over you. Stand still as it breaks and you hold your ground. Take a step just as it breaks, and it carries you three steps back, and if that takes you out of the pool, you are back at its edge. Reach the far side and the token is yours. The waves come a little more often in every park, and the pool is a little longer.' },
     { title: 'Water Park Tipping Bucket', sound: null, desc: 'The tipping bucket is found by the water filling it, louder and louder as it fills, until it tips and dumps its water with a crash. As the last of the water falls, a bell rings: that is your moment to run under it, before it fills again. The token is right under it. Dash in at the bell, and stay under it for a moment, a second, to take the token. Before the next dump the bell counts down: three bells, one second apart, and a second after the third the water comes down. If the bucket dumps while you are under it, or close beside it, you are caught: the lifeguard blows the whistle, you are pushed back from the bucket, and it costs five seconds. The bucket fills a little faster in every park.' },
-    { title: 'Water Park Duck Stand', sound: null, desc: 'The duck stand, new in 7.1.0, is found by its carnival organ music. Walk up to its counter and you take the air rifle: a ding says start shooting. Ducks fly in toward you from all around, two in the air at once, each quacking as it comes, louder as it nears. Turn until a duck is centred straight ahead of you and shoot, with a two-finger tap or Space: a hit knocks it down with a clang. A shot takes only a duck in front of you, but you need not be exact: a duck up to about 50 degrees either side of straight ahead is hit, the nearest first. There is no ammo to collect, but the rifle takes half a second to cock again between shots. You stay at the counter while you shoot, turning only. If a duck reaches you, it hits you: the lifeguard blows the whistle, it costs ten seconds, and another duck comes in its place. Shoot down every duck and the token is yours. The first park has four ducks, each taking six seconds to reach you; every new park has one more duck, up to ten, and they fly a little faster, never taking less than three and a half seconds.' },
-    { title: 'Water Park Closing Time and Score', sound: null, desc: 'Each park has its own clock: forty seconds, and thirty more for each attraction, with one second less for each attraction in every new park, never less than eighteen. The first park has three attractions, two minutes and ten seconds. Every token you win is announced with how many are left to go. When the last one is won, the clock stops, a bell rings, and the gate is heard, the battle exit\'s Morse signal: walk through it to the next park, which has one more attraction. Time left over is not carried on. When closing time comes, the bell rings and your visit is over. Your score is the number of parks you finished, and Water Park has its own high score board.' },
-    { title: 'Water Park in Chaos Mode', sound: null, desc: 'Chaos Mode has water parks too, one park to a level, which you know by the busy pool and its children. A water park in chaos has three attractions the first time in a run, and one more each time after, at most six. There is no park clock there: each token you win adds fifteen seconds to the chaos clock, and a mistake takes its seconds off it. When the last token is won, the exit is heard over the park, which plays on, and the chaos clock waits until you walk through it. There, double tap for the tokens found, then your health, the clock and the points.' },
+    { title: 'Water Park Duck Stand', sound: null, desc: 'The duck stand, new in 7.1.0, is found by its carnival organ music. Walk up to its counter and you take the air rifle: a ding says start shooting. Ducks fly in toward you from all around, two in the air at once, each quacking as it comes, louder as it nears. Turn until a duck is centred straight ahead of you and shoot, with a two-finger tap or Space: a hit knocks it down with a clang. A shot takes only a duck in front of you, but you need not be exact: a duck up to about 50 degrees either side of straight ahead is hit, the nearest first. There is no ammo to collect, but the rifle takes half a second to cock again between shots. You stay at the counter while you shoot, turning only. If a duck reaches you, it hits you: the lifeguard blows the whistle, it costs ten seconds, and another duck comes in its place. Shoot down every duck and the token is yours. The first park has four ducks, each taking seven seconds to reach you; every new park has one more duck, up to ten, and they always fly at that same speed.' },
+    { title: 'Water Park Closing Time and Score', sound: null, desc: 'Each park has its own clock: forty seconds, and thirty more for each attraction, with one second less for each attraction in every new park, never less than eighteen. The first park has three attractions, two minutes and ten seconds. Every token you win is announced with how many are left to go. When the last one is won, you go straight on to the next park, which has one more attraction: there is no gate to find. Time left over is not carried on. When closing time comes, the bell rings and your visit is over. Your score is the number of tokens you won, across every park of the visit, and Water Park has its own high score board.' },
+    { title: 'Water Park in Chaos Mode', sound: null, desc: 'Chaos Mode has water parks too, one park to a level, which you know by the busy pool and its children. A water park in chaos has three attractions the first time in a run, and one more each time after, at most six. There is no park clock there: each token you win adds fifteen seconds to the chaos clock, and a mistake takes its seconds off it. When the last token is won, the bell rings: that is your sign the exit is open, and nothing is said. The exit is heard over the park, which plays on, and the chaos clock waits until you walk through it. There, double tap for the tokens found, then your health, the clock and the points.' },
   ]],
 ];
 
@@ -899,7 +917,7 @@ const HELP_DEMOS = [
     { title: 'Duck Knocked Down', sound: PK_DUCK_DOWN, desc: 'A duck hit and knocked down.' },
     { title: 'Lifeguard\'s Whistle', sound: PK_WHISTLE, desc: 'A mistake at an attraction: back to its edge, and five seconds off the clock.' },
     { title: 'Token Won', sound: PK_TOKEN, desc: 'A token won.' },
-    { title: 'The Bell', sound: PK_BELL, desc: 'The gate to the next park opening, and closing time.' },
+    { title: 'The Bell', sound: PK_BELL, desc: 'Closing time; and in Chaos Mode, every token won and the exit open.' },
   ]],
 ];
 
@@ -945,7 +963,7 @@ export default {
     const tokens = pk ? pk.tokens : 0;
     if (game.audio.has(PK_BELL)) game.audio.play(PK_BELL, { keep: true });
     const opener = game.timeLeft <= 0 ? 'Closing time.' : 'Game Over.';
-    return { key: BOARD, score: parks, message: `${opener} You finished ${parks} ${plural(parks, 'park')} and won ${tokens} ${plural(tokens, 'token')}. ` };
+    return { key: BOARD, score: tokens, message: `${opener} You won ${tokens} ${plural(tokens, 'token')} and finished ${parks} ${plural(parks, 'park')}. ` };
   },
   room() { return PK_ROOM; },
   // On the slide the world does not turn; everywhere else it does.
@@ -961,6 +979,6 @@ export default {
     if (!pk) return 'Water Park.';
     return `Water Park. Level ${pk.park}. ${pk.won} of ${pk.count} tokens.`;
   },
-  boards: [{ key: BOARD, label: 'Water Park', fmt: (v) => `${v} ${v === 1 ? 'park' : 'parks'}` }],
+  boards: [{ key: BOARD, label: 'Water Park', fmt: (v) => `${v} ${v === 1 ? 'token' : 'tokens'}` }],
   help: { sections: HELP_SECTIONS, demos: HELP_DEMOS },
 };

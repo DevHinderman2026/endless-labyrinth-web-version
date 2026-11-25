@@ -48,6 +48,7 @@ const errors = [];
 page.on('pageerror', (e) => errors.push(String(e)));
 page.on('console', (m) => { if (m.type() === 'error' && !/api\.github|ERR_FAILED|CORS/.test(m.text())) errors.push(m.text()); });
 await page.goto(base + '/play.html?desktop=1');
+await page.evaluate(() => { window.__elNoChests = true; });   // (7.2.17: no random chaos chests to upset the counts)
 await page.click('#start');
 await page.waitForFunction(() => /Sounds loaded/.test(document.getElementById('lead').textContent), null, { timeout: 180000 });
 await page.keyboard.press('ArrowUp');
@@ -164,13 +165,13 @@ const first = await page.evaluate(async () => {
   return r;
 });
 check(first.introFirst, 'the character introduces themselves first');
-check(first.calls >= 1, `then calls, over and over (${first.calls} calls)`);
+check(first.calls === 0, `the character never calls you to the memories: only their tunes guide you (7.2.17; ${first.calls} calls)`);
 check(first.atTarget && first.nearest, 'from beside the nearest memory');
 check(first.tuneLoops === 3, 'each memory\'s tune loops where it lies');
 check(first.recorded !== false, 'a line is the character\'s recording');
 check(first.taken && first.found === 1 && first.tuneOnce, 'walking onto a memory takes it, and its tune plays once');
 check(/\.memory\.1$/.test(first.story || ''), `the character remembers: the first memory's line (${first.story})`);
-check(first.next, 'then calls from beside the next memory');
+check(first.next, 'then the next memory is the one its tune leads to, louder than the rest');
 
 // The rest, and the door.
 const door = await page.evaluate(async () => {
@@ -371,7 +372,7 @@ const fire = await page.evaluate(async () => {
   const placedBefore = t.placed.length;
   const faces = [0, Math.PI / 2, Math.PI, -Math.PI / 2, 0, Math.PI / 2];
   let k = 0;
-  while (mu.sparksLeft > 0 && k < 10) {
+  while (mu.sparksLeft > 0 && k < 16) {
     c.x = 38; c.y = 38;
     g._face(faces[k % faces.length], true);
     g.playerPos = [0, 0];
@@ -388,7 +389,7 @@ const fire = await page.evaluate(async () => {
   r.pops = t.played.filter((n) => n === 'mu_stamp').length - pops0;
   await t.frames(0.3);
   r.calm = c.mode !== 'charge';
-  await t.frames(2.3);
+  await t.frames(1.8);
   r.storyNotYet = !(g.muSaid || []).some((id) => /\.memory\./.test(id));
   await t.frames(9);
   r.story = (g.muSaid || []).some((id) => /\.memory\.1$/.test(id));
@@ -398,7 +399,7 @@ const fire = await page.evaluate(async () => {
 check(fire.taken && fire.firework && fire.warned && fire.notYet, 'a fiery memory: one of its four fireworks goes off and the character warns you');
 check(fire.side, 'it bursts on your left or right (7.2.6)');
 check(!fire.warnedEarly && fire.warned, 'the character warns you half a second into the firework, not before (7.2.9)');
-check(fire.sparks >= 4 && fire.sparks <= 6 && fire.asleepAtBang, `at the bang ${fire.sparks} sparks are released, and the creature sleeps on`);
+check(fire.sparks >= 4 && fire.sparks <= 12 && fire.asleepAtBang, `at the bang ${fire.sparks} sparks are released, and the creature sleeps on`);
 check(fire.silentStill && fire.stillAsleep, 'standing still, the sparks make no sound, none pops, and the creature stays asleep');
 check(fire.wokeOnFirst, 'the first spark you pop wakes the creature, and it charges');
 check(fire.roar1 === 1 && fire.roars === 1, `it roars as it wakes, once, not with every pop (${fire.roars})`);
@@ -558,13 +559,23 @@ const chaos = await page.evaluate(async () => {
   r.doneSaid = t.said.some((x) => /^60 more seconds\.$/.test(x));
   r.hp = g.towerHp;
   r.room = [g._utHpRoom({ chaos: true, hp: 145 }), g._utHpRoom({ chaos: true, hp: 150 }), g._utHpCap({ chaos: true, hp: 120 }, 180), g._utHpRoom({ chaos: false, hp: 400 })];
-  // A pool ends the whole run.
+  // A pool costs fifty health, and you are pulled out (7.2.17); with fifty or less, it ends the run.
   g._chaosClearEverything(); g.chaosNext = 'museum'; g._setupChaosLevel();
   await t.frames(0.5);
   const mu2 = g.mu; t.calm();
-  mu2.pools = [{ pos: [g.playerPos[0], g.playerPos[1] - 5], r: 3, voice: null }];
+  for (const c of mu2.creatures) { c.x = 38; c.y = 38; }
+  g.playerPos = [0, 5];
+  const pool = { pos: [0, 0], r: 3, voice: null };
+  mu2.pools = [pool];
   g._face(0, true);
-  g.towerHp = 500;
+  g.towerHp = 120;
+  g.input('up'); await t.frames(0.2);
+  const f = g._forward();
+  r.out = { state: g.state, hp: g.towerHp, edge: +(Math.hypot(g.playerPos[0], g.playerPos[1]) - 3).toFixed(2),
+    away: +((f[0] * g.playerPos[0] + f[1] * g.playerPos[1]) / Math.hypot(g.playerPos[0], g.playerPos[1])).toFixed(2),
+    side: g.playerPos[1] > 0, safe: mu2.lost >= 2.5 && mu2.shoveGrace >= 2.5, said: t.said.slice(-1)[0] };
+  g.towerHp = 40;
+  g.playerPos = [0, 5]; g._face(0, true);
   g.input('up'); await t.frames(0.2);
   r.end = g.state; r.said = t.said.slice(-1)[0];
   return r;
@@ -576,7 +587,9 @@ check(chaos.hp === 150, `chaos health stops at 150: 145 and a level's ten make 1
 check(JSON.stringify(chaos.room) === JSON.stringify([5, 0, 150, null]), `a chaos world stage's health gains stop at 150 too, and Ultimate Mode's do not (7.2.16): ${JSON.stringify(chaos.room)}`);
 check(chaos.door && chaos.clockWaits, 'every memory found: the door, and the chaos clock waits');
 check(chaos.next && chaos.points === 10, 'the door leads on to the next level, for ten points');
-check(chaos.end === 'game_over' && /bottomless pool/.test(chaos.said || ''), 'a pool ends the whole chaos run, whatever the health: ' + chaos.said);
+check(chaos.out.state === 'museum' && chaos.out.hp === 70 && Math.abs(chaos.out.edge - 6) < 0.05 && chaos.out.away > 0.99 && chaos.out.side && chaos.out.safe,
+  `a pool costs 50 health: pulled out, two steps from its edge on the side you came from, facing away, and safe a moment (7.2.17): ${JSON.stringify(chaos.out)}`);
+check(chaos.end === 'game_over' && /bottomless pool/.test(chaos.said || ''), 'with 50 health or less, a pool ends the chaos run: ' + chaos.said);
 
 check(errors.length === 0, 'no errors: ' + errors.slice(0, 5).join(' | '));
 await browser.close();

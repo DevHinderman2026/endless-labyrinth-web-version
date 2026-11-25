@@ -41,6 +41,7 @@ page.on('pageerror', (e) => errors.push(String(e)));
 page.on('console', (m) => { if (m.type() === 'error') errors.push(m.text()); });
 
 await page.goto(base + '/play.html?desktop=1');
+await page.evaluate(() => { window.__elNoChests = true; });   // (7.2.17: no random chaos chests to upset the counts)
 await page.click('#start');
 await page.waitForFunction(() => /Sounds loaded/.test(document.getElementById('lead').textContent), null, { timeout: 90000 });
 await page.keyboard.press('ArrowUp');

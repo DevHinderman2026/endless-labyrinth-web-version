@@ -1,10 +1,11 @@
 // Chaos's one health bar (web 6.3.0, Russell, 20 November 2026), played by script.
 // Run: serve the site folder, then
 //   node --import ./tests/github-stub.mjs tests/chaos-health.mjs http://localhost:8790
-// What is checked: a run starts at 100; every finished level gives 10, with no cap;
+// What is checked: a run starts at 100; every finished level gives 10, up to 150 (7.2.16);
 // a battle's enemy reaching you costs 25 (it is gone and counted, the crowd groans,
-// a moment's grace); an island's enemy costs 25, its guardian 25 and stays, but all
-// of it when you are out of shots; out of air, 10 a second until you reach air; a
+// a moment's grace); an island's enemy costs 25, its guardian 40 and stays, falling back
+// a while after (7.2.17), and out of shots it hunts more slowly, the elevator lets you
+// down, and with the seabed empty it throws a cartridge; out of air, 10 a second until you reach air; a
 // crash costs 20 and its 30 seconds; a tower potion back to 100 only if below; a
 // world starts from the run's health and gives back what is left; the low-health
 // warning (notes and voice, once, again after healing); the closing words; and
@@ -53,8 +54,8 @@ const start = await page.evaluate(() => {
   return out;
 });
 check(start.hp === 100, 'a chaos run starts with 100 health');
-check(start.after7 === 170, 'every finished level gives 10 more, with no cap: ' + start.after7);
-check(/ 170 health\. \d+ points total\. Facing [a-z-]+\.$/.test(start.report), 'the double tap gives the health: ' + start.report);
+check(start.after7 === 150, 'every finished level gives 10 more, up to 150 (7.2.16): ' + start.after7);
+check(/ 150 health\. \d+ points total\. Facing [a-z-]+\.$/.test(start.report), 'the double tap gives the health: ' + start.report);
 
 // ------------------------------------------------------------------ battle
 const battle = await page.evaluate(() => {
@@ -115,22 +116,66 @@ const island = await page.evaluate(() => {
   return out;
 });
 check(island.enemy && island.enemy[1] === island.enemy[0] - 25 && !island.enemy[2] && island.enemy[3] === 1 && island.enemy[4] === 'island', 'on a chaos island an enemy reaching you costs 25; it is gone, and counted: ' + JSON.stringify(island.enemy));
-check(island.guardian[1] === island.guardian[0] - 25 && island.guardian[2] && island.guardian[3] === 'island', 'the guardian costs 25 while you have shots, and stays: ' + JSON.stringify(island.guardian));
+check(island.guardian[1] === island.guardian[0] - 40 && island.guardian[2] && island.guardian[3] === 'island', 'the guardian costs 40 while you have shots, and stays (7.2.17): ' + JSON.stringify(island.guardian));
 check(island.air[1] === island.air[0] - 20 && island.air[2] === 'island', 'out of air, 10 health every second: ' + JSON.stringify(island.air));
 
-const guardianFatal = await page.evaluate(() => {
+const guardianOut = await page.evaluate(async () => {
   const g = window.__el.game; const t = window.__t;
   t.start(['island', 'island']);
   g.islandGrace = 0; g.chaosHitGrace = 0;
   for (const x of [...g.obstacles]) if (!x.guardian) { if (x.channel) x.channel.stop(); g.obstacles.splice(g.obstacles.indexOf(x), 1); }
   let gd = g.obstacles.find((x) => x.guardian);
   if (!gd) { g.islandGuardianHp = 3; g._islandSpawnGuardian(); gd = g.obstacles.find((x) => x.guardian); }
-  g.towerHp = 250; g.ammo = 0;
+  const out = {};
+  // Out of shots, it reaches you: forty, not all your health, and it falls back.
+  g.towerHp = 120; g.ammo = 0; g.islandAmmoCartridges = [5];
   g.playerPos = [gd.post[0], gd.post[1] + 0.2]; gd.x = gd.post[0]; gd.y = gd.post[1];
   g._islandUpdateSurface(1 / 30);
-  return [g.towerHp, g.state, t.said[t.said.length - 1]];
+  out.hit = [g.towerHp, g.state, (g.islandGuardianBack || 0) > 3];
+  g.chaosHitGrace = 0;
+  g._islandUpdateSurface(1 / 30);
+  out.noSecond = g.towerHp;
+  // Then it hunts you, slower than you run.
+  g.islandGuardianBack = 0; g.chaosHitGrace = 0;
+  g.playerPos = [gd.post[0] + 20, gd.post[1]]; gd.x = gd.post[0]; gd.y = gd.post[1];
+  const x0 = gd.x;
+  for (let i = 0; i < 30; i++) g._islandMoveGuardian(gd, 1 / 30);
+  out.speed = +(gd.x - x0).toFixed(1);
+  // The elevator lets you down while you are out of shots.
+  g.playerPos = [0.5, 0.5]; g.islandLiftArmed = true; g.islandGrace = 0;
+  gd.x = gd.post[0] + 30; gd.y = gd.post[1] + 30;
+  g._islandUpdateSurface(1 / 30);
+  out.down = !!(g.islandRide && g.islandRide.dir === 'down');
+  return out;
 });
-check(guardianFatal[0] === 0 && guardianFatal[1] === 'game_over' && /^Out of health\. You scored /.test(guardianFatal[2]), 'out of shots, the guardian takes all your health, however much: ' + JSON.stringify(guardianFatal));
+check(guardianOut.hit[0] === 80 && guardianOut.hit[1] === 'island' && guardianOut.hit[2], 'out of shots, the guardian\'s hit costs 40, not all your health, and it falls back (7.2.17): ' + JSON.stringify(guardianOut.hit));
+check(guardianOut.noSecond === 80, 'falling back, it does not strike again at once: ' + guardianOut.noSecond);
+check(guardianOut.speed > 7.5 && guardianOut.speed < 8.5, `out of shots it hunts you at 8 a second, slower than your run (7.2.17): ${guardianOut.speed}`);
+check(guardianOut.down, 'out of shots, the elevator takes you down to the seabed for more (7.2.17)');
+
+const thrown = await page.evaluate(async () => {
+  const g = window.__el.game; const t = window.__t;
+  t.start(['island', 'island']);
+  g.islandGrace = 0; g.chaosHitGrace = 0;
+  for (const x of [...g.obstacles]) if (!x.guardian) { if (x.channel) x.channel.stop(); g.obstacles.splice(g.obstacles.indexOf(x), 1); }
+  let gd = g.obstacles.find((x) => x.guardian);
+  if (!gd) { g.islandGuardianHp = 3; g._islandSpawnGuardian(); gd = g.obstacles.find((x) => x.guardian); }
+  g.islandGuardianHp = 4;
+  g.ammo = 0; g.islandAmmoCartridges = []; g.towerHp = 150;
+  g.playerPos = [gd.post[0] + 30, gd.post[1] + 30];
+  const heard = []; const ap = g.audio.play.bind(g.audio); g.audio.play = (n, o) => { heard.push(n); return ap(n, o); };
+  g._islandUpdateSurface(1 / 30);
+  g.audio.play = ap;
+  const it = g.islandItems.find((x) => x.kind === 'ammo');
+  const out = { thrown: !!it, shots: it && it.value, whoosh: heard.some((n) => /ninja_whoosh/.test(n)) };
+  g._islandUpdateSurface(1 / 30);
+  out.one = g.islandItems.filter((x) => x.kind === 'ammo').length;
+  if (it) { g.playerPos = [...it.pos]; gd.x = gd.post[0]; gd.y = gd.post[1]; g._islandUpdateSurface(1 / 30); }
+  out.ammo = g.ammo; out.gone = !g.islandItems.some((x) => x.kind === 'ammo');
+  return out;
+});
+check(thrown.thrown && thrown.shots === 4 && thrown.whoosh && thrown.one === 1, 'out of shots with the seabed empty, the guardian throws one cartridge, with just its four hits, heard flying (7.2.17): ' + JSON.stringify(thrown));
+check(thrown.ammo === 4 && thrown.gone, 'reach it, and its shots are yours: ' + JSON.stringify(thrown));
 
 // ------------------------------------------------------------------ a crash
 const crash = await page.evaluate(() => {
@@ -184,6 +229,41 @@ const world = await page.evaluate(() => {
   return out;
 });
 check(world.start === 100 && world.after === 73, 'a world starts from the run\'s health and hands back what is left, plus 10 for the level: ' + JSON.stringify(world));
+
+// ------------------------------------------------------------------ the treasure chest (7.2.17)
+const chest = await page.evaluate(async () => {
+  const g = window.__el.game; const t = window.__t;
+  const { CHAOS_CHEST_CHANCE } = await import('./js/modes/chaos.js');
+  t.start(['battle', 'battle']);
+  const out = { chance: CHAOS_CHEST_CHANCE };
+  for (const x of [...g.obstacles]) { if (x.channel) x.channel.stop(); }
+  g.obstacles = [];
+  g.battleExitActive = true; g.exitPos = [30, 0]; g.playerPos = [0, 0];
+  g.chaosChestRolled = false; g._chaosChestUpdate();
+  out.rolled = g.chaosChestRolled;
+  g._chaosChestGone(); g.chaosChestRolled = true;
+  g._chaosChestPlace(g.exitPos);
+  out.pos = g.chaosChest && g.chaosChest.pos.map((v) => +v.toFixed(1));
+  out.chime = !!(g.chaosChest && g.chaosChest.channel);
+  // At 150 health: no health, the other two.
+  g.towerHp = 150; const t0 = g.timeLeft; const p0 = g.chaosPoints || 0;
+  g.playerPos = [24, 0]; g._chaosChestUpdate();
+  out.full = { opened: !g.chaosChest, hp: g.towerHp, time: Math.round(g.timeLeft - t0), points: (g.chaosPoints || 0) - p0, said: t.said[t.said.length - 1] };
+  // Below it: never past 150.
+  let top = 0;
+  for (let k = 0; k < 12; k++) { g.towerHp = 140; g.playerPos = [0, 0]; g._chaosChestPlace(g.exitPos); g.playerPos = [24, 0]; g._chaosChestUpdate(); top = Math.max(top, g.towerHp); }
+  out.top = top;
+  // A new level: none left over.
+  g.playerPos = [0, 0]; g._chaosChestPlace(g.exitPos); g._chaosClearEverything();
+  out.cleared = !g.chaosChest && !g.chaosChestRolled;
+  return out;
+});
+check(chest.chance === 0.1 && chest.rolled, 'once a level, when the exit opens, a one in ten chance of a chest (7.2.17): ' + JSON.stringify(chest.chance));
+check(JSON.stringify(chest.pos) === '[24,0]' && chest.chime, 'the chest lies two steps from the exit, on your way to it, heard by its chime: ' + JSON.stringify(chest.pos));
+check(chest.full.opened && chest.full.hp === 150 && chest.full.time === 30 && chest.full.points === 50 && chest.full.said === '30 more seconds and 50 points.',
+  'at 150 health it gives no health, only time and points: ' + JSON.stringify(chest.full));
+check(chest.top === 150, 'and it never takes you past 150: ' + chest.top);
+check(chest.cleared, 'a chest left behind is gone with the level');
 
 check(!errors.length, 'no page errors ' + errors.join(' | '));
 await browser.close();

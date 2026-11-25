@@ -100,7 +100,7 @@ const built = [
   "You've just received 25 shots of ammo.", "You've just received 40 health.", "You've just received 3 tower items.",
   "You've just received 12 shots of ammo and 30 health.", "You've just received 12 shots of ammo, 30 health and 1 tower item.",
   "You've just received 2 more minutes in this world, and 3 and a half minutes on the clock.",
-  "You've just received a treasure chest. Listen for it nearby.", 'The world shows you mercy. 35 more seconds.',
+  "You've just received a treasure chest.", 'The world shows you mercy. 35 more seconds.',
   'Compass ready in 1 second.', '45 more seconds in this world.', '1,240 points total.', 'It was 7.',
   ...['north', 'north-north-east', 'north-east', 'east-north-east', 'east', 'east-south-east', 'south-east', 'south-south-east',
     'south', 'south-south-west', 'south-west', 'west-south-west', 'west', 'west-north-west', 'north-west', 'north-north-west'].map((w) => `Facing ${w}.`),

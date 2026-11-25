@@ -205,15 +205,10 @@ const r4 = await page.evaluate(() => {
   u.hp = 100;
   out.minutes = give(3, [0.0, 0.0, 0.5]);
   const chests = u.pickups.filter((p) => p.kind === 'chest').length;
+  const opened = u.chests || 0; const played0 = t.played.length;
   out.chest = give(3, [0.0, 0.9, 0.5, 0.5, 0.5, 0.5]);
-  const chest = u.pickups.find((p) => p.kind === 'chest');
-  out.chestPlaced = !!chest && u.pickups.filter((p) => p.kind === 'chest').length === chests + 1 && Math.hypot(chest.pos[0] - g.playerPos[0], chest.pos[1] - g.playerPos[1]) <= 40.1;
-  if (chest) {
-    g.playerPos = [...chest.pos]; u.area = chest.area; u.place = 'world';
-    const n = u.chests || 0;
-    g._utUpdatePickups();
-    out.chestOpened = (u.chests || 0) === n + 1 && !u.pickups.includes(chest);
-  }
+  out.chestPlaced = u.pickups.filter((p) => p.kind === 'chest').length === chests;     // (none placed now)
+  out.chestOpened = (u.chests || 0) === opened + 1 && t.played.slice(played0).some((n) => n === 'evt_chest_open' || n === 'treasure_pickup');
   // The mercy: only after a hint.
   t.said.length = 0;
   zone.who = { ch: { ...C.castList()[2], group: 3 }, pos: [0, 0], state: 'giving', told: { id: 'x', hint: true } };
@@ -240,7 +235,7 @@ check(G[6].ammo && G[6].hp && /shots of ammo and \d+ health\.$/.test(G[6].words)
 check(G[7].items && !G[7].ammo && /tower items\.$/.test(G[7].words), 'wild nature: tower items: ' + G[7].words);
 check(G[8].ammo && G[8].hp && G[8].items, 'cold, storms, machines and space: a little of everything: ' + G[8].words);
 check(r4.minutes.dTime === 120 && r4.minutes.words === "You've just received 2 more minutes in this world.", 'rare: two more minutes in this world: ' + r4.minutes.words);
-check(r4.chestPlaced && r4.chest.words === "You've just received a treasure chest. Listen for it nearby." && r4.chestOpened, 'rare: a treasure chest within hearing, opened by walking to it: ' + JSON.stringify([r4.chestPlaced, r4.chestOpened]));
+check(r4.chestPlaced && r4.chest.words === "You've just received a treasure chest." && r4.chestOpened, 'rare: a treasure chest, put in your hands and opened at once, with its sound (7.2.17): ' + JSON.stringify([r4.chestPlaced, r4.chestOpened]));
 check(r4.mercy.dTime === 35 && r4.mercy.said.includes('The world shows you mercy. 35 more seconds.') && r4.noMercy === 0, 'the world\'s mercy, only after a hint: ' + JSON.stringify(r4.mercy));
 
 // ------------------------------------------------------------------ the mystery: unheard lines first

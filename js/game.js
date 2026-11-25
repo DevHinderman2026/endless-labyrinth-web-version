@@ -401,6 +401,8 @@ export class Game {
     this.pausedVoices = [];
     for (const ch of [this.ambienceChannel, this.beatChannel]) if (ch) ch.stop();
     if (this.timeCredit && this.timeCredit.channel) this.timeCredit.channel.stop();
+    if (this.chaosChest && this.chaosChest.channel) this.chaosChest.channel.stop();
+    this.chaosChest = null; this.chaosChestRolled = false;
     for (const group of [this.obstacles, this.ammoPickups]) for (const t of group || []) if (t.channel) t.channel.stop();
     this.level = 1;
     this.playerPos = [0.0, 0.0];
@@ -730,6 +732,7 @@ export class Game {
       // November 2026: a credit already out stays, and can still be taken. Until now
       // it vanished the moment the exit appeared, even one you were a step from. No
       // new credit appears once the level is won: see _chaosLevelWon.)
+      this._chaosChestUpdate();          // (7.2.17: now and then, a treasure chest by the exit)
       return false;
     }
     this.timeLeft -= dt;
@@ -1009,6 +1012,7 @@ export class Game {
     if (this.chaosMode) {
       if (!this._battleClockWaits() && this._advanceTimer(dt)) return;
       if (this.state !== S.BATTLE) return;
+      if (this._chaosExitOpen()) this._chaosChestUpdate();     // (the clock waits here, so _advanceTimer is not called)
     }
     // Standard battle's own clock, which runs through the breaks as well.
     if (this._battleEndless()) {
@@ -1337,7 +1341,7 @@ export class Game {
       return v <= 0 ? `${label}: No score yet` : `${label}: ${fmt(v)}`;
     };
     // In the desktop's _score_lines order; a board it does not list goes after.
-    const order = ['chaos', 'tower', 'drive', 'drive_distance', 'island', 'findvoice', 'abyss', 'park', 'museum', 'ultimate'];
+    const order = ['chaos', 'tower', 'drive', 'drive_distance', 'island', 'findvoice', 'abyss', 'park_tokens', 'museum', 'ultimate'];
     const rank = (b) => (order.includes(b.key) ? order.indexOf(b.key) : order.length);
     const boards = MODES.flatMap((md) => md.boards || []).map((b, i) => [b, i])
       .sort((a, b) => rank(a[0]) - rank(b[0]) || a[1] - b[1]).map(([b]) => b);

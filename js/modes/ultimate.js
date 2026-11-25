@@ -490,7 +490,6 @@ export const GIFT_BUNDLE = { shots: [3, 5], health: [10, 15], items: [1, 2] };
 export const GIFT_RARE_CHANCE = 0.1;            // in every group: two more minutes in this world, or a treasure chest (half each)
 export const GIFT_MINUTES = 120;
 export const GIFT_CHAOS_CLOCK = 210;            // a chaos world stage: and three and a half minutes on the chaos clock
-export const GIFT_CHEST_FROM = [12.0, 40.0];    // the chest lies this far from you, within hearing
 // The world's mercy: only after a story line that is a hint, by luck, once the
 // character has finished talking.
 export const MERCY_CHANCE = 0.3;
@@ -894,7 +893,7 @@ const mixin = {
     const rint = (r) => randint(r[0], r[1]);
     const health = (n) => { const got = Math.min(n, this._utHpRoom(u)); u.hp += got; if (u.hp > 35) u.lowWarned = false; return got; };
     const gotWords = (n) => (n > 0 ? `You've just received ${n} health.` : 'Your health is already full.');
-    let words = null; let sound = 'ammo';
+    let words = null; let sound = 'ammo'; let chestNow = false;
     const roll = () => GIFT_DICE.roll();
     if (roll() < GIFT_RARE_CHANCE) {
       if (roll() < 0.5) {
@@ -903,9 +902,12 @@ const mixin = {
         sound = 'credit_chaos';
         if (u.chaos) { this._utChaosTime(GIFT_CHAOS_CLOCK); words = 'You\'ve just received 2 more minutes in this world, and 3 and a half minutes on the clock.'; }
         else words = 'You\'ve just received 2 more minutes in this world.';
-      } else if (this._utCastChest(a)) {
+      } else {
+        // A treasure chest, put straight into your hands and opened there (7.2.17,
+        // Russell: until then it was placed nearby, to walk to).
         sound = null;
-        words = 'You\'ve just received a treasure chest. Listen for it nearby.';
+        words = 'You\'ve just received a treasure chest.';
+        chestNow = true;
       }
     }
     if (!words) {
@@ -936,6 +938,7 @@ const mixin = {
     if (sound && this.audio.has(sound)) this.audio.play(sound, { keep: true });
     u.lastGift = { group: w.ch.group, words };
     this.tts.speak(words, { interrupt: true });
+    if (chestNow) this._utOpenChest({ interrupt: false });     // its sound now, its rewards said next
     // The world's mercy.
     if (w.told && w.told.hint && roll() < MERCY_CHANCE) {
       u.worldTime += MERCY_SECONDS;
@@ -945,23 +948,6 @@ const mixin = {
       if (s) this._utLater(1.2, s, null, { keep: true });
       this.tts.speak(`The world shows you mercy. ${MERCY_SECONDS} more seconds.`, { interrupt: false });
     }
-  },
-
-  // A treasure chest, placed within hearing: in their zone, or the area next door.
-  _utCastChest(a) {
-    const u = this.ut;
-    const near = [a, ...this._utNearAreas().filter((x) => x !== a)];
-    for (const area of near) {
-      const pos = randomFloor(u.world, area, rand, { from: this.playerPos, minDist: GIFT_CHEST_FROM[0], maxDist: GIFT_CHEST_FROM[1], avoid: u.pickups.map((p) => p.pos), clearance: 6.0 });
-      if (!pos) continue;
-      if (area.elevator && cellOf(pos)[0] === area.elevator[0] && cellOf(pos)[1] === area.elevator[1]) continue;
-      const beacon = CHEST_SOUNDS.find((n) => this.audio.has(n));
-      if (!beacon) return false;
-      u.pickups.push({ kind: 'chest', area, safe: false, pos, beacon, gain: CHEST_GAIN });
-      CHEST_OPEN_SOUNDS.forEach((n) => this.audio.has(n) && this.audio.prepare(n));
-      return true;
-    }
-    return false;
   },
 
   // ---------------------------------------------------------------- difficulty (tune)
@@ -2317,7 +2303,7 @@ const mixin = {
 
   // A treasure chest opens (web 5.0.0): two or three different things at once,
   // and the voice says only what they are, never "treasure chest".
-  _utOpenChest() {
+  _utOpenChest({ interrupt = true } = {}) {
     const u = this.ut;
     const open = CHEST_OPEN_SOUNDS.find((n) => this.audio.has(n));
     if (open) this.audio.play(open, { keep: true });
@@ -2348,7 +2334,7 @@ const mixin = {
     u.chests = (u.chests || 0) + 1;
     u.lastChest = take;
     const said = words.length > 1 ? `${words.slice(0, -1).join(', ')} and ${words[words.length - 1]}` : words[0];
-    this.tts.speak(`${said[0].toUpperCase()}${said.slice(1)}.`, { interrupt: true });
+    this.tts.speak(`${said[0].toUpperCase()}${said.slice(1)}.`, { interrupt });
   },
 
   // A seabed position's cell, counted from the elevator.

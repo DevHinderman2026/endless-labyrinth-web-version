@@ -8,7 +8,7 @@
   <link rel="icon" href="icons/icon-192.png">
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
   <meta name="theme-color" content="#0c0f14">
-  <link rel="stylesheet" href="css/site.css?v=7.2.16">
+  <link rel="stylesheet" href="css/site.css?v=7.2.17">
 </head>
 <body data-update-alert="history">
   <header class="site">
@@ -19,6 +19,21 @@
   <main class="page">
     <p>This page lists the web version. For the Windows version, see its <a href="https://github.com/DevHinderman2026/Endless-Labyrinth/blob/main/Credits%20and%20Version%20History/CHANGELOG.md">changelog</a> on GitHub.</p>
     <p>The game updates by itself: the next time you open it, you have the latest version. Only a sound pack that has changed is downloaded again, and your high scores are kept. Events are not listed here: they appear in the Events menu as they open.</p>
+
+    <h2>7.2.17 (25 November 2026), web only</h2>
+    <p>Chaos Mode, the Water Park and Ultimate Mode.</p>
+    <ul>
+      <li>Chaos Mode, museums: a fall into a bottomless pool now costs 50 health instead of ending the run. You are pulled out and set down a couple of steps from the pool, on the side you came from and facing away from it, and for three seconds no creature can reach you. With 50 health or less, the fall still ends the run.</li>
+      <li>The Museum: the character no longer calls you to the memories. Only the memories' own tunes guide you now, and every tune is heard from anywhere in the museum, the nearest louder than the rest. The character still introduces themselves, warns you, remembers each memory and says goodbye.</li>
+      <li>The Museum: a fiery memory's firework can release up to twelve sparks to pop, from four; it was at most six.</li>
+      <li>Chaos Mode, islands: the guardian's hit now costs 40 health, and after each hit it falls back toward its post for a few seconds. Run out of shots while it stands and it still comes for you, but slower than you can run, and the elevator now lets you down to the seabed for more shots. If the seabed has none left, the guardian throws a cartridge somewhere on the island, with just the shots to finish it: you hear it fly and land, and you have to reach it first. Before, a guardian reaching you while you were out of shots took all your health.</li>
+      <li>Chaos Mode: a rare treasure chest. Now and then, when a level's exit opens, a chest lies a couple of steps from the exit, on your way to it, heard by its sparkling chime. Walk onto it to open it: it holds two of more time, health and points, and never takes your health past 150. Leave without it and it is gone.</li>
+      <li>Water Park: the ducks start a little slower (seven seconds to reach you, from six) and keep that speed in every park, instead of getting faster.</li>
+      <li>Water Park: the tipping bucket is easier to get under. You no longer have to line it up almost exactly; anywhere close to it counts.</li>
+      <li>Water Park: your score is now the tokens you win, instead of the parks you finish. Its high score board starts afresh for tokens.</li>
+      <li>Water Park: when you win a park's last token you go straight on to the next park. There is no gate to walk to and no bell. In Chaos Mode's water parks the exit is still there, and the bell is your sign that it is open; the voice no longer says so.</li>
+      <li>Ultimate Mode: a treasure chest a character gives you is now put straight into your hands and opens at once, with its usual opening sound, instead of being placed nearby to walk to.</li>
+    </ul>
 
     <h2>7.2.16 (24 November 2026), web only</h2>
     <p>Balancing Chaos Mode.</p>
@@ -1045,67 +1060,67 @@
   <script type="importmap">
   {
     "imports": {
-      "./js/accessibility.js": "./js/accessibility.js?v=7.2.16",
-      "./js/audio.js": "./js/audio.js?v=7.2.16",
-      "./js/backup.js": "./js/backup.js?v=7.2.16",
-      "./js/backups-page.js": "./js/backups-page.js?v=7.2.16",
-      "./js/bella-lexicon.js": "./js/bella-lexicon.js?v=7.2.16",
-      "./js/bella-words.js": "./js/bella-words.js?v=7.2.16",
-      "./js/braille.js": "./js/braille.js?v=7.2.16",
-      "./js/calendar.js": "./js/calendar.js?v=7.2.16",
-      "./js/device.js": "./js/device.js?v=7.2.16",
-      "./js/display.js": "./js/display.js?v=7.2.16",
-      "./js/game.js": "./js/game.js?v=7.2.16",
-      "./js/gestures.js": "./js/gestures.js?v=7.2.16",
-      "./js/help-data.js": "./js/help-data.js?v=7.2.16",
-      "./js/help-page.js": "./js/help-page.js?v=7.2.16",
-      "./js/keywords.js": "./js/keywords.js?v=7.2.16",
-      "./js/main.js": "./js/main.js?v=7.2.16",
-      "./js/modes/abyss.js": "./js/modes/abyss.js?v=7.2.16",
-      "./js/modes/chaos.js": "./js/modes/chaos.js?v=7.2.16",
-      "./js/modes/driving.js": "./js/modes/driving.js?v=7.2.16",
-      "./js/modes/events/blocks.js": "./js/modes/events/blocks.js?v=7.2.16",
-      "./js/modes/events/engine.js": "./js/modes/events/engine.js?v=7.2.16",
-      "./js/modes/events/feed.js": "./js/modes/events/feed.js?v=7.2.16",
-      "./js/modes/events/help.js": "./js/modes/events/help.js?v=7.2.16",
-      "./js/modes/events/missions.js": "./js/modes/events/missions.js?v=7.2.16",
-      "./js/modes/events/more-spec.js": "./js/modes/events/more-spec.js?v=7.2.16",
-      "./js/modes/events/more.js": "./js/modes/events/more.js?v=7.2.16",
-      "./js/modes/events/py.js": "./js/modes/events/py.js?v=7.2.16",
-      "./js/modes/events/schema.js": "./js/modes/events/schema.js?v=7.2.16",
-      "./js/modes/events/sign.js": "./js/modes/events/sign.js?v=7.2.16",
-      "./js/modes/events/sounds.js": "./js/modes/events/sounds.js?v=7.2.16",
-      "./js/modes/events/tunes.js": "./js/modes/events/tunes.js?v=7.2.16",
-      "./js/modes/events/wording.js": "./js/modes/events/wording.js?v=7.2.16",
-      "./js/modes/events.js": "./js/modes/events.js?v=7.2.16",
-      "./js/modes/findvoice-guide.js": "./js/modes/findvoice-guide.js?v=7.2.16",
-      "./js/modes/findvoice.js": "./js/modes/findvoice.js?v=7.2.16",
-      "./js/modes/index.js": "./js/modes/index.js?v=7.2.16",
-      "./js/modes/island.js": "./js/modes/island.js?v=7.2.16",
-      "./js/modes/museum.js": "./js/modes/museum.js?v=7.2.16",
-      "./js/modes/park.js": "./js/modes/park.js?v=7.2.16",
-      "./js/modes/tower.js": "./js/modes/tower.js?v=7.2.16",
-      "./js/modes/ultimate/cast.js": "./js/modes/ultimate/cast.js?v=7.2.16",
-      "./js/modes/ultimate/help.js": "./js/modes/ultimate/help.js?v=7.2.16",
-      "./js/modes/ultimate/world.js": "./js/modes/ultimate/world.js?v=7.2.16",
-      "./js/modes/ultimate.js": "./js/modes/ultimate.js?v=7.2.16",
-      "./js/packs.js": "./js/packs.js?v=7.2.16",
-      "./js/site.js": "./js/site.js?v=7.2.16",
-      "./js/sound-rules.js": "./js/sound-rules.js?v=7.2.16",
-      "./js/speech.js": "./js/speech.js?v=7.2.16",
-      "./js/stats.js": "./js/stats.js?v=7.2.16",
-      "./js/storage.js": "./js/storage.js?v=7.2.16",
-      "./js/turning.js": "./js/turning.js?v=7.2.16",
-      "./js/update-alert.js": "./js/update-alert.js?v=7.2.16",
-      "./js/version.js": "./js/version.js?v=7.2.16",
-      "./js/voice-text.js": "./js/voice-text.js?v=7.2.16",
-      "./js/voice.js": "./js/voice.js?v=7.2.16",
-      "./js/wetworker.js": "./js/wetworker.js?v=7.2.16"
+      "./js/accessibility.js": "./js/accessibility.js?v=7.2.17",
+      "./js/audio.js": "./js/audio.js?v=7.2.17",
+      "./js/backup.js": "./js/backup.js?v=7.2.17",
+      "./js/backups-page.js": "./js/backups-page.js?v=7.2.17",
+      "./js/bella-lexicon.js": "./js/bella-lexicon.js?v=7.2.17",
+      "./js/bella-words.js": "./js/bella-words.js?v=7.2.17",
+      "./js/braille.js": "./js/braille.js?v=7.2.17",
+      "./js/calendar.js": "./js/calendar.js?v=7.2.17",
+      "./js/device.js": "./js/device.js?v=7.2.17",
+      "./js/display.js": "./js/display.js?v=7.2.17",
+      "./js/game.js": "./js/game.js?v=7.2.17",
+      "./js/gestures.js": "./js/gestures.js?v=7.2.17",
+      "./js/help-data.js": "./js/help-data.js?v=7.2.17",
+      "./js/help-page.js": "./js/help-page.js?v=7.2.17",
+      "./js/keywords.js": "./js/keywords.js?v=7.2.17",
+      "./js/main.js": "./js/main.js?v=7.2.17",
+      "./js/modes/abyss.js": "./js/modes/abyss.js?v=7.2.17",
+      "./js/modes/chaos.js": "./js/modes/chaos.js?v=7.2.17",
+      "./js/modes/driving.js": "./js/modes/driving.js?v=7.2.17",
+      "./js/modes/events/blocks.js": "./js/modes/events/blocks.js?v=7.2.17",
+      "./js/modes/events/engine.js": "./js/modes/events/engine.js?v=7.2.17",
+      "./js/modes/events/feed.js": "./js/modes/events/feed.js?v=7.2.17",
+      "./js/modes/events/help.js": "./js/modes/events/help.js?v=7.2.17",
+      "./js/modes/events/missions.js": "./js/modes/events/missions.js?v=7.2.17",
+      "./js/modes/events/more-spec.js": "./js/modes/events/more-spec.js?v=7.2.17",
+      "./js/modes/events/more.js": "./js/modes/events/more.js?v=7.2.17",
+      "./js/modes/events/py.js": "./js/modes/events/py.js?v=7.2.17",
+      "./js/modes/events/schema.js": "./js/modes/events/schema.js?v=7.2.17",
+      "./js/modes/events/sign.js": "./js/modes/events/sign.js?v=7.2.17",
+      "./js/modes/events/sounds.js": "./js/modes/events/sounds.js?v=7.2.17",
+      "./js/modes/events/tunes.js": "./js/modes/events/tunes.js?v=7.2.17",
+      "./js/modes/events/wording.js": "./js/modes/events/wording.js?v=7.2.17",
+      "./js/modes/events.js": "./js/modes/events.js?v=7.2.17",
+      "./js/modes/findvoice-guide.js": "./js/modes/findvoice-guide.js?v=7.2.17",
+      "./js/modes/findvoice.js": "./js/modes/findvoice.js?v=7.2.17",
+      "./js/modes/index.js": "./js/modes/index.js?v=7.2.17",
+      "./js/modes/island.js": "./js/modes/island.js?v=7.2.17",
+      "./js/modes/museum.js": "./js/modes/museum.js?v=7.2.17",
+      "./js/modes/park.js": "./js/modes/park.js?v=7.2.17",
+      "./js/modes/tower.js": "./js/modes/tower.js?v=7.2.17",
+      "./js/modes/ultimate/cast.js": "./js/modes/ultimate/cast.js?v=7.2.17",
+      "./js/modes/ultimate/help.js": "./js/modes/ultimate/help.js?v=7.2.17",
+      "./js/modes/ultimate/world.js": "./js/modes/ultimate/world.js?v=7.2.17",
+      "./js/modes/ultimate.js": "./js/modes/ultimate.js?v=7.2.17",
+      "./js/packs.js": "./js/packs.js?v=7.2.17",
+      "./js/site.js": "./js/site.js?v=7.2.17",
+      "./js/sound-rules.js": "./js/sound-rules.js?v=7.2.17",
+      "./js/speech.js": "./js/speech.js?v=7.2.17",
+      "./js/stats.js": "./js/stats.js?v=7.2.17",
+      "./js/storage.js": "./js/storage.js?v=7.2.17",
+      "./js/turning.js": "./js/turning.js?v=7.2.17",
+      "./js/update-alert.js": "./js/update-alert.js?v=7.2.17",
+      "./js/version.js": "./js/version.js?v=7.2.17",
+      "./js/voice-text.js": "./js/voice-text.js?v=7.2.17",
+      "./js/voice.js": "./js/voice.js?v=7.2.17",
+      "./js/wetworker.js": "./js/wetworker.js?v=7.2.17"
     }
   }
   </script>
   <!-- end of versions -->
-  <script type="module" src="js/site.js?v=7.2.16"></script>
-  <script type="module" src="js/update-alert.js?v=7.2.16"></script>
+  <script type="module" src="js/site.js?v=7.2.17"></script>
+  <script type="module" src="js/update-alert.js?v=7.2.17"></script>
 </body>
 </html>

@@ -74,6 +74,15 @@ const ISLAND_GUARDIAN_STRIKE = 4.0;    // get this close to the guardian and it 
 const ISLAND_GUARDIAN_GAIN = 2.4;      // louder than any other enemy
 const ISLAND_GUARDIAN_FLOOR = 0.5;     // and never quieter than half across the whole island
 const ISLAND_GUARDIAN_HUNT_SPEED = 10.5;  // out of shots with the guardian standing: it comes for you
+// Chaos (7.2.17, Russell): out of shots, the guardian hunts you more slowly, so a dash
+// gets you away; the elevator lets you down to the seabed for more; if the seabed has
+// none left, the guardian throws a cartridge holding just the shots to finish it,
+// somewhere on the island, betting you will not reach it. Each of its hits costs
+// ISLAND_GUARDIAN_CHAOS_HIT health, and after one it falls back toward its post a while.
+const ISLAND_GUARDIAN_CHAOS_HUNT_SPEED = 8.0;   // well under your running stride (14)
+const ISLAND_GUARDIAN_CHAOS_HIT = 40;
+const ISLAND_GUARDIAN_BACKOFF = 4.0;            // seconds it falls back after a hit
+const ISLAND_THROWN_GAIN = 0.85;
 // While the guardian is alive the elevator will not open. Walking into it gives the
 // buzz instead, at most this often.
 const ISLAND_BLOCKED_BUZZ = 1.0;
@@ -90,8 +99,8 @@ const ISLAND_POINTS_TREASURE = 50;
 const ISLAND_POINTS_DIVER = 150;
 const ISLAND_POINTS_GUARDIAN = 100;
 // Every seabed beacon has its own sound, and sits a little under the elevator.
-const ISLAND_ITEM_SOUNDS = { key: 'key_beacon', treasure: 'treasure_beacon', diver: 'diver_tap', vent: 'vent' };
-const ISLAND_ITEM_GAIN = { key: 0.75, treasure: 0.55, diver: 0.7, vent: 1.0, credit: 0.85 };
+const ISLAND_ITEM_SOUNDS = { key: 'key_beacon', treasure: 'treasure_beacon', diver: 'diver_tap', vent: 'vent', ammo: 'ammo_beacon' };
+const ISLAND_ITEM_GAIN = { key: 0.75, treasure: 0.55, diver: 0.7, vent: 1.0, credit: 0.85, ammo: ISLAND_THROWN_GAIN };
 // Under every air vent's bubbling, much quieter, the tower's health potion chime.
 const ISLAND_VENT_POTION_GAIN = 0.3;
 // You never arrive on an island within this many units of its elevator.
@@ -156,6 +165,8 @@ const CHAOS_CREDIT_SEABED = 0.33;
 const FPS = 30;
 const RATE = 44100;
 const ISLAND = 'island';
+
+import { aliasRecording } from './events/sounds.js';
 
 // ------------------------------------------------------------------ helpers
 const rand = Math.random;
@@ -581,6 +592,7 @@ const mixin = {
     }
     this.playerFacing = [0, -1];
     this.islandGrace = ISLAND_ARRIVAL_GRACE;
+    this.islandGuardianBack = 0;
     this.islandConcurrent = Math.min(ISLAND_MAX_CONCURRENT, 1 + Math.floor(this.islandNumber / 2));
     this.islandPlaceT = 0.0;
     this._islandSetMix(1.0);
@@ -623,6 +635,8 @@ const mixin = {
       for (const [kind, pos, value] of saved.items) {
         if (kind === 'treasure') {
           this.islandItems.push({ kind: 'treasure', pos, ch: this.audio.play('treasure_beacon', { loops: -1, volume: 0.0 }) });
+        } else if (kind === 'ammo') {
+          this.islandItems.push({ kind: 'ammo', pos, value, ch: this.audio.play(ISLAND_ITEM_SOUNDS.ammo, { loops: -1, volume: 0.0 }) });
         } else {
           this.islandItems.push({ kind: 'credit', pos, value, ch: this.audio.play(`credit_beacon_${value}`, { loops: -1, volume: 0.0 }) });
         }
@@ -660,8 +674,26 @@ const mixin = {
   _guardianHunting() {
     // Out of shots with the guardian still standing: there is nothing left to do
     // but be caught, so the guardian leaves its post and comes for you.
-    return this.ammo <= 0 && this.islandGuardianHp > 0 && this.islandGrace <= 0;
+    // (In chaos, not while it falls back after a hit.)
+    return this.ammo <= 0 && this.islandGuardianHp > 0 && this.islandGrace <= 0
+      && !(this.chaosMode && (this.islandGuardianBack || 0) > 0);
   },
+
+  // Chaos: out of shots, nothing left on the seabed, and no cartridge thrown already:
+  // the guardian throws one somewhere on the island, with just the shots to finish it.
+  _islandGuardianThrow() {
+    const g = this.obstacles.find((o) => o.guardian);
+    const far = g ? [[g.x, g.y]] : [[...this.islandGuardianPost]];
+    const pos = this._islandPlace(10.0, 35.0, ISLAND_ARENA - 3.0, [[0.0, 0.0]], far);
+    const shots = Math.max(1, this.islandGuardianHp);
+    const it = { kind: 'ammo', pos, value: shots, ch: this.audio.play(ISLAND_ITEM_SOUNDS.ammo, { loops: -1, volume: 0.0 }) };
+    this.islandItems.push(it);
+    // You hear it fly and land.
+    const whoosh = aliasRecording(this.audio, 'evt_ninja_whoosh', 'event_sfx_file_evt_ninja_whoosh');
+    if (whoosh) this.audio.play(whoosh, { at: pos, keep: true });
+  },
+
+  _islandSeabedEmpty() { return !(this.islandAmmoCartridges && this.islandAmmoCartridges.length); },
 
   _islandMoveGuardian(g, dt) {
     const [px, py] = this.playerPos;
@@ -670,8 +702,8 @@ const mixin = {
     let speed = g.speed;
     if (hunting) {
       tx = px; ty = py;
-      speed = ISLAND_GUARDIAN_HUNT_SPEED;
-    } else if (this.islandGrace <= 0 && Math.hypot(px - g.post[0], py - g.post[1]) < ISLAND_GUARDIAN_REACT) {
+      speed = this.chaosMode ? ISLAND_GUARDIAN_CHAOS_HUNT_SPEED : ISLAND_GUARDIAN_HUNT_SPEED;
+    } else if (this.islandGrace <= 0 && !(this.chaosMode && (this.islandGuardianBack || 0) > 0) && Math.hypot(px - g.post[0], py - g.post[1]) < ISLAND_GUARDIAN_REACT) {
       tx = px; ty = py;
     }
     const dx = tx - g.x; const dy = ty - g.y;
@@ -742,7 +774,7 @@ const mixin = {
       // where they stood, and whatever was lying on the sand.
       this.islandSaved = {
         enemies: this.obstacles.filter((o) => !o.guardian).map((o) => [o.soundIdx, o.x, o.y, o.speed]),
-        items: this.islandItems.filter((it) => it.kind === 'treasure' || it.kind === 'credit')
+        items: this.islandItems.filter((it) => it.kind === 'treasure' || it.kind === 'credit' || it.kind === 'ammo')
           .map((it) => [it.kind, it.pos, it.value]),
       };
     }
@@ -947,6 +979,10 @@ const mixin = {
       this.islandDiver = false;
       this.islandCarryingDiver = true;
       this.audio.play('diver_rescued');
+    } else if (kind === 'ammo') {
+      // The guardian's thrown cartridge (chaos): just the shots to finish it.
+      this.ammo += it.value;
+      this.audio.play('ammo');
     } else if (kind === 'credit') {
       this.timeLeft += it.value;
       if (it.seabed) this.islandSeabedCredit = 0;        // collected: this seabed has no more
@@ -984,6 +1020,13 @@ const mixin = {
     // The step taken since the last frame, if any, judged once below and then gone.
     const steps = [...(this.battleSteps || [])];
     this.battleSteps = [];
+    // Chaos (7.2.17): the guardian's fall back after a hit runs down; and out of shots,
+    // with the seabed empty, it throws a cartridge onto the island.
+    if (this.chaosMode) {
+      this.islandGuardianBack = Math.max(0, (this.islandGuardianBack || 0) - dt);
+      if (this.ammo <= 0 && this.islandGuardianHp > 0 && this.islandGrace <= 0 && this._islandSeabedEmpty()
+        && !this.islandItems.some((it) => it.kind === 'ammo')) this._islandGuardianThrow();
+    }
     this.islandPlaceT = (this.islandPlaceT || 0.0) + dt;
     const fade = this._islandSeabedFade();
     if (!this.islandAmb.surface && this.islandShore && !this.islandShorePending) {
@@ -1040,19 +1083,19 @@ const mixin = {
         // takes all your health: the run is over.
         if (this.chaosMode) {
           if (this.chaosHitGrace > 0) continue;
+          if (obs.guardian && (this.islandGuardianBack || 0) > 0) continue;   // falling back: it does not strike
           this.audio.play('player_hit');
-          if (obs.guardian && this.ammo <= 0) {
-            this.islandDeath = 'enemy';
-            this._chaosHurt(this.towerHp, 'hit');
-            return;
-          }
           if (!obs.guardian) {
             if (obs.channel) obs.channel.stop();
             this.obstacles.splice(this.obstacles.indexOf(obs), 1);
             this.kills += 1;
             this.islandKillsHere += 1;
           }
-          if (this._chaosHurt(this._chaosHitDamage(), 'hit')) { this.islandDeath = 'enemy'; return; }
+          // The guardian's hit: forty health, out of shots or not, and then it falls back
+          // a while (7.2.17, Russell; until then twenty five, and all your health if you
+          // were out of shots).
+          if (obs.guardian) this.islandGuardianBack = ISLAND_GUARDIAN_BACKOFF;
+          if (this._chaosHurt(obs.guardian ? ISLAND_GUARDIAN_CHAOS_HIT : this._chaosHitDamage(), 'hit')) { this.islandDeath = 'enemy'; return; }
           break;
         }
         this.audio.play('player_hit');
@@ -1079,8 +1122,9 @@ const mixin = {
       if (!this.islandLiftArmed && dist > ISLAND_REACH + 2.0) this.islandLiftArmed = true;
       this.islandBuzzTimer = Math.max(0.0, this.islandBuzzTimer - dt);
       if (this.islandLiftArmed && dist < ISLAND_REACH) {
-        if (this.islandGuardianHp > 0) {
-          // Shut while the guardian lives. The buzz says so.
+        // Shut while the guardian lives, except, in chaos, down to the seabed when you
+        // are out of shots (7.2.17). The buzz says so.
+        if (this.islandGuardianHp > 0 && !(this.chaosMode && this.ammo <= 0)) {
           if (this.islandBuzzTimer <= 0) {
             this.islandBuzzTimer = ISLAND_BLOCKED_BUZZ;
             this.audio.play('boundary');

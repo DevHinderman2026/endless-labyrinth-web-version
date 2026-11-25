@@ -114,6 +114,20 @@ const MUSEUM = 'museum';
 const WORLD = 'ultimate';
 const STATE_CHAOS_GAP = 'chaos_gap';
 
+// A treasure chest (7.2.17, Russell): now and then, when a level's exit opens, a chest
+// lies a couple of steps from the exit, on your way to it, heard by its sparkling
+// chime; walk onto it to open it. Very rare. Only where there is an exit to walk to:
+// a battle, a tower floor, a Find the Voice room, an abyss, a water park, a museum.
+// It holds two of: more time, health (never past CHAOS_HEALTH_MAX, and nothing when
+// you are already there), and points. Leave the level without it and it is gone.
+export const CHAOS_CHEST_CHANCE = 0.1;
+export const CHAOS_CHEST_FROM_EXIT = 6.0;     // units (two steps) from the exit, toward you
+export const CHAOS_CHEST_REACH = 3.0;
+export const CHAOS_CHEST_TIME = 30;
+export const CHAOS_CHEST_HEALTH = 25;
+export const CHAOS_CHEST_POINTS = 50;
+export const CHAOS_CHEST_BEACONS = ['ut_chest', 'treasure_beacon'];
+
 // ------------------------------------------------------------------ helpers
 const rand = Math.random;
 const uniform = (a, b) => a + (b - a) * rand();
@@ -228,6 +242,7 @@ const mixin = {
     this.ammoPickups = [];
     if (this.timeCredit && this.timeCredit.channel) this.timeCredit.channel.stop();
     this.timeCredit = null;
+    this._chaosChestGone();
     // tower
     for (const holder of ['towerEnemy', 'towerItem', 'towerPotion']) {
       const obj = this[holder];
@@ -683,6 +698,90 @@ const mixin = {
     return false;
   },
 
+  // ---------------------------------------------------------------- the treasure chest
+  // The open exit's position, on a level a chest can lie on; otherwise null.
+  _chaosExitPos() {
+    const st = this.state;
+    if (st === BATTLE) return this.battleExitActive ? this.exitPos : null;
+    if (st === TOWER) return this.towerStairsActive ? this.towerStairsPos : null;
+    if (st === FINDVOICE) return this.fv && this.fv.exit ? this.fv.exit.pos : null;
+    if (st === ABYSS) return this.ab && this.ab.exit ? this.ab.exit.pos : null;
+    if (st === PARK) return this.pk && this.pk.exit ? this.pk.exit.pos : null;
+    if (st === MUSEUM) return this.mu && this.mu.door ? this.mu.door.pos : null;
+    return null;
+  },
+
+  // Every frame the exit is open (from _advanceTimer): once a level, perhaps a chest;
+  // then its chime, and opening it when you reach it.
+  _chaosChestUpdate() {
+    if (!this.chaosMode) return;
+    if (!this.chaosChestRolled) {
+      const exit = this._chaosExitPos();
+      if (!exit) return;
+      this.chaosChestRolled = true;
+      // (Tests that count every second and point turn chests off: window.__elNoChests.)
+      const off = typeof window !== 'undefined' && window.__elNoChests;
+      if (!off && rand() < CHAOS_CHEST_CHANCE) this._chaosChestPlace(exit);
+    }
+    const c = this.chaosChest;
+    if (!c) return;
+    const [l, r, d] = this._chaosCreditLevels(c.pos);
+    if (c.channel) c.channel.setVolume(l, r, this._behind(c.pos));
+    if (d < CHAOS_CHEST_REACH) this._chaosChestOpen();
+  },
+
+  _chaosChestPlace(exit, force = false) {
+    const p = this.playerPos;
+    const dx = p[0] - exit[0]; const dy = p[1] - exit[1]; const d = Math.hypot(dx, dy);
+    if (d < CHAOS_CHEST_FROM_EXIT + 1.0 && !force) return false;       // you are at the exit already
+    const u = d > 0.01 ? [dx / d, dy / d] : [0, 1];
+    let pos = [exit[0] + u[0] * CHAOS_CHEST_FROM_EXIT, exit[1] + u[1] * CHAOS_CHEST_FROM_EXIT];
+    if (this.state === MUSEUM && this._muOutOfPools) { pos = this._muOutOfPools(pos); if (!pos) return false; }
+    const beacon = CHAOS_CHEST_BEACONS.find((n) => this.audio.has(n));
+    this.chaosChest = { pos, channel: beacon ? this.audio.play(beacon, { loops: -1, volume: 0.0 }) : null };
+    return true;
+  },
+
+  _chaosChestGone() {
+    if (this.chaosChest && this.chaosChest.channel) this.chaosChest.channel.stop();
+    this.chaosChest = null;
+    this.chaosChestRolled = false;
+  },
+
+  _chaosChestOpen() {
+    const c = this.chaosChest;
+    if (c && c.channel) c.channel.stop();
+    this.chaosChest = null;
+    const open = aliasRecording(this.audio, 'evt_chest_open', 'event_sfx_file_evt_chest_open') || (this.audio.has('treasure_pickup') ? 'treasure_pickup' : null);
+    if (open) this.audio.play(open, { keep: true });
+    const kinds = ['time', 'points'];
+    if (this.towerHp < CHAOS_HEALTH_MAX) kinds.push('health');
+    const take = kinds.sort(() => rand() - 0.5).slice(0, 2);
+    const words = [];
+    for (const k of ['time', 'health', 'points']) {
+      if (!take.includes(k)) continue;
+      if (k === 'time') {
+        this.timeLeft += CHAOS_CHEST_TIME;
+        this.thirtySecAnnounced = this.timeLeft <= 30.0;
+        const step = this._announceStep();
+        this.nextAnnounceTime = Math.floor((this.timeLeft - 1) / step) * step;
+        this.lastBeepSecond = -1;
+        words.push(`${CHAOS_CHEST_TIME} more seconds`);
+      } else if (k === 'health') {
+        const got = Math.min(CHAOS_CHEST_HEALTH, CHAOS_HEALTH_MAX - this.towerHp);
+        this.towerHp += got;
+        this._chaosLowCheck();
+        words.push(`${got} health`);
+      } else {
+        this.chaosPoints = (this.chaosPoints || 0) + CHAOS_CHEST_POINTS;
+        words.push(`${CHAOS_CHEST_POINTS} points`);
+      }
+    }
+    this.chaosChests = (this.chaosChests || 0) + 1;
+    const said = words.join(' and ');
+    this.tts.speak(`${said[0].toUpperCase()}${said.slice(1)}.`, { interrupt: true });
+  },
+
   // Stereo levels for a chaos credit: heard from anywhere in the room, louder as
   // you close, never fully silent.
   _chaosCreditLevels(pos) {
@@ -701,7 +800,7 @@ const mixin = {
 const HELP_SECTIONS = [
   ["Chaos Mode", [
     { title: "Chaos Mode", sound: null, desc: "Chaos mode is every mode at once, and the hardest one in the game. Each level is chosen at random from ten kinds: a labyrinth, a battle, one floor of a tower, a stretch of road, an island, a Find the Voice room, an abyss, a water park, a museum, or, rarest of all, a world of Ultimate Mode. Nothing ever tells you which one you are in. You work it out from what you hear, the labyrinth's drone, the battle drums, the tower's thin stairwell air, your engine, the shore, the guide calling, the lightning of an abyss, which strikes the moment you arrive, the busy pool and children of a water park, a character introducing themselves over their own world in a museum, or a world's many places, and then you play it by that mode's rules. Finish a level and the next one begins at once, its air fading in over the old one; after a tower floor's stairs it waits until the climb is over and half a second more, with the floor's air still playing. That silence is the mark of a change of place: the stairs, an exit, a road's exit, and then quiet, and then somewhere new. The one exception is leaving an island: the elevator ride itself carries you across, and the next level's sound rises through its doors. Your score is points. Every level you finish that is not an island or a world is worth ten. Islands are worth the most: everything island mode pays for enemies, guardians, treasure and rescued divers, plus one hundred for finishing the island. A world pays as Ultimate Mode does, while you play it. There are no level numbers anywhere in chaos, only points, and when the run ends you hear your points. In the first five kinds of level the clock is the only thing that speaks, apart from the Low air warning on a seabed, which is kept because your air runs out there just as it does in island mode; a Find the Voice room, an abyss, a water park, a museum and a world speak as those modes do. The walking levels of chaos, its labyrinths, battles, tower floors, islands, Find the Voice rooms, abysses, water parks, museums and worlds, turn with you exactly as those modes do on their own: flick left or right to turn, swipe up to walk the way you face, and your facing carries from one walking level to the next. A road does not turn: there north is always ahead, as in driving mode, and the level after a road begins facing north." },
-    { title: "Chaos Health", sound: null, desc: "In chaos mode you have one health bar for the whole run, starting at 100. Every level you finish, of any kind, gives you 10 more, up to 150 at most: no reward ever takes you past 150. Everything that hurts you takes from it. In a battle or on an island, an enemy that reaches you costs 25 health and is gone, and the crowd of a battle groans; on an island the guardian costs 25 and keeps coming, but if it reaches you while you are out of shots, it takes all your health at once. On a seabed, once your air runs out, you lose 10 health every second until you reach air again. A crash on a road costs 20 health as well as thirty seconds. In a Find the Voice room or an abyss, a creature catching you costs 25. In a museum a creature only shoves you, but a fall into a bottomless pool ends the run, however much health you have. A tower's throws and a world's dangers take what they always take. A tower's health potion, or a world's rare full heal, brings you back to 100 if you are below it, and other rewards simply add, up to 150. When your health first falls to 35 or less, you hear three quick falling notes and the voice says Health low and how much you have left; heal above it and it can warn you again. When it reaches nothing, the run is over. Every double tap tells you your health." },
+    { title: "Chaos Health", sound: null, desc: "In chaos mode you have one health bar for the whole run, starting at 100. Every level you finish, of any kind, gives you 10 more, up to 150 at most: no reward ever takes you past 150. Now and then, when a level's exit opens, a treasure chest lies a couple of steps from the exit, on your way to it, heard by its sparkling chime, in a battle, a tower floor, a Find the Voice room, an abyss, a water park or a museum: walk onto it to open it, for two of 30 more seconds, 25 health and 50 points. At 150 health it gives no health. Leave the level without it and it is gone. Everything that hurts you takes from it. In a battle or on an island, an enemy that reaches you costs 25 health and is gone, and the crowd of a battle groans; on an island the guardian's hit costs 40, and then it falls back for a few seconds. Run out of shots while it stands and it comes for you, but slower than you can run, so dash for the elevator: it will take you down to the seabed for more shots. If the seabed has none left, the guardian throws a cartridge somewhere on the island, with just the shots to finish it, and you have to reach it first. On a seabed, once your air runs out, you lose 10 health every second until you reach air again. A crash on a road costs 20 health as well as thirty seconds. In a Find the Voice room or an abyss, a creature catching you costs 25. In a museum a creature only knocks you toward a pool, and a fall into a bottomless pool costs 50 health: you are pulled out, set down a couple of steps from it facing away, and for a few seconds no creature can reach you; with 50 or less left, the fall ends the run. A tower's throws and a world's dangers take what they always take. A tower's health potion, or a world's rare full heal, brings you back to 100 if you are below it, and other rewards simply add, up to 150. When your health first falls to 35 or less, you hear three quick falling notes and the voice says Health low and how much you have left; heal above it and it can warn you again. When it reaches nothing, the run is over. Every double tap tells you your health." },
     { title: "Chaos Time Limit", sound: null, desc: "You get exactly five minutes for the whole run. Not a range, the same five minutes every time, so one run is worth comparing to another. The clock never resets between levels, so survive as many as you can before it runs out. Remaining time is announced every two minutes, and every double tap tells you it, just before your points, or on a keyboard you can press T at any point to check it. The clock stops for the moment of silence between levels and for every elevator ride on an island level. It also stops once a level is won and only its exit is left: from the moment a battle's Morse exit sounds, a road's exit comes into hearing, a tower floor's stairs appear, or the exit of a Find the Voice room, an abyss or a water park, or a museum's door, sounds, until you reach it. In a world of Ultimate Mode the clock runs all the time. A credit already lying in that level stays where it is, its beacon still sounding, and you can still take it for its time; so does a cartridge already out in a battle. No new credit or cartridge appears once the level is won. A labyrinth's clock never stops, because there the exit is the whole level." },
     { title: "Chaos Ammo", sound: null, desc: "In chaos mode, each kind of level that shoots keeps its own ammo: battles, islands and roads each have their own inventory, starting at eight shots, and the worlds of Ultimate Mode have theirs (see Chaos Worlds). Shots you have left at the end of a battle wait for you in the next battle, and the same for islands and for roads. Ammo you collect in one kind of level is never added to another, and you never spend one kind's shots in another. A double tap, in each kind of level, tells you that level's own count. Tower floors use items, not ammo, and keep their own stock as well. A Find the Voice room, an abyss, a water park and a museum have nothing to shoot." },
     { title: "Chaos Battles", sound: null, desc: "A battle inside chaos mode is a level, and that makes it a different game from standard battle mode. It has a fixed number of enemies to eliminate, ammo keeps appearing on the floor while you fight, and once the last enemy is down a Morse code exit appears which you walk to in order to advance the run. There are no waves and no breaks here. Standard battle mode has none of that: no levels, no exit, and ammo only between waves. What the two share is the aiming, the sounds and the endless scaling, and the way enemies come: in turns, never all at once, with the clock waiting whenever none is after you. How many may be after you at once grows with the battles you have played in that run: one at a time in your first three battles, two in the next three, then three, and from the tenth battle four, the most there will ever be. Battles keep their own ammo for the whole chaos run, separate from islands and roads: shots you save in one battle are waiting for you in the next, and they are never used up or added to by any other kind of level. Save them. The arena crowd is there too, as in battle mode: it roars when you shoot an enemy down, and here, since an enemy that reaches you costs health rather than the run (see Chaos Health), it groans when one does." },

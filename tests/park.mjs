@@ -16,6 +16,7 @@ const errors = [];
 page.on('pageerror', (e) => errors.push(String(e)));
 page.on('console', (m) => { if (m.type() === 'error' && !/api\.github|ERR_FAILED|CORS/.test(m.text())) errors.push(m.text()); });
 await page.goto(base + '/play.html?desktop=1');
+await page.evaluate(() => { window.__elNoChests = true; });   // (7.2.17: no random chaos chests to upset the counts)
 await page.click('#start');
 await page.waitForFunction(() => /Sounds loaded/.test(document.getElementById('lead').textContent), null, { timeout: 120000 });
 await page.keyboard.press('ArrowUp');
@@ -84,7 +85,7 @@ check(sizes.deal, 'every kind comes once before any comes twice');
 check(Math.abs(Math.asin(sizes.aim) * 180 / Math.PI - 50) < 1, `7.1.3: the air rifle takes a duck up to about 50 degrees either side of straight ahead (was 37): ${(Math.asin(sizes.aim) * 180 / Math.PI).toFixed(1)}`);
 check(sizes.far.dive[0] === 14 && sizes.far.dive[1] === 20 && sizes.far.pool === 24 && JSON.stringify(sizes.far.wave) === '[36,38,60]', `7.1.2: the tokens further out: the diving pool's 14 to 20 units from where you land (pool 24), the wave pool's 36 across, 2 more each park, at most 60: ${JSON.stringify(sizes.far)}`);
 check(sizes.kinds.includes('duck') && sizes.kinds.length === 5, '7.1.0: the duck stand is a fifth kind of attraction: ' + sizes.kinds.join(', '));
-check(JSON.stringify(sizes.ducks) === '[4,5,10,10]' && JSON.stringify(sizes.dt) === '[6,5.7,3.6,3.5]', `7.1.0: four ducks in park 1, one more each park, at most ten; six seconds to reach you, 0.3 less each park, never under 3.5: ${sizes.ducks} / ${sizes.dt}`);
+check(JSON.stringify(sizes.ducks) === '[4,5,10,10]' && JSON.stringify(sizes.dt) === '[7,7,7,7]', `four ducks in park 1, one more each park, at most ten; seven seconds to reach you in every park (7.2.17): ${sizes.ducks} / ${sizes.dt}`);
 
 // ------------------------------------------------------------------ each attraction
 // A park made of one kind at a time, so each can be played on its own.
@@ -181,12 +182,16 @@ await only('slide');
 const slide = await page.evaluate(async () => {
   const g = window.__el.game; const t = window.__t; const pk = g.pk;
   const at = pk.attractions[0];
+  const bells0 = t.played.filter((n) => n === 'wp_bell').length;
   g.frame(1 / 30);
   const heard = t.played.includes('stairs_beacon') || (at.voice && at.voice.name === 'stairs_beacon');
   await t.walkTo(at.pos);
   const riding = !!pk.ride;
   const pauseBlocked = g.mode.blockPause(g);
   const clock0 = g.timeLeft;
+  // (The last token goes straight on to the next park, with its own clock: the time is read just before.)
+  const begin = g._pkBegin.bind(g); let clockAtEnd = null;
+  g._pkBegin = (o) => { clockAtEnd = g.timeLeft; return begin(o); };
   let rideTime = 0;
   // Flicks and swipes on the way down do nothing.
   const pos0 = [...g.playerPos];
@@ -195,8 +200,9 @@ const slide = await page.evaluate(async () => {
     if (i % 10 === 5) { g.input(i % 20 === 5 ? 'left' : 'up'); if (pk.ride && (g.playerPos[0] !== pos0[0] || g.playerPos[1] !== pos0[1])) still = false; }
     g.frame(1 / 30); rideTime += 1 / 30;
   }
-  return { heard, riding, pauseBlocked, still, rideTime: +rideTime.toFixed(1), done: at.done, won: pk.won, exit: !!pk.exit, lost: +(clock0 - g.timeLeft - rideTime).toFixed(1),
-    played: [...new Set(t.played)], said: [...t.said] };
+  g._pkBegin = begin;
+  return { heard, riding, pauseBlocked, still, rideTime: +rideTime.toFixed(1), done: at.done, won: pk.won, exit: !!pk.exit, lost: +(clock0 - (clockAtEnd === null ? g.timeLeft : clockAtEnd) - rideTime).toFixed(1),
+    played: [...new Set(t.played)], said: [...t.said], bells: t.played.filter((n) => n === 'wp_bell').length - bells0 };
 });
 check(slide.heard, 'the slide is heard by its staircase beacon');
 check(slide.riding && slide.pauseBlocked, 'walking up to it starts the ride, and a pause waits until it is over');
@@ -204,21 +210,16 @@ check(slide.still && slide.rideTime > 5.4 && slide.rideTime < 6.0, `straight dow
 check(slide.played.includes('stairs_climb') && slide.played.includes('ut_slide') && slide.played.includes('evt_water_splash') && slide.played.includes('wp_token') && !slide.played.includes('boundary'),
   'the climb, the rush, the splash, the token: ' + slide.played.join(', '));
 check(Math.abs(slide.lost) < 0.2, `the ride costs only its own time: ${slide.lost}`);
-check(slide.done && slide.won === 1 && slide.exit, 'the token is won at the splash, and with the park\'s only token the gate opens');
-check(slide.said.includes('The exit is open.'), 'the voice says the gate is open: ' + slide.said.join(' | '));
+check(slide.done && slide.won === 1 && !slide.exit, 'the token is won at the splash, and with the park\'s only token there is no gate (7.2.17)');
+check(!slide.said.includes('The exit is open.') && slide.bells === 0, 'no bell and nothing said about an exit (7.2.17): ' + slide.said.join(' | '));
 
-// The gate: the clock stops, and walking through it is the next park, bigger.
+// No gate (7.2.17): straight on to the next park, bigger.
 const gate = await page.evaluate(async () => {
-  const g = window.__el.game; const t = window.__t; const pk = g.pk;
-  const c0 = g.timeLeft; await t.frames(2.0); const still = g.timeLeft === c0;
-  const ex = pk.exit; const morse = ex.voice && ex.voice.name;
-  await t.walkTo(ex.pos, 0.5);
+  const g = window.__el.game; const t = window.__t;
   const n = g.pk;
-  return { still, morse, park: n.park, count: n.count, clock: Math.round(g.timeLeft), parks: n.parks, said: [...t.said], amb: n.amb && n.amb.voice && n.amb.voice.busy };
+  return { park: n.park, count: n.count, clock: Math.round(g.timeLeft), parks: n.parks, exit: !!n.exit, said: [...t.said], amb: n.amb && n.amb.voice && n.amb.voice.busy };
 });
-check(gate.still, 'the clock stops once the gate is open');
-check(gate.morse === 'exit_morse', 'the gate is heard by the battle exit\'s Morse signal');
-check(gate.park === 2 && gate.count === 4 && gate.parks === 1, `walking through it: park 2, with 4 attractions (parks finished: ${gate.parks})`);
+check(gate.park === 2 && gate.count === 4 && gate.parks === 1 && !gate.exit, `straight on: park 2, with 4 attractions, and no gate (parks finished: ${gate.parks})`);
 check(Math.abs(gate.clock - (40 + 29 * 4)) <= 1, 'park 2\'s own clock, nothing carried on: ' + gate.clock);
 check(gate.amb, 'the park\'s air plays on into the next park');
 check(gate.said.includes('Level 2.'), 'the voice says level 2');
@@ -339,6 +340,15 @@ check(bucket.chime, '7.1.2: as the dump ends, a bell (evt_bell_real_6) says run 
     `7.1.2: before the dump, three bells a second apart, and the dump a second after the third: ${JSON.stringify(m)} (the bell is ${bucket.countdown.len} s long)`);
 }
 check(bucket.done && bucket.token, 'in just after a dump, and a moment under it: the token');
+await only('bucket');
+const offCentre = await page.evaluate(async () => {
+  const g = window.__el.game; const t = window.__t; const at = g.pk.attractions[0];
+  at.phase = 'fill'; at.t = 0.2; at.under = 0;
+  g.playerPos = [at.pos[0] + 2.4, at.pos[1] + 2.8];        // 3.7 off its middle
+  await t.frames(1.3);
+  return { done: at.done };
+});
+check(offCentre.done, 'a step off its middle (3.7 units) still counts as under the bucket (7.2.17)');
 
 // ------------------------------------------------------------------ 7.1.0: the duck stand
 await only('duck');
@@ -414,7 +424,7 @@ check(duck.amb === 0.55, `7.1.0: the park's air comes back up after the stand: $
 // ------------------------------------------------------------------ the voice: all recordings
 const voice = await page.evaluate(() => {
   const b = window.__el.game.tts.bella;
-  const lines = ['Level 1.', 'Level 12.', '2 to go.', '1 to go.', 'The exit is open.', 'Missed.', 'Low air.', 'Level 3. 2 of 5 found.', 'All 4 found.', '0 of 3 found.'];
+  const lines = ['Level 1.', 'Level 12.', '2 to go.', '1 to go.', 'Missed.', 'Low air.', 'Level 3. 2 of 5 found.', 'All 4 found.', '0 of 3 found.'];
   return lines.map((l) => [l, b.canSay(l)]);
 });
 check(voice.every(([, ok]) => ok), 'every line said in a park is a recording: ' + voice.filter(([, ok]) => !ok).map(([l]) => l).join(' | '));
@@ -427,10 +437,10 @@ const closing = await page.evaluate(async () => {
   g.pk.parks = 2; g.pk.tokens = 9;
   g.timeLeft = 0.5; t.played.length = 0; t.said.length = 0;
   await t.frames(1.0);
-  return { state: g.state, bell: t.played.includes('wp_bell'), said: t.said.join(' | '), best: g.scores.scores.park };
+  return { state: g.state, bell: t.played.includes('wp_bell'), said: t.said.join(' | '), best: g.scores.scores.park_tokens };
 });
 check(closing.state === 'game_over' && closing.bell, 'closing time ends the visit, with the bell');
-check(/Closing time\. You finished 2 parks and won 9 tokens\./.test(closing.said) && closing.best === 2, 'the score is the parks finished, on the Water Park board: ' + closing.said);
+check(/Closing time\. You won 9 tokens and finished 2 parks\./.test(closing.said) && closing.best === 9, 'the score is the tokens won, on the Water Park board (7.2.17): ' + closing.said);
 
 // ------------------------------------------------------------------ Chaos
 const chaos = await page.evaluate(async () => {
@@ -449,10 +459,12 @@ const chaos = await page.evaluate(async () => {
   out.room = g._currentRoom(); out.ambLevel = g.pk && g.pk.amb.voice.l;
   out.locators = g.pk.attractions.map((a) => a.kind);
   // Every token but by the rules: each one won is 15 seconds.
+  t.played.length = 0; t.said.length = 0;
   const c0 = g.timeLeft;
   for (const at of [...g.pk.attractions]) { g._pkQuiet(at); g._pkToken(at); }
   out.added = Math.round(g.timeLeft - c0);
   out.exit = !!g.pk.exit; out.won = g.chaosMode && g._chaosExitOpen();
+  out.bell = t.played.includes('wp_bell'); out.quiet = !t.said.includes('The exit is open.');
   const c1 = g.timeLeft; await t.frames(2.0); out.waits = g.timeLeft === c1;
   out.ambAtExit = !!(g.pk.amb && g.pk.amb.voice && g.pk.amb.voice.busy && g.pk.amb.voice.l > 0.5);
   const amb = g.pk.amb.voice;
@@ -476,6 +488,7 @@ check(chaos.state === 'park' && chaos.chaos && chaos.count === 3 && chaos.amb ==
 check(chaos.room === 'hall' && Math.abs(chaos.ambLevel - 0.55) < 0.01, `7.0.1: a chaos water park is the same: the hall's echo, the park's air at 0.55 (${chaos.room}, ${chaos.ambLevel})`);
 check(chaos.added === 45, `each token is 15 seconds on the chaos clock: ${chaos.added}`);
 check(chaos.exit && chaos.won && chaos.waits, 'every token won: the exit, and the chaos clock waits');
+check(chaos.bell && chaos.quiet, 'the bell is the sign the exit is open, and nothing is said (7.2.17)');
 check(chaos.ambAtExit, 'the park\'s air plays on when the exit opens');
 check(chaos.next !== 'park' && chaos.points === 10 && chaos.ambFades, `through the exit: the next level, ten points, the park's air fading under it (now ${chaos.next})`);
 check(chaos.count2 === 4 && chaos.count3 === 6, `the next water park has one more attraction, at most six: ${chaos.count2}, ${chaos.count3}`);
