@@ -640,6 +640,17 @@ export const LEXICON = Object.freeze({
   "wolfs": "wˈʊlfs",
   // Web 6.1.0 (the Fable review): Music Box Menders' creatures, "2 clockwork toys about".
   "toys": "tˈYz", "giants": "ʤˈIənts", "imps": "ˈɪmps",
+  // Web 7.3.0: Story Mode's narration (js/storymode-lines.js). Gemini as Google says it
+  // ("JEM-in-eye"), Sangre as Papa Sangre's makers say it ("SANG-gray").
+  "gemini": "ʤˈɛmᵻnˌI", "sangre": "sˈɑŋɡɹA", "abyss": "əbˈɪs", "building": "bˈɪldɪŋ",
+  "designs": "dəzˈInz", "designed": "dəzˈInd", "designer": "dəzˈInəɹ", "writes": "ɹˈIts",
+  "wanted": "wˈɑntᵻd", "became": "bəkˈAm", "threw": "θɹˈu", "circling": "sˈɜɹklɪŋ",
+  "program": "pɹˈOɡɹˌæm", "alongside": "əlˈɔŋsˌId", "original": "əɹˈɪʤənᵊl",
+  "fountain": "fˈWntᵊn", "himself": "hɪmsˈɛlf", "seabeds": "sˈibˌɛdz", "bearings": "bˈɛɹɪŋz",
+  "model": "mˈɑdᵊl", "darkest": "dˈɑɹkəst", "horror": "hˈɔɹəɹ", "showed": "ʃˈOd",
+  "fear": "fˈɪɹ", "lightning": "lˈItnɪŋ", "fun": "fˈʌn", "indoor": "ˈɪndˌɔɹ",
+  "tipping": "tˈɪpɪŋ", "bucket": "bˈʌkət", "soul": "sˈOl", "remembers": "ɹəmˈɛmbəɹz",
+  "tester": "tˈɛstəɹ", "scene": "sˈin", "decision": "dəsˈɪʒən", "thank": "θˈæŋk",
 });
 
 // Words said differently by what comes next (see bella-words.js): "the" and "to"

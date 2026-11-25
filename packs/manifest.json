@@ -87,6 +87,10 @@
   "museum-voice": {
    "file": "museum-voice-f04c690c59.elpack",
    "bytes": 9667803
+  },
+  "story-voice": {
+   "file": "story-voice-1c971269e1.elpack",
+   "bytes": 1760576
   }
  }
 }
