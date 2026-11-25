@@ -168,6 +168,13 @@ const first = await page.evaluate(async () => {
   await t.frames(14);
   r.next = sp.target && sp.target !== target && !sp.target.taken;
   r.nextOnly = !g._muTalking() && mu.memories.every((m) => m.taken || !!m.voice === (m === sp.target));
+  // (7.5.1) While a found memory's whole tune still plays, the next one waits, even
+  // with no story to tell.
+  const kept = mu.takenTune;
+  mu.takenTune = { busy: true }; await t.frames(0.5);
+  r.waitsForTune = !g._muTuneOn() && mu.memories.every((m) => !m.voice);
+  mu.takenTune = kept; await t.frames(0.5);
+  r.backAfter = g._muTuneOn() && !!(sp.target && sp.target.voice);
   r.said = t.lines();
   return r;
 });
@@ -180,6 +187,7 @@ check(first.recorded !== false, 'a line is the character\'s recording');
 check(first.taken && first.found === 1 && first.tuneOnce, 'walking onto a memory takes it, and its tune plays once');
 check(/\.memory\.1$/.test(first.story || ''), `the character remembers: the first memory's line (${first.story})`);
 check(first.silentInStory, 'no memory sounds while the character tells a memory\'s story (7.3.1)');
+check(first.waitsForTune && first.backAfter, 'while a found memory\'s whole tune plays, no other memory sounds; then the next one does (7.5.1)');
 check(first.next && first.nextOnly, 'after the story, the next memory sounds, and only that one (7.3.1)');
 
 // The rest, and the door.

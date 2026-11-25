@@ -672,6 +672,10 @@ const mixin = {
   _muTuneOn() {
     const mu = this.mu; const sp = mu.speaker;
     if (mu.storyHold) return false;
+    // (7.5.1, Russell: two memories were heard at once. A found memory's whole tune is
+    // still playing when its character has no story left to tell, or tells a short one:
+    // the next memory waits for it to end.)
+    if (mu.takenTune && mu.takenTune.busy) return false;
     const story = (ln) => !!(ln && ln.id && /\.(intro|memory)\./.test(ln.id));
     if (sp.queue.some(story)) return false;
     if (story(sp.line) && this._muTalking()) return false;
@@ -739,7 +743,7 @@ const mixin = {
     mu.storyHold = true;
     mu.found += 1;
     mu.memoriesTotal += 1;
-    if (this.audio.has(m.tune)) this._muPlay(m.tune, { at: m.pos, volume: 1.0, keep: true });
+    mu.takenTune = this.audio.has(m.tune) ? this._muPlay(m.tune, { at: m.pos, volume: 1.0, keep: true }) : null;
     const sp = mu.speaker;
     this._muHush(100);
     if (sp.beacon) { sp.beacon.fadeout(200); sp.beacon = null; }

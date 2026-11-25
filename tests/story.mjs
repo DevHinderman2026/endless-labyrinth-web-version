@@ -83,11 +83,14 @@ await page.evaluate(async () => {
     }
     return false;
   };
+  t.doorAways = [];
   t.through = async () => {
     const n0 = g.sm.chapter; const t0 = g.sm.twist;
     await t.skip();
     // (A room whose goal is its door: you are there already, and through it once she has spoken.)
     if (!g.sm || g.sm.chapter !== n0 || g.sm.twist !== t0) return g.sm ? true : g.state === 'menu';
+    t.doorAway = g.sm.door ? Math.hypot(g.sm.door.pos[0] - g.playerPos[0], g.sm.door.pos[1] - g.playerPos[1]) : null;
+    t.doorAways.push([n0, t.doorAway]);
     if (!g.sm.door) throw new Error('no door: chapter ' + g.sm.chapter + ', ' + g.sm.phase + ', ' + JSON.stringify(g.playerPos));
     await t.walkTo(g.sm.door.pos, 1.0);
     await t.frames(0.2);
@@ -149,7 +152,8 @@ const basics = await page.evaluate(async () => {
   for (let i = 0; i < 30 && g.sm.phase === 'task'; i++) { t.face(room.circler.pos); await t.frames(0.05); }
   out.c3 = g.sm.phase;
   out.to4 = await t.through() && t.ch() === 4;
-  // 4. The fountain.
+  // 4. The fountain: the courtyard's own air, flowing as you arrive (7.5.1).
+  out.fountainAtOnce = !!(g.sm.room.fountain && g.sm.room.fountain.voice && g.sm.phase === 'story');
   await t.toTask();
   const f = g.sm.room.fountain;
   const far = Math.max(...g._smLevels(f.pos, f.gain, f.range, f.floor).slice(0, 2));
@@ -206,6 +210,7 @@ check(basics.off === 'task' && basics.c1 === 'done' && basics.chime && !basics.d
 check(basics.notNorth && basics.north && basics.part2, 'chapter 2: you begin facing away from north; flicking to the higher tick of north is the first part, and Bella gives the second');
 check(basics.flicksNot && basics.stillHeld === 'task' && basics.c2 === 'done' && basics.to3, 'chapter 2: a held slide all the way round, and the finger lifted, is the task done (flicks do not count for it)');
 check(basics.frontFirst === 'task' && basics.c3 === 'done' && basics.to4, 'chapter 3: behind you first, then in front');
+check(basics.fountainAtOnce, 'chapter 4: the fountain flows from the moment you arrive, while Bella talks (7.5.1)');
 check(basics.louder && basics.c4 === 'done' && basics.to5, 'chapter 4: the fountain grows as you walk to it');
 check(basics.bellOn5 && basics.stepsNot && basics.ran && basics.backed && basics.c5 === 'done' && basics.to6, 'chapter 5: single steps are not running; a held slide up runs toward the bell, and a held slide down walks backwards, still facing it');
 check(basics.knock && basics.c6c === 'done' && basics.to7c, 'chapter 6: a wall knocks and stops you; the corridor walked to its chime is the task done');
@@ -231,10 +236,16 @@ const modes = await page.evaluate(async () => {
   out.three = tg.length === 3;
   t.played.length = 0;
   for (const s of tg) { t.face(s.pos); g.input('space'); await t.frames(0.05); }
-  out.hits = t.played.filter((n) => n === 'enemy_hit').length;
+  await t.frames(0.6);
+  out.hits = t.played.filter((n) => n === 'explosion').length;
+  out.explodedThere = tg.every((s) => t.placed.some((p) => p[0] === 'explosion' && Math.hypot(p[1][0] - s.pos[0], p[1][1] - s.pos[1]) < 0.01));
   out.c10b = g.sm.phase;
   out.to11 = await t.through() && t.ch() === 11;
-  // 11. Driving: north ahead, lanes; the car waits in your lane until you move.
+  // 11. Driving: your engine from the moment you arrive (7.5.1); north ahead, lanes;
+  // the car waits in your lane until you move.
+  await t.frames(0.3);
+  out.engineAtOnce = g.sm.phase === 'story' && t.played.includes('engine_8') && !!(g.sm.room.engine && g.sm.room.engine.busy);
+  out.carQuiet = !g.sm.room.carSound.voice;
   await t.toTask();
   out.noTurn = !g._turnsNow();
   out.engine = t.played.includes('engine_8');
@@ -249,7 +260,8 @@ const modes = await page.evaluate(async () => {
   return out;
 });
 check(modes.beeps >= 2 && modes.higher && modes.c8 === 'done' && modes.to10, `chapter 9: the exit beeps from where it is, higher as you close in; reached, the task is done (${modes.beeps} beeps)`);
-check(modes.three && modes.hits === 3 && modes.c10b === 'done' && modes.to11, 'chapter 10: three enemies standing still, shot down');
+check(modes.three && modes.hits === 3 && modes.explodedThere && modes.c10b === 'done' && modes.to11, 'chapter 10: (7.5.1) each one goes down with Battle Mode\'s explosion, from where it stood; three enemies standing still, shot down');
+check(modes.engineAtOnce && modes.carQuiet, 'chapter 11: your engine runs from the moment you arrive, while Bella talks; the car comes only after (7.5.1)');
 check(modes.noTurn && modes.engine && modes.waits && modes.lane && modes.edge && modes.c10 === 'done' && modes.walkAgain, 'chapter 11: north ahead and your engine; the car waits in your lane; a change of lane lets it pass (and the road has edges); then on foot again');
 
 // ------------------------------------------------------------------ the twist
@@ -283,7 +295,8 @@ const tw = await page.evaluate(async () => {
       const shots = kind === 'guardian' ? 3 : 1;
       t.played.length = 0;
       for (const x of [...tg]) { t.face(x.pos); for (let k = 0; k < shots; k++) { g.input('space'); await t.frames(0.05); } }
-      r.hits = t.played.filter((n) => n === (kind === 'guardian' ? 'guardian_hit' : 'enemy_hit')).length;
+      await t.frames(0.6);
+      r.hits = t.played.filter((n) => n === (kind === 'guardian' ? 'guardian_hit' : 'explosion')).length;
       r.down = t.played.includes('guardian_down');
       g.sm.say.queue = [];
     }
@@ -320,7 +333,9 @@ const late = await page.evaluate(async () => {
   await t.walkTo(g.sm.door.pos, 1.0); await t.frames(0.1); out.c14 = g.sm.phase;
   await t.skip(); await t.frames(0.2); out.to15 = t.ch() === 16;
   await t.toTask(); await t.frames(2.0); out.board = t.placed.some((p) => p[0] === 'wp_board');
+  t.played.length = 0;
   await t.walkTo(g.sm.room.board, 4.0); await t.frames(0.1); out.c15 = g.sm.phase;
+  out.dryFeet = t.played.some((n) => /^step_stone_/.test(n)) && !t.played.some((n) => /water_step/.test(n));
   out.to16 = await t.through() && t.ch() === 17;
   await t.toTask();
   await t.walkTo(g.sm.room.memory, 3.0); await t.frames(0.1); out.tune = g.sm.phase;
@@ -368,8 +383,10 @@ const late = await page.evaluate(async () => {
   out.gift = t.played.includes('potion_drink');
   out.c20 = g.sm.phase;
   out.to21 = await t.through() && t.ch() === 21;
-  out.c18 = await goal(() => g.sm.door.pos, 1.0);
-  await t.skip(); await t.frames(0.2); out.to19 = t.ch() === 22;
+  out.chaosExit = !!g.sm.room.exit && !g.sm.door;
+  out.c18 = await goal(() => g.sm.room.exit, 1.0);
+  out.exitQuiet = !g.sm.room.exitSound;
+  out.to19 = await t.through() && t.ch() === 22;
   // 22. Events: north ahead; each swipe a step that way.
   await t.toTask();
   out.noTurn19 = !g._turnsNow();
@@ -405,12 +422,13 @@ check(late.c11 === 'done' && late.stairs && late.to12, 'chapter 12: the stairs b
 check(late.ding && late.c12 === 'done' && late.sand && late.to13, 'chapter 13: the elevator\'s hum and chime, on sand, walked to');
 check(late.calls && late.c13 === 'done' && late.to14, 'chapter 14: Bella calls from where she stands; reaching her is the task');
 check(late.door14Quiet && late.door14On && late.c14 === 'done' && late.to15, 'chapter 15: the door, the goal, sounds only once Bella has given the task');
+check(late.dryFeet, 'chapter 16: the park\'s ordinary footsteps, not wading (7.5.1)');
 check(late.board && late.c15 === 'done' && late.to16, 'chapter 16: the diving board among the park\'s sounds');
 check(late.tune === 'tune' && late.case && late.smash && late.c16 === 'done' && late.to17, 'chapter 17: the memory\'s tune, then a glass case to smash');
 check(late.aOnly && late.bNow && late.c17 === 'done' && late.toCompass, 'chapter 18: one place\'s background gives way to the next across the border');
 check(late.silent && late.on && late.pitch && late.arrived && late.c19 === 'done' && late.toHazel, 'chapter 19: the safe zone is silent; a held finger turns the compass on, it names the goal and how far, beeps higher facing it, and says when you arrive');
 check(late.greets && late.herVoice && late.hazelLines === 'witch.story.001,witch.gift.001' && late.gift && late.c20 === 'done' && late.to21, 'chapter 20: Mother Hazel greets from where she stands, in her own recorded voice; beside her, her story and her gift');
-check(late.c18 === 'done' && late.to19, 'chapter 21: the exit\'s Morse signal, reached');
+check(late.chaosExit && late.c18 === 'done' && late.exitQuiet && late.to19, 'chapter 21: the exit\'s Morse signal, reached; it falls silent, and the door opens elsewhere (7.5.1)');
 check(late.noTurn19 && late.east && late.picked === 3 && late.c19e === 'done' && late.to20, 'chapter 22: north ahead, a step each way, three chimes collected');
 check(!late.before && late.lines20 === 'story.23.story,story.23.end' && late.menu === 'menu' && late.done2 && late.finished, 'chapter 23: no task; the last door leads back to the menu, the story marked as walked');
 
@@ -436,6 +454,9 @@ const list = await page.evaluate(async () => {
   g._stopRunSounds(); g.runId += 1; g._toMenu();
   return out;
 });
+const aways = await page.evaluate(() => window.__t.doorAways);
+const near = aways.filter(([n, d]) => n !== 15 && d !== null && d < 11.9);
+check(aways.length >= 20 && near.length === 0, `every door opens at least four steps from where you stand (7.5.1), but the Abyss's, which is the goal: ${near.map(([n, d]) => `chapter ${n} ${d.toFixed(1)}`).join(', ') || 'none nearer'}`);
 check(list.state === 'story_menu' && /Choose a chapter\. Chapter 1, Welcome/.test(list.first) && list.back === 'Back to the main menu' && list.twenty === 'Chapter 23, Help and settings', 'once walked, Story Mode opens with the list of twenty-three chapters: ' + list.first);
 check(list.fourteen === 'Chapter 17, The Museum' && list.started === 'story' && list.chapter === 17 && list.twistDone, 'a chapter chosen from the list begins there (past chapter 11, no twist)');
 check(/Chapter 17 of 23, The Museum/.test(list.report || ''), 'double tap: the chapter: ' + list.report);

@@ -41,6 +41,7 @@ export const SM_STEP = 3.0;                     // one step, in the game's units
 export const SM_HALF = 30.0;                    // a room: this far each way from its middle (20 steps across)
 export const SM_DOOR_REACH = 3.5;               // units: this near the door is walking through it
 export const SM_DOOR_RANGE = [15.0, 24.0];      // how far from you the door appears
+export const SM_DOOR_AWAY = 12.0;               // and never nearer than this (four steps: you always walk to it)
 export const SM_DOOR = 'exit_morse';            // the door, sounding: the battle exit's Morse signal
 export const SM_DOOR_LEVEL = 0.9;
 export const SM_DOOR_OPEN = 'mu_door_open';     // (the Museum's door)
@@ -50,7 +51,6 @@ export const SM_VOICE_LEVEL = 1.0;              // Bella, telling the story (not
 export const SM_VOICE_SEND = 0.12;
 export const SM_WAIT_VOICE = 2.5;               // seconds a line waits for its recording to be decoded
 export const SM_STEPS_STONE = ['step_stone_1', 'step_stone_2', 'step_stone_3', 'step_stone_4'];
-export const SM_STEPS_WATER = ['ut_water_step_1', 'ut_water_step_2', 'ut_water_step_3', 'ut_water_step_4'];
 export const SM_REACH = 3.0;                    // units: this near a goal (the stairs, the elevator, a corridor's end) is reaching it
 // Chapter 1: the bell is centred within this share of its distance, for this long.
 export const SM_CENTRED = 0.17;                 // about 10 degrees either side
@@ -340,18 +340,20 @@ const mixin = {
 
   // A sound that loops at a place, kept level every frame. gain/range/floor: its
   // loudness as you come near (`floor` keeps it heard across the room).
-  _smPlace(name, pos, { gain = 0.9, range = 40.0, floor = 0.12, tag = null } = {}) {
+  _smPlace(name, pos, { gain = 0.9, range = 40.0, floor = 0.12, tag = null, always = false } = {}) {
     if (!name || !this.audio.has(name)) return null;
     // (7.3.1, Russell: a room's own sounds start only once Bella has said what to do;
     // until then only its background plays. sm.live: they may sound.)
-    const s = { name, pos, gain, range, floor, tag, voice: this.sm.live ? this.audio.play(name, { loops: -1, volume: 0.0, fadeMs: 300 }) : null };
+    // (`always`: part of the room's air, like chapter 4's fountain, it plays from the
+    // moment you arrive, while Bella talks. 7.5.1, Russell.)
+    const s = { name, pos, gain, range, floor, tag, always, voice: this.sm.live || always ? this.audio.play(name, { loops: -1, volume: 0.0, fadeMs: 300 }) : null };
     this.sm.sounds.push(s);
     this._smLevelSound(s);
     return s;
   },
 
   _smLevelSound(s) {
-    if (!s.voice && this.sm.live) s.voice = this.audio.play(s.name, { loops: -1, volume: 0.0, fadeMs: 300 });
+    if (!s.voice && (this.sm.live || s.always)) s.voice = this.audio.play(s.name, { loops: -1, volume: 0.0, fadeMs: 300 });
     if (!s.voice || !s.voice.busy) return;
     const [l, r] = this._smLevels(s.pos, s.gain, s.range, s.floor);
     s.voice.setVolume(l, r, this._behind(s.pos));
@@ -494,6 +496,7 @@ const mixin = {
         const p = at(this.playerPos, uniform(0, TAU), uniform(...SM_DOOR_RANGE));
         if (room && room.events) { p[0] = Math.round(p[0] / SM_STEP) * SM_STEP; p[1] = Math.round(p[1] / SM_STEP) * SM_STEP; }
         const fits = room && (room.doorOk || room.ok);
+        if (dist2(p, this.playerPos) < SM_DOOR_AWAY) continue;
         if (fits ? fits(p) : Math.abs(p[0]) <= lim && Math.abs(p[1]) <= lim) pos = p;
       }
       if (!pos) pos = [0, -SM_HALF + 3];
@@ -646,8 +649,10 @@ const mixin = {
       this._smTaskDone();
       return;
     }
+    // Down: Battle Mode's explosion from where it stood, a moment after the shot (the
+    // farther it was, the later), as in Battle (7.5.1, Russell).
     this._smUnplace(best, 60);
-    this._smShot('enemy_hit', best.pos, 1.0, true);
+    this._later(bestD * 0.015, 'explosion', [...best.pos]);
     if (!list.some((s) => sm.sounds.includes(s))) this._smTaskDone();
   },
 
@@ -864,7 +869,7 @@ const SETUP = {
   },
   // 4. Distance and walking: the fountain.
   4(room, p0) {
-    room.fountain = this._smPlace(this._smEventName('evt_amb_waterfall'), at(p0, uniform(0, TAU), 26.0), { gain: 1.0, range: SM_FOUNTAIN_RANGE, floor: 0.04 });
+    room.fountain = this._smPlace(this._smEventName('evt_amb_waterfall'), at(p0, uniform(0, TAU), 26.0), { gain: 1.0, range: SM_FOUNTAIN_RANGE, floor: 0.04, always: true });
     this._smBackground('evt_amb_morning_birds', AMBIENCE_LEVEL * 0.8);
     room.check = function (r) { if (dist2(r.fountain.pos, this.playerPos) <= SM_FOUNTAIN_REACH) this._smTaskDone(); };
   },
@@ -889,11 +894,13 @@ const SETUP = {
   },
   // 6. Walls and edges: an L-shaped corridor, north and then east, a chime at its end.
   6(room) {
-    room.ok = any(rect(-1.6, 1.6, -16.6, 1.6), rect(-1.6, 16.6, -16.6, -13.4));
+    // (7.5.1, Russell: the door never opens where you stand. The corridor runs on five
+    // steps past the chime, to the door.)
+    room.ok = any(rect(-1.6, 1.6, -16.6, 1.6), rect(-1.6, 31.6, -16.6, -13.4));
     room.end = [15.0, -15.0];
     room.chime = this._smPlace('event_beacon_shimmer', room.end, { gain: 0.8, range: 40, floor: 0.2 });
     this._smBackground('lab_01_cavewind', 0.6);
-    room.doorAt = room.end; room.doorHere = true;
+    room.doorAt = [30.0, -15.0];
     room.check = function (r) { if (dist2(r.end, this.playerPos) < SM_REACH) this._smTaskDone(); };
     room.onDone = function (r) { this._smUnplace(r.chime, 600); };
   },
@@ -919,10 +926,11 @@ const SETUP = {
   },
   // 9. Standard Mode: a tiny labyrinth, and its exit's beep.
   9(room) {
-    room.ok = any(rect(-1.6, 1.6, -13.6, 1.6), rect(-1.6, 13.6, -13.6, -10.4), rect(10.4, 13.6, -25.6, -10.4));
+    // (The labyrinth runs on five steps past its exit, to the door. 7.5.1.)
+    room.ok = any(rect(-1.6, 1.6, -13.6, 1.6), rect(-1.6, 13.6, -13.6, -10.4), rect(10.4, 13.6, -40.6, -10.4));
     room.exit = [12.0, -24.0];
     room.beep = 0;
-    room.doorAt = room.exit; room.doorHere = true;
+    room.doorAt = [12.0, -39.0];
     this._smBackground('lab_02_scary_cave', 0.6);
     room.frame = function (r, dt) {
       if (this.sm.phase !== 'task') return;
@@ -950,7 +958,8 @@ const SETUP = {
     this.playerPos = [SM_LANES[1], 0];
     room.car = { pos: [SM_LANES[1], -SM_CAR_FROM], lane: 1, passed: false };
     room.carSound = this._smPlace('enemy_car_oncoming', room.car.pos, { gain: 1.0, range: 70, floor: 0.08 });
-    room.onLive = function (r) { r.engine = this.audio.play('engine_8', { loops: -1, volume: 0.45, fadeMs: 600 }); };
+    // Your engine runs from the moment you arrive, while Bella talks (7.5.1, Russell).
+    room.engine = this.audio.play('engine_8', { loops: -1, volume: 0.45, fadeMs: 600 });
     room.frame = function (r, dt) {
       const c = r.car;
       if (!r.carSound) return;
@@ -1024,7 +1033,6 @@ const SETUP = {
     ];
     this._smPlace('wp_bucket_fill', at(p0, b + 2.6, 18.0), { gain: 0.6, range: 40, floor: 0.12 });
     this._smPlace('wp_organ', at(p0, b - 2.6, 18.0), { gain: 0.45, range: 40, floor: 0.12 });
-    room.steps = SM_STEPS_WATER;
     this._smBackground('wp_park', 0.35);
     room.frame = function (r, dt) { for (const s of r.shots) { s.t -= dt; if (s.t <= 0) { s.t += s.every; this._smShot(s.name, s.pos, s.volume); } } };
     room.check = function (r) { if (dist2(r.board, this.playerPos) <= 5.0) this._smTaskDone(); };
@@ -1130,10 +1138,14 @@ const SETUP = {
   // 21. Chaos Mode: a level's exit, the Morse signal.
   21(room, p0) {
     this._smBackground('drm_03_loop_75', 0.25);
-    this._smOpenDoor(at(p0, uniform(0, TAU), 22.0), { sound: false });
-    room.doorHere = true;
+    // The level's exit, the Morse signal, is the goal; reached, it falls silent and the
+    // door opens somewhere else in the room, to walk to (7.5.1, Russell: the door never
+    // opens where you stand).
+    room.exit = at(p0, uniform(0, TAU), 22.0);
+    room.exitSound = this._smPlace(SM_DOOR, room.exit, { gain: SM_DOOR_LEVEL, range: 45, floor: 0.2 });
     room.onLive = function () { const th = AB_THUNDERS.find((s) => this.audio.has(s)); if (th) this.audio.play(th, { volume: 0.6 }); };
-    room.check = function () { const dr = this.sm.door; if (dr && dist2(dr.pos, this.playerPos) < SM_DOOR_REACH) this._smTaskDone(); };
+    room.check = function (r) { if (dist2(r.exit, this.playerPos) < SM_DOOR_REACH) this._smTaskDone(); };
+    room.onDone = function (r) { this._smUnplace(r.exitSound, 200); r.exitSound = null; };
   },
   // 22. Events: a collecting mission, stepped north, south, west and east.
   22(room) {
