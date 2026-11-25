@@ -1202,6 +1202,10 @@ export class Game {
   // Asked by js/main.js on every touch and key press, before anything else hears it:
   // true once, on the main menu, after a run has ended.
   freshSoundDue() {
+    // (7.5.3) A mode may ask for one in the middle of a run, at a moment of its choosing:
+    // Story Mode, a run of half an hour or more, once in each chapter.
+    const md = this.mode;
+    if (this.playing && !this.isPaused && md && md.freshDue && md.freshDue(this)) return true;
     if (!this.soundStale || this.state !== S.MENU) return false;
     this.soundStale = false;
     return true;

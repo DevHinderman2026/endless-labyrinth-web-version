@@ -409,6 +409,7 @@ const mixin = {
     sm.phase = 'story';
     sm.live = false;
     sm.waitFor = null;
+    sm.freshDue = true;
     this.level = n;
     this.playerPos = [0.0, 0.0];
     this.arenaLimit = SM_HALF;
@@ -544,6 +545,7 @@ const mixin = {
     sm.twistDone = true;
     sm.phase = 'story';
     sm.live = false;
+    sm.freshDue = true;
     const t = sm.twist = { kind: kind || choice(TWISTS), hp: SM_GUARDIAN_HITS, targets: [] };
     sm.room = { n: 'twist', steps: t.kind === 'abyss' ? AB_STEPS_GLASS : SM_STEPS_STONE };
     this.playerPos = [0.0, 0.0];
@@ -1230,6 +1232,19 @@ export default {
   finish() { return { custom: true, message: 'Story Mode. ' }; },
   room(game) { return game._smRoom(); },
   // A held slide's turn, start to end (chapter 2 counts it).
+  // (7.5.3, Russell: in Story Mode the static came back after a while, and a pause
+  // cleared it. A run of half an hour kept one sound engine all that time, where every
+  // other mode's runs get a fresh one each time (6.3.7). Now each chapter gets a fresh
+  // engine too, at your first touch or key press once Bella has finished speaking (a
+  // phone starts a new engine only inside a touch, and a recording still playing would
+  // be cut off with the old engine). The room's sounds carry on in the new one.)
+  freshDue(game) {
+    const sm = game.sm;
+    if (!sm || !sm.freshDue || game.state !== STATE) return false;
+    if (!(sm.phase === 'task' || sm.phase === 'done') || sm.waitFor || game._smTalking()) return false;
+    sm.freshDue = false;
+    return true;
+  },
   turnInput(game, g) { if (game.sm && game.state === STATE) game.sm.holding = g !== 'turn_end'; },
   // A finger held still: the compass, in chapter 19 only.
   holdGesture(game) { return !!(game.sm && game.sm.room && game.sm.room.compass); },

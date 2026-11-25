@@ -119,8 +119,18 @@ const basics = await page.evaluate(async () => {
   // 1. The bell: quiet while Bella speaks.
   out.bellQuiet = !g.sm.room.bell.voice && !!g.sm.bg;
   t.face(g.sm.room.bell.pos); await t.frames(1.0); out.early = g.sm.phase;
+  // (7.5.3) No fresh sound engine while Bella speaks...
+  const key = () => document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Shift', bubbles: true }));
+  const f0 = window.__el.audio.freshened || 0;
+  key(); out.noFreshTalking = (window.__el.audio.freshened || 0) === f0;
   out.task1 = await t.toTask();
   out.bellOn = !!(g.sm.room.bell.voice && g.sm.room.bell.voice.busy);
+  // ... then one at the first touch or key once she has finished, the bell carrying on.
+  const ctx0 = window.__el.audio.ctx;
+  key(); await t.frames(0.3);
+  out.fresh = (window.__el.audio.freshened || 0) === f0 + 1 && window.__el.audio.ctx !== ctx0;
+  key(); out.onlyOnce = (window.__el.audio.freshened || 0) === f0 + 1;
+  out.bellCarries = !!(g.sm.room.bell.voice && g.sm.room.bell.voice.busy && g.sm.room.bell.voice.ctx === window.__el.audio.ctx);
   g._turnStop(); g._face(g.tn.face + Math.PI / 2, true); await t.frames(1.0); out.off = g.sm.phase;
   t.face(g.sm.room.bell.pos); await t.frames(0.8);
   out.c1 = g.sm.phase; out.chime = t.played.includes('evt_chime_clear');
@@ -205,6 +215,7 @@ const basics = await page.evaluate(async () => {
   return out;
 });
 check(basics.start[0] === 'story' && basics.start[1] === 1 && basics.start[2] === 'story.1.story' && basics.start[3], 'the old story walked does not count (7.4.0): Story Mode begins at chapter 1, with Bella\'s recording');
+check(basics.noFreshTalking && basics.fresh && basics.onlyOnce && basics.bellCarries, 'each chapter gets a fresh sound engine, once, at the first key or touch after Bella has finished speaking; the room\'s sounds carry on in it (7.5.3)');
 check(basics.bellQuiet && basics.early === 'story' && basics.task1 === 'task' && basics.bellOn, 'chapter 1: only the background while Bella speaks; the bell starts, and counts, once she has given the task');
 check(basics.off === 'task' && basics.c1 === 'done' && basics.chime && !basics.doorBefore && basics.to2, 'chapter 1: the bell centred is the task done; the door opens after her done line');
 check(basics.notNorth && basics.north && basics.part2, 'chapter 2: you begin facing away from north; flicking to the higher tick of north is the first part, and Bella gives the second');
