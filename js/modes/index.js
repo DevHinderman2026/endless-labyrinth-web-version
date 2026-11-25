@@ -24,5 +24,6 @@ import story from './story.js';
 // Web 6.2.0 (Russell, 20 Nov): The Abyss comes after Find the Voice.
 // Web 7.0.0 (Russell, 23 Nov): the Water Park comes after The Abyss.
 // Web 7.2.0 (Russell, 23 Nov): The Museum comes after the Water Park.
-// Web 7.3.0: Story Mode comes after The Museum.
+// Web 7.3.0: Story Mode comes after The Museum. Web 7.5.0 (Russell): it comes first
+// on the main menu, above Standard Mode (its menu item is marked first).
 export const MODES = [driving, tower, island, findvoice, abyss, park, museum, story, ultimate, chaos, events];

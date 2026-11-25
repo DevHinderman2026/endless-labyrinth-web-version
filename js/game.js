@@ -134,9 +134,12 @@ const HELP = (() => {
   const isDemo = ([name]) => name.startsWith('Demos');
   const base = BASE_HELP.filter((s) => !isDemo(s));
   const baseDemos = BASE_HELP.filter(isDemo);
-  const extra = MODES.flatMap((m) => (m.help && m.help.sections) || []);
+  const extra = MODES.flatMap((m) => (m.help && !m.help.first && m.help.sections) || []);
   const extraDemos = MODES.flatMap((m) => (m.help && m.help.demos) || []);
-  return [...base, ...extra, ...baseDemos, ...extraDemos];
+  // (7.5.0) A mode first on the main menu has its section first too, after General.
+  const first = MODES.flatMap((m) => (m.help && m.help.first && m.help.sections) || []);
+  const g = base.findIndex(([name]) => name === 'General') + 1;
+  return [...base.slice(0, g), ...first, ...base.slice(g), ...extra, ...baseDemos, ...extraDemos];
 })();
 export { HELP, isRunState, modeOf };
 
@@ -358,7 +361,12 @@ export class Game {
     // speech rate: the game's own voice on or off, and a key test for a new
     // device (js/braille.js).
     const windows = windowsOnly() ? ['speech', 'keytest'] : [];
-    return ['standard', 'battle', ...this._menuItems().map((i) => i.key), 'scores', ...practice, ...windows, 'rate', 'leave'];
+    // Web 7.5.0 (Russell, 25 Nov): Story Mode, the game's introduction, comes first,
+    // above Standard Mode (a mode's menu item marked first).
+    const items = this._menuItems();
+    const first = items.filter((i) => i.first).map((i) => i.key);
+    const rest = items.filter((i) => !i.first).map((i) => i.key);
+    return [...first, 'standard', 'battle', ...rest, 'scores', ...practice, ...windows, 'rate', 'leave'];
   }
 
   _menuLabel(k) {
@@ -380,7 +388,8 @@ export class Game {
   welcome() {
     let line = 'Welcome to Endless Labyrinth. Please wear headphones as this is a 3D audio game. '
       + 'Swipe up and down to navigate. Double tap to select. Tap four times for Help. ';
-    if (!this.scores.settings.practiced) line += 'New here? Try Gesture Practice, on this menu. ';
+    if (!this.scores.settings.storyDone2) line += 'New here? Story Mode, first on this menu, shows you how the game works. ';
+    if (!this.scores.settings.practiced && !keyboardDevice()) line += 'Try Gesture Practice, on this menu, to learn the gestures. ';
     const ios = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
     const standalone = window.navigator.standalone || (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches);
     if (ios && !standalone && !this.scores.settings.homeTipSaid) {

@@ -82,12 +82,12 @@ check(setup.menu.indexOf('Find the Voice') === setup.menu.indexOf('Island Mode')
   && setup.menu.indexOf('The Abyss') === setup.menu.indexOf('Find the Voice') + 1
   && setup.menu.indexOf('Water Park') === setup.menu.indexOf('The Abyss') + 1
   && setup.menu.indexOf('The Museum') === setup.menu.indexOf('Water Park') + 1
-  && setup.menu.indexOf('Story Mode') === setup.menu.indexOf('The Museum') + 1
-  && setup.menu.indexOf('Ultimate Mode') === setup.menu.indexOf('Story Mode') + 1
+  && setup.menu[0] === 'Story Mode'
+  && setup.menu.indexOf('Ultimate Mode') === setup.menu.indexOf('The Museum') + 1
   && setup.menu.indexOf('Chaos Mode') === setup.menu.indexOf('Ultimate Mode') + 1
   && setup.menu.findIndex((m) => /^Events\b(?!.*High)/.test(m)) === setup.menu.indexOf('Chaos Mode') + 1
   && setup.menu.findIndex((m) => /^Event High Scores/.test(m)) === setup.menu.indexOf('Chaos Mode') + 2
-  && setup.menu.indexOf('High Scores') === setup.menu.indexOf('Chaos Mode') + 3, 'the main menu ends its modes with Find the Voice, The Abyss, Water Park, The Museum, Story Mode, Ultimate Mode and Chaos Mode, then the events: ' + setup.menu.join(', '));
+  && setup.menu.indexOf('High Scores') === setup.menu.indexOf('Chaos Mode') + 3, 'the main menu begins with Story Mode (7.5.0) and ends its modes with Find the Voice, The Abyss, Water Park, The Museum, Ultimate Mode and Chaos Mode, then the events: ' + setup.menu.join(', '));
 const lineAt = (k) => setup.lines.findIndex((l) => l.startsWith(k));
 check(lineAt('Chaos Mode') === 2 && lineAt('Tower Mode') === 3 && lineAt('Driving Mode') === 4 && lineAt('Driving Distance') === 5
   && lineAt('Island Mode') === 6 && setup.lines.includes('Chaos Mode: No score yet'), 'the boards in the desktop\'s order: ' + setup.lines.join(' | '));

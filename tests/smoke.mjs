@@ -127,7 +127,7 @@ await page.waitForFunction(() => document.querySelector('#faq button.topic-toggl
   check(await page.locator('footer.site nav a[href="faq.html"]').count() === 0, 'the footer no longer links to the old questions page');
 }
 await page.goto(base + '/history.html');
-check((await page.locator('main h2').allTextContents()).join(' | ').startsWith('7.4.0 (25 November 2026), web only | 7.3.1 (25 November 2026), web only | 7.3.0 (25 November 2026), web only | 7.2.17 (25 November 2026), web only | 7.2.16 (24 November 2026), web only | 7.2.15 (24 November 2026), web only | 7.2.14 (24 November 2026), web only | 7.2.13 (24 November 2026), web only | 7.2.12 (24 November 2026), web only | 7.2.11 (24 November 2026), web only | 7.2.10 (24 November 2026), web only | 7.2.9 (24 November 2026), web only | 7.2.8 (24 November 2026), web only | 7.2.7 (24 November 2026), web only | 7.2.6 (24 November 2026), web only | 7.2.5 (24 November 2026), web only | 7.2.4 (24 November 2026), web only | 7.2.3 (24 November 2026), web only | 7.2.2 (24 November 2026), web only | 7.2.1 (24 November 2026), web only | 7.2.0 (23 November 2026), web only | 7.1.6 (23 November 2026), web only | 7.1.5 (23 November 2026), web only | 7.1.4 (23 November 2026), web only | 7.1.3 (23 November 2026), web only | 7.1.2 (23 November 2026), web only | 7.1.1 (23 November 2026), web only | 7.1.0 (23 November 2026), web only | 7.0.1 (23 November 2026), web only | 7.0.0 (23 November 2026), web only | 6.3.9 (22 November 2026), web only | 6.3.8 (22 November 2026), web only | 6.3.7 (22 November 2026), web only | 6.3.6 (21 November 2026), web only | 6.3.5 (21 November 2026), web only | 6.3.4 (21 November 2026), web only | 6.3.3 (21 November 2026) | 6.3.2 (20 November 2026) | 6.3.1 (20 November 2026) | 6.3.0 (20 November 2026) | 6.2.0 (20 November 2026), web only | 6.1.0 (19 November 2026) | 6.0.3 (19 November 2026) | 6.0.2 (19 November 2026), web only | 6.0.1 (19 November 2026), web only | 6.0.0 (19 November 2026) | 5.1.2 (12 November 2026), web only | 5.1.1 (12 November 2026), web only | 5.1.0 (12 November 2026), web only | 5.0.0 (12 November 2026) | 4.1.2 (11 November 2026), web only | 4.1.1 (11 November 2026), web only | 4.1.0 (11 November 2026), web only | 4.0.0 (11 November 2026), web only | 3.3.0 (10 November 2026), web only | 3.2.0 (9 November 2026), web only | 3.1.0 (9 November 2026), web only | 3.0.0 (8 November 2026), web only | 2.0.0 (8 November 2026), web only'), 'the Update History lists the newest version first, 2.1.0 then 2.0.0, marked web only');
+check((await page.locator('main h2').allTextContents()).join(' | ').startsWith('7.5.0 (25 November 2026), web only | 7.4.0 (25 November 2026), web only | 7.3.1 (25 November 2026), web only | 7.3.0 (25 November 2026), web only | 7.2.17 (25 November 2026), web only | 7.2.16 (24 November 2026), web only | 7.2.15 (24 November 2026), web only | 7.2.14 (24 November 2026), web only | 7.2.13 (24 November 2026), web only | 7.2.12 (24 November 2026), web only | 7.2.11 (24 November 2026), web only | 7.2.10 (24 November 2026), web only | 7.2.9 (24 November 2026), web only | 7.2.8 (24 November 2026), web only | 7.2.7 (24 November 2026), web only | 7.2.6 (24 November 2026), web only | 7.2.5 (24 November 2026), web only | 7.2.4 (24 November 2026), web only | 7.2.3 (24 November 2026), web only | 7.2.2 (24 November 2026), web only | 7.2.1 (24 November 2026), web only | 7.2.0 (23 November 2026), web only | 7.1.6 (23 November 2026), web only | 7.1.5 (23 November 2026), web only | 7.1.4 (23 November 2026), web only | 7.1.3 (23 November 2026), web only | 7.1.2 (23 November 2026), web only | 7.1.1 (23 November 2026), web only | 7.1.0 (23 November 2026), web only | 7.0.1 (23 November 2026), web only | 7.0.0 (23 November 2026), web only | 6.3.9 (22 November 2026), web only | 6.3.8 (22 November 2026), web only | 6.3.7 (22 November 2026), web only | 6.3.6 (21 November 2026), web only | 6.3.5 (21 November 2026), web only | 6.3.4 (21 November 2026), web only | 6.3.3 (21 November 2026) | 6.3.2 (20 November 2026) | 6.3.1 (20 November 2026) | 6.3.0 (20 November 2026) | 6.2.0 (20 November 2026), web only | 6.1.0 (19 November 2026) | 6.0.3 (19 November 2026) | 6.0.2 (19 November 2026), web only | 6.0.1 (19 November 2026), web only | 6.0.0 (19 November 2026) | 5.1.2 (12 November 2026), web only | 5.1.1 (12 November 2026), web only | 5.1.0 (12 November 2026), web only | 5.0.0 (12 November 2026) | 4.1.2 (11 November 2026), web only | 4.1.1 (11 November 2026), web only | 4.1.0 (11 November 2026), web only | 4.0.0 (11 November 2026), web only | 3.3.0 (10 November 2026), web only | 3.2.0 (9 November 2026), web only | 3.1.0 (9 November 2026), web only | 3.0.0 (8 November 2026), web only | 2.0.0 (8 November 2026), web only'), 'the Update History lists the newest version first, 2.1.0 then 2.0.0, marked web only');
 await page.goto(base + '/credits.html');
 check((await page.locator('ul.credits li').count()) === 383, 'credits list the recordings (7.2.0: 383)');
 
@@ -175,6 +175,8 @@ const tap = () => touch('tap', [[200, 300]]);
 const taps = async (n) => { for (let i = 0; i < n; i++) { await tap(); await page.waitForTimeout(60); } };
 const said = () => page.evaluate(() => document.getElementById('said').textContent);
 
+// (7.5.0: Story Mode is first on the menu; the swipes below begin on Standard Mode.)
+await page.evaluate(() => { const g = window.__el.game; g.menuIndex = g.menuKeys.indexOf('standard'); });
 await page.evaluate(() => { window.__g = []; const orig = window.__el.game.input.bind(window.__el.game); window.__el.game.input = (g) => { window.__g.push(g); orig(g); }; });
 await swipe(0, 80); await page.waitForTimeout(50);
 await swipe(0, -80); await page.waitForTimeout(50);
@@ -183,7 +185,7 @@ await swipe(-80, 0); await page.waitForTimeout(50);
 await taps(2); await page.waitForTimeout(450);
 let got = await page.evaluate(() => window.__g.splice(0));
 check(JSON.stringify(got) === '["down","up","right","left","enter"]', 'swipes and a double tap in a menu: ' + got.join(' '));
-// We are now in Standard mode (the menu started at Standard).
+// We are now in Standard mode (the swipes started at Standard).
 check(await page.evaluate(() => window.__el.game.state) === 'standard', 'double tap on Standard Mode starts it');
 // During a run a double tap acts at once.
 await taps(2); await page.waitForTimeout(30);
@@ -273,7 +275,7 @@ check(/reached level 4/.test(await said()), 'game over is spoken: ' + (await sai
 const bat = await page.evaluate(async () => {
   const g = window.__el.game;
   g.input('enter');               // back to the menu
-  g.menuIndex = 1;
+  g.menuIndex = g.menuKeys.indexOf('battle');
   g.input('enter');               // Battle Mode
   const out = { state: g.state, ammo0: g.ammo, waves: 0, kills: 0, breaks: 0, pickups: 0, credits: 0, maxEnemies: 0 };
   let lastWave = 1;

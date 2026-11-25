@@ -61,8 +61,8 @@ const setup = await page.evaluate(async () => {
   };
 });
 // Web 6.0.0: Find the Voice, then Ultimate Mode, then Chaos Mode, the last mode (6.2.0: The Abyss after Find the Voice).
-check(setup.menu.indexOf('Ultimate Mode') === setup.menu.indexOf('Story Mode') + 1 && setup.menu.indexOf('Story Mode') === setup.menu.indexOf('The Museum') + 1 && setup.menu.indexOf('Chaos Mode') === setup.menu.indexOf('Ultimate Mode') + 1, 'main menu: Ultimate Mode between Story Mode (7.3.0; The Museum before it) and Chaos: ' + setup.menu.join(', '));
-check(setup.names.indexOf('Ultimate Mode') === setup.names.indexOf('Story Mode') + 1 && setup.names.indexOf('Story Mode') === setup.names.indexOf('The Museum') + 1 && setup.names.indexOf('Chaos Mode') === setup.names.indexOf('Ultimate Mode') + 1
+check(setup.menu[0] === 'Story Mode' && setup.menu.indexOf('Ultimate Mode') === setup.menu.indexOf('The Museum') + 1 && setup.menu.indexOf('Chaos Mode') === setup.menu.indexOf('Ultimate Mode') + 1, 'main menu: Story Mode first (7.5.0); Ultimate Mode between The Museum and Chaos: ' + setup.menu.join(', '));
+check(setup.names.indexOf('Story Mode') === setup.names.indexOf('General') + 1 && setup.names.indexOf('Ultimate Mode') === setup.names.indexOf('The Museum') + 1 && setup.names.indexOf('Chaos Mode') === setup.names.indexOf('Ultimate Mode') + 1
   && setup.names.indexOf('Demos, Ultimate Mode') === setup.names.indexOf('Demos, The Museum') + 1 && setup.names.indexOf('Demos, Chaos Mode') === setup.names.indexOf('Demos, Ultimate Mode') + 1, 'help sections in order: ' + setup.names.join(' | '));
 check(setup.topics === 20 && setup.demos === 25, `help: ${setup.topics} topics, ${setup.demos} demos`);
 check(setup.silentBeforeRun.length === 0, 'every demo plays before any run' + (setup.silentBeforeRun.length ? ': silent ' + setup.silentBeforeRun.join(', ') : ''));

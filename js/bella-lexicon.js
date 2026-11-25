@@ -656,6 +656,7 @@ export const LEXICON = Object.freeze({
   "dullness": "dˈʌlnəs", "tiny": "tˈIni", "you'd": "jˈud", "inspired": "ɪnspˈIəɹd",
   "attractions": "ətɹˈækʃənz", "attraction": "ətɹˈækʃən", "token": "tˈOkən", "beware": "bəwˈɛɹ",
   "bottomless": "bˈɑɾəmləs", "pools": "pˈulz", "grounds": "ɡɹˈWndz", "bar": "bˈɑɹ", "tour": "tˈʊɹ",
+  "greeting": "ɡɹˈiɾɪŋ",
 });
 
 // Words said differently by what comes next (see bella-words.js): "the" and "to"
