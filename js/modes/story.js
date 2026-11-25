@@ -1122,11 +1122,20 @@ const SETUP = {
       if (r.wait > 0) return;
       r.wait = uniform(...SM_GREET_GAP);
       r.greet = (r.greet % HAZEL.greet.length) + 1;
-      this._smQueueLine(HAZEL.greet[r.greet - 1], { pos: r.hazel });
+      const ln = HAZEL.greet[r.greet - 1];
+      // With the Speech setting Off, or no recording of her greeting, a soft shimmering
+      // beacon sounds where she stands instead, as for Bella in chapter 14 (7.5.2).
+      let cv = null; try { cv = this._smVoices(); } catch (e) { /* none */ }
+      if (this._smSilent() || !cv || !cv.has(ln)) {
+        if (!r.beacon) r.beacon = this._smPlace('event_beacon_shimmer', r.hazel, { gain: 0.7, range: 48, floor: 0.18 });
+        return;
+      }
+      this._smQueueLine(ln, { pos: r.hazel });
     };
     room.check = function (r) {
       if (r.met || dist2(r.hazel, this.playerPos) > SM_HAZEL_REACH) return;
       r.met = true;
+      if (r.beacon) { this._smUnplace(r.beacon, 300); r.beacon = null; }
       this.sm.say.queue = [];
       this._smQueueLine(HAZEL.story, { pos: r.hazel });
       this._smQueueLine(HAZEL.gift, {

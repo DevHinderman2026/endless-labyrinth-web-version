@@ -452,8 +452,18 @@ const list = await page.evaluate(async () => {
   g.input('enter'); await t.frames(0.2);
   out.nine = t.ch(); out.nineTwist = !g.sm.twistDone;
   g._stopRunSounds(); g.runId += 1; g._toMenu();
+  // (7.5.2) With the Speech setting Off, Mother Hazel is found by a beacon where she stands.
+  const muted = g.tts.muted; g.tts.muted = () => true;
+  g.startStory(20);
+  for (let i = 0; i < 10 && g.sm.phase === 'story'; i++) await t.skip();
+  await t.frames(1.5);
+  const hz = g.sm.room.hazel; const bc = g.sm.room.beacon;
+  out.hazelBeacon = !!bc && Math.hypot(bc.pos[0] - hz[0], bc.pos[1] - hz[1]) < 0.01 && !!bc.voice;
+  g.tts.muted = muted;
+  g._stopRunSounds(); g.runId += 1; g._toMenu();
   return out;
 });
+check(list.hazelBeacon, 'with the Speech setting Off, a beacon sounds where Mother Hazel stands (7.5.2)');
 const aways = await page.evaluate(() => window.__t.doorAways);
 const near = aways.filter(([n, d]) => n !== 15 && d !== null && d < 11.9);
 check(aways.length >= 20 && near.length === 0, `every door opens at least four steps from where you stand (7.5.1), but the Abyss's, which is the goal: ${near.map(([n, d]) => `chapter ${n} ${d.toFixed(1)}`).join(', ') || 'none nearer'}`);

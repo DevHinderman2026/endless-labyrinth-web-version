@@ -168,9 +168,12 @@ for (const path of ['/about.html', '/play.html', '/help.html', '/events.html']) 
 // ------------------------------------------------------------------ the high scores reset alert (web 6.3.5)
 {
   const RESET = Date.UTC(2026, 10, 21, 19, 0, 0);
+  // (A release fresh at the time of the reset: dated from the run's own day, it would
+  // lie in the future of the page's clock once the test is a few days old.)
+  const freshThen = { ...fresh, published_at: new Date(RESET - 1 * day).toISOString() };
   const at = async (ms) => {
     const page = await browser.newPage();
-    await page.route('https://api.github.com/**', (route) => route.fulfill({ status: 200, headers: { 'Access-Control-Allow-Origin': '*' }, contentType: 'application/json', body: JSON.stringify(fresh) }));
+    await page.route('https://api.github.com/**', (route) => route.fulfill({ status: 200, headers: { 'Access-Control-Allow-Origin': '*' }, contentType: 'application/json', body: JSON.stringify(freshThen) }));
     await page.route('**/packs/manifest.json', async (route) => {
       const res = await route.fetch();
       await route.fulfill({ response: res, headers: { ...res.headers(), date: new Date(ms).toUTCString() } });
