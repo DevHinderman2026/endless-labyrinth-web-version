@@ -79,7 +79,6 @@ export const MU_MEMORY_FROM_START = 18.0;       // ... and six from where you co
 export const MU_TUNE_RANGE = 90.0;
 export const MU_TUNE_GAIN = 0.7;                // ... at this loudness beside it ...
 export const MU_TUNE_FLOOR = 0.25;
-export const MU_TUNE_OTHERS = 0.55;             // the tunes of memories the character is not calling from
 // The bottomless pools: three in the first museum, one more every second museum, never
 // more than eight; and round the memories, closer every museum until the tenth (7.2.6,
 // Russell: by museums 3 and 4 there were far too many; it was 1.5 more a museum, up to
@@ -667,17 +666,33 @@ const mixin = {
   },
 
   // ---------------------------------------------------------------- the memories
+  // Whether the memory the character wants found may sound now: not while a memory's
+  // story is still to come (mu.storyHold, from finding it until its story is heard out),
+  // nor while their introduction or a story waits or is being told.
+  _muTuneOn() {
+    const mu = this.mu; const sp = mu.speaker;
+    if (mu.storyHold) return false;
+    const story = (ln) => !!(ln && ln.id && /\.(intro|memory)\./.test(ln.id));
+    if (sp.queue.some(story)) return false;
+    if (story(sp.line) && this._muTalking()) return false;
+    return true;
+  },
+
   _muUpdateMemories(dt) {
     const mu = this.mu;
     const target = mu.speaker.target;
-    // Only the nearest case knocks (as in The Abyss); every case hums.
-    let knocker = null;
-    for (const m of mu.memories) if (!m.taken && m.inCase && dist2(m.pos, this.playerPos) < CASE_KNOCK_RANGE && (!knocker || dist2(m.pos, this.playerPos) < dist2(knocker.pos, this.playerPos))) knocker = m;
+    // (7.3.1, Russell: one memory sounds at a time, the one the character wants found
+    // next, and only once their story is told: never during their introduction or a
+    // memory's story, nor between finding a memory and the end of its story.)
+    const on = this._muTuneOn();
+    const knocker = on && target && target.inCase && !target.taken && dist2(target.pos, this.playerPos) < CASE_KNOCK_RANGE ? target : null;
     for (const m of mu.memories) {
       if (m.taken) continue;
+      const heard = on && m === target;
+      if (!heard && m.voice) { m.voice.fadeout(300); m.voice = null; }
       if (m.inCase) {
-        const [l, r, d] = this._muLevels(m.pos, CASE_GAIN * (m === knocker || !knocker ? 1 : 0.6), MU_TUNE_RANGE, MU_TUNE_FLOOR);
-        if (!m.voice && this.audio.has(CASE_SOUND)) m.voice = this._muPlay(CASE_SOUND, { loops: -1, volume: 0.0, fadeMs: 300 });
+        const [l, r, d] = this._muLevels(m.pos, CASE_GAIN, MU_TUNE_RANGE, MU_TUNE_FLOOR);
+        if (heard && !m.voice && this.audio.has(CASE_SOUND)) m.voice = this._muPlay(CASE_SOUND, { loops: -1, volume: 0.0, fadeMs: 300 });
         if (m.voice) m.voice.setVolume(l, r, this._behind(m.pos));
         m.knockT = Math.max(0, m.knockT - dt);
         if (m === knocker && d < CASE_KNOCK_RANGE && m.knockT <= 0 && this.audio.has(CASE_KNOCK)) {
@@ -690,8 +705,8 @@ const mixin = {
           if (!m.near) { m.near = true; if (this.audio.has(CASE_CHIME)) this._muPlay(CASE_CHIME, { at: m.pos, volume: 0.8, keep: true }); }
         } else if (d > CASE_REARM || off > CASE_UNLINED) m.near = false;
       } else {
-        const gain = MU_TUNE_GAIN * (m === target ? 1 : MU_TUNE_OTHERS);
-        const [l, r] = this._muLevels(m.pos, gain, MU_TUNE_RANGE, MU_TUNE_FLOOR, true);
+        if (!heard) continue;
+        const [l, r] = this._muLevels(m.pos, MU_TUNE_GAIN, MU_TUNE_RANGE, MU_TUNE_FLOOR, true);
         if (!m.voice && this.audio.has(m.tune)) m.voice = this._muPlay(m.tune, { loops: -1, volume: 0.0, fadeMs: 200 });
         if (m.voice) m.voice.setVolume(l, r, this._behind(m.pos));
       }
@@ -721,6 +736,7 @@ const mixin = {
     if (mu.storyIn > 0) this._muTellStory();      // (another memory before the last one's story: that story first)
     m.taken = true;
     if (m.voice) { m.voice.fadeout(150); m.voice = null; }
+    mu.storyHold = true;
     mu.found += 1;
     mu.memoriesTotal += 1;
     if (this.audio.has(m.tune)) this._muPlay(m.tune, { at: m.pos, volume: 1.0, keep: true });
@@ -765,6 +781,7 @@ const mixin = {
     const mu = this.mu; const sp = mu.speaker;
     const f = () => {
       if (this.mu !== mu || mu.dead) return;
+      mu.storyHold = false;
       sp.pause = MU_PAUSE;
       if (mu.found >= mu.count) { this._muOpenDoor(); return; }
       this._muNextTarget();
@@ -1336,7 +1353,7 @@ const mixin = {
 const HELP_SECTIONS = [
   ['The Museum', [
     { title: 'The Museum', sound: null, desc: 'The Museum is a mode of its own, new in 7.2.0, inspired by Papa Sangre, where you must save a soul in the land of the dead, and by Papa Sangre II, which has a Museum of Memories of its own. Each museum holds the soul of one of the characters of Ultimate Mode\'s safe zones, chosen at random, and you hear their own world playing softly through a great echoing hall. Their memories are scattered through the museum. Find every one, then walk out of the door, and their soul is free. Then you walk on into the next museum, with another character, and one more memory to find. There is no clock. You turn and walk as in every walking mode (see General Turning). Double tap for the level, the memories found and the way you are facing.' },
-    { title: 'The Museum Memories', sound: null, desc: 'A memory sounds like music: each one plays a little tune of its own, over and over, where it lies, so you can tell them apart, and the nearest plays louder than the rest. The tunes are your only guide: the character does not call you to them, and you hear every tune from anywhere in the museum. Walk onto a memory to take it, and its whole tune plays once. About one memory in three is locked in a glass case instead: it hums, and the nearest case knocks as you close in, faster as you come nearer; when you are beside it and facing it a bell rings: tap with two fingers to smash it, or press the spacebar, and the memory is yours at once; a few seconds later the character tells you about it. But smashing glass is loud. The first museum has three memories, and each museum after it has one more, up to eight.' },
+    { title: 'The Museum Memories', sound: null, desc: 'A memory sounds like music: each one plays a little tune of its own, over and over, where it lies. Only one memory sounds at a time: the next one to find, which you hear from anywhere in the museum, and only once the character has finished speaking: it starts after their introduction, and after each memory\'s story the next one starts. The tune is your only guide: the character does not call you to it. Walk onto a memory to take it, and its whole tune plays once. About one memory in three is locked in a glass case instead: when it is the one sounding it hums, and knocks as you close in, faster as you come nearer; when you are beside it and facing it a bell rings: tap with two fingers to smash it, or press the spacebar, and the memory is yours at once; a few seconds later the character tells you about it. But smashing glass is loud. The first museum has three memories, and each museum after it has one more, up to eight.' },
     { title: 'The Museum Characters', sound: null, desc: 'The character whose museum it is guides you. They call to you from beside the memory they want you to find next, the nearest one, in their own voice, so walk toward their voice. Each memory you find gives them back a piece of their life, and they tell you about it. They do not call you to the memories: follow the memories\' own tunes. When every memory is found, they say nothing of the door: listen for its buzzer. As you walk out, they say goodbye, and they are free. They also warn you whenever you come close to the edge of a bottomless pool.' },
     { title: 'The Museum Bottomless Pools', sound: null, desc: 'The one danger in the museum is its bottomless pools, which dissolve memory. They lie all through the museum, many of them close around the memories, and sometimes you have to go around one to reach a memory. Each pool bubbles where it lies, louder as you come closer, and the nearest few are heard at once. When the step straight ahead of you would take you into a pool, the character warns you, so stop, turn, and go another way; a pool beside you or behind you is not called ahead, so listen to its bubbling too. You fall in only walking straight at a pool: one off to your side you simply walk round. Fall into a pool, and the run is over at once. There are no lives. Every museum has more pools than the last, closer around the memories, but there is always a way through to every memory and to the door.' },
     { title: 'The Museum Creatures', sound: null, desc: 'Creatures sleep in the museum: one in the first museum, two in the second, and three from the third museum on. You hear them breathing softly. They wake only on noise, never because you walk near them. Smash a glass case (unless it holds a fiery memory, whose sparks wake them instead), and every creature wakes with a roar from where it sleeps, so you can tell which way it is coming, and charges you for about three seconds, growling, with a footstep for every step it runs. Run the other way: you are a little faster than they are. A smashed case leaves its broken glass on the floor, crunching under your feet: step on it while no creature is charging, and the noise wakes them for about two seconds; while they are already charging, it adds nothing. The glass stays only in that museum. A creature that reaches you knocks you toward the nearest bottomless pool and leaves you one step from its edge, so be careful which way you step next. Then it calms down and walks away, and the other creatures lose your trail for a moment, so you are never shoved twice in a row. You cannot shoot them.' },

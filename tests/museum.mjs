@@ -144,7 +144,11 @@ const first = await page.evaluate(async () => {
   const g = window.__el.game; const t = window.__t; const mu = g.mu;
   t.calm();
   for (const m of mu.memories) { m.inCase = false; m.fiery = false; }
-  await t.frames(16.0);
+  // (7.3.1) Nothing sounds while the character introduces themselves.
+  await t.frames(1.0);
+  const duringIntro = mu.memories.filter((m) => m.voice).length;
+  const introTalking = g._muTalking();
+  await t.frames(15.0);
   const sp = mu.speaker;
   const target = sp.target;
   const nearest = mu.memories.reduce((b, m) => (!b || Math.hypot(m.pos[0] - g.playerPos[0], m.pos[1] - g.playerPos[1]) < Math.hypot(b.pos[0] - g.playerPos[0], b.pos[1] - g.playerPos[1]) ? m : b), null);
@@ -152,26 +156,31 @@ const first = await page.evaluate(async () => {
   const said = t.lines();
   const r = { introFirst: /\.intro\.1$/.test(said[0] || ''), calls: said.filter((id) => /\.call\./.test(id)).length,
     atTarget: sp.pos && Math.hypot(sp.pos[0] - target.pos[0], sp.pos[1] - target.pos[1]) < 0.01, nearest: target === nearest, tuneLoops,
-    recorded: sp.voice ? /^mu_line_/.test(sp.voice.name) : null };
+    recorded: sp.voice ? /^mu_line_/.test(sp.voice.name) : null, duringIntro, introTalking,
+    onlyTarget: mu.memories.every((m) => !!m.voice === (m === target)) };
   await t.walkTo(target.pos, 1.0);
   await t.frames(0.2);
   r.taken = target.taken; r.found = mu.found;
   r.tuneOnce = t.played.filter((n) => n === target.tune).length >= 1;
   await t.frames(0.5);
   r.story = (sp.line && sp.line.id) || (sp.queue[0] && sp.queue[0].id) || null;
+  r.silentInStory = mu.memories.every((m) => !m.voice);
   await t.frames(14);
   r.next = sp.target && sp.target !== target && !sp.target.taken;
+  r.nextOnly = !g._muTalking() && mu.memories.every((m) => m.taken || !!m.voice === (m === sp.target));
   r.said = t.lines();
   return r;
 });
 check(first.introFirst, 'the character introduces themselves first');
 check(first.calls === 0, `the character never calls you to the memories: only their tunes guide you (7.2.17; ${first.calls} calls)`);
 check(first.atTarget && first.nearest, 'from beside the nearest memory');
-check(first.tuneLoops === 3, 'each memory\'s tune loops where it lies');
+check(first.introTalking && first.duringIntro === 0, 'no memory sounds while the character introduces themselves (7.3.1)');
+check(first.tuneLoops === 1 && first.onlyTarget, `then only one memory sounds, the one to find next, its tune looping where it lies (7.3.1): ${first.tuneLoops}`);
 check(first.recorded !== false, 'a line is the character\'s recording');
 check(first.taken && first.found === 1 && first.tuneOnce, 'walking onto a memory takes it, and its tune plays once');
 check(/\.memory\.1$/.test(first.story || ''), `the character remembers: the first memory's line (${first.story})`);
-check(first.next, 'then the next memory is the one its tune leads to, louder than the rest');
+check(first.silentInStory, 'no memory sounds while the character tells a memory\'s story (7.3.1)');
+check(first.next && first.nextOnly, 'after the story, the next memory sounds, and only that one (7.3.1)');
 
 // The rest, and the door.
 const door = await page.evaluate(async () => {

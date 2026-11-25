@@ -279,13 +279,16 @@ const mixin = {
   // loudness as you come near (`floor` keeps it heard across the room).
   _smPlace(name, pos, { gain = 0.9, range = 40.0, floor = 0.12, tag = null } = {}) {
     if (!name || !this.audio.has(name)) return null;
-    const s = { name, pos, gain, range, floor, tag, voice: this.audio.play(name, { loops: -1, volume: 0.0, fadeMs: 300 }) };
+    // (7.3.1, Russell: a room's own sounds start only once Bella has said what to do;
+    // until then only its background plays. sm.live: they may sound.)
+    const s = { name, pos, gain, range, floor, tag, voice: this.sm.live ? this.audio.play(name, { loops: -1, volume: 0.0, fadeMs: 300 }) : null };
     this.sm.sounds.push(s);
     this._smLevelSound(s);
     return s;
   },
 
   _smLevelSound(s) {
+    if (!s.voice && this.sm.live) s.voice = this.audio.play(s.name, { loops: -1, volume: 0.0, fadeMs: 300 });
     if (!s.voice || !s.voice.busy) return;
     const [l, r] = this._smLevels(s.pos, s.gain, s.range, s.floor);
     s.voice.setVolume(l, r, this._behind(s.pos));
@@ -333,6 +336,8 @@ const mixin = {
     sm.chapter = n;
     sm.twist = null;
     sm.phase = 'story';
+    sm.live = false;
+    sm.waitFor = null;
     this.level = n;
     this.playerPos = [0.0, 0.0];
     this.arenaLimit = SM_HALF;
@@ -395,6 +400,7 @@ const mixin = {
   // The task line heard out: the task counts from now. Chapter 10 has none: its door opens.
   _smTaskBegins() {
     const sm = this.sm;
+    sm.live = true;
     if (sm.chapter === 10) { sm.phase = 'done'; this._smOpenDoor(); return; }
     sm.phase = 'task';
   },
@@ -428,7 +434,7 @@ const mixin = {
       if (!pos) pos = [0, -SM_HALF + 3];
     }
     if (sm.door && sm.door.voice && dist2(sm.door.pos, pos) > 0.01) { sm.door.voice.fadeout(300); sm.door.voice = null; }
-    if (!sm.door || !sm.door.voice) sm.door = { pos, voice: this.audio.play(SM_DOOR, { loops: -1, volume: 0.0, fadeMs: 400 }) };
+    if (!sm.door || !sm.door.voice) sm.door = { pos, voice: sm.live ? this.audio.play(SM_DOOR, { loops: -1, volume: 0.0, fadeMs: 400 }) : null };
     sm.door.open = sound;
     if (sound) this._smShot(SM_DOOR_OPEN, pos, 0.9, true);
     this._smLevelDoor();
@@ -436,6 +442,7 @@ const mixin = {
 
   _smLevelDoor() {
     const door = this.sm.door;
+    if (door && !door.voice && this.sm.live) door.voice = this.audio.play(SM_DOOR, { loops: -1, volume: 0.0, fadeMs: 400 });
     if (!door || !door.voice) return 1e9;
     const [l, r, d] = this._smLevels(door.pos, SM_DOOR_LEVEL, 45.0, 0.2);
     door.voice.setVolume(l, r, this._behind(door.pos));
@@ -468,6 +475,7 @@ const mixin = {
     this._smHush();
     sm.twistDone = true;
     sm.phase = 'story';
+    sm.live = false;
     const t = sm.twist = { kind: kind || choice(TWISTS), hp: SM_GUARDIAN_HITS, targets: [] };
     sm.room = { n: 'twist' };
     this.playerPos = [0.0, 0.0];
@@ -475,9 +483,16 @@ const mixin = {
     this.stride = null;
     this._face(0, true);
     this._syncRoom();
-    const thunder = AB_THUNDERS.find((s) => this.audio.has(s));
-    if (thunder) this.audio.play(thunder, { volume: 0.9, keep: true });
-    this._smQueue('story.twist.twist', { after: () => this._smTwistArea() });
+    // (7.3.1, Russell: the thunder cut her line off. She says it first, in silence; then
+    // the thunder, heard out; then the practice area.)
+    this._smQueue('story.twist.twist', {
+      after: () => {
+        if (this.sm !== sm || sm.twist !== t) return;
+        const thunder = AB_THUNDERS.find((s) => this.audio.has(s));
+        const v = thunder ? this.audio.play(thunder, { volume: 0.9, keep: true }) : null;
+        sm.waitFor = { voice: v, then: () => this._smTwistArea() };
+      },
+    });
   },
 
   _smTwistArea() {
@@ -502,7 +517,7 @@ const mixin = {
       this._smBackground(AB_BACKGROUND, AMBIENCE_LEVEL);
     }
     this._smSyncTwistRoom();
-    this._smQueue(`story.twist.${t.kind}`, { after: () => { if (this.sm === sm && sm.twist === t) sm.phase = 'task'; } });
+    this._smQueue(`story.twist.${t.kind}`, { after: () => { if (this.sm === sm && sm.twist === t) { sm.phase = 'task'; sm.live = true; } } });
   },
 
   _smSyncTwistRoom() { this._syncRoom(); },
@@ -564,6 +579,8 @@ const mixin = {
     if (!sm || this.isPaused || this.state !== STATE) return;
     this._smUpdateSay(dt);
     if (this.sm !== sm || this.state !== STATE) return;
+    // A sound heard out before what comes next (the twist's thunder).
+    if (sm.waitFor && !(sm.waitFor.voice && sm.waitFor.voice.busy)) { const f = sm.waitFor.then; sm.waitFor = null; f(); if (this.sm !== sm) return; }
     const room = sm.room;
     if (!room) return;
     // Sounds that move, or call now and then.
@@ -571,7 +588,7 @@ const mixin = {
       room.angle = (room.angle + TAU / SM_CIRCLE_LAP * dt) % TAU;
       room.circler.pos = at([0, 0], room.angle, SM_CIRCLE_R);
     }
-    if (room.n === 8) {
+    if (room.n === 8 && sm.live) {
       for (const s of room.shots) { s.t -= dt; if (s.t <= 0) { s.t += s.every; this._smShot(s.name, s.pos, s.volume); } }
     }
     for (const s of sm.sounds) this._smLevelSound(s);

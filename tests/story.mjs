@@ -99,13 +99,15 @@ const c1 = await page.evaluate(async () => {
   const g = window.__el.game; const t = window.__t;
   g.scores.settings.storyDone = false;
   g.menuIndex = g.menuKeys.indexOf('story'); g.input('enter'); await t.frames(0.5);
-  const out = { state: g.state, chapter: g.sm.chapter, first: t.lines[0] && t.lines[0][0], recorded: t.played.includes('sm_line'), phase: g.sm.phase, bell: !!g.sm.room.bell };
+  const out = { state: g.state, chapter: g.sm.chapter, first: t.lines[0] && t.lines[0][0], recorded: t.played.includes('sm_line'), phase: g.sm.phase, bell: !!g.sm.room.bell,
+    bellQuiet: !g.sm.room.bell.voice, bgOn: !!g.sm.bg };
   // Turning before the task has been given does not count.
   t.face(g.sm.room.bell.pos); await t.frames(1.0);
   out.early = g.sm.phase;
   await t.skip();
   out.lines = t.lines.map((l) => l[0]);
   out.task = g.sm.phase;
+  await t.frames(0.1); out.bellOn = !!(g.sm.room.bell.voice && g.sm.room.bell.voice.busy);
   g._face(g.tn.face + Math.PI / 2, true); await t.frames(1.0);
   out.offCentre = g.sm.phase;
   t.face(g.sm.room.bell.pos); await t.frames(0.2);
@@ -122,6 +124,7 @@ const c1 = await page.evaluate(async () => {
   return out;
 });
 check(c1.state === 'story' && c1.chapter === 1 && c1.first === 'story.1.story' && c1.recorded, 'the first time, Story Mode begins at chapter 1, with Bella\'s recorded story line');
+check(c1.bellQuiet && c1.bgOn && c1.bellOn, 'the room\'s background plays while Bella speaks; the bell starts only once she has said what to do (7.3.1)');
 check(c1.early === 'story' && c1.lines.join() === 'story.1.story,story.1.task' && c1.task === 'task', 'the story, then the task: the task counts only once it has been given');
 check(c1.offCentre === 'task' && c1.brief === 'task' && c1.done === 'done' && c1.chime, 'chapter 1: the bell held centred for half a second is the task done, with a chime; off centre, or only a moment, is not');
 check(c1.doorSound === 'later' && c1.doneLine && c1.door && c1.opened, 'Bella\'s done line, and then the door opens and sounds');
@@ -187,12 +190,24 @@ const tw = await page.evaluate(async () => {
   const g = window.__el.game; const t = window.__t; const out = {};
   out.through = await t.through();
   out.twist = g.sm.twist && g.sm.twist.kind;
-  out.thunder = t.played.some((n) => /^ab_thunder_/.test(n));
+  await t.frames(0.3);
   out.line = t.lines[t.lines.length - 1][0];
+  out.thunderFirst = t.played.some((n) => /^ab_thunder_/.test(n));
+  // Her line heard out: then the thunder, heard out, before the practice area's line.
+  const s = g.sm.say; if (s.voice) s.voice.stop(); s.until = 0;
+  await t.frames(0.3);
+  out.thunder = t.played.some((n) => /^ab_thunder_/.test(n));
+  out.areaWaits = !t.lines.some((l) => l[0] === `story.twist.${out.twist}`);
+  for (let i = 0; i < 80 && !t.lines.some((l) => l[0] === `story.twist.${out.twist}`); i++) await t.frames(0.1);
+  out.areaLine = t.lines.some((l) => l[0] === `story.twist.${out.twist}`);
+  out.targetsQuiet = g.sm.twist.targets.every((x) => !x.voice);
   out.chapter = g.sm.chapter;
   // Each of the three practice areas, in turn.
   for (const kind of ['battle', 'guardian', 'abyss']) {
     g._smTwist(kind);
+    await t.skip();
+    // (Then the thunder, heard out, before the area and its line.)
+    for (let i = 0; i < 80 && !g.sm.twist.targets.length; i++) await t.frames(0.1);
     await t.skip();
     const r = out[kind] = { line: t.lines.slice(-2).map((l) => l[0]).join(), phase: g.sm.phase, targets: g.sm.twist.targets.length };
     const tg = g.sm.twist.targets;
@@ -227,6 +242,7 @@ const tw = await page.evaluate(async () => {
   out.warp = t.played.some((n) => /evt_exit_warp/.test(n));
   return out;
 });
+check(!tw.thunderFirst && tw.thunder && tw.areaWaits && tw.areaLine && tw.targetsQuiet, 'the twist: Bella\'s line first, in silence; then the thunder, heard out; then the practice area, whose targets sound only after her line (7.3.1)');
 check(tw.through && ['battle', 'guardian', 'abyss'].includes(tw.twist) && tw.thunder && tw.line === 'story.twist.twist', `after chapter 5's door, the twist: thunder, "${'But not everything here is so easy.'}", and a practice area at random (${tw.twist})`);
 check(tw.battle.line === 'story.twist.twist,story.twist.battle' || tw.battle.line.endsWith('story.twist.battle'), 'the battle area: Bella says what it is');
 check(tw.battle.targets === 3 && tw.battle.miss && tw.battle.hits === 3 && tw.battle.done === 'done', 'the battle area: three enemies standing still; a shot off centre misses, and three centred shots bring them down');
