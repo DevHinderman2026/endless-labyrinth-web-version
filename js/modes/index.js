@@ -14,6 +14,7 @@ import ultimate from './ultimate.js';
 import events from './events.js';
 import findvoice from './findvoice.js';
 import abyss from './abyss.js';
+import edge from './edge.js';
 import park from './park.js';
 import museum from './museum.js';
 import story from './story.js';
@@ -26,4 +27,6 @@ import story from './story.js';
 // Web 7.2.0 (Russell, 23 Nov): The Museum comes after the Water Park.
 // Web 7.3.0: Story Mode comes after The Museum. Web 7.5.0 (Russell): it comes first
 // on the main menu, above Standard Mode (its menu item is marked first).
-export const MODES = [driving, tower, island, findvoice, abyss, park, museum, story, ultimate, chaos, events];
+// Web 8.0.0 (Russell, 25 Nov): The Edge, The Abyss's sub mode, comes right after it (its
+// help and its high scores after The Abyss's); it has no main menu entry of its own.
+export const MODES = [driving, tower, island, findvoice, abyss, edge, park, museum, story, ultimate, chaos, events];

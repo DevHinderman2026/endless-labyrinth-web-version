@@ -41,7 +41,7 @@ await page.evaluate(() => {
   g._chaosPickNext = (w) => (t.seq.length ? t.seq[t.pick++ % t.seq.length] : pick(w));
   t.frames = (seconds, dt = 1 / 30) => { for (let i = 0; i < Math.round(seconds / dt); i++) g.frame(dt); };
   t.menu = () => { if (g.state !== 'menu') { g._stopRunSounds(); g.runId += 1; g.state = 'menu'; g._refreshMenu(); } };
-  t.start = (key, seq = []) => { t.menu(); t.seq = seq; t.pick = 0; t.said.length = 0; g.menuIndex = g.menuKeys.indexOf(key); g.input('enter'); g.frame(1 / 30); };
+  t.start = (key, seq = []) => { t.menu(); t.seq = seq; t.pick = 0; t.said.length = 0; g.menuIndex = g.menuKeys.indexOf(key); g.input('enter'); if (g.state === 'abyss_menu') { t.said.length = 0; g.input('enter'); } g.frame(1 / 30); };   // (8.0.0: The Abyss's own menu, The Abyss first)
   t.loops = () => [...a.live].filter((v) => v.loop && v.busy && !v.fadingOut).map((v) => v.name);
   // A quiet abyss to test in: no lightning due, every creature and case placed by hand.
   t.calm = () => { const ab = g.ab; ab.nextStrike = 1e9; ab.cover = 0; ab.grace = 0; if (g.timeLeft < 900) g.timeLeft = 999; };

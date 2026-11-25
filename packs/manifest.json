@@ -91,6 +91,10 @@
   "story-voice": {
    "file": "story-voice-ae5cd47432.elpack",
    "bytes": 4669172
+  },
+  "edge": {
+   "file": "edge-757ccae43c.elpack",
+   "bytes": 146793
   }
  }
 }

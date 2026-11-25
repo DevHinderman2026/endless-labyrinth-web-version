@@ -1354,7 +1354,7 @@ export class Game {
       return v <= 0 ? `${label}: No score yet` : `${label}: ${fmt(v)}`;
     };
     // In the desktop's _score_lines order; a board it does not list goes after.
-    const order = ['chaos', 'tower', 'drive', 'drive_distance', 'island', 'findvoice', 'abyss', 'park_tokens', 'museum', 'ultimate'];
+    const order = ['chaos', 'tower', 'drive', 'drive_distance', 'island', 'findvoice', 'abyss', 'edge', 'park_tokens', 'museum', 'ultimate'];
     const rank = (b) => (order.includes(b.key) ? order.indexOf(b.key) : order.length);
     const boards = MODES.flatMap((md) => md.boards || []).map((b, i) => [b, i])
       .sort((a, b) => rank(a[0]) - rank(b[0]) || a[1] - b[1]).map(([b]) => b);
@@ -2070,6 +2070,7 @@ export class Game {
     if (this.state === S.STANDARD) return 'standard';
     if (this.state === S.BATTLE) return 'battle';
     const m = modeOf(this.state);
+    if (m && m.statKey) return m.statKey;      // (8.0.0: The Edge, which has no menu entry of its own)
     return m && m.menu && m.menu[0] ? ({ events: 'event' }[m.menu[0].key] || m.menu[0].key) : null;
   }
 

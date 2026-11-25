@@ -24,7 +24,7 @@ function el(tag, attrs = {}, children = []) {
   return e;
 }
 
-export const MODE_NAMES = { standard: 'Standard Mode', battle: 'Battle Mode', drive: 'Driving Mode', tower: 'Tower Mode', island: 'Island Mode', chaos: 'Chaos Mode', findvoice: 'Find the Voice', abyss: 'The Abyss', park: 'Water Park', museum: 'The Museum', ultimate: 'Ultimate Mode', event: 'Events' };
+export const MODE_NAMES = { standard: 'Standard Mode', battle: 'Battle Mode', drive: 'Driving Mode', tower: 'Tower Mode', island: 'Island Mode', chaos: 'Chaos Mode', findvoice: 'Find the Voice', abyss: 'The Abyss', edge: 'The Edge', park: 'Water Park', museum: 'The Museum', ultimate: 'Ultimate Mode', event: 'Events' };
 
 // The high score boards, in the game's own High Scores order and words.
 export const BOARDS = [
@@ -35,6 +35,7 @@ export const BOARDS = [
   ['island', 'Island Mode', (v) => count(v, 'point')],
   ['findvoice', 'Find the Voice', (v) => count(v, 'level')],
   ['abyss', 'The Abyss', (v) => count(v, 'case')],
+  ['edge', 'The Edge', (v) => count(v, 'crossing')],
   ['park_tokens', 'Water Park', (v) => count(v, 'token')],
   ['museum', 'The Museum', (v) => count(v, 'soul')],
   ['ultimate', 'Ultimate Mode', (v) => count(v, 'point')],

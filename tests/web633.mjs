@@ -248,7 +248,7 @@ await page.evaluate(() => { const g = window.__el.game; g._stopRunSounds(); g.ru
 const abyss = await page.evaluate(async () => {
   const g = window.__el.game; const a = window.__el.audio;
   const AB = await import('./js/modes/abyss.js'); const UT = await import('./js/modes/ultimate.js');
-  g.menuIndex = g.menuKeys.indexOf('abyss'); g.input('enter');
+  g.menuIndex = g.menuKeys.indexOf('abyss'); g.input('enter'); if (g.state === 'abyss_menu') g.input('enter');
   const ab = g.ab;
   // The odds, over many cases.
   const roll = (chaos) => { ab.chaos = chaos; let l = 0; let life = 0; const n = 4000; for (let i = 0; i < n; i++) { const c = g._abNewCase(); if (c.lightning) l += 1; if (c.life) life += 1; ab.cases.splice(ab.cases.indexOf(c), 1); } ab.chaos = false; return { l: l / n, life: life / n }; };
