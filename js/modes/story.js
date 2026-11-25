@@ -1,20 +1,23 @@
 // Story Mode (web 7.3.0, Russell's design, 25 November 2026; website only).
 //
-// A walk through the story of how Endless Labyrinth was made, in ten chapters. Bella,
-// the game's own recorded voice, tells each part of the story as you arrive in a room
-// from that part of the game's life; one small task in the room shows off the web
-// game's 3D sound. When the task is done a door starts to sound: find it by ear and walk
-// through it into the next chapter. Nothing can hurt you, there is no clock, and no
-// task can be failed.
+// A walk through how Endless Labyrinth works, told by Bella, the game's own recorded
+// voice: twenty chapters (web 7.4.0; 7.3.0's ten told how the game was made, which the
+// website's Story page already tells). The first seven are the basics: headphones and
+// centring a sound, turning, in front and behind, distance and walking, walls, echo and
+// the report. Then a chapter for every mode, each a small room with one task. Bella
+// tells the chapter and gives the task; only the room's background plays while she
+// talks, and its own sounds (and the door) start once she has finished (7.3.1, Russell).
+// When the task is done a door opens: find it by ear and walk through it. Nothing can
+// hurt you, there is no clock, and no task can be failed.
 //
-// Midway, once (Russell: "but not everything is so easy"), walking out of chapter 5
-// drops you into one practice area at random: a battle whose three enemies stand still,
-// an island's guardian that never moves, or the abyss with a glass case to smash. Bella
-// says what it is, you finish its one task, and you are pulled back into the story.
+// Midway, once, after chapter 10 (Russell: "but not everything is so easy"), you are
+// dropped into one practice area at random: a battle whose three enemies stand still, an
+// island's guardian that never moves, or the abyss with a glass case to smash. Bella says
+// what it is, you finish its one task, and you are pulled back into the story.
 //
 // The first time through, the chapters come in order. Once the story has been walked to
-// its end (the setting storyDone), Story Mode opens with a list of the chapters; the
-// story carries on from the chapter chosen to the end.
+// its end (the setting storyDone2: 7.4.0 started everyone afresh), Story Mode opens with
+// a list of the chapters; the story carries on from the chapter chosen to the end.
 //
 // Bella's lines are js/storymode-lines.js, recorded (packs/story-voice-*.elpack, played
 // by their ids as the characters' lines are: js/voice.js CastVoices). Without their
@@ -47,29 +50,44 @@ export const SM_VOICE_SEND = 0.12;
 export const SM_WAIT_VOICE = 2.5;               // seconds a line waits for its recording to be decoded
 export const SM_STEPS_STONE = ['step_stone_1', 'step_stone_2', 'step_stone_3', 'step_stone_4'];
 export const SM_STEPS_WATER = ['ut_water_step_1', 'ut_water_step_2', 'ut_water_step_3', 'ut_water_step_4'];
+export const SM_REACH = 3.0;                    // units: this near a goal (the stairs, the elevator, a corridor's end) is reaching it
 // Chapter 1: the bell is centred within this share of its distance, for this long.
 export const SM_CENTRED = 0.17;                 // about 10 degrees either side
 export const SM_CENTRED_FOR = 0.5;
-// Chapter 2: the circling enemy, and how long it must be behind you, then in front.
+// Chapter 2: facing north, held this long (a turn that has landed).
+export const SM_NORTH_FOR = 0.3;
+// Chapter 3: the circling enemy, and how long it must be behind you, then in front.
 export const SM_CIRCLE_R = 12.0;
 export const SM_CIRCLE_LAP = 24.0;              // seconds a lap
 export const SM_BEHIND_FOR = 1.2;
 export const SM_FRONT_FOR = 0.8;
-// Chapter 3: the fountain is reached this near; it fades over this far.
+// Chapter 4: the fountain is reached this near; it fades over this far.
 export const SM_FOUNTAIN_REACH = 5.0;
 export const SM_FOUNTAIN_RANGE = 34.0;
-// Chapter 5: the small room, and where the great hall begins.
+// Chapter 6: the small room, and where the great hall begins.
 export const SM_SMALL_HALF = 6.0;               // the small room: this far each side
 export const SM_SMALL_BACK = 6.0;               // ... its back wall (you begin a step in front of it)
 export const SM_HALL_FROM = -3.0;               // the opening: the hall is north of this (two steps ahead)
 export const SM_HALL_DONE = -12.0;              // three steps into the hall
 export const SM_HALL_FAR = -48.0;               // the hall's far wall (15 steps on)
-// Chapter 6: Bella calls from here, and is reached this near.
+// Chapter 10: the road's three lanes, and the car coming at you.
+export const SM_LANES = [-4.0, 0.0, 4.0];
+export const SM_CAR_FROM = 60.0;                // it starts this far ahead
+export const SM_CAR_SPEED = 12.0;               // units a second
+export const SM_CAR_WAIT = 8.0;                 // in your lane, it waits this far ahead until you move
+export const SM_CAR_GONE = 30.0;                // and is gone this far behind you
+// Chapter 13: Bella calls from here, and is reached this near.
 export const SM_BELLA_DIST = [20.0, 26.0];
 export const SM_BELLA_REACH = 6.0;
 export const SM_CALL_GAP = [1.0, 2.0];
 export const SM_CALLS = 5;
-// The practice areas.
+// Chapter 17: two places, the border between them at the room's middle.
+export const SM_AREA_START = 12.0;              // you begin four steps south of the border
+export const SM_AREA_BLEND = 6.0;               // the next place is heard from two steps before the border
+export const SM_AREA_DONE = -9.0;               // three steps past it
+// Chapter 19: the items of the collecting mission.
+export const SM_ITEMS = 3;
+// The practice areas (the twist), and chapter 9's battle.
 export const SM_ENEMIES = 3;
 export const SM_AIM = 0.3;                      // a shot hits what is centred within this share of its distance
 export const SM_GUARDIAN_HITS = 3;
@@ -78,19 +96,35 @@ export const SM_GUARDIAN_GAIN = 1.3;
 const RATE = 44100;
 const VOICE_ROOMS = ['lab', 'tower', 'battle', 'cathedral', 'hall'];
 
-// The chapters, as the chapter list names them, and each room's echo.
+// The chapters, as the chapter list names them, and each room's echo (web 7.4.0: the
+// new Story Mode, about how the game works; Russell, 25 November 2026).
 export const CHAPTERS = [
-  { n: 1, title: 'Where it started', room: 'lab' },
-  { n: 2, title: 'Growing into six modes', room: 'battle' },
-  { n: 3, title: 'Building a world out of sound', room: 'battle' },
-  { n: 4, title: 'Phones, tablets and computers', room: 'lab' },
-  { n: 5, title: 'Ultimate Mode', room: 'lab' },
-  { n: 6, title: 'A voice of its own', room: 'battle' },
-  { n: 7, title: 'Papa Sangre and The Abyss', room: 'battle' },
-  { n: 8, title: 'Water Park', room: 'hall' },
-  { n: 9, title: 'The Museum', room: 'hall' },
-  { n: 10, title: 'How the game is made today', room: 'lab' },
+  { n: 1, title: 'Welcome', room: 'lab' },
+  { n: 2, title: 'Turning', room: 'lab' },
+  { n: 3, title: 'In front and behind', room: 'battle' },
+  { n: 4, title: 'Distance and walking', room: 'battle' },
+  { n: 5, title: 'Walls and edges', room: 'lab' },
+  { n: 6, title: 'Echo', room: 'lab' },
+  { n: 7, title: 'The report', room: 'lab' },
+  { n: 8, title: 'Standard Mode', room: 'lab' },
+  { n: 9, title: 'Battle Mode', room: 'battle' },
+  { n: 10, title: 'Driving Mode', room: null },
+  { n: 11, title: 'Tower Mode', room: 'tower' },
+  { n: 12, title: 'Island Mode', room: null },
+  { n: 13, title: 'Find the Voice', room: 'battle' },
+  { n: 14, title: 'The Abyss', room: 'battle' },
+  { n: 15, title: 'Water Park', room: 'hall' },
+  { n: 16, title: 'The Museum', room: 'hall' },
+  { n: 17, title: 'Ultimate Mode', room: 'lab' },
+  { n: 18, title: 'Chaos Mode', room: 'battle' },
+  { n: 19, title: 'Events', room: 'battle' },
+  { n: 20, title: 'Help and settings', room: 'lab' },
 ];
+export const SM_CHAPTERS = CHAPTERS.length;
+export const SM_TWIST_AFTER = 10;               // the twist comes after this chapter's door
+// The setting that says the story has been walked to its end. (7.4.0: a new one, so
+// every player walks the new, longer story in order before the chapter list opens.)
+export const SM_DONE_KEY = 'storyDone2';
 export const TWISTS = ['battle', 'guardian', 'abyss'];
 
 // ------------------------------------------------------------------ helpers
@@ -107,7 +141,7 @@ export function storyLine(id) { return STORY_LINES[id] ? { id, text: STORY_LINES
 
 // The lines a chapter says as you arrive, and when its task is done.
 function linesOf(n) {
-  if (n === 10) return { arrive: ['story.10.story', 'story.10.end'], done: [] };
+  if (n === CHAPTERS.length) return { arrive: [`story.${n}.story`, `story.${n}.end`], done: [] };
   return { arrive: [`story.${n}.story`, `story.${n}.task`], done: [`story.${n}.done`] };
 }
 
@@ -116,7 +150,7 @@ const mixin = {
   // Story Mode from the main menu: the first time, chapter 1; after the story has been
   // walked to its end, the chapter list.
   openStoryMode() {
-    if (this.scores && this.scores.settings && this.scores.settings.storyDone) {
+    if (this.scores && this.scores.settings && this.scores.settings[SM_DONE_KEY]) {
       this.state = MENU_STATE;
       this.storyMenuIndex = 0;
       this.tts.speak('Story Mode. Choose a chapter. ' + this._smMenuLine(0));
@@ -156,7 +190,7 @@ const mixin = {
     this._wake(true);
     if (this.ambienceChannel) { this.ambienceChannel.stop(); this.ambienceChannel = null; }
     if (this.beatChannel) { this.beatChannel.stop(); this.beatChannel = null; }
-    this.sm = { run: this.runId, chapter: 0, twistDone: n > 5, room: null, say: { queue: [], voice: null, until: 0, line: null, waitSince: 0 }, sounds: [], phase: 'story', door: null };
+    this.sm = { run: this.runId, chapter: 0, twistDone: n > SM_TWIST_AFTER, room: null, say: { queue: [], voice: null, until: 0, line: null, waitSince: 0 }, sounds: [], extra: [], phase: 'story', door: null };
     this._smChapter(n);
   },
 
@@ -324,11 +358,17 @@ const mixin = {
     sm.sounds = [];
     if (sm.bg) { if (fadeMs > 0) sm.bg.fadeout(fadeMs); else sm.bg.stop(); sm.bg = null; }
     if (sm.door && sm.door.voice) { if (fadeMs > 0) sm.door.voice.fadeout(fadeMs); else sm.door.voice.stop(); }
+    for (const v of sm.extra) if (v) { if (fadeMs > 0) v.fadeout(fadeMs); else v.stop(); }
+    sm.extra = [];
+    if (sm.room && sm.room.engine) { sm.room.engine.stop(); sm.room.engine = null; }
     sm.door = null;
     sm.room = null;
   },
 
   // ---------------------------------------------------------------- chapters
+  // A chapter: you at the room's start, facing north (chapter 2: any way but north), the
+  // room's background, the places of its sounds (which start only once Bella has told you
+  // what to do: sm.live), and Bella's lines.
   _smChapter(n) {
     const sm = this.sm;
     this._smClearRoom();
@@ -343,66 +383,25 @@ const mixin = {
     this.arenaLimit = SM_HALF;
     this.stride = null;
     this._face(0, true);
+    const room = sm.room = { n, held: 0, step: 0, ok: null, steps: SM_STEPS_STONE };
     this._syncRoom();
-    const room = sm.room = { n, held: 0, step: 0 };
     const p0 = [0, 0];
-    if (n === 1) {
-      room.bell = this._smPlace('event_beacon_bell', at(p0, uniform(70, 290) * Math.PI / 180, 22.0), { gain: 0.9, range: 50, floor: 0.25 });
-      this._smBackground('evt_amb_water_drip', AMBIENCE_LEVEL * 0.7);
-    } else if (n === 2) {
-      room.angle = uniform(0, TAU);
-      const o = choice(['obstacle_3', 'obstacle_5', 'obstacle_1']);
-      room.circler = this._smPlace(o, at(p0, room.angle, SM_CIRCLE_R), { gain: 0.9, range: 40, floor: 0.2 });
-      this._smBackground('drm_06_tribal_beat', 0.3);
-    } else if (n === 3) {
-      room.fountain = this._smPlace(this._smEventName('evt_amb_waterfall'), at(p0, uniform(0, TAU), 26.0), { gain: 1.0, range: SM_FOUNTAIN_RANGE, floor: 0.04 });
-      this._smBackground('evt_amb_morning_birds', AMBIENCE_LEVEL * 0.8);
-    } else if (n === 4) {
-      const b = uniform(0, TAU);
-      this._smPlace(this._smEventName('evt_amb_clock'), at(p0, b, 10.0), { gain: 0.8, range: 30, floor: 0.2 });
-      this._smPlace(this._smEventName('evt_amb_water_drip'), at(p0, b + TAU / 3, 10.0), { gain: 0.8, range: 30, floor: 0.2 });
-      this._smPlace(this._smEventName('evt_owl_hoot'), at(p0, b + 2 * TAU / 3, 10.0), { gain: 0.7, range: 30, floor: 0.2 });
-      room.turned = 0; room.face = this.tn.face;
-    } else if (n === 5) {
-      this.playerPos = [0.0, SM_SMALL_BACK - SM_STEP];
-    } else if (n === 6) {
-      room.bella = at(p0, uniform(0, TAU), uniform(...SM_BELLA_DIST));
-      room.calls = 0; room.wait = 0.8;
-    } else if (n === 7) {
-      const b = uniform(-0.7, 0.7);
-      const door = at(p0, b, 27.0);
-      const mid = at(p0, b, 13.5);
-      const side = choice([-1, 1]) * uniform(4.0, 6.0);
-      room.creature = this._smPlace(this._smEventName(AB_IDLE), [mid[0] + Math.cos(b) * side, mid[1] + Math.sin(b) * side], { gain: 0.9, range: 36, floor: 0.12 });
-      this._smBackground(AB_BACKGROUND, AMBIENCE_LEVEL);
-      this._smOpenDoor(door, { sound: false });
-    } else if (n === 8) {
-      const b = uniform(0, TAU);
-      room.board = at(p0, b, 24.0);
-      room.shots = [
-        { name: 'wp_board', pos: room.board, every: 1.3, t: 0.4, volume: 0.95 },
-        { name: 'wp_wave', pos: at(p0, b + 1.3, 20.0), every: 3.2, t: 1.2, volume: 0.8 },
-        { name: this._smEventName('evt_water_splash'), pos: at(p0, b - 1.4, 22.0), every: 4.1, t: 2.3, volume: 0.8 },
-      ];
-      this._smPlace('wp_bucket_fill', at(p0, b + 2.6, 18.0), { gain: 0.6, range: 40, floor: 0.12 });
-      this._smPlace('wp_organ', at(p0, b - 2.6, 18.0), { gain: 0.45, range: 40, floor: 0.12 });
-      this._smBackground('wp_park', 0.35);
-    } else if (n === 9) {
-      if (!this.audio.has('event_beacon_story_tune')) addMade(this.audio, 'event_beacon_story_tune', tuneSound([0, 2, 4, 5, 4, 2]));
-      room.memory = at(p0, uniform(0, TAU), 22.0);
-      room.tune = this._smPlace('event_beacon_story_tune', room.memory, { gain: 0.75, range: 60, floor: 0.25 });
-    }
+    const set = SETUP[n];
+    if (set) set.call(this, room, p0);
+    this._syncRoom();
     const { arrive } = linesOf(n);
     arrive.forEach((id, i) => this._smQueue(id, { after: i === arrive.length - 1 ? () => this._smTaskBegins() : null }));
     for (const id of linesOf(n).done) this._smPrefetch(id);
   },
 
-  // The task line heard out: the task counts from now. Chapter 10 has none: its door opens.
+  // The task line heard out: the room's sounds start, and the task counts from now. The
+  // last chapter has none: its door opens.
   _smTaskBegins() {
-    const sm = this.sm;
+    const sm = this.sm; const room = sm.room;
     sm.live = true;
-    if (sm.chapter === 10) { sm.phase = 'done'; this._smOpenDoor(); return; }
+    if (sm.chapter === SM_CHAPTERS) { sm.phase = 'done'; this._smOpenDoor(); return; }
     sm.phase = 'task';
+    if (room && room.onLive) room.onLive.call(this, room);
   },
 
   // A task done: the chime, Bella's line, and the door opens.
@@ -412,29 +411,31 @@ const mixin = {
     sm.phase = 'done';
     if (sm.twist) { this._smTwistDone(); return; }
     this.audio.play(SM_DONE, { volume: 0.8, keep: true });
-    const n = sm.chapter;
-    if (n === 1 && room.bell) this._smUnplace(room.bell, 1200);
-    if (n === 2 && room.circler) this._smUnplace(room.circler, 1200);
-    const { done } = linesOf(n);
-    done.forEach((id, i) => this._smQueue(id, { after: i === done.length - 1 && n !== 7 ? () => this._smOpenDoor() : null }));
-    if (n === 7) this._smOpenDoor(sm.door ? sm.door.pos : null);
+    if (room.onDone) room.onDone.call(this, room);
+    const { done } = linesOf(sm.chapter);
+    // (A room whose goal is where its door stands opens the door at once: you are there.)
+    const here = room.doorHere;
+    done.forEach((id, i) => this._smQueue(id, { after: i === done.length - 1 && !here ? () => this._smOpenDoor(room.doorAt || null) : null }));
+    if (here) this._smOpenDoor(sm.door ? sm.door.pos : room.doorAt);
   },
 
   // The door: it opens, and sounds where it stands until you walk through it.
-  // (`sound: false`: chapter 7's door sounds from the start, shut, as the task's goal.)
+  // (`sound: false`: a door that is the task's goal, sounding from the task's start, shut.)
   _smOpenDoor(pos = null, { sound = true } = {}) {
-    const sm = this.sm;
+    const sm = this.sm; const room = sm.room;
     if (sm.door && sm.door.open) return;
     if (!pos) {
-      for (let i = 0; i < 300 && !pos; i++) {
+      const lim = SM_HALF - 2;
+      for (let i = 0; i < 400 && !pos; i++) {
         const p = at(this.playerPos, uniform(0, TAU), uniform(...SM_DOOR_RANGE));
-        const lim = sm.chapter === 5 ? null : SM_HALF - 2;
-        if (lim === null ? this._smInHall(p) && p[1] < SM_HALL_FROM - 6 : Math.abs(p[0]) <= lim && Math.abs(p[1]) <= lim) pos = p;
+        if (room && room.events) { p[0] = Math.round(p[0] / SM_STEP) * SM_STEP; p[1] = Math.round(p[1] / SM_STEP) * SM_STEP; }
+        const fits = room && (room.doorOk || room.ok);
+        if (fits ? fits(p) : Math.abs(p[0]) <= lim && Math.abs(p[1]) <= lim) pos = p;
       }
       if (!pos) pos = [0, -SM_HALF + 3];
     }
     if (sm.door && sm.door.voice && dist2(sm.door.pos, pos) > 0.01) { sm.door.voice.fadeout(300); sm.door.voice = null; }
-    if (!sm.door || !sm.door.voice) sm.door = { pos, voice: sm.live ? this.audio.play(SM_DOOR, { loops: -1, volume: 0.0, fadeMs: 400 }) : null };
+    if (!sm.door || dist2(sm.door.pos, pos) > 0.01) sm.door = { pos, voice: null };
     sm.door.open = sound;
     if (sound) this._smShot(SM_DOOR_OPEN, pos, 0.9, true);
     this._smLevelDoor();
@@ -449,19 +450,19 @@ const mixin = {
     return d;
   },
 
-  // Through the door: the next chapter (after chapter 5, the twist, once); after
-  // chapter 10, the menu.
+  // Through the door: the next chapter (after chapter 10, the twist, once); after the
+  // last, the menu.
   _smThroughDoor() {
     const sm = this.sm;
     this.audio.play(SM_DOOR_CLOSE, { volume: 0.8, keep: true });
     const n = sm.chapter;
-    if (n >= 10) { this._smFinish(); return; }
-    if (n === 5 && !sm.twistDone) { this._smTwist(); return; }
+    if (n >= SM_CHAPTERS) { this._smFinish(); return; }
+    if (n === SM_TWIST_AFTER && !sm.twistDone) { this._smTwist(); return; }
     this._smChapter(n + 1);
   },
 
   _smFinish() {
-    if (this.scores && this.scores.settings) { this.scores.settings.storyDone = true; try { this.scores.save(); } catch (e) { /* kept next time */ } }
+    if (this.scores && this.scores.settings) { this.scores.settings[SM_DONE_KEY] = true; try { this.scores.save(); } catch (e) { /* kept next time */ } }
     this._smStopAll();
     this._stopRunSounds();
     this.runId += 1;
@@ -477,7 +478,7 @@ const mixin = {
     sm.phase = 'story';
     sm.live = false;
     const t = sm.twist = { kind: kind || choice(TWISTS), hp: SM_GUARDIAN_HITS, targets: [] };
-    sm.room = { n: 'twist' };
+    sm.room = { n: 'twist', steps: t.kind === 'abyss' ? AB_STEPS_GLASS : SM_STEPS_STONE };
     this.playerPos = [0.0, 0.0];
     this.arenaLimit = SM_HALF;
     this.stride = null;
@@ -500,12 +501,7 @@ const mixin = {
     if (!t) return;
     const p0 = this.playerPos;
     if (t.kind === 'battle') {
-      const b = uniform(0, TAU);
-      const names = ['obstacle_0', 'obstacle_3', 'obstacle_6'];
-      for (let i = 0; i < SM_ENEMIES; i++) {
-        const s = this._smPlace(names[i], at(p0, b + i * TAU / SM_ENEMIES + uniform(-0.3, 0.3), uniform(12.0, 18.0)), { gain: 0.9, range: 40, floor: 0.2, tag: 'enemy' });
-        if (s) t.targets.push(s);
-      }
+      this._smEnemies(t.targets, p0);
       this._smBackground('drm_06_tribal_beat', 0.3);
     } else if (t.kind === 'guardian') {
       const s = this._smPlace('guardian', at(p0, uniform(0, TAU), 15.0), { gain: SM_GUARDIAN_GAIN, range: 40, floor: 0.2, tag: 'guardian' });
@@ -516,11 +512,9 @@ const mixin = {
       if (s) t.targets.push(s);
       this._smBackground(AB_BACKGROUND, AMBIENCE_LEVEL);
     }
-    this._smSyncTwistRoom();
+    this._syncRoom();
     this._smQueue(`story.twist.${t.kind}`, { after: () => { if (this.sm === sm && sm.twist === t) { sm.phase = 'task'; sm.live = true; } } });
   },
-
-  _smSyncTwistRoom() { this._syncRoom(); },
 
   _smTwistDone() {
     const sm = this.sm; const t = sm.twist;
@@ -531,21 +525,41 @@ const mixin = {
         if (this.sm !== sm) return;
         const warp = this._smEventName('evt_exit_warp', 'pickup');
         if (warp) this.audio.play(warp, { volume: 0.7, keep: true });
-        this._smChapter(6);
+        this._smChapter(SM_TWIST_AFTER + 1);
       },
     });
   },
 
-  // The attack (a two-finger tap, or the spacebar): only in the practice areas.
+  // Three battle enemies standing still around a place, a third of a circle apart.
+  _smEnemies(into, p0) {
+    const b = uniform(0, TAU);
+    const names = ['obstacle_0', 'obstacle_3', 'obstacle_6'];
+    for (let i = 0; i < SM_ENEMIES; i++) {
+      const s = this._smPlace(names[i], at(p0, b + i * TAU / SM_ENEMIES + uniform(-0.3, 0.3), uniform(12.0, 18.0)), { gain: 0.9, range: 40, floor: 0.2, tag: 'enemy' });
+      if (s) into.push(s);
+    }
+  },
+
+  // A glass case within reach and faced, as The Abyss's and The Museum's are.
+  _smCaseReady(c) {
+    if (!c) return false;
+    const [side, ahead] = this._rel(c.pos);
+    const d = dist2(c.pos, this.playerPos);
+    return d < CASE_REACH + 1.5 && (d < 1.0 || (ahead > 0 && Math.abs(side) / d < 0.5));
+  },
+
+  // The attack (a two-finger tap, or the spacebar): in the practice areas, chapter 9's
+  // battle and chapter 16's glass case.
   _smFire() {
-    const sm = this.sm; const t = sm.twist;
-    if (!t || sm.phase !== 'task') return;
-    const live = t.targets.filter((s) => sm.sounds.includes(s));
-    if (t.kind === 'abyss') {
+    const sm = this.sm; const t = sm.twist; const room = sm.room;
+    if (sm.phase !== 'task' || !room) return;
+    let kind = t ? t.kind : room.fire;
+    if (!kind) return;
+    const list = t ? t.targets : (room.targets || []);
+    const live = list.filter((s) => sm.sounds.includes(s));
+    if (kind === 'abyss' || kind === 'case') {
       const c = live[0];
-      const [side, ahead] = c ? this._rel(c.pos) : [0, 0];
-      const d = c ? dist2(c.pos, this.playerPos) : 1e9;
-      if (c && d < CASE_REACH + 1.5 && (d < 1.0 || (ahead > 0 && Math.abs(side) / d < 0.5))) {
+      if (this._smCaseReady(c)) {
         this._smShot(CASE_SMASH, c.pos, 1.0, true);
         this._smUnplace(c, 80);
         this._smTaskDone();
@@ -560,7 +574,7 @@ const mixin = {
       if (d > 0 && ahead > 0 && Math.abs(side) / d < SM_AIM && d < bestD) { best = s; bestD = d; }
     }
     if (!best) return;
-    if (t.kind === 'guardian') {
+    if (kind === 'guardian') {
       t.hp -= 1;
       if (t.hp > 0) { this._smShot('guardian_hit', best.pos, 1.0, true); return; }
       this._smUnplace(best, 80);
@@ -570,7 +584,7 @@ const mixin = {
     }
     this._smUnplace(best, 60);
     this._smShot('enemy_hit', best.pos, 1.0, true);
-    if (!t.targets.some((s) => sm.sounds.includes(s))) this._smTaskDone();
+    if (!list.some((s) => sm.sounds.includes(s))) this._smTaskDone();
   },
 
   // ---------------------------------------------------------------- the frame
@@ -583,81 +597,119 @@ const mixin = {
     if (sm.waitFor && !(sm.waitFor.voice && sm.waitFor.voice.busy)) { const f = sm.waitFor.then; sm.waitFor = null; f(); if (this.sm !== sm) return; }
     const room = sm.room;
     if (!room) return;
-    // Sounds that move, or call now and then.
-    if (room.n === 2 && room.circler && room.circler.voice) {
-      room.angle = (room.angle + TAU / SM_CIRCLE_LAP * dt) % TAU;
-      room.circler.pos = at([0, 0], room.angle, SM_CIRCLE_R);
-    }
-    if (room.n === 8 && sm.live) {
-      for (const s of room.shots) { s.t -= dt; if (s.t <= 0) { s.t += s.every; this._smShot(s.name, s.pos, s.volume); } }
-    }
+    if (room.frame && sm.live) room.frame.call(this, room, dt);
+    if (this.sm !== sm) return;
     for (const s of sm.sounds) this._smLevelSound(s);
     const d = this._smLevelDoor();
-    if (sm.phase === 'task') this._smCheckTask(dt);
+    if (sm.phase === 'task' && !sm.twist && room.check) room.check.call(this, room, dt);
+    if (this.sm !== sm) return;
     if (sm.phase === 'tune') {
       room.tuneWait -= dt;
-      if (room.tuneWait <= 0 && !(room.tuneVoice && room.tuneVoice.busy)) { room.tuneVoice = null; sm.phase = 'task'; this._smTaskDone(); }
+      if (room.tuneWait <= 0 && !(room.tuneVoice && room.tuneVoice.busy)) { room.tuneVoice = null; sm.phase = 'task'; if (room.afterTune) room.afterTune.call(this, room); }
     }
-    if (this.sm !== sm) return;
-    if (sm.phase === 'task' && room.n === 6) this._smBellaCalls(dt);
     if (sm.phase === 'done' && sm.door && sm.door.open && d < SM_DOOR_REACH && !this._smTalking()) this._smThroughDoor();
   },
 
-  // Whether the room's task has just been done (checked every frame, and after a step).
-  _smCheckTask(dt = 0) {
-    const sm = this.sm; const room = sm.room;
-    if (!room || sm.phase !== 'task' || sm.twist) return;
-    const n = room.n;
-    if (n === 1 && room.bell) {
-      const [side, ahead] = this._rel(room.bell.pos);
-      const d = dist2(room.bell.pos, this.playerPos);
-      room.held = ahead > 0 && Math.abs(side) / d < SM_CENTRED ? room.held + dt : 0;
-      if (room.held >= SM_CENTRED_FOR) this._smTaskDone();
-    } else if (n === 2 && room.circler) {
-      const [, ahead] = this._rel(room.circler.pos);
-      const d = dist2(room.circler.pos, this.playerPos);
-      if (room.step === 0) {
-        room.held = ahead < -0.75 * d ? room.held + dt : 0;
-        if (room.held >= SM_BEHIND_FOR) { room.step = 1; room.held = 0; this.audio.play('ut_click', { volume: 0.6 }); }
-      } else {
-        room.held = ahead > 0.9 * d ? room.held + dt : 0;
-        if (room.held >= SM_FRONT_FOR) this._smTaskDone();
-      }
-    } else if (n === 3 && room.fountain) {
-      if (dist2(room.fountain.pos, this.playerPos) <= SM_FOUNTAIN_REACH) this._smTaskDone();
-    } else if (n === 4) {
-      room.turned += wrapPi(this.tn.face - room.face);
-      room.face = this.tn.face;
-      if (Math.abs(room.turned) >= TAU - 0.05) this._smTaskDone();
-    } else if (n === 5) {
-      if (this.playerPos[1] <= SM_HALL_DONE) this._smTaskDone();
-    } else if (n === 6) {
-      if (dist2(room.bella, this.playerPos) <= SM_BELLA_REACH) this._smTaskDone();
-    } else if (n === 7) {
-      if (sm.door && dist2(sm.door.pos, this.playerPos) < SM_DOOR_REACH) this._smTaskDone();
-    } else if (n === 8) {
-      if (dist2(room.board, this.playerPos) <= 5.0) this._smTaskDone();
-    } else if (n === 9 && room.tune) {
-      if (dist2(room.memory, this.playerPos) <= 3.5) {
-        // The memory found: its tune plays once, whole, then Bella speaks.
-        this._smUnplace(room.tune, 100);
-        room.tune = null;
-        sm.phase = 'tune';
-        room.tuneVoice = this.audio.play('event_beacon_story_tune', { volume: 0.8, keep: true });
-        room.tuneWait = 0.2;
-      }
+  // ---------------------------------------------------------------- walking
+  _smStep(g) {
+    const sm = this.sm; const room = sm && sm.room;
+    if (!room || sm.phase === 'tune') return;
+    let from = [...this.playerPos];
+    if (room.drive) return;
+    if (room.events) {
+      // An event's step: one step north, south, west or east, whatever the way you face.
+      const dir = { up: [0, -1], down: [0, 1], left: [-1, 0], right: [1, 0] }[g];
+      const to = [from[0] + dir[0] * SM_STEP, from[1] + dir[1] * SM_STEP];
+      if (Math.abs(to[0]) > SM_HALF || Math.abs(to[1]) > SM_HALF) { this.audio.play('boundary'); return; }
+      this.playerPos = to;
+    } else {
+      const f = this.playerFacing = this._forward();
+      const dir = g === 'up' ? f : [-f[0], -f[1]];
+      if (room.ok) {
+        // A room with walls of its own: straight into one, its knock from where it
+        // stands; at a slant, you slide along it.
+        const to = [from[0] + dir[0] * SM_STEP, from[1] + dir[1] * SM_STEP];
+        let dest = null;
+        if (room.ok(to)) dest = to;
+        else if (room.ok([to[0], from[1]]) && Math.abs(to[0] - from[0]) >= SM_STEP * 0.25) dest = [to[0], from[1]];
+        else if (room.ok([from[0], to[1]]) && Math.abs(to[1] - from[1]) >= SM_STEP * 0.25) dest = [from[0], to[1]];
+        if (!dest) {
+          // The wall: the first spot along the step that is not floor.
+          let hit = to;
+          for (let k = 1; k <= 6; k++) { const q = [from[0] + dir[0] * SM_STEP * k / 6, from[1] + dir[1] * SM_STEP * k / 6]; if (!room.ok(q)) { hit = q; break; } }
+          this.audio.play('wall', { at: hit });
+          return;
+        }
+        this.playerPos = dest;
+      } else if (!this._walkArena(dir, SM_STEP, SM_HALF, { sound: false })) return;
     }
+    this._syncRoom();
+    const steps = typeof room.steps === 'function' ? room.steps.call(this, room) : room.steps;
+    const bank = (steps || SM_STEPS_STONE).filter((nm) => this.audio.has(nm));
+    if (bank.length) this.audio.play(choice(bank));
+    if (room.onStep && sm.live) room.onStep.call(this, room);
+    if (sm.twist && sm.twist.kind === 'abyss') this._smCaseChime(sm.twist.targets.find((s) => sm.sounds.includes(s)), sm.twist);
+    if (sm.phase === 'task' && !sm.twist && room.check) room.check.call(this, room, 0);
+    if (this.sm === sm && sm.phase === 'done' && sm.door && sm.door.open && this._smLevelDoor() < SM_DOOR_REACH && !this._smTalking()) this._smThroughDoor();
   },
 
-  // Chapter 6: Bella calls from where she stands until you reach her.
+  // A glass case's chime as you come within reach of it, facing it.
+  _smCaseChime(c, holder) {
+    if (!c) return;
+    const ready = this._smCaseReady(c);
+    if (ready && !holder.chimed) { holder.chimed = true; this._smShot(CASE_CHIME, c.pos, 0.8, true); } else if (!ready) holder.chimed = false;
+  },
+
+  // Left and right: a turn; on chapter 10's road, a change of lane.
+  _smSide(g) {
+    const sm = this.sm; const room = sm && sm.room;
+    if (room && room.drive) {
+      if (sm.phase !== 'task') return;
+      const lane = room.lane + (g === 'right' ? 1 : -1);
+      if (lane < 0 || lane > 2) { this.audio.play('boundary'); return; }
+      room.lane = lane;
+      this.playerPos = [SM_LANES[lane], 0];
+      return;
+    }
+    if (room && room.events) { this._smStep(g); return; }
+    this._turnQuick(g === 'right' ? 1 : -1);
+  },
+
+  // The room's echo.
+  _smRoom() {
+    const sm = this.sm;
+    if (!sm || !sm.room) return 'lab';
+    if (sm.twist) return sm.twist.kind === 'guardian' ? null : 'battle';
+    const room = sm.room;
+    if (room.roomAt) return room.roomAt.call(this, room);
+    return CHAPTERS[room.n - 1].room;
+  },
+
+  // Enter's report: the chapter, and whether its door is open. (Chapter 7's task.)
+  _smReport() {
+    const sm = this.sm;
+    if (!sm) return;
+    let text;
+    if (sm.twist) text = 'Story Mode. A practice area.' + (sm.phase === 'task' ? ' Nothing here can hurt you.' : '');
+    else {
+      const c = CHAPTERS[sm.chapter - 1];
+      const open = sm.door && sm.door.open ? ' The door is open.' : '';
+      text = `Story Mode. Chapter ${c.n} of ${SM_CHAPTERS}, ${c.title}.${open}`;
+    }
+    this._report(text);
+    const room = sm.room;
+    if (room && room.onReport && sm.phase === 'task') room.onReport.call(this, room, text);
+  },
+
+  // Chapter 13: Bella calls from where she stands until you reach her.
   _smBellaCalls(dt) {
     const room = this.sm.room;
-    if (this._smTalking() || this.sm.say.queue.length) return;
+    if (this._smTalking()) return;
     room.wait -= dt;
     if (room.wait > 0) return;
     room.wait = uniform(...SM_CALL_GAP);
     room.calls = (room.calls % SM_CALLS) + 1;
-    const id = `story.6.call.${room.calls}`;
+    const id = `story.13.call.${room.calls}`;
     // With the Speech setting Off, or no recording of her call, a soft shimmering
     // beacon sounds where she stands instead (as Find the Voice's guide's).
     let cv = null; try { cv = this._smVoices(); } catch (e) { /* none */ }
@@ -666,62 +718,6 @@ const mixin = {
       return;
     }
     this._smQueue(id, { pos: room.bella });
-  },
-
-  // ---------------------------------------------------------------- walking
-  _smInHall(p) { return p[1] <= SM_HALL_FROM && p[1] >= SM_HALL_FAR && Math.abs(p[0]) <= SM_HALF; },
-  _smInSmall(p) { return p[1] > SM_HALL_FROM && p[1] <= SM_SMALL_BACK && Math.abs(p[0]) <= SM_SMALL_HALF; },
-
-  _smStep(g) {
-    const sm = this.sm;
-    if (!sm || !sm.room || sm.phase === 'tune') return;
-    const f = this.playerFacing = this._forward();
-    const dir = g === 'up' ? f : [-f[0], -f[1]];
-    if (sm.room.n === 5) {
-      // The small room and the great hall: walls of their own.
-      const from = [...this.playerPos];
-      const to = [from[0] + dir[0] * SM_STEP, from[1] + dir[1] * SM_STEP];
-      const ok = (p) => this._smInSmall(p) || this._smInHall(p);
-      let dest = null;
-      if (ok(to)) dest = to;
-      else if (ok([to[0], from[1]]) && Math.abs(to[0] - from[0]) >= SM_STEP * 0.25) dest = [to[0], from[1]];
-      else if (ok([from[0], to[1]]) && Math.abs(to[1] - from[1]) >= SM_STEP * 0.25) dest = [from[0], to[1]];
-      if (!dest) { this.audio.play('boundary'); return; }
-      this.playerPos = dest;
-    } else if (!this._walkArena(dir, SM_STEP, SM_HALF, { sound: false })) return;
-    this._syncRoom();
-    const glass = (sm.room.n === 7) || (sm.twist && sm.twist.kind === 'abyss');
-    const bank = (glass ? AB_STEPS_GLASS : sm.room.n === 8 ? SM_STEPS_WATER : SM_STEPS_STONE).filter((nm) => this.audio.has(nm));
-    if (bank.length) this.audio.play(choice(bank.length ? bank : SM_STEPS_STONE));
-    // The abyss's glass case: its chime as you come within reach of it.
-    if (sm.twist && sm.twist.kind === 'abyss') {
-      const c = sm.twist.targets.find((s) => sm.sounds.includes(s));
-      if (c) {
-        const near = dist2(c.pos, this.playerPos) < CASE_REACH + 1.5;
-        if (near && !sm.twist.chimed) { sm.twist.chimed = true; this._smShot(CASE_CHIME, c.pos, 0.8, true); } else if (!near) sm.twist.chimed = false;
-      }
-    }
-    this._smCheckTask(0);
-    if (this.sm === sm && sm.phase === 'done' && sm.door && sm.door.open && this._smLevelDoor() < SM_DOOR_REACH && !this._smTalking()) this._smThroughDoor();
-  },
-
-  // The room's echo: chapter 5's changes as you cross from the small room into the hall.
-  _smRoom() {
-    const sm = this.sm;
-    if (!sm || !sm.room) return 'lab';
-    if (sm.twist) return sm.twist.kind === 'guardian' ? null : 'battle';
-    if (sm.room.n === 5) return this.playerPos[1] > SM_HALL_FROM ? 'lab' : 'cathedral';
-    return CHAPTERS[sm.room.n - 1].room;
-  },
-
-  // Enter's report: the chapter, and whether its door is open.
-  _smReport() {
-    const sm = this.sm;
-    if (!sm) return;
-    if (sm.twist) { this._report('Story Mode. A practice area.' + (sm.phase === 'task' ? ' Nothing here can hurt you.' : '')); return; }
-    const c = CHAPTERS[sm.chapter - 1];
-    const open = sm.door && sm.door.open ? ' The door is open.' : '';
-    this._report(`Story Mode. Chapter ${c.n} of 10, ${c.title}.${open}`);
   },
 
   _smStopAll() {
@@ -733,13 +729,300 @@ const mixin = {
   },
 };
 
+// ------------------------------------------------------------------ the rooms
+// Each chapter's room: SETUP[n] lays it out (`this` is the game). A room may give:
+//   ok(p)      its own walls (a spot is floor); otherwise the open floor of SM_HALF
+//   check()    whether the task is done (each frame, and after each step)
+//   frame()    what moves, once its sounds are live
+//   onLive()   what starts when Bella has given the task
+//   onDone()   what stops when it is done
+//   doorAt, doorHere   where its door opens (doorHere: where the task's goal is)
+//   roomAt()   its echo, if it changes with where you stand
+//   steps      its footsteps
+const rect = (x0, x1, y0, y1) => (p) => p[0] >= x0 && p[0] <= x1 && p[1] >= y0 && p[1] <= y1;
+const any = (...fs) => (p) => fs.some((f) => f(p));
+
+const SETUP = {
+  // 1. Welcome: centre the bell.
+  1(room, p0) {
+    room.bell = this._smPlace('event_beacon_bell', at(p0, uniform(70, 290) * Math.PI / 180, 22.0), { gain: 0.9, range: 50, floor: 0.25 });
+    this._smBackground('evt_amb_water_drip', AMBIENCE_LEVEL * 0.7);
+    room.check = function (r, dt) {
+      const [side, ahead] = this._rel(r.bell.pos);
+      const d = dist2(r.bell.pos, this.playerPos);
+      r.held = ahead > 0 && Math.abs(side) / d < SM_CENTRED ? r.held + dt : 0;
+      if (r.held >= SM_CENTRED_FOR) this._smTaskDone();
+    };
+    room.onDone = function (r) { this._smUnplace(r.bell, 1200); };
+  },
+  // 2. Turning: you begin facing any way but north; land on north.
+  2(room) {
+    this._face(choice([3, 4, 5, 6, 7, 8, 9]) * Math.PI / 6, true);
+    this._smBackground('lab_04_dungeon_air', 0.5);
+    room.check = function (r, dt) {
+      const north = Math.abs(wrapPi(this.tn.face)) < 0.01 && !this.tn.turn;
+      r.held = north ? r.held + dt : 0;
+      if (r.held >= SM_NORTH_FOR) this._smTaskDone();
+    };
+  },
+  // 3. In front and behind: the circling enemy.
+  3(room, p0) {
+    room.angle = uniform(0, TAU);
+    room.circler = this._smPlace(choice(['obstacle_3', 'obstacle_5', 'obstacle_1']), at(p0, room.angle, SM_CIRCLE_R), { gain: 0.9, range: 40, floor: 0.2 });
+    this._smBackground('drm_06_tribal_beat', 0.3);
+    room.frame = function (r, dt) {
+      r.angle = (r.angle + TAU / SM_CIRCLE_LAP * dt) % TAU;
+      r.circler.pos = at([0, 0], r.angle, SM_CIRCLE_R);
+    };
+    room.check = function (r, dt) {
+      const [, ahead] = this._rel(r.circler.pos);
+      const d = dist2(r.circler.pos, this.playerPos);
+      if (r.step === 0) {
+        r.held = ahead < -0.75 * d ? r.held + dt : 0;
+        if (r.held >= SM_BEHIND_FOR) { r.step = 1; r.held = 0; this.audio.play('ut_click', { volume: 0.6 }); }
+      } else {
+        r.held = ahead > 0.9 * d ? r.held + dt : 0;
+        if (r.held >= SM_FRONT_FOR) this._smTaskDone();
+      }
+    };
+    room.onDone = function (r) { this._smUnplace(r.circler, 1200); };
+  },
+  // 4. Distance and walking: the fountain.
+  4(room, p0) {
+    room.fountain = this._smPlace(this._smEventName('evt_amb_waterfall'), at(p0, uniform(0, TAU), 26.0), { gain: 1.0, range: SM_FOUNTAIN_RANGE, floor: 0.04 });
+    this._smBackground('evt_amb_morning_birds', AMBIENCE_LEVEL * 0.8);
+    room.check = function (r) { if (dist2(r.fountain.pos, this.playerPos) <= SM_FOUNTAIN_REACH) this._smTaskDone(); };
+  },
+  // 5. Walls and edges: an L-shaped corridor, north and then east, a chime at its end.
+  5(room) {
+    room.ok = any(rect(-1.6, 1.6, -16.6, 1.6), rect(-1.6, 16.6, -16.6, -13.4));
+    room.end = [15.0, -15.0];
+    room.chime = this._smPlace('event_beacon_shimmer', room.end, { gain: 0.8, range: 40, floor: 0.2 });
+    this._smBackground('lab_01_cavewind', 0.6);
+    room.doorAt = room.end; room.doorHere = true;
+    room.check = function (r) { if (dist2(r.end, this.playerPos) < SM_REACH) this._smTaskDone(); };
+    room.onDone = function (r) { this._smUnplace(r.chime, 600); };
+  },
+  // 6. Echo: the small room, and the great hall two steps ahead.
+  6(room) {
+    this.playerPos = [0.0, SM_SMALL_BACK - SM_STEP];
+    const small = rect(-SM_SMALL_HALF, SM_SMALL_HALF, SM_HALL_FROM + 0.01, SM_SMALL_BACK);
+    const hall = rect(-SM_HALF, SM_HALF, SM_HALL_FAR, SM_HALL_FROM);
+    room.ok = any(small, hall);
+    room.doorOk = (p) => hall(p) && p[1] < SM_HALL_FROM - 6;
+    room.roomAt = function () { return this.playerPos[1] > SM_HALL_FROM ? 'lab' : 'cathedral'; };
+    room.check = function () { if (this.playerPos[1] <= SM_HALL_DONE) this._smTaskDone(); };
+  },
+  // 7. The report: double tap, and listen.
+  7(room) {
+    this._smBackground('lab_03_scifi_cave', 0.5);
+    room.onReport = function (r, text) { if (r.reported === undefined) r.reported = 0.8 + String(text).length * 0.065; };
+    room.check = function (r, dt) {
+      if (r.reported === undefined) return;
+      r.reported -= dt;
+      if (r.reported <= 0) this._smTaskDone();
+    };
+  },
+  // 8. Standard Mode: a tiny labyrinth, and its exit's beep.
+  8(room) {
+    room.ok = any(rect(-1.6, 1.6, -13.6, 1.6), rect(-1.6, 13.6, -13.6, -10.4), rect(10.4, 13.6, -25.6, -10.4));
+    room.exit = [12.0, -24.0];
+    room.beep = 0;
+    room.doorAt = room.exit; room.doorHere = true;
+    this._smBackground('lab_02_scary_cave', 0.6);
+    room.frame = function (r, dt) {
+      if (this.sm.phase !== 'task') return;
+      const d = dist2(r.exit, this.playerPos) / SM_STEP;    // (the labyrinth's own steps)
+      r.beep -= dt;
+      if (r.beep > 0) return;
+      r.beep = Math.max(0.15, d * 0.05 * SM_STEP);
+      const pitch = Math.max(0, Math.min(19, 19 - Math.trunc(d)));
+      const level = Math.max(0.2, 1 - d * SM_STEP / 300);
+      this.audio.play('prox_' + pitch, { at: r.exit, volume: level * 0.4 });
+    };
+    room.check = function (r) { if (dist2(r.exit, this.playerPos) < SM_REACH) this._smTaskDone(); };
+  },
+  // 9. Battle Mode: three enemies standing still.
+  9(room, p0) {
+    room.targets = [];
+    room.fire = 'battle';
+    this._smEnemies(room.targets, p0);
+    this._smBackground('drm_06_tribal_beat', 0.3);
+  },
+  // 10. Driving Mode: the middle lane, a car coming straight at you; change lanes.
+  10(room) {
+    room.drive = true;
+    room.lane = 1;
+    this.playerPos = [SM_LANES[1], 0];
+    room.car = { pos: [SM_LANES[1], -SM_CAR_FROM], lane: 1, passed: false };
+    room.carSound = this._smPlace('enemy_car_oncoming', room.car.pos, { gain: 1.0, range: 70, floor: 0.08 });
+    room.onLive = function (r) { r.engine = this.audio.play('engine_8', { loops: -1, volume: 0.45, fadeMs: 600 }); };
+    room.frame = function (r, dt) {
+      const c = r.car;
+      if (!r.carSound) return;
+      // It comes on until it is close; in your lane, it waits there for you to move.
+      const stop = c.lane === r.lane && !c.passed ? -SM_CAR_WAIT : Infinity;
+      c.pos[1] = Math.min(stop, c.pos[1] + SM_CAR_SPEED * dt);
+      if (c.lane !== r.lane && c.pos[1] > -SM_CAR_WAIT) c.passed = true;
+      r.carSound.pos = c.pos;
+      if (c.pos[1] > SM_CAR_GONE) { this._smUnplace(r.carSound, 800); r.carSound = null; }
+    };
+    room.check = function (r) { if (r.car.passed && r.car.pos[1] > 4.0) this._smTaskDone(); };
+    room.onDone = function (r) {
+      // Off the road: on foot again, for the door.
+      r.drive = false;
+      if (r.engine) { r.engine.fadeout(1200); r.engine = null; }
+      this._face(0, true);
+    };
+  },
+  // 11. Tower Mode: the stairs.
+  11(room, p0) {
+    room.goal = at(p0, uniform(0, TAU), 20.0);
+    room.stairs = this._smPlace('stairs_beacon', room.goal, { gain: 0.9, range: 45, floor: 0.2 });
+    this._smBackground('tow_01_night_castle', 0.6);
+    room.check = function (r) { if (dist2(r.goal, this.playerPos) < SM_REACH) this._smTaskDone(); };
+    room.onDone = function (r) { this._smUnplace(r.stairs, 800); };
+  },
+  // 12. Island Mode: the elevator, its hum and its chime.
+  12(room, p0) {
+    room.goal = at(p0, uniform(0, TAU), 20.0);
+    room.hum = this._smPlace('elevator_hum', room.goal, { gain: 0.8, range: 45, floor: 0.2 });
+    room.chimeT = 0.5;
+    room.steps = ['step_sand_1', 'step_sand_2', 'step_sand_3', 'step_sand_4'];
+    this._smBackground('island_02_sandy_beach_calm', 0.7);
+    room.frame = function (r, dt) {
+      if (!r.hum) return;
+      r.chimeT -= dt;
+      if (r.chimeT <= 0) { r.chimeT = 1.6; this._smShot('elevator_ding', r.goal, 0.8); }
+    };
+    room.check = function (r) { if (dist2(r.goal, this.playerPos) < SM_REACH) this._smTaskDone(); };
+    room.onDone = function (r) { this._smUnplace(r.hum, 800); r.hum = null; };
+  },
+  // 13. Find the Voice: Bella calls from where she stands.
+  13(room, p0) {
+    room.bella = at(p0, uniform(0, TAU), uniform(...SM_BELLA_DIST));
+    room.calls = 0; room.wait = 0.8;
+    room.frame = function (r, dt) { if (this.sm.phase === 'task') this._smBellaCalls(dt); };
+    room.check = function (r) { if (dist2(r.bella, this.playerPos) <= SM_BELLA_REACH) this._smTaskDone(); };
+    room.onDone = function (r) { if (r.beacon) this._smUnplace(r.beacon, 300); };
+  },
+  // 14. The Abyss: glass underfoot, a sleeping creature, the door the goal.
+  14(room, p0) {
+    const b = uniform(-0.7, 0.7);
+    const door = at(p0, b, 27.0);
+    const mid = at(p0, b, 13.5);
+    const side = choice([-1, 1]) * uniform(4.0, 6.0);
+    room.creature = this._smPlace(this._smEventName(AB_IDLE), [mid[0] + Math.cos(b) * side, mid[1] + Math.sin(b) * side], { gain: 0.9, range: 36, floor: 0.12 });
+    room.steps = AB_STEPS_GLASS;
+    this._smBackground(AB_BACKGROUND, AMBIENCE_LEVEL);
+    this._smOpenDoor(door, { sound: false });
+    room.doorHere = true;
+    room.check = function () { const dr = this.sm.door; if (dr && dist2(dr.pos, this.playerPos) < SM_DOOR_REACH) this._smTaskDone(); };
+  },
+  // 15. Water Park: the diving board among the attractions.
+  15(room, p0) {
+    const b = uniform(0, TAU);
+    room.board = at(p0, b, 24.0);
+    room.shots = [
+      { name: 'wp_board', pos: room.board, every: 1.3, t: 0.4, volume: 0.95 },
+      { name: 'wp_wave', pos: at(p0, b + 1.3, 20.0), every: 3.2, t: 1.2, volume: 0.8 },
+      { name: this._smEventName('evt_water_splash'), pos: at(p0, b - 1.4, 22.0), every: 4.1, t: 2.3, volume: 0.8 },
+    ];
+    this._smPlace('wp_bucket_fill', at(p0, b + 2.6, 18.0), { gain: 0.6, range: 40, floor: 0.12 });
+    this._smPlace('wp_organ', at(p0, b - 2.6, 18.0), { gain: 0.45, range: 40, floor: 0.12 });
+    room.steps = SM_STEPS_WATER;
+    this._smBackground('wp_park', 0.35);
+    room.frame = function (r, dt) { for (const s of r.shots) { s.t -= dt; if (s.t <= 0) { s.t += s.every; this._smShot(s.name, s.pos, s.volume); } } };
+    room.check = function (r) { if (dist2(r.board, this.playerPos) <= 5.0) this._smTaskDone(); };
+  },
+  // 16. The Museum: follow the memory's tune; then a glass case hums: smash it.
+  16(room, p0) {
+    if (!this.audio.has('event_beacon_story_tune')) addMade(this.audio, 'event_beacon_story_tune', tuneSound([0, 2, 4, 5, 4, 2]));
+    room.memory = at(p0, uniform(0, TAU), 22.0);
+    room.tune = this._smPlace('event_beacon_story_tune', room.memory, { gain: 0.75, range: 60, floor: 0.25 });
+    room.targets = [];
+    room.check = function (r) {
+      if (r.step === 0 && r.tune && dist2(r.memory, this.playerPos) <= 3.5) {
+        // The memory found: its tune plays once, whole; then the case starts to hum.
+        this._smUnplace(r.tune, 100);
+        r.tune = null;
+        this.sm.phase = 'tune';
+        r.tuneVoice = this.audio.play('event_beacon_story_tune', { volume: 0.8, keep: true });
+        r.tuneWait = 0.2;
+      }
+    };
+    room.afterTune = function (r) {
+      r.step = 1;
+      r.fire = 'case';
+      const c = this._smPlace(this._smEventName(CASE_SOUND), at(this.playerPos, uniform(0, TAU), 18.0), { gain: 0.75, range: 50, floor: 0.2 });
+      if (c) { c.pos[0] = Math.max(-SM_HALF + 3, Math.min(SM_HALF - 3, c.pos[0])); c.pos[1] = Math.max(-SM_HALF + 3, Math.min(SM_HALF - 3, c.pos[1])); r.targets.push(c); }
+    };
+    room.onStep = function (r) { if (r.step === 1) this._smCaseChime(r.targets.find((s) => this.sm.sounds.includes(s)), r); };
+  },
+  // 17. Ultimate Mode: one place's background gives way to the next across a border.
+  17(room) {
+    this.playerPos = [0.0, SM_AREA_START];
+    room.a = this._smEventName('evt_amb_forest_night', 'amb');
+    room.b = this._smEventName('evt_amb_market', 'amb');
+    room.va = room.a ? this.audio.play(room.a, { loops: -1, volume: AMBIENCE_LEVEL, fadeMs: 800, send: BACKGROUND_SEND }) : null;
+    room.vb = null;
+    this.sm.extra.push(room.va);
+    room.steps = function (r) { return this.playerPos[1] > 0 ? ['step_grass_1', 'step_grass_2', 'step_grass_3', 'step_grass_4'] : SM_STEPS_STONE; };
+    room.onLive = function (r) { r.vb = r.b ? this.audio.play(r.b, { loops: -1, volume: 0.0, fadeMs: 300, send: BACKGROUND_SEND }) : null; this.sm.extra.push(r.vb); };
+    room.frame = function (r) {
+      // Heard only near the border: within two steps of it, the next place rises.
+      const t = Math.max(0, Math.min(1, (SM_AREA_BLEND - this.playerPos[1]) / (2 * SM_AREA_BLEND)));
+      if (r.va) r.va.setVolume(AMBIENCE_LEVEL * (1 - t));
+      if (r.vb) r.vb.setVolume(AMBIENCE_LEVEL * t);
+    };
+    room.check = function () { if (this.playerPos[1] <= SM_AREA_DONE) this._smTaskDone(); };
+    room.roomAt = function () { return this.playerPos[1] > 0 ? 'lab' : 'hall'; };
+  },
+  // 18. Chaos Mode: a level's exit, the Morse signal.
+  18(room, p0) {
+    this._smBackground('drm_03_loop_75', 0.25);
+    this._smOpenDoor(at(p0, uniform(0, TAU), 22.0), { sound: false });
+    room.doorHere = true;
+    room.onLive = function () { const th = AB_THUNDERS.find((s) => this.audio.has(s)); if (th) this.audio.play(th, { volume: 0.6 }); };
+    room.check = function () { const dr = this.sm.door; if (dr && dist2(dr.pos, this.playerPos) < SM_DOOR_REACH) this._smTaskDone(); };
+  },
+  // 19. Events: a collecting mission, stepped north, south, west and east.
+  19(room) {
+    room.events = true;
+    room.items = 0;
+    this._smBackground('evt_amb_campfire', AMBIENCE_LEVEL);
+    room.next = function (r) {
+      const spots = [];
+      for (let i = -4; i <= 4; i++) for (let j = -4; j <= 4; j++) {
+        const p = [this.playerPos[0] + i * SM_STEP, this.playerPos[1] + j * SM_STEP];
+        const d = Math.abs(i) + Math.abs(j);
+        if (d >= 3 && d <= 5 && Math.abs(p[0]) <= SM_HALF - 3 && Math.abs(p[1]) <= SM_HALF - 3) spots.push(p);
+      }
+      r.item = this._smPlace('event_beacon_bell', choice(spots), { gain: 0.9, range: 40, floor: 0.2 });
+    };
+    room.onLive = function (r) { r.next.call(this, r); };
+    room.check = function (r) {
+      if (!r.item || dist2(r.item.pos, this.playerPos) > 1.0) return;
+      this._smShot('event_pickup_bell', r.item.pos, 0.9, true);
+      this._smUnplace(r.item, 80);
+      r.item = null;
+      r.items += 1;
+      if (r.items >= SM_ITEMS) this._smTaskDone(); else r.next.call(this, r);
+    };
+  },
+  // 20. Help and settings: no task.
+  20() {
+    this._smBackground('evt_amb_fireplace', AMBIENCE_LEVEL * 0.8);
+  },
+};
+
 // ------------------------------------------------------------------ help
 const HELP_SECTIONS = [
   ['Story Mode', [
-    { title: 'Story Mode', sound: null, desc: 'Story Mode, new in 7.3.0, is a walk through the story of how Endless Labyrinth was made, in ten chapters, told by Bella, the game\'s own voice. Each chapter is a room from that part of the game\'s life. As you arrive, Bella tells that part of the story, then gives you one small task that shows off the game\'s 3D sound: centring a bell, telling in front from behind, walking to a fountain, turning a full circle, and more. Nothing can hurt you, there is no clock, and no task can be failed: take as long as you like. You turn and walk as in every walking mode (see General Turning). About 10 to 15 minutes from start to finish. Double tap for the chapter you are in and whether its door is open, and the way you are facing.' },
-    { title: 'Story Mode Doors', sound: null, desc: 'When a chapter\'s task is done you hear a chime, Bella says so, and a door opens somewhere in the room: it sounds like a battle exit\'s Morse signal. Find it by ear and walk through it into the next chapter. You can stay in a room as long as you like first. Through the last door, after chapter 10, you are back at the main menu.' },
+    { title: 'Story Mode', sound: null, desc: 'Story Mode, new in 7.3.0, is a walk through how Endless Labyrinth works, in twenty chapters, told by Bella, the game\'s own voice. The first chapters are the basics: headphones and centring a sound, turning, telling in front from behind, distance and walking, walls and edges, echo, and the report. Then there is a chapter for every mode, from Standard Mode to Chaos Mode, then Events, and last of all help and settings. Each chapter is a room with one small task: as you arrive, Bella tells you about it, then gives you the task. Only the room\'s background plays while she talks; everything you play with starts once she has finished. Nothing can hurt you, there is no clock, and no task can be failed: take as long as you like. You turn and walk as in every walking mode (see General Turning), except on the road in the Driving chapter and in the Events chapter, where north stays ahead, as it does in those modes. About half an hour from start to finish. Double tap for the chapter you are in and whether its door is open, and the way you are facing.' },
+    { title: 'Story Mode Doors', sound: null, desc: 'When a chapter\'s task is done you hear a chime, Bella says so, and a door opens somewhere in the room: it sounds like a battle exit\'s Morse signal. Find it by ear and walk through it into the next chapter. You can stay in a room as long as you like first. Through the last door, after chapter 20, you are back at the main menu.' },
     { title: 'Story Mode The Twist', sound: null, desc: 'Once, midway through the story, not everything is so easy. You will find out when you get there. Whatever happens, nothing there can hurt you either.' },
-    { title: 'Story Mode Chapters', sound: null, desc: 'The first time, the chapters come in order, from where the game started to how it is made today. Once you have walked the story to its end, Story Mode opens with a list of the chapters: choose one and the story carries on from there to the end. With the Speech setting turned Off, Bella\'s lines go to your Braille display.' },
+    { title: 'Story Mode Chapters', sound: null, desc: 'The first time, the chapters come in order. Once you have walked the story to its end, Story Mode opens with a list of the chapters: choose one and the story carries on from there to the end. (In 7.4.0 the story became twenty chapters, and everyone starts again from chapter 1.) With the Speech setting turned Off, Bella\'s lines go to your Braille display.' },
   ]],
 ];
 
@@ -755,7 +1038,7 @@ function input(game, g) {
   if (g === 'clock') { game.tts.speak('There is no clock in Story Mode.', { interrupt: true }); return; }
   if (g === 'enter') { game._smReport(); return; }
   if (g === 'space') { game._smFire(); return; }
-  if (g === 'left' || g === 'right') { game._turnQuick(g === 'right' ? 1 : -1); return; }
+  if (g === 'left' || g === 'right') { game._smSide(g); return; }
   if (g === 'up' || g === 'down') game._smStep(g);
 }
 
@@ -770,7 +1053,8 @@ export default {
   stopAll(game) { if (game.sm) game._smStopAll(); },
   finish() { return { custom: true, message: 'Story Mode. ' }; },
   room(game) { return game._smRoom(); },
-  turns(game) { return game.state === STATE; },
+  // (Chapter 10's road and chapter 19's event do not turn: north is ahead there.)
+  turns(game) { return game.state === STATE && !(game.sm && game.sm.room && (game.sm.room.drive || game.sm.room.events)); },
   surroundings(game, pos, room) {
     if (room === 'cathedral') return [1.0, 0.0];
     return game._arenaSurroundings(pos);
@@ -780,7 +1064,7 @@ export default {
     const sm = game.sm;
     if (!sm) return 'Story Mode.';
     if (sm.twist) return 'Story Mode. A practice area.';
-    return `Story Mode. Chapter ${sm.chapter} of 10.`;
+    return `Story Mode. Chapter ${sm.chapter} of ${SM_CHAPTERS}.`;
   },
   inputStates: { [MENU_STATE]: (game, g) => game.storyMenuInput(g) },
   statusFor: { [MENU_STATE]: (game) => 'Story Mode: ' + game._smMenuLine(game.storyMenuIndex || 0) },

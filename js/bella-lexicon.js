@@ -651,6 +651,11 @@ export const LEXICON = Object.freeze({
   "fear": "fˈɪɹ", "lightning": "lˈItnɪŋ", "fun": "fˈʌn", "indoor": "ˈɪndˌɔɹ",
   "tipping": "tˈɪpɪŋ", "bucket": "bˈʌkət", "soul": "sˈOl", "remembers": "ɹəmˈɛmbəɹz",
   "tester": "tˈɛstəɹ", "scene": "sˈin", "decision": "dəsˈɪʒən", "thank": "θˈæŋk",
+  // Web 7.4.0: the new Story Mode's narration.
+  "chapters": "ʧˈæptəɹz", "speaker": "spˈikəɹ", "centring": "sˈɛntəɹɪŋ", "opened": "ˈOpənd",
+  "dullness": "dˈʌlnəs", "tiny": "tˈIni", "you'd": "jˈud", "inspired": "ɪnspˈIəɹd",
+  "attractions": "ətɹˈækʃənz", "attraction": "ətɹˈækʃən", "token": "tˈOkən", "beware": "bəwˈɛɹ",
+  "bottomless": "bˈɑɾəmləs", "pools": "pˈulz", "grounds": "ɡɹˈWndz", "bar": "bˈɑɹ", "tour": "tˈʊɹ",
 });
 
 // Words said differently by what comes next (see bella-words.js): "the" and "to"
