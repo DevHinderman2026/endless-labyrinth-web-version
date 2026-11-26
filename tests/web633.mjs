@@ -298,7 +298,7 @@ check(Math.abs(abyss.chaosOdds.l - 0.25) < 0.03 && abyss.chaosOdds.life === 0, `
 check(abyss.first.length === 1 && abyss.first[0] === abyss.firstAt, 'of three cases in range, only the nearest knocks: ' + JSON.stringify(abyss.first));
 check(abyss.stays.length === 1 && abyss.stays[0] === abyss.firstAt, 'another case a little nearer does not take the knocking over: ' + JSON.stringify(abyss.stays));
 check(abyss.moved.length >= 1 && abyss.moved[abyss.moved.length - 1] === abyss.secondAt, 'two steps nearer, it does: ' + JSON.stringify(abyss.moved));
-check(abyss.lives === 5 && abyss.heart && abyss.said.includes('10 more seconds. Extra life, 4 lives.') && abyss.said.includes('20 more seconds. Extra life, 5 lives.'), 'an extra life: the heart, the seconds and the lives said, and no limit (' + abyss.lives + ' lives): ' + JSON.stringify(abyss.said));
+check(abyss.lives === 5 && abyss.heart && abyss.said.includes('Extra life, 4 lives.') && abyss.said.includes('Extra life, 5 lives.') && !abyss.said.some((x) => /more seconds/.test(x)), 'an extra life: the heart and the lives said (8.0.4: not the seconds), and no limit (' + abyss.lives + ' lives): ' + JSON.stringify(abyss.said));
 
 // ------------------------------------------------------------------ 7. the limiter adds nothing below its threshold
 const lim = await page.evaluate(async () => {
