@@ -13,7 +13,7 @@ const check = (ok, what) => { console.log((ok ? 'PASS ' : 'FAIL ') + what); if (
 // ------------------------------------------------------------------ the layout, on its own
 {
   const E = await import('../js/modes/edge.js');
-  let ok = true; let widest = 0; let lens = new Set(); let bendsOk = true; let neverBeside = true; let patchOk = true;
+  let ok = true; let widest = 0; let lens = new Set(); let bendsOk = true; let neverBeside = true; let patchOk = true; let neverBack = true; let drift = 0; let exitAhead = true;
   for (let i = 0; i < 400; i++) {
     const bends = E.bendsFor(1 + (i % 15));
     const lay = E.layCrossing(bends);
@@ -27,6 +27,8 @@ const check = (ok, what) => { console.log((ok ? 'PASS ' : 'FAIL ') + what); if (
     let run = 1; let turns = 0;
     for (let k = 1; k < L.length; k++) {
       const d = [L[k][0] - L[k - 1][0], L[k][1] - L[k - 1][1]];
+      if (d[1] > 0) neverBack = false;
+      drift = Math.max(drift, Math.abs(L[k][0]));
       if (Math.abs(d[0]) + Math.abs(d[1]) !== 1) ok = false;
       const prev = k >= 2 ? [L[k - 1][0] - L[k - 2][0], L[k - 1][1] - L[k - 2][1]] : [0, -1];
       if (d[0] === prev[0] && d[1] === prev[1]) run += 1; else { lens.add(run); run = 1; turns += 1; if (d[0] === -prev[0] && d[1] === -prev[1]) ok = false; }
@@ -41,14 +43,18 @@ const check = (ok, what) => { console.log((ok ? 'PASS ' : 'FAIL ') + what); if (
     }
     // The far side: open stone three across, three deep, the exit at its far end.
     if (lay.patch.length !== 9 || !has(...lay.exit)) patchOk = false;
+    const lastTwo = L.slice(-1)[0]; if (!(lay.exit[0] === lastTwo[0] && lay.exit[1] < lastTwo[1])) exitAhead = false;
   }
   check(ok, 'every crossing starts on a square five stones across, the ledge leaving from the middle of the side ahead');
   check(widest <= 2 && [...lens].every((n) => n >= 1 && n <= 2), `the ledge never runs straight more than two stones between bends (longest ${widest})`);
   check(bendsOk, 'each crossing has exactly the bends it should, all quarter turns');
   check(neverBeside, 'the ledge is one stone wide everywhere: it never runs beside itself');
   check(patchOk, 'the far side opens out three across and three deep, with the exit on stone');
+  check(neverBack, 'the path only ever goes forward or sideways, never back, away from the buzzer (8.0.3)');
+  check(drift <= 4, `it never drifts more than four steps to either side (${drift})`);
+  check(exitAhead, 'its last stretch is forward, the exit straight on from it');
   check(E.bendsFor(1) === 6 && E.bendsFor(2) === 8 && E.bendsFor(99) === 30, 'six bends in the first crossing, two more each crossing, at most thirty');
-  check(E.bendsFor(1, E.ED_CHAOS_BENDS) === 5 && E.bendsFor(3, E.ED_CHAOS_BENDS) === 7 && E.bendsFor(50, E.ED_CHAOS_BENDS) === 12, 'in chaos: five, one more each time, at most twelve');
+  check(E.bendsFor(1, E.ED_CHAOS_BENDS) === 6 && E.bendsFor(2, E.ED_CHAOS_BENDS) === 8 && E.bendsFor(50, E.ED_CHAOS_BENDS) === 12, 'in chaos: six, two more each time, at most twelve (8.0.3)');
   check(String(E.turnCell([0, -1], 1)) === '1,0' && String(E.turnCell([0, -1], 2)) === '0,1' && String(E.turnCell([0, -1], 3)) === '-1,0', 'a crossing can be turned to face any main direction');
 }
 
@@ -276,7 +282,7 @@ const chaos = await page.evaluate(async () => {
   g._chaosPickNext = pick;
   return r;
 });
-check(chaos.state === 'edge' && chaos.chaos && chaos.bends === 5, 'Chaos can bring an Edge level, five bends the first time');
+check(chaos.state === 'edge' && chaos.chaos && chaos.bends === 6, 'Chaos can bring an Edge level, six bends the first time');
 check(Math.abs(chaos.clock1 - chaos.clock0) < 0.01, `the chaos clock waits through the level (${chaos.clock0} then ${chaos.clock1})`);
 check(chaos.fallingAt === '1,-1' || chaos.fallingAt === '3,-1', 'off the edge in chaos you fall too');
 check(chaos.hp1 === chaos.hp0 - 35 && Math.abs(chaos.clock2 - (chaos.clock0 - 60)) < 0.01, `a fall costs 35 health and 60 seconds (${chaos.hp0} to ${chaos.hp1}, ${chaos.clock0} to ${chaos.clock2})`);

@@ -57,8 +57,18 @@ export const ED_STEP = 3.0;                     // one step (one stone), in the 
 export const ED_PLATFORM = 2;                   // the starting square: this many stones each way from its middle (five across)
 // The bends in a crossing: six in the first, two more each crossing, at most thirty.
 export const ED_BENDS = [6, 2, 30];
-// In Chaos: five the first time in a run, one more each time, at most twelve.
-export const ED_CHAOS_BENDS = [5, 1, 12];
+// In Chaos: six the first time in a run, two more each time, at most twelve (8.0.3; was
+// five, one more each time: a crossing now always has an even number of bends, so its
+// last stretch, and the exit, are straight ahead).
+export const ED_CHAOS_BENDS = [6, 2, 12];
+// (8.0.3, Russell, 25 November 2026: on crossing 2 the way toward the buzzer kept being
+// edge, and he could not find a way round. The path could wander off sideways and even
+// back, away from the buzzer.) Now it only ever goes forward or sideways, never back:
+// forward, then a jog of one or two steps left or right, then forward again, so the
+// buzzer is always somewhere ahead, and at every bend after going forward one of the two
+// sides leads on; after going sideways, the way on is always forward. Nor does it drift
+// more than this many steps to either side of where it began.
+export const ED_DRIFT = 4;
 export const ED_RUN = [1, 2];                   // stones straight between two bends (never more than two)
 export const ED_EXIT_DEPTH = 3;                 // the open stone at the far side: this many steps deep ...
 export const ED_EXIT_WIDE = 1;                  // ... and this many stones to each side of the ledge (three across)
@@ -117,7 +127,8 @@ export function turnCell([x, y], k) {
   return p;
 }
 export function bendsFor(crossing, table = ED_BENDS) {
-  return Math.min(table[2], table[0] + table[1] * Math.max(0, crossing - 1));
+  const n = Math.min(table[2], table[0] + table[1] * Math.max(0, crossing - 1));
+  return n + (n % 2);      // even, so the last stretch is forward (8.0.3)
 }
 
 // ------------------------------------------------------------------ the crossing
@@ -128,6 +139,7 @@ export function bendsFor(crossing, table = ED_BENDS) {
 // touches, side to side, only the stones before and after it), and ends in a patch
 // of open stone ED_EXIT_DEPTH deep and three across with the exit at its far end.
 export function layCrossing(bends) {
+  bends += bends % 2;      // (even: the last stretch, and the exit, straight ahead)
   const P = ED_PLATFORM;
   const platform = [];
   for (let x = -P; x <= P; x++) for (let y = -P; y <= P; y++) platform.push([x, y]);
@@ -154,9 +166,11 @@ export function layCrossing(bends) {
         stones.add(key(next[0], next[1])); ledge.push(next); pos = next;
       }
       if (!ok || b === bends) break;
-      // A quarter turn, left or right: whichever the next stone can go (both: either).
-      const left = [dir[1], -dir[0]]; const right = [-dir[1], dir[0]];
-      const can = [left, right].filter((d) => free([pos[0] + d[0], pos[1] + d[1]], pos));
+      // After going sideways: forward again. After going forward: a jog left or right,
+      // whichever the next stone can go (both: either), never further than ED_DRIFT out.
+      if (dir[0] !== 0) { dir = [0, -1]; continue; }
+      const sides = [[-1, 0], [1, 0]].filter((d) => Math.abs(pos[0] + d[0] * ED_RUN[1]) <= ED_DRIFT || Math.abs(pos[0] + d[0]) < Math.abs(pos[0]));
+      const can = sides.filter((d) => free([pos[0] + d[0], pos[1] + d[1]], pos));
       if (!can.length) { ok = false; break; }
       dir = choice(can);
     }
@@ -504,10 +518,10 @@ const HELP_SECTIONS = [
   ['The Edge', [
     { title: 'The Edge', sound: null, desc: 'The Edge is a mode of its own inside The Abyss, new in 8.0.0: choose The Abyss on the main menu, then The Edge. Inspired by the abyss level of Papa Sangre II, you cross the abyss on a narrow path of gravel, one step wide, with only the wind of the abyss around you. There are no creatures at all: the only danger is the edge. The way across is marked by the buzzer of The Museum\'s door, which you hear from the start. Reach it, and you are across. There is no clock. You turn and walk as in every walking mode (see General Turning). Double tap for the crossing you are on, the crossings you have finished, and the way you are facing.' },
     { title: 'The Edge Throwing Glass', sound: null, desc: 'You cannot see the edge, so you throw glass, and you have as much of it as you like. Tap with two fingers, or press the spacebar, and a piece of glass lands one step ahead of you, the way you face. If it lands on the gravel with a clink, like a cup set down, that step is safe. The glass is always heard straight in front of you, never to one side. If it whooshes away into the dark, and a moment later breaks far below, that is the edge: do not step there. Turn and throw again until you find the way on. A throw always goes in the main direction, north, east, south or west, nearest the way you face, and so does every step, so being turned a little off never takes you over the side.' },
-    { title: 'The Edge The Ledge', sound: null, desc: 'You always begin in the middle of a small square of gravel, five steps across, so you are two steps from the edge on every side: walk about, get your bearings and throw some glass before you set out. The ledge leaves from the middle of the side ahead of you. It runs straight for one or two steps, never more, then bends a quarter turn to the left or the right: three flicks, and the ticks for north, east, south and west help you count. Near the far side it opens out, three steps wide and three deep, and the buzzer is at its far end, so you can walk straight in.' },
+    { title: 'The Edge The Ledge', sound: null, desc: 'You always begin in the middle of a small square of gravel, five steps across, so you are two steps from the edge on every side: walk about, get your bearings and throw some glass before you set out. The ledge leaves from the middle of the side ahead of you. It runs straight for one or two steps, never more, then bends a quarter turn to the left or the right: three flicks, and the ticks for north, east, south and west help you count. It only ever goes forward or sideways, never back, so the buzzer is always somewhere ahead of where you started: after a stretch forward, the way on is to your left or your right; after a stretch sideways, the way on is forward again, toward the buzzer. Near the far side it opens out, three steps wide and three deep, and the buzzer is at its far end, so you can walk straight in.' },
     { title: 'The Edge Loose Stones', sound: null, desc: 'Every time a step brings you to the edge, with the edge straight ahead of you, your foot kicks a stone off it, and you hear it tumble away: do not step forward again. Turn, throw glass, and find the way on. The warning comes only for the edge straight ahead, the way you walked; the edge beside you is found with the glass.' },
     { title: 'The Edge Falling and Score', sound: null, desc: 'Step off the ledge, and you fall, screaming, and the run is over at once: there are no lives. Each crossing you finish counts: the next one begins a moment after the buzzer, on a new ledge with two more bends than the last, up to thirty. Your score is the number of crossings you finish, and The Edge has its own high score board.' },
-    { title: 'The Edge in Chaos Mode', sound: null, desc: 'Chaos Mode has Edge levels too, one crossing to a level: you know one by the gravel underfoot, the wind of the abyss and the buzzer. You begin in the middle of a square of gravel, two steps from the edge on every side, and the ledge leaves from the side you happen to be facing. A crossing in chaos has five bends the first time in a run, and one more each time after, up to twelve. The chaos clock waits for the whole level, so take your time. But a fall costs 35 health and 60 seconds of the chaos clock, and puts you back on the spot you stepped off from. If the fall leaves you with no health, or the chaos clock with no time, the run is over. There, double tap for your health, the clock and the points.' },
+    { title: 'The Edge in Chaos Mode', sound: null, desc: 'Chaos Mode has Edge levels too, one crossing to a level: you know one by the gravel underfoot, the wind of the abyss and the buzzer. You begin in the middle of a square of gravel, two steps from the edge on every side, and the ledge leaves from the side you happen to be facing. A crossing in chaos has six bends the first time in a run, and two more each time after, up to twelve. The chaos clock waits for the whole level, so take your time. But a fall costs 35 health and 60 seconds of the chaos clock, and puts you back on the spot you stepped off from. If the fall leaves you with no health, or the chaos clock with no time, the run is over. There, double tap for your health, the clock and the points.' },
   ]],
 ];
 
