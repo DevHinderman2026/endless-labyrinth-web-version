@@ -61,9 +61,9 @@ const check = (ok, what) => { console.log((ok ? 'PASS ' : 'FAIL ') + what); if (
   const buf = readFileSync(root + 'packs/' + p.file);
   const n = buf.readUInt32LE(8);
   const head = JSON.parse(buf.slice(12, 12 + n).toString('utf8'));
-  const want = ['ed_glass_stone', 'ed_glass_whoosh', 'ed_glass_below', 'ed_kick', 'ed_fall', 'ed_scream'];
-  check(buf.length === p.bytes && head.pack === 'edge' && head.entries.length === 6 && want.every((w) => head.entries.some((e) => e.name === w)),
-    'the edge pack holds its six recordings: ' + head.entries.map((e) => `${e.name} ${(e.frames / head.rate).toFixed(2)} s`).join(', '));
+  const want = ['ed_step_1', 'ed_step_2', 'ed_step_3', 'ed_step_4', 'ed_glass_stone', 'ed_glass_whoosh', 'ed_glass_below', 'ed_kick', 'ed_fall', 'ed_scream'];
+  check(buf.length === p.bytes && head.pack === 'edge' && head.entries.length === 10 && want.every((w) => head.entries.some((e) => e.name === w)),
+    'the edge pack holds its ten recordings (8.0.1: four gravel steps, the glass set down on gravel): ' + head.entries.map((e) => `${e.name} ${(e.frames / head.rate).toFixed(2)} s`).join(', '));
   check(head.entries.every((e) => !e.loop && buf.slice(12 + n + e.offset, 12 + n + e.offset + 4).toString() === 'OggS'), 'all of them Ogg one-shots');
 }
 
@@ -180,7 +180,7 @@ const walk = await page.evaluate(() => {
   const none = t.placed.filter(([nm]) => nm === n).length;
   return { c1, c2, step, kicked, again, none, cell: ed.cell.join(), state: g.state };
 });
-check(walk.c1 === '0,-1' && walk.c2 === '0,0' && walk.step.some((s) => /^step_stone_/.test(s)), 'a step forward and back on stone, with a stone footstep');
+check(walk.c1 === '0,-1' && walk.c2 === '0,0' && walk.step.some((s) => /^ed_step_[1-4]$/.test(s)), 'a step forward and back, with a footstep on gravel (8.0.1): ' + walk.step.join());
 check(walk.kicked.length === 1 && walk.kicked[0] === '9,0', 'at the edge, a loose stone is kicked off ahead of you: ' + JSON.stringify(walk.kicked));
 check(walk.again === 0, 'a kicked stone is gone: no second warning there');
 check(walk.none === 0 && walk.state === 'edge', 'a stone that is not loose gives no warning');

@@ -4,7 +4,8 @@
 // Abyss or The Edge. Inspired by the abyss level of Papa Sangre II, where a step or
 // two at a time is all the ground there is.
 //
-// You cross the abyss on a ledge of stone one step wide, with the abyss's wind all
+// You cross the abyss on a gravel path one step wide (8.0.1, Russell: gravel, not
+// stone), with the abyss's wind all
 // round you and nothing else: no creatures at all. The ledge runs straight for one
 // or two steps, never more, then bends a quarter turn left or right. Near the far
 // side it opens out for a few steps, and the exit is there: the Museum's buzzer,
@@ -12,7 +13,8 @@
 //
 // You cannot see the edge, so you throw glass. You have as much as you like: two
 // fingers or the spacebar throws a piece one step ahead, the way you face. If it
-// shatters on stone, that step is safe. If it whooshes away into the dark (and, a
+// lands on the gravel with a clink, like a cup set down (8.0.1: not a smash), that
+// step is safe. If it whooshes away into the dark (and, a
 // moment later, breaks far below), that is the edge. Some edge stones are loose,
 // too: walking onto one, your foot kicks a stone off the edge ahead of you, a
 // warning. But only some of them, about half, so the glass is still what keeps you
@@ -20,7 +22,7 @@
 // the end of the run at once. There is no clock. The score is the crossings you
 // finish; each crossing has more bends than the last.
 //
-// You always begin on a small square of stone, five steps across, in its middle: two
+// You always begin on a small square of gravel, five steps across, in its middle: two
 // steps from the edge on every side, so you can walk and get your bearings, and throw
 // glass, before you have to. The ledge leaves from the middle of the side ahead of
 // you (Russell, 25 November 2026).
@@ -34,8 +36,8 @@
 // level. A fall costs 35 health and 60 seconds of the chaos clock, and puts you back
 // on the stone you stepped from; if that leaves no health or no time, the run is over.
 //
-// The sounds: the game's own stone footsteps (The Museum's), the abyss's wind, the
-// Museum's buzzer, and new recordings for the glass, the kicked stone, the fall and
+// The sounds: the abyss's wind, the Museum's buzzer, and new recordings for the
+// gravel footsteps (8.0.1), the glass, the kicked stone, the fall and
 // the scream (Pixabay, web-only, in the edge pack; tools/edge/make_sounds.py names
 // each one). Should a recording ever be missing, the game's nearest sound stands in
 // for it (EDGE_STAND_INS), and the kicked stone is made by the game (kickSound).
@@ -74,8 +76,10 @@ export const ED_CHAOS_FALL_HEALTH = 35;
 export const ED_CHAOS_FALL_TIME = 60;
 // Sounds.
 export const ED_BACKGROUND = AB_BACKGROUND;     // the abyss's own wind
-export const ED_STEPS = MU_STEPS;               // stone underfoot
-export const ED_GLASS_STONE = 'ed_glass_stone'; // glass shattering on stone, a step ahead: safe
+// Gravel underfoot (8.0.1, Russell: the stone steps sounded like concrete); The Museum's
+// stone steps stand in should the gravel ever be missing.
+export const ED_STEPS = ['ed_step_1', 'ed_step_2', 'ed_step_3', 'ed_step_4'];
+export const ED_GLASS_STONE = 'ed_glass_stone'; // glass landing on the gravel a step ahead, like a cup set down: safe
 export const ED_GLASS_WHOOSH = 'ed_glass_whoosh';   // glass flying out over the edge: not safe
 export const ED_GLASS_BELOW = 'ed_glass_below'; // and breaking, far below
 export const ED_KICK = 'ed_kick';               // a loose stone kicked off the edge, tumbling away
@@ -85,7 +89,7 @@ export const ED_ROOM = 'open';                  // open air: no echo, as The Aby
 // Should a recording be missing: the sound that stands in for it (an events recording
 // by its stem, or the game's own), or one the game makes (ED_KICK).
 export const EDGE_STAND_INS = {
-  [ED_GLASS_STONE]: ['ut_glass_smash', 'evt_glass_smash'],
+  [ED_GLASS_STONE]: ['ut_glass_step_1'],
   [ED_GLASS_WHOOSH]: ['evt_ninja_whoosh'],
   [ED_GLASS_BELOW]: ['ut_glass_smash', 'evt_glass_smash'],
   [ED_FALL]: ['event_falling', 'evt_ninja_whoosh'],
@@ -311,7 +315,7 @@ const mixin = {
   },
 
   // ---------------------------------------------------------------- the glass
-  // A piece of glass, one step ahead the way you face: it shatters on stone, or it
+  // A piece of glass, one step ahead the way you face: it lands on the gravel, or it
   // whooshes out over the edge and, a moment later, breaks far below.
   _edThrow() {
     const ed = this.ed;
@@ -355,7 +359,8 @@ const mixin = {
     if (!this._edStone(to)) { this._edFall(to); return; }
     ed.cell = to;
     this.playerPos = this._edPos(to);
-    const bank = ED_STEPS.filter((n) => this.audio.has(n));
+    let bank = ED_STEPS.filter((n) => this.audio.has(n));
+    if (!bank.length) bank = MU_STEPS.filter((n) => this.audio.has(n));
     if (bank.length) this.audio.play(choice(bank));
     if (to[0] === ed.exit[0] && to[1] === ed.exit[1]) { this._edCrossed(); return; }
     this._edMaybeKick(d);
@@ -493,20 +498,20 @@ const mixin = {
 // ------------------------------------------------------------------ help
 const HELP_SECTIONS = [
   ['The Edge', [
-    { title: 'The Edge', sound: null, desc: 'The Edge is a mode of its own inside The Abyss, new in 8.0.0: choose The Abyss on the main menu, then The Edge. Inspired by the abyss level of Papa Sangre II, you cross the abyss on a narrow ledge of stone, one step wide, with only the wind of the abyss around you. There are no creatures at all: the only danger is the edge. The way across is marked by the buzzer of The Museum\'s door, which you hear from the start. Reach it, and you are across. There is no clock. You turn and walk as in every walking mode (see General Turning). Double tap for the crossing you are on, the crossings you have finished, and the way you are facing.' },
-    { title: 'The Edge Throwing Glass', sound: null, desc: 'You cannot see the edge, so you throw glass, and you have as much of it as you like. Tap with two fingers, or press the spacebar, and a piece of glass lands one step ahead of you, the way you face. If it shatters on stone, that step is safe. If it whooshes away into the dark, and a moment later breaks far below, that is the edge: do not step there. Turn and throw again until you find the way on. A throw always goes in the main direction, north, east, south or west, nearest the way you face, and so does every step, so being turned a little off never takes you over the side.' },
-    { title: 'The Edge The Ledge', sound: null, desc: 'You always begin in the middle of a small square of stone, five steps across, so you are two steps from the edge on every side: walk about, get your bearings and throw some glass before you set out. The ledge leaves from the middle of the side ahead of you. It runs straight for one or two steps, never more, then bends a quarter turn to the left or the right: three flicks, and the ticks for north, east, south and west help you count. Near the far side it opens out, three steps wide and three deep, and the buzzer is at its far end, so you can walk straight in.' },
+    { title: 'The Edge', sound: null, desc: 'The Edge is a mode of its own inside The Abyss, new in 8.0.0: choose The Abyss on the main menu, then The Edge. Inspired by the abyss level of Papa Sangre II, you cross the abyss on a narrow path of gravel, one step wide, with only the wind of the abyss around you. There are no creatures at all: the only danger is the edge. The way across is marked by the buzzer of The Museum\'s door, which you hear from the start. Reach it, and you are across. There is no clock. You turn and walk as in every walking mode (see General Turning). Double tap for the crossing you are on, the crossings you have finished, and the way you are facing.' },
+    { title: 'The Edge Throwing Glass', sound: null, desc: 'You cannot see the edge, so you throw glass, and you have as much of it as you like. Tap with two fingers, or press the spacebar, and a piece of glass lands one step ahead of you, the way you face. If it lands on the gravel with a clink, like a cup set down, that step is safe. If it whooshes away into the dark, and a moment later breaks far below, that is the edge: do not step there. Turn and throw again until you find the way on. A throw always goes in the main direction, north, east, south or west, nearest the way you face, and so does every step, so being turned a little off never takes you over the side.' },
+    { title: 'The Edge The Ledge', sound: null, desc: 'You always begin in the middle of a small square of gravel, five steps across, so you are two steps from the edge on every side: walk about, get your bearings and throw some glass before you set out. The ledge leaves from the middle of the side ahead of you. It runs straight for one or two steps, never more, then bends a quarter turn to the left or the right: three flicks, and the ticks for north, east, south and west help you count. Near the far side it opens out, three steps wide and three deep, and the buzzer is at its far end, so you can walk straight in.' },
     { title: 'The Edge Loose Stones', sound: null, desc: 'Some of the stones at the edge are loose. When you step onto one with the edge straight ahead of you, your foot kicks a stone off the edge, and you hear it tumble away: turn, and go another way. But only some edge stones are loose, about half of them, and a kicked stone is gone for good, so never count on the warning. The glass is what keeps you safe.' },
     { title: 'The Edge Falling and Score', sound: null, desc: 'Step off the ledge, and you fall, screaming, and the run is over at once: there are no lives. Each crossing you finish counts: the next one begins a moment after the buzzer, on a new ledge with two more bends than the last, up to thirty. Your score is the number of crossings you finish, and The Edge has its own high score board.' },
-    { title: 'The Edge in Chaos Mode', sound: null, desc: 'Chaos Mode has Edge levels too, one crossing to a level: you know one by the stone underfoot, the wind of the abyss and the buzzer. You begin in the middle of a square of stone, two steps from the edge on every side, and the ledge leaves from the side you happen to be facing. A crossing in chaos has five bends the first time in a run, and one more each time after, up to twelve. The chaos clock waits for the whole level, so take your time. But a fall costs 35 health and 60 seconds of the chaos clock, and puts you back on the stone you stepped off from. If the fall leaves you with no health, or the chaos clock with no time, the run is over. There, double tap for your health, the clock and the points.' },
+    { title: 'The Edge in Chaos Mode', sound: null, desc: 'Chaos Mode has Edge levels too, one crossing to a level: you know one by the gravel underfoot, the wind of the abyss and the buzzer. You begin in the middle of a square of gravel, two steps from the edge on every side, and the ledge leaves from the side you happen to be facing. A crossing in chaos has five bends the first time in a run, and one more each time after, up to twelve. The chaos clock waits for the whole level, so take your time. But a fall costs 35 health and 60 seconds of the chaos clock, and puts you back on the spot you stepped off from. If the fall leaves you with no health, or the chaos clock with no time, the run is over. There, double tap for your health, the clock and the points.' },
   ]],
 ];
 
 const HELP_DEMOS = [
   ['Demos, The Edge', [
     { title: 'The Edge Demos', sound: null, desc: 'The sounds of The Edge.' },
-    { title: 'Footstep on Stone', sound: ED_STEPS[0], desc: 'A step on the stone of the ledge.' },
-    { title: 'Glass on Stone', sound: ED_GLASS_STONE, desc: 'Your glass shattering on stone: that step is safe.' },
+    { title: 'Footstep on Gravel', sound: ED_STEPS[0], desc: 'A step on the gravel path.' },
+    { title: 'Glass on Gravel', sound: ED_GLASS_STONE, desc: 'Your glass landing on the gravel, like a cup set down: that step is safe.' },
     { title: 'Glass Over the Edge', sound: ED_GLASS_WHOOSH, desc: 'Your glass flying out over the edge: do not step there.' },
     { title: 'Glass Far Below', sound: ED_GLASS_BELOW, desc: 'A moment after it goes over the edge, the glass breaks far below.' },
     { title: 'Loose Stone', sound: ED_KICK, desc: 'A loose stone kicked off the edge, tumbling away: the edge is straight ahead.' },

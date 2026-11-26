@@ -20,8 +20,19 @@ MAGIC = b'ELPACK1\n'
 
 # name: (original, start s, end s, loop, rms dB, mono)
 SOUNDS = {
-    # Glass shattering on stone, a step ahead: "Broken Glass Impact" by Universfield (Pixabay 454859).
-    'ed_glass_stone':  ('edge_glass_454859.mp3', 0.0, 1.4, False, -17.0, True),
+    # (8.0.1, Russell: the path is gravel, not concrete, and the safe glass must not be a
+    # smash: glass set down on gravel, like a cup set down.)
+    # The ledge's gravel underfoot, four steps: "Footsteps on Gravel - 1" by DRAGON-STUDIO
+    # (Pixabay 397987), each step cut out on its own.
+    'ed_step_1':       ('edge_gravel_steps_397987.mp3', 0.50, 1.05, False, -24.0, True),
+    'ed_step_2':       ('edge_gravel_steps_397987.mp3', 1.28, 1.78, False, -24.0, True),
+    'ed_step_3':       ('edge_gravel_steps_397987.mp3', 2.73, 3.30, False, -24.0, True),
+    'ed_step_4':       ('edge_gravel_steps_397987.mp3', 3.40, 3.84, False, -24.0, True),
+    # Your glass landing on the gravel one step ahead: safe. A glass cup set down,
+    # "setting down glass cup" by freesound_community (93946), its second set-down,
+    # with a soft crunch of the same gravel under it (ed_glass_gravel, mixed in below).
+    'ed_glass_stone':  ('edge_glass_cup_93946.mp3', 3.63, 4.30, False, -17.0, True),
+    'ed_glass_gravel': ('edge_gravel_steps_397987.mp3', 1.29, 1.96, False, -27.0, True),
     # Glass flying out over the edge: "Simple Whoosh" by DRAGON-STUDIO (382724).
     'ed_glass_whoosh': ('edge_whoosh_382724.mp3', 0.0, 0.57, False, -17.0, True),
     # The glass breaking far below: "glass break 3" by freesound_community (102271);
@@ -36,8 +47,9 @@ SOUNDS = {
     'ed_scream':       ('edge_scream_326183.mp3', 0.0, 3.08, False, -16.0, False),
 }
 XFADE = 1.0
-FADE_OUT = {'edge_glass_454859.mp3': 0.3, 'edge_kick_44890.mp3': 0.5, 'edge_fall_433006.mp3': 0.6, 'edge_scream_326183.mp3': 0.3}
-MIXES = []
+FADE_OUT = {'edge_glass_cup_93946.mp3': 0.15, 'edge_gravel_steps_397987.mp3': 0.08, 'edge_kick_44890.mp3': 0.5, 'edge_fall_433006.mp3': 0.6, 'edge_scream_326183.mp3': 0.3}
+# Sounds made of two: (name, [parts], rms dB). The parts are not packed on their own.
+MIXES = [('ed_glass_stone', ['ed_glass_stone', 'ed_glass_gravel'], -18.0)]
 
 
 REPO = None
