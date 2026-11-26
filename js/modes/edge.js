@@ -20,8 +20,8 @@
 // (8.0.2, Russell, 25 November 2026: every time; in 8.0.0 and 8.0.1 only about half
 // the edge stones were loose, and once kicked a stone was gone, which made a moment's
 // inattention a fall). Step off the ledge and you fall, with a scream: in The Edge itself, that is
-// the end of the run at once. There is no clock. The score is the crossings you
-// finish; each crossing has more bends than the last.
+// the end of the run at once. Four minutes for the whole run (8.0.4; until then no
+// clock). The score is the crossings you finish; each crossing has more bends than the last.
 //
 // You always begin on a small square of gravel, five steps across, in its middle: two
 // steps from the edge on every side, so you can walk and get your bearings, and throw
@@ -33,8 +33,8 @@
 // over the side.
 //
 // Chaos Mode has Edge levels too (js/modes/chaos.js): one crossing, shorter, from a
-// square in the direction you happen to face. The chaos clock waits for the whole
-// level. A fall costs 35 health and 60 seconds of the chaos clock, and puts you back
+// square in the direction you happen to face. The chaos clock runs, and the buzzer
+// puts thirty seconds on it (8.0.4). A fall costs 35 health and 60 seconds of the chaos clock, and puts you back
 // on the stone you stepped from; if that leaves no health or no time, the run is over.
 //
 // The sounds: the abyss's wind, the Museum's buzzer, and new recordings for the
@@ -78,6 +78,13 @@ export const ED_DROP_DELAY = [1.8, 2.4];        // seconds before glass that wen
 export const ED_DROP_LEVEL = 0.18;              // how loud that is: far below
 export const ED_FALL_TIME = 2.6;                // seconds of falling (the scream) before the run ends, or you are put back
 export const ED_NEXT_HOLD = 1.6;                // seconds after the buzzer before the next crossing
+// (8.0.4, Russell, 25 November 2026: with the path always leading toward the buzzer the
+// mode had become much easier.) A clock: four minutes for the whole run, never added to;
+// finish as many crossings as you can. It stops during a fall and between crossings.
+export const ED_START_TIME = 240.0;
+// Chaos (8.0.4): the chaos clock runs through an Edge level, and reaching the buzzer puts
+// thirty seconds on it. (8.0.0 to 8.0.3: the clock waited for the whole level.)
+export const ED_CHAOS_DONE_TIME = 30;
 // The buzzer: as loud as The Museum's door, heard from anywhere on the crossing.
 export const ED_BUZZ_GAIN = 1.0;
 export const ED_BUZZ_FLOOR = 0.3;
@@ -246,6 +253,10 @@ const mixin = {
     if (this.beatChannel) { this.beatChannel.stop(); this.beatChannel = null; }
     this.ed = null;
     this._face(0, true);
+    this.timeLeft = ED_START_TIME;
+    this.nextAnnounceTime = Math.floor((this.timeLeft - 1) / this._announceStep()) * this._announceStep();
+    this.thirtySecAnnounced = this.timeLeft <= 30.0;
+    this.lastBeepSecond = -1;
     this._edBegin({ chaos: false, crossing: 1 });
   },
 
@@ -468,7 +479,16 @@ const mixin = {
     this._turnStop();
     if (ed.buzz.voice) { ed.buzz.voice.fadeout(200); ed.buzz.voice = null; }
     ed.crossed += 1;
-    if (ed.chaos) { ed.done = true; this.nextLevel(); return; }
+    if (ed.chaos) {
+      // Thirty seconds on the chaos clock, its announcements put right as every chaos credit does.
+      this.timeLeft += ED_CHAOS_DONE_TIME;
+      this.thirtySecAnnounced = this.timeLeft <= 30.0;
+      const step = this._announceStep();
+      this.nextAnnounceTime = Math.floor((this.timeLeft - 1) / step) * step;
+      this.lastBeepSecond = -1;
+      this.tts.speak(`${ED_CHAOS_DONE_TIME} more seconds.`, { interrupt: true });
+      ed.done = true; this.nextLevel(); return;
+    }
     ed.next = { t: ED_NEXT_HOLD };
   },
 
@@ -476,7 +496,6 @@ const mixin = {
   updateEdge(dt) {
     const ed = this.ed;
     if (!ed || this.isPaused || ed.dead || ed.done) return;
-    // (No clock: in Chaos the chaos clock waits for the whole level, js/modes/chaos.js.)
     ed.throwT = Math.max(0, ed.throwT - dt);
     this._edUpdateDrops(dt);
     if (ed.falling) { this._edUpdateFall(dt); return; }
@@ -485,6 +504,10 @@ const mixin = {
       if (ed.next.t <= 0) this._edBegin({ chaos: false, crossing: ed.crossing + 1 });
       return;
     }
+    // The clock (8.0.4): the run's four minutes, or the chaos clock. Not during a fall or
+    // between crossings (above).
+    if (this._advanceTimer(dt)) return;
+    if (this.state !== STATE || this.ed !== ed) return;
     this._edUpdateBuzzer(dt);
   },
 
@@ -493,7 +516,7 @@ const mixin = {
   _edReport() {
     const ed = this.ed;
     if (ed.chaos) { this._report('', true); return; }
-    this._report(`Crossing ${ed.crossing}. Crossed: ${ed.crossed}.`);
+    this._report(`Crossing ${ed.crossing}. Crossed: ${ed.crossed}.`, true);
   },
 
   // Everything of a crossing stopped (`all`: the wind too).
@@ -516,12 +539,12 @@ const mixin = {
 // ------------------------------------------------------------------ help
 const HELP_SECTIONS = [
   ['The Edge', [
-    { title: 'The Edge', sound: null, desc: 'The Edge is a mode of its own inside The Abyss, new in 8.0.0: choose The Abyss on the main menu, then The Edge. Inspired by the abyss level of Papa Sangre II, you cross the abyss on a narrow path of gravel, one step wide, with only the wind of the abyss around you. There are no creatures at all: the only danger is the edge. The way across is marked by the buzzer of The Museum\'s door, which you hear from the start. Reach it, and you are across. There is no clock. You turn and walk as in every walking mode (see General Turning). Double tap for the crossing you are on, the crossings you have finished, and the way you are facing.' },
+    { title: 'The Edge', sound: null, desc: 'The Edge is a mode of its own inside The Abyss, new in 8.0.0: choose The Abyss on the main menu, then The Edge. Inspired by the abyss level of Papa Sangre II, you cross the abyss on a narrow path of gravel, one step wide, with only the wind of the abyss around you. There are no creatures at all: the only danger is the edge. The way across is marked by the buzzer of The Museum\'s door, which you hear from the start. Reach it, and you are across. You have four minutes for the whole run. You turn and walk as in every walking mode (see General Turning). Double tap for the crossing you are on, the crossings you have finished, the clock, and the way you are facing.' },
     { title: 'The Edge Throwing Glass', sound: null, desc: 'You cannot see the edge, so you throw glass, and you have as much of it as you like. Tap with two fingers, or press the spacebar, and a piece of glass lands one step ahead of you, the way you face. If it lands on the gravel with a clink, like a cup set down, that step is safe. The glass is always heard straight in front of you, never to one side. If it whooshes away into the dark, and a moment later breaks far below, that is the edge: do not step there. Turn and throw again until you find the way on. A throw always goes in the main direction, north, east, south or west, nearest the way you face, and so does every step, so being turned a little off never takes you over the side.' },
     { title: 'The Edge The Ledge', sound: null, desc: 'You always begin in the middle of a small square of gravel, five steps across, so you are two steps from the edge on every side: walk about, get your bearings and throw some glass before you set out. The ledge leaves from the middle of the side ahead of you. It runs straight for one or two steps, never more, then bends a quarter turn to the left or the right: three flicks, and the ticks for north, east, south and west help you count. It only ever goes forward or sideways, never back, so the buzzer is always somewhere ahead of where you started: after a stretch forward, the way on is to your left or your right; after a stretch sideways, the way on is forward again, toward the buzzer. Near the far side it opens out, three steps wide and three deep, and the buzzer is at its far end, so you can walk straight in.' },
     { title: 'The Edge Loose Stones', sound: null, desc: 'Every time a step brings you to the edge, with the edge straight ahead of you, your foot kicks a stone off it, and you hear it tumble away: do not step forward again. Turn, throw glass, and find the way on. The warning comes only for the edge straight ahead, the way you walked; the edge beside you is found with the glass.' },
-    { title: 'The Edge Falling and Score', sound: null, desc: 'Step off the ledge, and you fall, screaming, and the run is over at once: there are no lives. Each crossing you finish counts: the next one begins a moment after the buzzer, on a new ledge with two more bends than the last, up to thirty. Your score is the number of crossings you finish, and The Edge has its own high score board.' },
-    { title: 'The Edge in Chaos Mode', sound: null, desc: 'Chaos Mode has Edge levels too, one crossing to a level: you know one by the gravel underfoot, the wind of the abyss and the buzzer. You begin in the middle of a square of gravel, two steps from the edge on every side, and the ledge leaves from the side you happen to be facing. A crossing in chaos has six bends the first time in a run, and two more each time after, up to twelve. The chaos clock waits for the whole level, so take your time. But a fall costs 35 health and 60 seconds of the chaos clock, and puts you back on the spot you stepped off from. If the fall leaves you with no health, or the chaos clock with no time, the run is over. There, double tap for your health, the clock and the points.' },
+    { title: 'The Edge Clock, Falling and Score', sound: null, desc: 'You have four minutes for the whole run: finish as many crossings as you can before the clock runs out. Nothing adds time to it. The clock stops while you fall, and for the moment between one crossing and the next. Step off the path and you fall, screaming, and the run is over at once: there are no lives. Each crossing you finish counts: the next one begins a moment after the buzzer, on a new path with two more bends than the last, up to thirty. Your score is the number of crossings you finish, and The Edge has its own high score board.' },
+    { title: 'The Edge in Chaos Mode', sound: null, desc: 'Chaos Mode has Edge levels too, one crossing to a level: you know one by the gravel underfoot, the wind of the abyss and the buzzer. You begin in the middle of a square of gravel, two steps from the edge on every side, and the path leaves from the side you happen to be facing. A crossing in chaos has six bends the first time in a run, and two more each time after, up to twelve. The chaos clock keeps running while you cross, and reaching the buzzer puts thirty seconds on it. A fall costs 35 health and 60 seconds of the chaos clock, and puts you back on the spot you stepped off from. If the fall leaves you with no health, or the chaos clock with no time, the run is over. There, double tap for your health, the clock and the points.' },
   ]],
 ];
 
@@ -548,8 +571,9 @@ function input(game, g) {
   const ed = game.ed;
   if (!ed) return;
   if (g === 'clock') {
-    // No clock in The Edge; a chaos level answers with the chaos clock.
-    if (ed.chaos) { const secs = Math.trunc(game.timeLeft); game.tts.speak(`${secs} second${secs === 1 ? '' : 's'} remaining.`, { interrupt: true }); }
+    // The run's clock, or the chaos clock (8.0.4).
+    const secs = Math.trunc(game.timeLeft);
+    game.tts.speak(`${secs} second${secs === 1 ? '' : 's'} remaining.`, { interrupt: true });
     return;
   }
   if (g === 'enter') { game._edReport(); return; }
@@ -575,12 +599,14 @@ export default {
   finish(game) {
     const ed = game.ed;
     const n = ed ? ed.crossed : 0;
-    const opener = ed && ed.dead ? 'You fell into the abyss.' : 'Game Over.';
+    const opener = ed && ed.dead ? 'You fell into the abyss.' : game.timeLeft <= 0 ? 'Time up.' : 'Game Over.';
     return { key: BOARD, score: n, message: `${opener} You finished ${n} ${plural(n, 'crossing')}. ` };
   },
   room() { return ED_ROOM; },
   turns(game) { return game.state === STATE && !(game.ed && (game.ed.falling || game.ed.next)); },
   blockPause(game) { return !!(game.ed && game.ed.falling); },
+  // (Between crossings you keep the way you face: the next crossing is laid out ahead of it.)
+  keepFacing(game) { return !!(game.ed && game.ed.next); },
   blockStride(game) { return !!(game.ed && (game.ed.falling || game.ed.next || game.ed.dead)); },
   surroundings() { return [1.0, 0.0]; },     // no walls anywhere
   strideSig(game) { const ed = game.ed; return ed ? `${ed.crossing}|${!!ed.falling}|${!!ed.next}` : ''; },

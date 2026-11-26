@@ -251,7 +251,7 @@ const cases = await page.evaluate(async () => {
 });
 check(cases.hum && cases.knock >= 1, 'a case hums where it stands, and knocks as you close in');
 check(cases.bell === 1, 'beside it and facing it, the bell rings once');
-check(cases.smash && cases.time === 20 && cases.said.includes('20 more seconds.'), 'the attack smashes it: its time is yours, and the voice says how much: ' + JSON.stringify([cases.time, cases.said]));
+check(cases.smash && cases.time === 20 && !cases.said.some((s) => /more seconds/.test(s)), 'the attack smashes it: its time is yours, and the voice no longer says how much (8.0.4): ' + JSON.stringify([cases.time, cases.said]));
 check(cases.charge[0] === 3 && cases.charge[1] === 0 && cases.closer && cases.chargeOver, 'the smash brings every creature in hearing charging for three seconds: ' + JSON.stringify(cases.charge));
 check(cases.refilled === 3, 'a new case appears in its place, so three are always around');
 check(cases.coveredSmash, 'a smash under the lightning\'s cover brings no charge');

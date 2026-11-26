@@ -134,15 +134,31 @@ check(start.face === 0 && start.ledge0 && !start.side, 'facing north, the ledge 
 check(start.turns && start.room === 'open', 'The Edge turns with you, in open air with no echo');
 check(/howling_wind/.test(start.amb || ''), 'the abyss\'s wind plays: ' + start.amb);
 check(!start.creatures, 'no creatures');
+check(Math.abs(start.clock - 240) < 0.1, 'a run has four minutes on its clock (8.0.4): ' + start.clock);
 
 // ------------------------------------------------------------------ the buzzer
 const buzz = await page.evaluate(() => {
   const g = window.__el.game; const t = window.__t;
   t.played.length = 0; t.frames(4);
   const bz = g.ed.buzz;
-  return { played: t.played.filter((n) => n === 'mu_buzzer').length, live: !!(bz.voice) };
+  return { played: t.played.filter((n) => n === 'mu_buzzer').length, live: !!(bz.voice), t: bz.t, busy: bz.voice && bz.voice.busy, state: g.state, ed: !!g.ed, clock: g.timeLeft, falling: !!g.ed.falling, next: !!g.ed.next, dead: !!g.ed.dead, done: !!g.ed.done, paused: g.isPaused };
 });
-check(buzz.played >= 1, `the Museum's buzzer sounds from the far side from the start (${buzz.played} buzzes in 4 s)`);
+check(buzz.played >= 1, `the Museum's buzzer sounds from the far side from the start (${buzz.played} buzzes in 4 s) `);
+
+// ------------------------------------------------------------------ the clock (8.0.4)
+{
+  const clk = await page.evaluate(() => {
+    const g = window.__el.game; const t = window.__t; const ed = g.ed;
+    const c0 = g.timeLeft; t.frames(5); const c1 = g.timeLeft;
+    // While falling, the clock stops.
+    ed.falling = { t: 10, at: [9, 9] }; t.frames(2); const c2 = g.timeLeft; ed.falling = null;
+    // Between crossings, too.
+    ed.next = { t: 10 }; t.frames(2); const c3 = g.timeLeft; ed.next = null;
+    return { c0, c1, c2, c3 };
+  });
+  check(Math.abs(clk.c0 - clk.c1 - 5) < 0.1, `the clock runs while you play (${clk.c0.toFixed(1)} then ${clk.c1.toFixed(1)})`);
+  check(Math.abs(clk.c2 - clk.c1) < 0.01 && Math.abs(clk.c3 - clk.c1) < 0.01, 'and stops while you fall and between crossings');
+}
 
 // ------------------------------------------------------------------ throwing glass
 const glass = await page.evaluate(() => {
@@ -241,7 +257,7 @@ const rep = await page.evaluate(() => {
   g.input('enter'); g.input('clock');
   return t.said.slice();
 });
-check(rep.length === 1 && /^Crossing 2\. Crossed: 1\. Facing /.test(rep[0]), 'double tap: the crossing, the crossings finished, the way you face: ' + rep.join(' | '));
+check(rep.length === 2 && /^Crossing 2\. Crossed: 1\. Clock \d+ seconds\. Facing /.test(rep[0]) && /^\d+ seconds remaining\.$/.test(rep[1]), 'double tap: the crossing, the crossings finished, the clock, the way you face; T: the clock (8.0.4): ' + rep.join(' | '));
 
 // ------------------------------------------------------------------ the recorded voice says its lines
 {
@@ -283,9 +299,9 @@ const chaos = await page.evaluate(async () => {
   return r;
 });
 check(chaos.state === 'edge' && chaos.chaos && chaos.bends === 6, 'Chaos can bring an Edge level, six bends the first time');
-check(Math.abs(chaos.clock1 - chaos.clock0) < 0.01, `the chaos clock waits through the level (${chaos.clock0} then ${chaos.clock1})`);
+check(Math.abs(chaos.clock0 - chaos.clock1 - 10) < 0.2, `the chaos clock keeps running through the level (8.0.4: ${chaos.clock0.toFixed(1)} then ${chaos.clock1.toFixed(1)})`);
 check(chaos.fallingAt === '1,-1' || chaos.fallingAt === '3,-1', 'off the edge in chaos you fall too');
-check(chaos.hp1 === chaos.hp0 - 35 && Math.abs(chaos.clock2 - (chaos.clock0 - 60)) < 0.01, `a fall costs 35 health and 60 seconds (${chaos.hp0} to ${chaos.hp1}, ${chaos.clock0} to ${chaos.clock2})`);
+check(chaos.hp1 === chaos.hp0 - 35 && chaos.clock1 - chaos.clock2 >= 60 && chaos.clock1 - chaos.clock2 < 60.6, `a fall costs 35 health and 60 seconds (${chaos.hp0} to ${chaos.hp1}, ${chaos.clock1.toFixed(1)} to ${chaos.clock2.toFixed(1)}, the clock stopped while falling)`);
 check(chaos.state2 === 'edge' && chaos.back === String([Number(chaos.fallingAt.split(',')[0]) - 1, -1]), 'and you are put back on the stone you stepped off from: ' + chaos.back);
 check(chaos.said.some((s) => /^Lost 60 seconds\. \d+ health\. \d+ seconds remaining\.$/.test(s)), 'the voice says what it cost: ' + chaos.said.join(' | '));
 check(chaos.report.length === 1 && /health\. Clock \d+ seconds\. \d+ points total\. Facing /.test(chaos.report[0]), 'double tap in chaos: health, clock, points: ' + chaos.report.join(' | '));
@@ -311,14 +327,24 @@ const chaos2 = await page.evaluate(async () => {
     for (const [dx, dy] of [[0, -1], [1, 0], [0, 1], [-1, 0]]) { const n = `${x + dx},${y + dy}`; if (ed.stones.has(n) && !prev.has(n)) { prev.set(n, c); q.push(n); } }
   }
   const path = []; for (let c = goal; c; c = prev.get(c)) path.unshift(c.split(',').map(Number));
-  const pts = g.chaosPoints;
+  const pts = g.chaosPoints; const time0 = g.timeLeft; t.said.length = 0;
   for (let i = 1; i < path.length; i++) { t.face(t.dirTo(path[i - 1], path[i])); g.input('up'); }
   const st = g.state;
   g._chaosPickNext = pick;
-  return { east, st, pts0: pts, pts1: g.chaosPoints, ed0: !!ed0 };
+  return { east, st, pts0: pts, pts1: g.chaosPoints, ed0: !!ed0, gained: +(g.timeLeft - time0).toFixed(2), said: t.said.slice() };
 });
 check(chaos2.east, 'in chaos the crossing lies ahead of the way you face (east, here)');
 check(chaos2.st !== 'edge' && chaos2.pts1 === chaos2.pts0 + 10, `reaching the buzzer in chaos goes on to the next level, for ten points (${chaos2.st})`);
+check(chaos2.gained === 30 && chaos2.said.includes('30 more seconds.'), `and puts thirty seconds on the chaos clock, and says so (8.0.4): ${chaos2.gained} ${chaos2.said.join(' | ')}`);
+
+// ------------------------------------------------------------------ time up (8.0.4)
+const tup = await page.evaluate(() => {
+  const g = window.__el.game; const t = window.__t;
+  t.menu(); g.menuIndex = g.menuKeys.indexOf('abyss'); g.input('enter'); g.input('down'); g.input('enter'); t.frames(0.2);
+  g.timeLeft = 1.0; t.said.length = 0; t.frames(1.5);
+  return { state: g.state, said: t.said.slice() };
+});
+check(tup.state === 'game_over' && tup.said.some((s) => /^Time up\. You finished 0 crossings\./.test(s)), 'when the four minutes run out the run is over: ' + tup.said.join(' | '));
 
 // ------------------------------------------------------------------ help and high scores
 const help = await page.evaluate(async () => {
