@@ -12,7 +12,7 @@
 // larger total of every stat, the better of every event run; this device's
 // settings kept) or replace (the file as it is, settings included), or cancel.
 
-import { KEY, FORMAT, readStats, mergeStats, SCORES_RESET_AT } from './storage.js';
+import { KEY, FORMAT, readStats, mergeStats, SCORES_RESET_AT, BOARD_RESETS, staleBoards, clearBoards, newerMarks } from './storage.js';
 import { EVENT_SCORES_KEY } from './modes/events/feed.js';
 
 export const BACKUP_FORMAT = 1;
@@ -52,7 +52,7 @@ export async function makeBackup(play = savedPlay(), made = new Date()) {
   const body = {
     endless_labyrinth_backup: BACKUP_FORMAT,
     made: made.toISOString(),
-    game: play.game || { format: FORMAT, scores: {}, settings: {}, resetAt: 0, stats: readStats(null) },
+    game: play.game || { format: FORMAT, scores: {}, settings: {}, resetAt: 0, boardResets: { ...BOARD_RESETS }, stats: readStats(null) },
     events: play.events || { total: 0, events: {} },
   };
   body.seal = await hmac(canonical({ ...body, seal: undefined }));
@@ -78,11 +78,27 @@ export async function readBackup(text) {
   return { made: new Date(body.made), game: body.game, events: body.events };
 }
 
-// A short account of what a backup holds.
+// A save's high scores, without the boards from before a reset (6.3.5's of every
+// board; 8.1.0's of The Abyss alone): those a backup cannot bring back.
+function freshScores(g) {
+  if (!g || num(g.resetAt) < SCORES_RESET_AT) return {};
+  const out = { ...(g.scores || {}) };
+  for (const k of staleBoards(g)) delete out[k];
+  return out;
+}
+
+// A save's stats, without those of a board from before its own reset (8.1.0).
+function freshStats(g) {
+  const s = readStats(g);
+  clearBoards(null, s, staleBoards(g));
+  return s;
+}
+
+// A short account of what a backup holds (what restoring it would bring back).
 export function describe(backup) {
-  const scores = Object.values(backup.game.scores || {}).filter((v) => v > 0).length;
+  const scores = Object.values(freshScores(backup.game)).filter((v) => v > 0).length;
   const events = Object.keys((backup.events && backup.events.events) || {}).length;
-  const stats = readStats(backup.game);
+  const stats = freshStats(backup.game);
   const runs = Object.values(stats.runs).reduce((a, b) => a + b, 0);
   let when;
   try { when = backup.made.toLocaleString(undefined, { dateStyle: 'full', timeStyle: 'short' }); } catch (e) { when = backup.made.toString(); }
@@ -94,12 +110,13 @@ function num(v) { return typeof v === 'number' && isFinite(v) ? v : 0; }
 // This browser's play and a backup as one: the better of everything, with this
 // device's settings kept.
 export function combine(mine, backup) {
-  const game = { format: FORMAT, scores: {}, settings: { ...((mine.game && mine.game.settings) || backup.game.settings || {}) }, resetAt: Math.max(num(mine.game && mine.game.resetAt), SCORES_RESET_AT), stats: null };
-  // (6.3.5) Scores from before the site-wide reset are not brought back by a backup.
-  const fresh = (g) => (g && num(g.resetAt) >= SCORES_RESET_AT ? (g.scores || {}) : {});
-  const a = fresh(mine.game); const b = fresh(backup.game);
+  const game = { format: FORMAT, scores: {}, settings: { ...((mine.game && mine.game.settings) || backup.game.settings || {}) }, resetAt: Math.max(num(mine.game && mine.game.resetAt), SCORES_RESET_AT),
+    boardResets: newerMarks(mine.game && mine.game.boardResets, backup.game.boardResets), stats: null };
+  // (6.3.5) Scores from before the site-wide reset are not brought back by a backup; nor
+  // (8.1.0) The Abyss's score and stats from before its own reset.
+  const a = freshScores(mine.game); const b = freshScores(backup.game);
   for (const k of new Set([...Object.keys(a), ...Object.keys(b)])) game.scores[k] = Math.max(0, Math.floor(Math.max(num(a[k]), num(b[k]))));
-  game.stats = mergeStats(readStats(mine.game), readStats(backup.game));
+  game.stats = mergeStats(freshStats(mine.game), freshStats(backup.game));
   const events = { total: Math.max(num(mine.events && mine.events.total), num(backup.events.total)), events: {} };
   const ea = (mine.events && mine.events.events) || {}; const eb = backup.events.events || {};
   for (const id of new Set([...Object.keys(ea), ...Object.keys(eb)])) {
@@ -125,8 +142,9 @@ export function combine(mine, backup) {
 // The backup as it is, settings included. The reset mark is set to now so an
 // open copy of the game takes these scores instead of putting its own back.
 export function replacement(backup) {
-  const game = { ...backup.game, format: FORMAT, resetAt: Date.now() };
-  if (num(backup.game && backup.game.resetAt) < SCORES_RESET_AT) game.scores = {};   // (6.3.5) from before the reset
+  const game = { ...backup.game, format: FORMAT, resetAt: Date.now(), boardResets: newerMarks(backup.game && backup.game.boardResets) };
+  game.scores = freshScores(backup.game);   // (6.3.5, 8.1.0) none from before a reset
+  game.stats = freshStats(backup.game);
   return { game, events: { total: num(backup.events.total), events: { ...(backup.events.events || {}) } } };
 }
 

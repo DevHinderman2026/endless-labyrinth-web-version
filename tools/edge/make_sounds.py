@@ -4,6 +4,7 @@ Run in Claude's workspace (Russell does not run it):
 
     python3 tools/edge/make_sounds.py <folder of the original Pixabay downloads> <web repository folder>
 
+(8.1.0: the new scream and wind are in Downloads\\abyss-edge-pixabay-2026-11-26.)
 Each original is the MP3 exactly as downloaded from Pixabay (kept on Russell's
 computer in Downloads\\edge-pixabay). Each finished sound is cut, set to a loudness
 like the museum pack's one-shots, limited under -1 dB, and written as Ogg Vorbis,
@@ -41,13 +42,27 @@ SOUNDS = {
     # A loose stone kicked off the edge, tumbling away: "Rocks Falling" by
     # freesound_community (44890), its first 1.6 seconds.
     'ed_kick':         ('edge_kick_44890.mp3', 0.0, 1.6, False, -18.0, True),
-    # The rush of air as you fall: "Simple Whoosh 02" by DRAGON-STUDIO (433006).
-    'ed_fall':         ('edge_fall_433006.mp3', 0.35, 2.85, False, -19.0, False),
-    # A man's scream as you fall (Russell's wish): "Male Falling Scream" by Universfield (326183).
-    'ed_scream':       ('edge_scream_326183.mp3', 0.0, 3.08, False, -16.0, False),
+    # (8.1.0, Russell, 26 November 2026.) A man's scream as you fall: "052663_Man falling."
+    # by freesound_community (Pixabay 85712), replacing "Male Falling Scream" by Universfield
+    # (326183). In The Edge itself: its first eight seconds, fading away as you fall
+    # (ED_FALL_TIME); cut before the end, where the recording's impact is meant to be. In a
+    # Chaos fall, where you land on the abyss's glass floor: the whole recording, impact
+    # and all, eleven and a half seconds (ED_CHAOS_FALL_SECONDS).
+    'ed_scream':       ('edge_scream_85712.mp3', 0.15, 8.15, False, -16.0, False),
+    'ed_scream_whole': ('edge_scream_85712.mp3', 0.15, 11.65, False, -16.0, False),
+    # The rush of air as you fall, as long as the scream: "Blizzard Wind" by DRAGON-STUDIO
+    # (463217), strong and steady for its first twelve seconds (8.1.0, Russell chose a
+    # longer wind recording over looping the old whoosh). Until 8.1.0: "Simple Whoosh 02"
+    # by DRAGON-STUDIO (433006), 0.35 to 2.85 s.
+    'ed_fall':         ('edge_fall_wind_463217.mp3', 0.0, 8.0, False, -19.0, False),
+    'ed_fall_whole':   ('edge_fall_wind_463217.mp3', 0.0, 11.5, False, -19.0, False),
 }
 XFADE = 1.0
-FADE_OUT = {'edge_glass_cup_93946.mp3': 0.15, 'edge_gravel_steps_397987.mp3': 0.08, 'edge_kick_44890.mp3': 0.5, 'edge_fall_433006.mp3': 0.6, 'edge_scream_326183.mp3': 0.3}
+FADE_OUT = {'edge_glass_cup_93946.mp3': 0.15, 'edge_gravel_steps_397987.mp3': 0.08, 'edge_kick_44890.mp3': 0.5}
+# A fade of a sound's own, over its file's (8.1.0: two cuts of one recording fade differently).
+# The Edge's scream and air fade away over their last second and a half, as you fall away.
+FADE_NAMED = {'ed_scream': 1.5, 'ed_fall': 1.5, 'ed_scream_whole': 0.4, 'ed_fall_whole': 1.0}
+FADE_IN_NAMED = {'ed_fall': 0.3, 'ed_fall_whole': 0.3}
 # Sounds made of two: (name, [parts], rms dB). The parts are not packed on their own.
 MIXES = [('ed_glass_stone', ['ed_glass_stone', 'ed_glass_gravel'], -18.0)]
 
@@ -76,7 +91,7 @@ def decode(path):
     return np.frombuffer(raw, np.float32).reshape(-1, 2).astype(np.float64)
 
 
-def make(src, a, b, loop, rms_db, mono):
+def make(src, a, b, loop, rms_db, mono, name=None):
     x = decode(src)
     if loop:
         n = int((b - a) * RATE); f = int(XFADE * RATE); s = int(a * RATE)
@@ -89,10 +104,10 @@ def make(src, a, b, loop, rms_db, mono):
         y = body
     else:
         y = x[int(a * RATE):int(b * RATE)].copy()
-        edge = int(FADE_OUT.get(src if src.startswith('pack:') else os.path.basename(src), 0.01) * RATE)
+        edge = int(FADE_NAMED.get(name, FADE_OUT.get(src if src.startswith('pack:') else os.path.basename(src), 0.01)) * RATE)
         y[-edge:] *= np.linspace(1, 0, edge)[:, None]
-        if a > 0:                         # cut from the middle: a short fade in, so it does not click
-            fin = int(0.01 * RATE)
+        if a > 0 or name in FADE_IN_NAMED:   # cut from the middle: a short fade in, so it does not click
+            fin = int(FADE_IN_NAMED.get(name, 0.01) * RATE)
             y[:fin] *= np.linspace(0, 1, fin)[:, None]
     if mono:
         m = y.mean(axis=1)
@@ -122,7 +137,7 @@ def main():
     entries = []; blobs = []; off = 0
     global REPO
     REPO = repo
-    made = {name: make(f if f.startswith('pack:') else os.path.join(src_dir, f), a, b, loop, rms, mono) for name, (f, a, b, loop, rms, mono) in SOUNDS.items()}
+    made = {name: make(f if f.startswith('pack:') else os.path.join(src_dir, f), a, b, loop, rms, mono, name) for name, (f, a, b, loop, rms, mono) in SOUNDS.items()}
     parts = set()
     for name, ps, rms in MIXES:
         n = min(len(made[q]) for q in ps)

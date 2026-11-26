@@ -17,6 +17,38 @@ const DEFAULT_SCORES = { standard: 0, battle: 0 };
 // time the game or the site is opened on 6.3.5, on every device, once. Event High
 // Scores are kept elsewhere and are not touched; nor are play time and runs (stats).
 export const SCORES_RESET_AT = Date.UTC(2026, 10, 21, 19, 0, 0);   // 21 November 2026, 2 PM Eastern
+// Web 8.1.0 (Russell, 26 November 2026: "everything of the abyss will be reset for scores and
+// backups will not be able to bring them back"; "Reset those too" for its stats). A reset of
+// one board at a time: each board named here, with its high score AND its Game Stats (play
+// time and runs), is set back to 0 in a save that does not carry this mark for it, once, on
+// every device. A save, another tab's save or a backup made before the mark cannot bring them
+// back; one made after it can. Every other board, its stats, and the Event High Scores are
+// not touched. (A board's key is also its key in the stats.)
+export const BOARD_RESETS = { abyss: Date.UTC(2026, 10, 26, 21, 0, 0) };   // The Abyss: 26 November 2026, 4 PM Eastern
+
+// The boards that a save's own marks say are from before their reset.
+export function staleBoards(data) {
+  const marks = data && typeof data === 'object' && data.boardResets && typeof data.boardResets === 'object' ? data.boardResets : {};
+  return Object.keys(BOARD_RESETS).filter((k) => !((Number(marks[k]) || 0) >= BOARD_RESETS[k]));
+}
+
+// Those boards set back to 0 in a set of scores and stats (changed in place).
+export function clearBoards(scores, stats, keys) {
+  for (const k of keys) {
+    if (scores && k in scores) scores[k] = 0;
+    if (stats) { if (stats.time) stats.time[k] = 0; if (stats.runs) stats.runs[k] = 0; }
+  }
+}
+
+// The marks to save: the newer of each.
+export function newerMarks(...sets) {
+  const out = { ...BOARD_RESETS };
+  for (const m of sets) {
+    if (!m || typeof m !== 'object') continue;
+    for (const [k, v] of Object.entries(m)) if (typeof v === 'number' && isFinite(v) && v > (out[k] || 0)) out[k] = v;
+  }
+  return out;
+}
 // The modes stats are kept for, by the key the Game Stats page shows them under.
 export const STAT_MODES = ['standard', 'battle', 'drive', 'tower', 'island', 'chaos', 'findvoice', 'abyss', 'edge', 'park', 'museum', 'ultimate', 'event'];
 const STATS_FLUSH_SECONDS = 15;   // play time is written this often, and at the end of a run
@@ -57,6 +89,7 @@ export class Store {
     this.settings = { speechRate: 3, practiced: false, homeTipSaid: false, turnTold: false };   // (turnTold, web 4.0.0: Ultimate Mode has said once that the world now turns with you)
     this.readFailed = false;   // the save is there but could not be read: never overwrite it
     this.resetAt = SCORES_RESET_AT;   // when the boards were last reset, in any copy of the game (6.3.5: a new save starts after the site-wide reset)
+    this.boardResets = { ...BOARD_RESETS };   // (8.1.0) a board reset of its own, per board: a new save starts after it
     this.stats = emptyStats();  // seconds played and runs started, per mode (web 1.1.0)
     this._statsUnsaved = 0;     // seconds of play not yet written
     this.load();
@@ -86,12 +119,18 @@ export class Store {
     this.resetAt = Number(data.resetAt) || 0;
     this.stats = readStats(data);
     this._seen = { ...this.settings };
+    let write = false;
     // (6.3.5) The boards from before the site-wide reset go back to 0, once.
     if (this.resetAt < SCORES_RESET_AT) {
       for (const k of Object.keys(this.scores)) this.scores[k] = 0;
       this.resetAt = SCORES_RESET_AT;
-      this._write();
+      write = true;
     }
+    // (8.1.0) A board reset of its own (The Abyss): its score and its stats go back to 0, once.
+    const stale = staleBoards(data);
+    if (stale.length) { clearBoards(this.scores, this.stats, stale); write = true; }
+    this.boardResets = newerMarks(data.boardResets);
+    if (write) this._write();
   }
 
   // What another copy of the game has saved since: the higher score on every
@@ -106,10 +145,21 @@ export class Store {
       for (const k of Object.keys(this.scores)) this.scores[k] = 0;
       this.resetAt = theirReset;
     }
+    // (8.1.0) A board the other copy has from before its reset (an older copy of the game
+    // still open) brings nothing back; one it has reset since this copy looked is reset here too.
+    const stale = new Set(staleBoards(data));
+    const theirMarks = (data.boardResets && typeof data.boardResets === 'object') ? data.boardResets : {};
+    for (const [k, v] of Object.entries(theirMarks)) {
+      if (typeof v === 'number' && v > (this.boardResets[k] || 0)) clearBoards(this.scores, this.stats, [k]);
+    }
+    this.boardResets = newerMarks(this.boardResets, theirMarks);
     for (const [k, v] of Object.entries(data.scores || {})) {
+      if (stale.has(k)) continue;
       if (typeof v === 'number' && isFinite(v)) this.scores[k] = Math.max(this.scores[k] || 0, Math.floor(v));
     }
-    this.stats = mergeStats(this.stats, readStats(data));
+    const theirs = readStats(data);
+    clearBoards(null, theirs, [...stale]);
+    this.stats = mergeStats(this.stats, theirs);
     // A setting the other copy changed, and this one has not, is taken in too.
     const seen = this._seen || {};
     for (const [k, v] of Object.entries(data.settings || {})) {
@@ -129,7 +179,7 @@ export class Store {
 
   _write() {
     try {
-      window.localStorage.setItem(KEY, JSON.stringify({ format: FORMAT, scores: this.scores, settings: this.settings, resetAt: this.resetAt, stats: this.stats }));
+      window.localStorage.setItem(KEY, JSON.stringify({ format: FORMAT, scores: this.scores, settings: this.settings, resetAt: this.resetAt, boardResets: this.boardResets, stats: this.stats }));
       this._seen = { ...this.settings };
       this._statsUnsaved = 0;
       // Ask the browser to keep this data even when the phone is short of space.

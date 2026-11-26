@@ -292,8 +292,8 @@ const abyss = await page.evaluate(async () => {
   g._stopRunSounds(); g.runId += 1; g.state = 'menu'; g._refreshMenu();
   return { odds, chaosOdds, first: [...first], stays: [...stays], moved: [...moved], firstAt: `${px + 20},${py}`, secondAt: `${px - 26},${py}`, lives, said, heart: played.includes(AB.AB_LIFE_SOUND), consts: [AB.AB_LIGHTNING_CASE, AB.AB_LIFE_CASE] };
 });
-check(abyss.consts[0] === 0.25 && abyss.consts[1] === 0.05, 'The Abyss: lightning in one case in four, an extra life in one in twenty (6.3.4)');
-check(Math.abs(abyss.odds.l - 0.25) < 0.03 && Math.abs(abyss.odds.life - 0.05) < 0.015, `over 4000 cases: lightning ${abyss.odds.l.toFixed(3)}, extra lives ${abyss.odds.life.toFixed(3)}`);
+check(abyss.consts[0] === 0.3 && abyss.consts[1] === 0.05, 'The Abyss: lightning in three cases in ten (8.1.0), an extra life in one in twenty (6.3.4)');
+check(Math.abs(abyss.odds.l - 0.3) < 0.03 && Math.abs(abyss.odds.life - 0.05) < 0.015, `over 4000 cases: lightning ${abyss.odds.l.toFixed(3)}, extra lives ${abyss.odds.life.toFixed(3)}`);
 check(Math.abs(abyss.chaosOdds.l - 0.25) < 0.03 && abyss.chaosOdds.life === 0, `in Chaos's Abyss: lightning ${abyss.chaosOdds.l.toFixed(3)} as well, and no extra lives`);
 check(abyss.first.length === 1 && abyss.first[0] === abyss.firstAt, 'of three cases in range, only the nearest knocks: ' + JSON.stringify(abyss.first));
 check(abyss.stays.length === 1 && abyss.stays[0] === abyss.firstAt, 'another case a little nearer does not take the knocking over: ' + JSON.stringify(abyss.stays));

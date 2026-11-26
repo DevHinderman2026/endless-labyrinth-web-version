@@ -165,7 +165,7 @@ const storm = await page.evaluate(async () => {
   const out = { cover: ab.cover, strike: ab.strike, d: Math.hypot(ab.strike[0], ab.strike[1]) };
   out.thunder = t.at.filter(([n]) => /thunder/.test(n)).map(([, p]) => p);
   out.ducked = g._abDuckFactor();
-  out.pinned = [1, 3, 4].every((k) => [...window.__el.audio.pins.values()].includes(`dry:event_sfx_file_ab_thunder_${k}`))
+  out.pinned = [1, 3, 5].every((k) => [...window.__el.audio.pins.values()].includes(`dry:event_sfx_file_ab_thunder_${k}`))
     && ![...window.__el.audio.pins.values()].some((v) => v.includes('ab_thunder_2'));
   const names = []; for (let k = 0; k < 30; k++) { ab.nextStrike = 0; g.updateAbyss(1 / 30); names.push(ab.lastThunder); }
   out.varied = new Set(names).size === 3 && !names.includes('ab_thunder_2') && names.every((x, i) => i === 0 || x !== names[i - 1]);
@@ -191,7 +191,7 @@ check(storm.ducked < 0.5 && storm.pinned && storm.varied, 'each strike is one of
 check(storm.storm[0] && storm.storm[1] && !storm.storm[2] && storm.toward, 'creatures near the strike run toward it; one far off does not: ' + JSON.stringify(storm.storm));
 check(storm.coveredStep, 'a step during the cover is not heard');
 check(storm.coverAfter === 0 && storm.heardAgain, 'once the five seconds are over, your steps are heard again');
-check(JSON.stringify(storm.gaps) === JSON.stringify([[6, 10], [7, 12], [9, 16], [16, 20], [20, 20]]), 'strikes every 6 to 10 seconds, less often every three cases, never more than 20 apart (back in 6.3.4): ' + JSON.stringify(storm.gaps));
+check(JSON.stringify(storm.gaps) === JSON.stringify([[6, 10], [7, 12], [9, 16], [16, 25], [25, 25]]), 'strikes every 6 to 10 seconds, less often every three cases, never more than 25 apart (8.1.0; 20 from 6.3.4): ' + JSON.stringify(storm.gaps));
 
 // ------------------------------------------------------------------ glass cases
 const cases = await page.evaluate(async () => {
@@ -261,7 +261,22 @@ const o = cases.odds; const sh = (k) => o[k] / 40000;
 check(o[10] === 40000 && o[20] === 0 && o[30] === 0 && o[60] === 0, 'every case gives 10 seconds, never 20, 30 or 60 (8.0.2): ' + JSON.stringify(o));
 { const oc = cases.chaosOdds; const sc = (k) => oc[k] / 40000;
   check(Math.abs(sc(10) - 0.62) < 0.02 && Math.abs(sc(20) - 0.25) < 0.02 && Math.abs(sc(30) - 0.10) < 0.015 && Math.abs(sc(60) - 0.03) < 0.01, 'in Chaos the cases keep 10 mostly, sometimes 20 or 30, rarely 60: ' + JSON.stringify(oc)); }
-check(JSON.stringify(cases.creaturesFor) === JSON.stringify([3, 3, 4, 5, 6, 7, 7]), 'one more creature every three cases, at most seven: ' + JSON.stringify(cases.creaturesFor));
+check(JSON.stringify(cases.creaturesFor) === JSON.stringify([3, 3, 4, 5, 6, 7, 10]), 'one more creature every three cases, at most ten (8.1.0; seven until then): ' + JSON.stringify(cases.creaturesFor));
+
+// ------------------------------------------------------------------ 8.1.0: harder long runs, Chaos's stages unchanged
+{
+  const M = await import('../js/modes/abyss.js');
+  check(M.creaturesFor(21) === 10 && M.creaturesFor(18) === 9 && M.creaturesFor(300) === 10, 'ten creatures from case 21 on');
+  check(M.creaturesFor(30, true) === 7 && M.creaturesFor(6, true) === 5, 'in Chaos\'s Abyss stages, at most seven, as before (five at most with eight cases)');
+  check(JSON.stringify(M.strikeGap(30, true)) === JSON.stringify([16, 20]) && JSON.stringify(M.strikeGap(6, true)) === JSON.stringify([8, 14]), 'in Chaos, lightning never more than 20 seconds apart, as before');
+  check(M.AB_LIGHTNING_CASE === 0.3 && M.lightningCaseOdds(false) === 0.3 && M.lightningCaseOdds(true) === 0.25, 'lightning in three cases in ten; in Chaos one in four, as before');
+  const ring = [0, 3, 30, 60].map((k) => M.caseRing(k));
+  check(JSON.stringify(ring) === JSON.stringify([[25, 55], [28, 58], [55, 85], [85, 115]]), 'new cases a step further off every three cases, with no end (about 18 to 28 steps at case 30, 28 to 38 at 60): ' + JSON.stringify(ring));
+  check(JSON.stringify(M.caseRing(30, true)) === JSON.stringify([25, 55]) && M.caseRange(30, true) === 70 && M.caseFar(30, true) === 110, 'in Chaos the cases stay where they were');
+  const ok = [0, 3, 30, 60, 300].every((k) => { const [, hi] = M.caseRing(k); const range = M.caseRange(k); return range > hi && M.caseFar(k) > range + 30 && Math.abs((1 - hi / range) - (1 - 55 / 70)) < 1e-9; });
+  check(ok && M.caseRange(0) === 70 && M.caseFar(0) === 110, 'their hum carries further in step, the furthest as loud as at the start, and they are let go further off');
+}
+
 
 // ------------------------------------------------------------------ endless, the report
 const far = await page.evaluate(async () => {
@@ -385,7 +400,7 @@ const grow = await page.evaluate(() => {
   // The mode itself, seven creatures, a minute of walking and lightning: they keep
   // three steps apart, none is lost, nothing goes astray.
   t.start('abyss');
-  const b = g.ab; b.smashed = 12; g.timeLeft = 999;
+  const b = g.ab; b.smashed = 21; g.timeLeft = 999;
   g._abFillCreatures(); g.updateAbyss(1 / 30);
   let worst = 1e9; let lost = 0; let bad = 0; let tooNear = 0; const n0 = b.creatures.length;
   // Keeping apart, watched: it never moves a creature that is not hunting you nearer
@@ -420,9 +435,26 @@ const grow = await page.evaluate(() => {
   return out;
 });
 check(grow.chaos && grow.next >= 8 - 0.04 && grow.nextHi <= 14 && grow.trials.every((x) => x[0] === 'abyss'), 'in a Chaos Abyss level too, the lightning comes less often as cases are smashed (six cases in, two tiers: 8 to 14 seconds): ' + JSON.stringify(grow.trials.map((x) => x[4])));
-check(grow.n0 === 7 && grow.lost === 0 && grow.bad === 0, 'seven creatures through a minute of walking and lightning: none lost, none astray: ' + JSON.stringify([grow.n0, grow.lost, grow.bad]));
+check(grow.n0 === 10 && grow.lost === 0 && grow.bad === 0, 'ten creatures (8.1.0) through a minute of walking and lightning: none lost, none astray: ' + JSON.stringify([grow.n0, grow.lost, grow.bad]));
 check(grow.worst >= 8.9, 'and they keep three steps apart all the while: ' + grow.worst.toFixed(2));
 check(grow.tooNear === 0 && grow.keep >= 9 - 0.6, 'keeping apart never eases a creature that is not hunting you in toward you: ' + JSON.stringify([grow.tooNear, +grow.keep.toFixed(2)]));
+
+{
+  // Played: a long run's new cases appear in the wider ring, and are heard.
+  const far81 = await page.evaluate(async () => {
+    const g = window.__el.game; const t = window.__t; const M = await import('./js/modes/abyss.js');
+    t.start('abyss'); const ab = g.ab; ab.smashed = 30; g.timeLeft = 999;
+    for (const c of [...ab.cases]) g._abDropCase(c);
+    g._abFillCases(); g.updateAbyss(1 / 30);
+    const ds = ab.cases.map((c) => Math.hypot(c.x - g.playerPos[0], c.y - g.playerPos[1]));
+    const heard = ab.cases.every((c) => !!c.voice);
+    let l = 0; for (let i = 0; i < 4000; i++) { const c = g._abNewCase(); if (c.lightning) l += 1; g._abDropCase(c); }
+    t.menu();
+    return { ds, heard, l: l / 4000 };
+  });
+  check(far81.ds.every((d) => d >= 54.9 && d <= 85.1) && far81.heard, 'at case 30 the cases appear 55 to 85 units off, and every one is heard: ' + far81.ds.map((d) => d.toFixed(1)).join(', '));
+  check(Math.abs(far81.l - 0.3) < 0.03, 'about three cases in ten hold lightning: ' + far81.l.toFixed(3));
+}
 
 check(!errors.length, 'no page errors ' + errors.join(' | '));
 await browser.close();

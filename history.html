@@ -8,7 +8,7 @@
   <link rel="icon" href="icons/icon-192.png">
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
   <meta name="theme-color" content="#0c0f14">
-  <link rel="stylesheet" href="css/site.css?v=8.0.4">
+  <link rel="stylesheet" href="css/site.css?v=8.1.0">
 </head>
 <body data-update-alert="history">
   <header class="site">
@@ -19,6 +19,17 @@
   <main class="page">
     <p>This page lists the web version. For the Windows version, see its <a href="https://github.com/DevHinderman2026/Endless-Labyrinth/blob/main/Credits%20and%20Version%20History/CHANGELOG.md">changelog</a> on GitHub.</p>
     <p>The game updates by itself: the next time you open it, you have the latest version. Only a sound pack that has changed is downloaded again, and your high scores are kept. Events are not listed here: they appear in the Events menu as they open.</p>
+
+    <h2>8.1.0 (26 November 2026), web only</h2>
+    <p>Harder long runs in The Abyss, a fresh start for its high score, new sounds, and a long fall in Chaos Mode.</p>
+    <ul>
+      <li>The Abyss: a long run now keeps getting harder. Until now nothing changed after about the twelfth case, so a careful player could go on almost for ever. Now one more creature wakes every three cases up to ten instead of seven, new glass cases appear a step further away every three cases with no end (their hum carries further to match), the lightning can be up to twenty-five seconds apart instead of twenty, and about three cases in ten hold lightning instead of one in four. Chaos Mode's Abyss levels stay exactly as they were.</li>
+      <li>The Abyss high score board, and The Abyss's play time and runs on the Game Stats page, have been reset to zero on every device, because runs from before this update were far easier. A backup made before this update brings back everything else, but not The Abyss's score or stats; a backup made from now on brings them back as usual. Every other board, its stats, and the Event High Scores are untouched.</li>
+      <li>The Abyss: a new thunderclap, "BIG THUNDER recorded in stereo with rain fall and lightning" by rcroller, takes the place of "big thunder clap", one of the three a strike plays.</li>
+      <li>The Edge: a new scream as you fall, "052663_Man falling.", eight seconds that fade away as you fall, with a longer rush of wind to match, "Blizzard Wind" by DRAGON-STUDIO.</li>
+      <li>Chaos Mode: a fall from the Edge no longer puts you straight back on the path. It costs 35 health and no time, and you fall the whole way, screaming, onto the glass floor of the abyss below. There The Abyss's rules hold: smash three glass cases on your first fall in a run, one more each fall after, up to eight. They give no time, and the chaos clock keeps running; a creature that catches you costs 25 health and 10 seconds. When the last case breaks, an elevator calls you, and its ride, with the clock stopped, carries you back onto the spot you fell from, with sixty more seconds on the chaos clock. Then the crossing goes on.</li>
+      <li>The help now explains that in Chaos Mode, running out of air on the seabed costs 10 health every second until you reach air again. The Chaos Islands section wrongly said that drowning ends the run.</li>
+    </ul>
 
     <h2>8.0.4 (25 November 2026), web only</h2>
     <p>A clock for The Edge, and a quieter Abyss.</p>
@@ -1175,70 +1186,70 @@
   <script type="importmap">
   {
     "imports": {
-      "./js/accessibility.js": "./js/accessibility.js?v=8.0.4",
-      "./js/audio.js": "./js/audio.js?v=8.0.4",
-      "./js/backup.js": "./js/backup.js?v=8.0.4",
-      "./js/backups-page.js": "./js/backups-page.js?v=8.0.4",
-      "./js/bella-lexicon.js": "./js/bella-lexicon.js?v=8.0.4",
-      "./js/bella-words.js": "./js/bella-words.js?v=8.0.4",
-      "./js/braille.js": "./js/braille.js?v=8.0.4",
-      "./js/calendar.js": "./js/calendar.js?v=8.0.4",
-      "./js/device.js": "./js/device.js?v=8.0.4",
-      "./js/display.js": "./js/display.js?v=8.0.4",
-      "./js/game.js": "./js/game.js?v=8.0.4",
-      "./js/gestures.js": "./js/gestures.js?v=8.0.4",
-      "./js/help-data.js": "./js/help-data.js?v=8.0.4",
-      "./js/help-page.js": "./js/help-page.js?v=8.0.4",
-      "./js/keywords.js": "./js/keywords.js?v=8.0.4",
-      "./js/main.js": "./js/main.js?v=8.0.4",
-      "./js/modes/abyss.js": "./js/modes/abyss.js?v=8.0.4",
-      "./js/modes/chaos.js": "./js/modes/chaos.js?v=8.0.4",
-      "./js/modes/driving.js": "./js/modes/driving.js?v=8.0.4",
-      "./js/modes/edge.js": "./js/modes/edge.js?v=8.0.4",
-      "./js/modes/events/blocks.js": "./js/modes/events/blocks.js?v=8.0.4",
-      "./js/modes/events/engine.js": "./js/modes/events/engine.js?v=8.0.4",
-      "./js/modes/events/feed.js": "./js/modes/events/feed.js?v=8.0.4",
-      "./js/modes/events/help.js": "./js/modes/events/help.js?v=8.0.4",
-      "./js/modes/events/missions.js": "./js/modes/events/missions.js?v=8.0.4",
-      "./js/modes/events/more-spec.js": "./js/modes/events/more-spec.js?v=8.0.4",
-      "./js/modes/events/more.js": "./js/modes/events/more.js?v=8.0.4",
-      "./js/modes/events/py.js": "./js/modes/events/py.js?v=8.0.4",
-      "./js/modes/events/schema.js": "./js/modes/events/schema.js?v=8.0.4",
-      "./js/modes/events/sign.js": "./js/modes/events/sign.js?v=8.0.4",
-      "./js/modes/events/sounds.js": "./js/modes/events/sounds.js?v=8.0.4",
-      "./js/modes/events/tunes.js": "./js/modes/events/tunes.js?v=8.0.4",
-      "./js/modes/events/wording.js": "./js/modes/events/wording.js?v=8.0.4",
-      "./js/modes/events.js": "./js/modes/events.js?v=8.0.4",
-      "./js/modes/findvoice-guide.js": "./js/modes/findvoice-guide.js?v=8.0.4",
-      "./js/modes/findvoice.js": "./js/modes/findvoice.js?v=8.0.4",
-      "./js/modes/index.js": "./js/modes/index.js?v=8.0.4",
-      "./js/modes/island.js": "./js/modes/island.js?v=8.0.4",
-      "./js/modes/museum.js": "./js/modes/museum.js?v=8.0.4",
-      "./js/modes/park.js": "./js/modes/park.js?v=8.0.4",
-      "./js/modes/story.js": "./js/modes/story.js?v=8.0.4",
-      "./js/modes/tower.js": "./js/modes/tower.js?v=8.0.4",
-      "./js/modes/ultimate/cast.js": "./js/modes/ultimate/cast.js?v=8.0.4",
-      "./js/modes/ultimate/help.js": "./js/modes/ultimate/help.js?v=8.0.4",
-      "./js/modes/ultimate/world.js": "./js/modes/ultimate/world.js?v=8.0.4",
-      "./js/modes/ultimate.js": "./js/modes/ultimate.js?v=8.0.4",
-      "./js/packs.js": "./js/packs.js?v=8.0.4",
-      "./js/site.js": "./js/site.js?v=8.0.4",
-      "./js/sound-rules.js": "./js/sound-rules.js?v=8.0.4",
-      "./js/speech.js": "./js/speech.js?v=8.0.4",
-      "./js/stats.js": "./js/stats.js?v=8.0.4",
-      "./js/storage.js": "./js/storage.js?v=8.0.4",
-      "./js/storymode-lines.js": "./js/storymode-lines.js?v=8.0.4",
-      "./js/turning.js": "./js/turning.js?v=8.0.4",
-      "./js/update-alert.js": "./js/update-alert.js?v=8.0.4",
-      "./js/version.js": "./js/version.js?v=8.0.4",
-      "./js/voice-text.js": "./js/voice-text.js?v=8.0.4",
-      "./js/voice.js": "./js/voice.js?v=8.0.4",
-      "./js/wetworker.js": "./js/wetworker.js?v=8.0.4"
+      "./js/accessibility.js": "./js/accessibility.js?v=8.1.0",
+      "./js/audio.js": "./js/audio.js?v=8.1.0",
+      "./js/backup.js": "./js/backup.js?v=8.1.0",
+      "./js/backups-page.js": "./js/backups-page.js?v=8.1.0",
+      "./js/bella-lexicon.js": "./js/bella-lexicon.js?v=8.1.0",
+      "./js/bella-words.js": "./js/bella-words.js?v=8.1.0",
+      "./js/braille.js": "./js/braille.js?v=8.1.0",
+      "./js/calendar.js": "./js/calendar.js?v=8.1.0",
+      "./js/device.js": "./js/device.js?v=8.1.0",
+      "./js/display.js": "./js/display.js?v=8.1.0",
+      "./js/game.js": "./js/game.js?v=8.1.0",
+      "./js/gestures.js": "./js/gestures.js?v=8.1.0",
+      "./js/help-data.js": "./js/help-data.js?v=8.1.0",
+      "./js/help-page.js": "./js/help-page.js?v=8.1.0",
+      "./js/keywords.js": "./js/keywords.js?v=8.1.0",
+      "./js/main.js": "./js/main.js?v=8.1.0",
+      "./js/modes/abyss.js": "./js/modes/abyss.js?v=8.1.0",
+      "./js/modes/chaos.js": "./js/modes/chaos.js?v=8.1.0",
+      "./js/modes/driving.js": "./js/modes/driving.js?v=8.1.0",
+      "./js/modes/edge.js": "./js/modes/edge.js?v=8.1.0",
+      "./js/modes/events/blocks.js": "./js/modes/events/blocks.js?v=8.1.0",
+      "./js/modes/events/engine.js": "./js/modes/events/engine.js?v=8.1.0",
+      "./js/modes/events/feed.js": "./js/modes/events/feed.js?v=8.1.0",
+      "./js/modes/events/help.js": "./js/modes/events/help.js?v=8.1.0",
+      "./js/modes/events/missions.js": "./js/modes/events/missions.js?v=8.1.0",
+      "./js/modes/events/more-spec.js": "./js/modes/events/more-spec.js?v=8.1.0",
+      "./js/modes/events/more.js": "./js/modes/events/more.js?v=8.1.0",
+      "./js/modes/events/py.js": "./js/modes/events/py.js?v=8.1.0",
+      "./js/modes/events/schema.js": "./js/modes/events/schema.js?v=8.1.0",
+      "./js/modes/events/sign.js": "./js/modes/events/sign.js?v=8.1.0",
+      "./js/modes/events/sounds.js": "./js/modes/events/sounds.js?v=8.1.0",
+      "./js/modes/events/tunes.js": "./js/modes/events/tunes.js?v=8.1.0",
+      "./js/modes/events/wording.js": "./js/modes/events/wording.js?v=8.1.0",
+      "./js/modes/events.js": "./js/modes/events.js?v=8.1.0",
+      "./js/modes/findvoice-guide.js": "./js/modes/findvoice-guide.js?v=8.1.0",
+      "./js/modes/findvoice.js": "./js/modes/findvoice.js?v=8.1.0",
+      "./js/modes/index.js": "./js/modes/index.js?v=8.1.0",
+      "./js/modes/island.js": "./js/modes/island.js?v=8.1.0",
+      "./js/modes/museum.js": "./js/modes/museum.js?v=8.1.0",
+      "./js/modes/park.js": "./js/modes/park.js?v=8.1.0",
+      "./js/modes/story.js": "./js/modes/story.js?v=8.1.0",
+      "./js/modes/tower.js": "./js/modes/tower.js?v=8.1.0",
+      "./js/modes/ultimate/cast.js": "./js/modes/ultimate/cast.js?v=8.1.0",
+      "./js/modes/ultimate/help.js": "./js/modes/ultimate/help.js?v=8.1.0",
+      "./js/modes/ultimate/world.js": "./js/modes/ultimate/world.js?v=8.1.0",
+      "./js/modes/ultimate.js": "./js/modes/ultimate.js?v=8.1.0",
+      "./js/packs.js": "./js/packs.js?v=8.1.0",
+      "./js/site.js": "./js/site.js?v=8.1.0",
+      "./js/sound-rules.js": "./js/sound-rules.js?v=8.1.0",
+      "./js/speech.js": "./js/speech.js?v=8.1.0",
+      "./js/stats.js": "./js/stats.js?v=8.1.0",
+      "./js/storage.js": "./js/storage.js?v=8.1.0",
+      "./js/storymode-lines.js": "./js/storymode-lines.js?v=8.1.0",
+      "./js/turning.js": "./js/turning.js?v=8.1.0",
+      "./js/update-alert.js": "./js/update-alert.js?v=8.1.0",
+      "./js/version.js": "./js/version.js?v=8.1.0",
+      "./js/voice-text.js": "./js/voice-text.js?v=8.1.0",
+      "./js/voice.js": "./js/voice.js?v=8.1.0",
+      "./js/wetworker.js": "./js/wetworker.js?v=8.1.0"
     }
   }
   </script>
   <!-- end of versions -->
-  <script type="module" src="js/site.js?v=8.0.4"></script>
-  <script type="module" src="js/update-alert.js?v=8.0.4"></script>
+  <script type="module" src="js/site.js?v=8.1.0"></script>
+  <script type="module" src="js/update-alert.js?v=8.1.0"></script>
 </body>
 </html>

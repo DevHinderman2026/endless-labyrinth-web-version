@@ -5,3 +5,7 @@ desktop.ini
 tools/voice/__pycache__/
 tools/museum/__pycache__/
 tools/museum/finished/
+tools/edge/finished/
+tools/abyss/finished/
+__pycache__/
+node_modules
