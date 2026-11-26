@@ -258,7 +258,7 @@ check(cases.coveredSmash, 'a smash under the lightning\'s cover brings no charge
 check(cases.lightningCase, 'a lightning case sends a strike, and the creatures run to it instead of you');
 check(cases.click, 'with nothing in reach, the attack clicks');
 const o = cases.odds; const sh = (k) => o[k] / 40000;
-check(Math.abs(sh(10) - 0.7) < 0.02 && Math.abs(sh(20) - 0.3) < 0.02 && o[30] === 0 && o[60] === 0, 'cases give 10 seconds mostly, sometimes 20, never 30 or 60 (6.3.4): ' + JSON.stringify(o));
+check(o[10] === 40000 && o[20] === 0 && o[30] === 0 && o[60] === 0, 'every case gives 10 seconds, never 20, 30 or 60 (8.0.2): ' + JSON.stringify(o));
 { const oc = cases.chaosOdds; const sc = (k) => oc[k] / 40000;
   check(Math.abs(sc(10) - 0.62) < 0.02 && Math.abs(sc(20) - 0.25) < 0.02 && Math.abs(sc(30) - 0.10) < 0.015 && Math.abs(sc(60) - 0.03) < 0.01, 'in Chaos the cases keep 10 mostly, sometimes 20 or 30, rarely 60: ' + JSON.stringify(oc)); }
 check(JSON.stringify(cases.creaturesFor) === JSON.stringify([3, 3, 4, 5, 6, 7, 7]), 'one more creature every three cases, at most seven: ' + JSON.stringify(cases.creaturesFor));

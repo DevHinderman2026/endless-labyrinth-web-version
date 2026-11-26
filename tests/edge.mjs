@@ -152,14 +152,19 @@ const glass = await page.evaluate(() => {
   const below = t.placed.map(([n, p]) => [n, p.join()]);
   // A little off a main direction still throws along it.
   ed.cell = [0, 0]; g.playerPos = [0, 0]; g._turnStop(); g._face(0.35, true); t.placed.length = 0; t.frames(0.5);
-  g.input('space'); const off = t.placed.map(([n, p]) => p.join());
-  return { onStone, whoosh, below, off, names: Object.fromEntries(E), throws: ed.throws };
+  g.input('space'); const off = t.placed.map(([n, p]) => p.join()); const offName = t.placed.map(([n]) => n);
+  const rel = t.placed.length ? g._rel(t.placed[0][1]) : null; const offRel = rel ? [+rel[0].toFixed(3), +rel[1].toFixed(3)] : null;
+  // Turned a little off west at the square's west edge: over the edge, still straight ahead.
+  ed.cell = [-2, 0]; g.playerPos = g._edPos(ed.cell); g._turnStop(); g._face(3 * Math.PI / 2 + 0.35, true); t.placed.length = 0; t.frames(0.5);
+  g.input('space'); const wRel = t.placed.length ? g._rel(t.placed[0][1]) : null; const wName = t.placed.map(([n]) => n);
+  return { onStone, whoosh, below, off, offName, offRel, wRel: wRel && [+wRel[0].toFixed(3), +wRel[1].toFixed(3)], wName, names: Object.fromEntries(E), throws: ed.throws };
 });
 check(glass.names.ed_glass_stone === 'ed_glass_stone' && glass.names.ed_scream === 'ed_scream' && glass.names.ed_kick === 'ed_kick', 'The Edge plays its own recordings: ' + JSON.stringify(glass.names));
 check(glass.onStone.length === 1 && glass.onStone[0][0] === glass.names.ed_glass_stone && glass.onStone[0][1] === '0,-3', 'glass thrown ahead shatters on the stone one step ahead: ' + JSON.stringify(glass.onStone));
 check(glass.whoosh.length === 1 && glass.whoosh[0][0] === glass.names.ed_glass_whoosh && glass.whoosh[0][1] === '-9,0', 'glass thrown over the edge whooshes away from there: ' + JSON.stringify(glass.whoosh));
 check(glass.below.length === 1 && glass.below[0][0] === glass.names.ed_glass_below, 'and a moment later breaks far below: ' + JSON.stringify(glass.below));
-check(glass.off.length === 1 && glass.off[0] === '0,-3', 'turned a little off north, the glass still lands one step north');
+check(glass.off.length === 1 && glass.offName[0] === glass.names.ed_glass_stone && glass.offRel && Math.abs(glass.offRel[0]) < 0.01 && glass.offRel[1] > 2.9, 'turned a little off north, the glass still lands on the stone to the north, and is heard straight in front of you (8.0.2): ' + JSON.stringify(glass.offRel));
+check(glass.wName[0] === glass.names.ed_glass_whoosh && glass.wRel && Math.abs(glass.wRel[0]) < 0.01 && glass.wRel[1] > 2.9, 'turned a little off west at the edge, the glass goes over it, heard straight in front of you: ' + JSON.stringify(glass.wRel));
 
 // ------------------------------------------------------------------ walking and loose stones
 const walk = await page.evaluate(() => {
@@ -172,8 +177,8 @@ const walk = await page.evaluate(() => {
   ed.loose.clear(); ed.loose.set('2,0>1,0', true);   // (the mode keeps its own Math.random: the stone is made loose by hand)
   t.face(1); t.placed.length = 0; g.input('up'); g.input('up');
   const kicked = t.placed.filter(([nm]) => nm === n).map(([, p]) => p.join());
-  // Back and forward again: the kicked stone has gone, no second warning.
-  g.input('down'); t.placed.length = 0; g.input('up');
+  // Back and forward again: it warns again (8.0.2: every time).
+  ed.loose.clear(); g.input('down'); t.placed.length = 0; g.input('up');
   const again = t.placed.filter(([nm]) => nm === n).length;
   // None loose: no warning at all.
   ed.loose.clear(); ed.loose.set('2,-2>0,-1', false); t.face(0); t.placed.length = 0; g.input('up'); g.input('up');
@@ -182,7 +187,7 @@ const walk = await page.evaluate(() => {
 });
 check(walk.c1 === '0,-1' && walk.c2 === '0,0' && walk.step.some((s) => /^ed_step_[1-4]$/.test(s)), 'a step forward and back, with a footstep on gravel (8.0.1): ' + walk.step.join());
 check(walk.kicked.length === 1 && walk.kicked[0] === '9,0', 'at the edge, a loose stone is kicked off ahead of you: ' + JSON.stringify(walk.kicked));
-check(walk.again === 0, 'a kicked stone is gone: no second warning there');
+check(walk.again === 1, 'back and forward again: the warning comes again, every time (8.0.2)');
 check(walk.none === 0 && walk.state === 'edge', 'a stone that is not loose gives no warning');
 
 // ------------------------------------------------------------------ falling, in The Edge
