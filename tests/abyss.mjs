@@ -103,11 +103,11 @@ const moves = await page.evaluate(() => {
   out.wanderSpeed = Math.max(Math.hypot(a.x - p0[0][0], a.y - p0[0][1]), Math.hypot(b.x - p0[1][0], b.y - p0[1][1])) / 2.0;
   out.neverCloser = dist(a) >= d0[0] - 1e-6 && dist(b) >= d0[1] - 1e-6;
   out.notHunting = !a.moving && !b.moving && a.wandering;
-  t.put(a, 0, 24); t.put(b, 0, -45);
-  // One walking step (north): a creeps toward it for 0.6 s, b does not hear it.
+  t.put(a, 0, 12); t.put(b, 0, -45);
+  // One walking step (8.1.4: heard within four steps): a creeps toward it for 0.4 s, quietly; b does not hear it.
   g.input('down');                                     // a step back, to the south
   const a0 = [a.x, a.y]; const b0 = [b.x, b.y];
-  t.frames(0.3); out.aMoving = a.moving; out.creep = Math.hypot(a.x - a0[0], a.y - a0[1]) / 0.3;
+  t.frames(0.3); out.aMoving = a.moving; out.creep = Math.hypot(a.x - a0[0], a.y - a0[1]) / 0.3; out.quietCreep = a.creeping && a.note !== g._abName('ab_creature_hunt');
   out.bStayed = !b.moving;
   t.frames(0.5); const a1 = [a.x, a.y]; t.frames(1.0);
   out.aFrozen = !a.moving && Math.hypot(a.x - a1[0], a.y - a1[1]) <= 1.5 + 1e-6;
@@ -122,7 +122,7 @@ const moves = await page.evaluate(() => {
   return out;
 });
 check(moves.wanderSpeed > 0.5 && moves.wanderSpeed <= 1.5 + 1e-6 && moves.neverCloser && moves.notHunting, 'while you stand still they only wander, 30 steps a minute, never toward you: ' + moves.wanderSpeed.toFixed(2));
-check(moves.aMoving && Math.abs(moves.creep - 4.5) < 0.3 && moves.bStayed, 'a walking step: creatures within ten steps creep toward it (90 steps a minute); one further off does not hear it: ' + moves.creep.toFixed(2));
+check(moves.aMoving && Math.abs(moves.creep - 4.5) < 0.3 && moves.bStayed && moves.quietCreep, 'a walking step: creatures within four steps creep toward it (90 steps a minute), breathing, not growling (8.1.4); one further off does not hear it: ' + moves.creep.toFixed(2));
 check(moves.aFrozen && moves.bFrozen, 'then they stop hunting, and only wander, until they hear you again (6.3.5: back as before 6.3.4)');
 check(Math.abs(moves.charge - 11) < 0.3, 'a running step is heard from twenty steps, and they charge, 220 steps a minute (your run is 280): ' + moves.charge.toFixed(2));
 check(moves.footsteps >= 2, 'a moving creature makes a footstep on the glass from where it is');
@@ -178,7 +178,7 @@ const storm = await page.evaluate(async () => {
   const bm = b.move; g.input('up'); out.coveredStep = b.move === bm || b.storm > 0;
   t.frames(4.5); out.coverAfter = ab.cover;
   // After the cover: heard again.
-  t.put(a, g.playerPos[0], g.playerPos[1] + 20); a.storm = 0;
+  t.put(a, g.playerPos[0], g.playerPos[1] + 9); a.storm = 0;   // (8.1.4: a walking step is heard within four steps)
   g.input('up'); out.heardAgain = a.move > 0;
   out.gaps = [mod.strikeGap(0), mod.strikeGap(3), mod.strikeGap(9), mod.strikeGap(30), mod.strikeGap(300)];
   out.next = ab.nextStrike;
@@ -213,7 +213,7 @@ const cases = await page.evaluate(async () => {
   out.bell = t.played.filter((n) => n === 'evt_chime_clear').length;
   // Creatures: one within hearing of the smash, one beyond.
   const [a, b] = ab.creatures;
-  t.put(a, c.x + 45, c.y + 3); t.put(b, c.x + 300, c.y);   // (45 units: three seconds of its charge cannot reach you)
+  t.put(a, c.x + 26, c.y + 3); t.put(b, c.x + 300, c.y); ab.grace = 6;   // (8.1.4: a smash is heard within ten steps; the grace keeps its charge from catching you here)
   const time0 = g.timeLeft; t.said.length = 0; t.played.length = 0;
   g.input('space');
   out.smash = t.played.includes('ut_glass_smash');
@@ -251,7 +251,7 @@ const cases = await page.evaluate(async () => {
 });
 check(cases.hum && cases.knock >= 1, 'a case hums where it stands, and knocks as you close in');
 check(cases.bell === 1, 'beside it and facing it, the bell rings once');
-check(cases.smash && cases.time === 20 && !cases.said.some((s) => /more seconds/.test(s)), 'the attack smashes it: its time is yours, and the voice no longer says how much (8.0.4): ' + JSON.stringify([cases.time, cases.said]));
+check(cases.smash && cases.time === 10 && !cases.said.some((s) => /more seconds/.test(s)), 'the attack smashes it: its time is yours (ten for the first case), and the voice does not say how much (8.0.4): ' + JSON.stringify([cases.time, cases.said]));
 check(cases.charge[0] === 3 && cases.charge[1] === 0 && cases.closer && cases.chargeOver, 'the smash brings every creature in hearing charging for three seconds: ' + JSON.stringify(cases.charge));
 check(cases.refilled === 3, 'a new case appears in its place, so three are always around');
 check(cases.coveredSmash, 'a smash under the lightning\'s cover brings no charge');
@@ -267,12 +267,13 @@ check(JSON.stringify(cases.creaturesFor) === JSON.stringify([3, 3, 4, 5, 6, 7, 1
 {
   const M = await import('../js/modes/abyss.js');
   check(M.creaturesFor(21) === 10 && M.creaturesFor(18) === 9 && M.creaturesFor(300) === 10, 'ten creatures from case 21 on');
-  check(M.creaturesFor(30, true) === 7 && M.creaturesFor(6, true) === 5, 'in Chaos\'s Abyss stages, at most seven, as before (five at most with eight cases)');
-  check(JSON.stringify(M.strikeGap(30, true)) === JSON.stringify([16, 20]) && JSON.stringify(M.strikeGap(6, true)) === JSON.stringify([8, 14]), 'in Chaos, lightning never more than 20 seconds apart, as before');
-  check(M.AB_LIGHTNING_CASE === 0.3 && M.lightningCaseOdds(false) === 0.3 && M.lightningCaseOdds(true) === 0.25, 'lightning in three cases in ten; in Chaos one in four, as before');
+  check(M.creaturesFor(30, true) === 10 && M.creaturesFor(6, true) === 5, 'in Chaos\'s Abyss stages too, at most ten (8.1.4)');
+  check(JSON.stringify([1, 5, 6, 12, 30, 60].map((k) => M.caseReward(k))) === JSON.stringify([10, 10, 11, 12, 15, 20]), 'a case\'s time grows gently: one second more every six cases (8.1.4)');
+  check(JSON.stringify(M.strikeGap(30, true)) === JSON.stringify([16, 25]) && JSON.stringify(M.strikeGap(6, true)) === JSON.stringify([8, 14]), 'in Chaos too, lightning up to 25 seconds apart (8.1.4)');
+  check(M.AB_LIGHTNING_CASE === 0.3 && M.lightningCaseOdds(false) === 0.3 && M.lightningCaseOdds(true) === 0.3, 'lightning in three cases in ten, in Chaos too (8.1.4)');
   const ring = [0, 3, 30, 60].map((k) => M.caseRing(k));
   check(JSON.stringify(ring) === JSON.stringify([[25, 55], [28, 58], [55, 85], [85, 115]]), 'new cases a step further off every three cases, with no end (about 18 to 28 steps at case 30, 28 to 38 at 60): ' + JSON.stringify(ring));
-  check(JSON.stringify(M.caseRing(30, true)) === JSON.stringify([25, 55]) && M.caseRange(30, true) === 70 && M.caseFar(30, true) === 110, 'in Chaos the cases stay where they were');
+  check(JSON.stringify(M.caseRing(30, true)) === JSON.stringify([55, 85]), 'in Chaos too the cases appear further off as you go (8.1.4)');
   const ok = [0, 3, 30, 60, 300].every((k) => { const [, hi] = M.caseRing(k); const range = M.caseRange(k); return range > hi && M.caseFar(k) > range + 30 && Math.abs((1 - hi / range) - (1 - 55 / 70)) < 1e-9; });
   check(ok && M.caseRange(0) === 70 && M.caseFar(0) === 110, 'their hum carries further in step, the furthest as loud as at the start, and they are let go further off');
 }
@@ -484,6 +485,33 @@ check(grow.tooNear === 0 && grow.keep >= 9 - 0.6, 'keeping apart never eases a c
   });
   check(st.caughtUnderCover === 0 && st.huntCatch === 1, 'under the lightning, running among ten crowded creatures 120 times: none running to the strike catches you, and a hunting one still does (8.1.3): ' + JSON.stringify([st.caughtUnderCover, st.huntCatch]));
   check(st.ds.length === 10 && st.ds.every((d) => d >= st.far[0] - 0.1 && d <= st.far[1] + 0.1 && d > st.heard), 'a creature left far behind is replaced out of hearing, 27 to 33 steps off (8.1.3): ' + st.ds.map((d) => d.toFixed(0)).join(', '));
+}
+
+{
+  // 8.1.4: under the lightning no creature comes any nearer to you; your walking steps are soft.
+  const lt = await page.evaluate(async () => {
+    const g = window.__el.game; const t = window.__t;
+    t.start('abyss'); const ab = g.ab; ab.smashed = 12; g._abFillCreatures(); g.timeLeft = 999;
+    const orig = g._abCaught.bind(g); g._abCaught = () => { ab.grace = 99; };
+    let closer = 0; let n = 0;
+    for (let k = 0; k < 100; k++) {
+      g.playerPos = [0, 0]; ab.cover = 0; ab.grace = 0;
+      for (const c of ab.creatures) { const a = Math.random() * 6.283; const d = 9 + Math.random() * 40; c.x = Math.sin(a) * d; c.y = -Math.cos(a) * d; c.charge = 0; c.storm = 0; c.move = 0; }
+      const d0 = ab.creatures.map((c) => Math.hypot(c.x, c.y)); const low = d0.slice();
+      ab.nextStrike = 0; g.updateAbyss(1 / 30);
+      for (let f = 0; f < 150; f++) { g.updateAbyss(1 / 30); ab.creatures.forEach((c, i) => { low[i] = Math.min(low[i], Math.hypot(c.x, c.y)); }); }
+      ab.creatures.forEach((c, i) => { n += 1; if (low[i] < d0[i] - 0.05) closer += 1; });
+    }
+    g._abCaught = orig;
+    // Walking and running steps: their loudness.
+    const a = window.__el.audio; const vols = []; const play = a.play; a.play = (name, o) => { if (/^ut_glass_step_/.test(name) && !(o && o.at)) vols.push(o && o.volume); return play.call(a, name, o); };
+    for (const x of ab.creatures) t.put(x, 900, 900);
+    g.input('up'); g.strideStepping = 'up'; g.input('up'); g.strideStepping = null;
+    a.play = play; t.menu();
+    return { n, closer, vols };
+  });
+  check(lt.n === 700 && lt.closer === 0, `under the lightning, no creature ever comes nearer to you, even one on your far side from the strike (8.1.4): ${lt.closer} of ${lt.n}`);
+  check(lt.vols[0] === 0.5 && lt.vols[1] === 1, 'your walking steps on the glass are softer than running ones (8.1.4): ' + JSON.stringify(lt.vols));
 }
 
 check(!errors.length, 'no page errors ' + errors.join(' | '));

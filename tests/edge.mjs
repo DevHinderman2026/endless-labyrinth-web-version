@@ -137,7 +137,7 @@ check(start.face === 0 && start.ledge0 && !start.side, 'facing north, the ledge 
 check(start.turns && start.room === 'open', 'The Edge turns with you, in open air with no echo');
 check(/howling_wind/.test(start.amb || ''), 'the abyss\'s wind plays: ' + start.amb);
 check(!start.creatures, 'no creatures');
-check(Math.abs(start.clock - 240) < 0.1, 'a run has four minutes on its clock (8.0.4): ' + start.clock);
+check(Math.abs(start.clock - 300) < 0.1, 'a run has five minutes on its clock (8.1.4; four from 8.0.4): ' + start.clock);
 
 // ------------------------------------------------------------------ the buzzer
 const buzz = await page.evaluate(() => {
@@ -262,6 +262,35 @@ const rep = await page.evaluate(() => {
 });
 check(rep.length === 2 && /^Crossing 2\. Crossed: 1\. Clock \d+ seconds\. Facing /.test(rep[0]) && /^\d+ seconds remaining\.$/.test(rep[1]), 'double tap: the crossing, the crossings finished, the clock, the way you face; T: the clock (8.0.4): ' + rep.join(' | '));
 
+// ------------------------------------------------------------------ 8.1.4: time credits on the path
+const cred = await page.evaluate(async () => {
+  const g = window.__el.game; const t = window.__t; const E = await import('./js/modes/edge.js');
+  t.menu(); g.menuIndex = g.menuKeys.indexOf('abyss'); g.input('enter'); g.input('down'); g.input('enter'); t.frames(0.2);
+  let have = 0; const vals = { 20: 0, 30: 0, 40: 0 }; let onLedge = true;
+  for (let i = 0; i < 400; i++) {
+    g._edBegin({ chaos: false, crossing: 1 }); const cr = g.ed.credit;
+    if (!cr) continue;
+    have += 1; vals[cr.value] += 1;
+    const [x, y] = cr.cell; if (!g.ed.stones.has(`${x},${y}`) || (Math.abs(x) <= 2 && Math.abs(y) <= 2)) onLedge = false;
+  }
+  let ed; do { g._edBegin({ chaos: false, crossing: 1 }); ed = g.ed; } while (!ed.credit);
+  t.played.length = 0; t.frames(0.5);
+  const beacon = t.played.includes(ed.credit.beacon);
+  const before = g.timeLeft; const value = ed.credit.value; const pickup = ed.credit.pickup;
+  // Stand beside it and step on.
+  const [cx, cy] = ed.credit.cell; const from = [[0, 1], [1, 0], [0, -1], [-1, 0]].map(([dx, dy]) => [cx + dx, cy + dy]).find(([x, y]) => ed.stones.has(`${x},${y}`));
+  ed.cell = from; g.playerPos = g._edPos(from); t.face(t.dirTo(from, [cx, cy])); t.played.length = 0; g.input('up');
+  const gained = +(g.timeLeft - before).toFixed(2); const took = t.played.includes(pickup) && !ed.credit;
+  // Never in Chaos.
+  let chaosCredit = 0; for (let i = 0; i < 100; i++) { g._edBegin({ chaos: true, crossing: 1 }); if (g.ed.credit) chaosCredit += 1; }
+  t.menu();
+  return { have, vals, onLedge, beacon, gained, value, took, chaosCredit };
+});
+check(cred.have > 160 && cred.have < 240 && cred.onLedge, `about half the crossings have a time credit, on a stone of the path (8.1.4): ${cred.have} of 400`);
+check(cred.vals[20] > cred.vals[30] && cred.vals[30] > cred.vals[40] && cred.vals[40] > 10, 'worth 20 most often, 30 sometimes, 40 rarely: ' + JSON.stringify(cred.vals));
+check(cred.beacon && cred.took && cred.gained === cred.value, `its beacon calls, and stepping onto it gives its time (${cred.gained})`);
+check(cred.chaosCredit === 0, 'never in Chaos');
+
 // ------------------------------------------------------------------ the recorded voice says its lines
 {
   const { readFileSync } = await import('node:fs');
@@ -271,7 +300,7 @@ check(rep.length === 2 && /^Crossing 2\. Crossed: 1\. Clock \d+ seconds\. Facing
   const buf = readFileSync(root + 'packs/' + manifest.packs['voice-bella'].file);
   const n = buf.readUInt32LE(8);
   const idx = makeIndex(JSON.parse(buf.slice(12, 12 + n).toString('utf8')).entries);
-  const lines = ['Crossing 1.', 'Crossing 12.', 'Crossing 3. Crossed: 2.', '65 health.', '5 health.', '60 more seconds. 65 health.', '60 more seconds. 100 health.',
+  const lines = ['Crossing 1.', 'Crossing 12.', 'Crossing 3. Crossed: 2.', '65 health.', '5 health.', 'Lost 75 seconds. 65 health.', 'Lost 75 seconds.', '30 more seconds.', '60 more seconds.',
     'Caught. Lost 10 seconds.', '1 of 3 glass cases.', '7 of 8 glass cases.', 'All 8 glass cases.', 'Riding the elevator up.'];
   const missing = lines.filter((s) => !plan(s, idx));
   check(missing.length === 0, 'every line The Edge says during a run is in the recorded voice' + (missing.length ? ': missing ' + missing.join(' | ') : ''));
@@ -347,10 +376,10 @@ check(Math.abs(chaos.clock0 - chaos.clock1 - 10) < 0.2, `the chaos clock keeps r
 check(chaos.fallingAt === '1,-1' || chaos.fallingAt === '3,-1', 'off the edge in chaos you fall too');
 check(chaos.fallPlayed.some((n) => /ed_scream_whole$/.test(n)) && chaos.fallPlayed.some((n) => /ed_fall_whole$/.test(n)), 'in chaos the whole scream and the whole rush of air play (8.1.0): ' + chaos.fallPlayed.join(', '));
 check(chaos.stillFalling && Math.abs(chaos.clockFalling - chaos.clock1) < 0.1, 'the fall lasts the whole scream, eleven and a half seconds, the clock stopped');
-check(chaos.hp1 === chaos.hp0 - 35 && Math.abs(chaos.clock2 - chaos.clock1) < 0.75, `a fall costs 35 health and no time (8.1.0: ${chaos.hp0} to ${chaos.hp1}, ${chaos.clock1.toFixed(1)} to ${chaos.clock2.toFixed(1)})`);
+check(chaos.hp1 === chaos.hp0 - 35 && Math.abs(chaos.clock1 - chaos.clock2 - 75) < 0.75, `a fall costs 35 health and 75 seconds (8.1.4: ${chaos.hp0} to ${chaos.hp1}, ${chaos.clock1.toFixed(1)} to ${chaos.clock2.toFixed(1)})`);
 check(chaos.state2 === 'abyss' && chaos.below && chaos.edKept, 'you land on the glass floor of the abyss below, the crossing waiting above');
 check(chaos.landed === 1 && !chaos.thunderAtLanding && chaos.thunderSoon, 'you land with a thud on the glass (8.1.1), and the first strike comes a moment later, not on top of it');
-check(chaos.said.some((s) => /^65 health\.$/.test(s)), 'the voice says your health as you land: ' + chaos.said.join(' | '));
+check(chaos.said.some((s) => /^Lost 75 seconds\. 65 health\.$/.test(s)), 'the voice says the time lost and your health as you land: ' + chaos.said.join(' | '));
 check(chaos.quota === 3 && JSON.stringify(chaos.quotas) === JSON.stringify([3, 4, 5, 6, 7, 8, 9, 12, 15, 15]), 'three cases in the first Edge level of a run, one more each Edge level after, at most fifteen (8.1.2): ' + JSON.stringify(chaos.quotas));
 check(chaos.creatures === 3 && chaos.cases === 3 && chaos.wind, 'The Abyss\'s rules below: three creatures, three cases, the wind playing on');
 check(chaos.clockRuns > 1.9 && chaos.clockRuns < 2.1, 'below, the chaos clock keeps running: ' + chaos.clockRuns.toFixed(2));
@@ -390,12 +419,17 @@ const chaos2 = await page.evaluate(async () => {
   const pts = g.chaosPoints; const time0 = g.timeLeft; t.said.length = 0;
   for (let i = 1; i < path.length; i++) { t.face(t.dirTo(path[i - 1], path[i])); g.input('up'); }
   const st = g.state;
+  const gained = +(g.timeLeft - time0).toFixed(2); const said = t.said.slice(); const pts1 = g.chaosPoints;
+  // (8.1.4) A crossing you fell from: sixty at the buzzer.
+  g.state = 'edge'; g.ed = null; g._edBegin({ chaos: true, crossing: 1 }); g.ed.fell = true; t.said.length = 0;
+  const time1 = g.timeLeft; g._edCrossed(); const gainedAfterFall = +(g.timeLeft - time1).toFixed(2); const saidAfterFall = t.said.slice();
   g._chaosPickNext = pick;
-  return { east, st, pts0: pts, pts1: g.chaosPoints, ed0: !!ed0, gained: +(g.timeLeft - time0).toFixed(2), said: t.said.slice() };
+  return { east, st, pts0: pts, pts1, ed0: !!ed0, gained, said, gainedAfterFall, saidAfterFall };
 });
 check(chaos2.east, 'in chaos the crossing lies ahead of the way you face (east, here)');
 check(chaos2.st !== 'edge' && chaos2.pts1 === chaos2.pts0 + 10, `reaching the buzzer in chaos goes on to the next level, for ten points (${chaos2.st})`);
-check(chaos2.gained === 60 && chaos2.said.includes('60 more seconds.'), `and puts sixty seconds on the chaos clock, and says so (8.1.2; thirty from 8.0.4): ${chaos2.gained} ${chaos2.said.join(' | ')}`);
+check(chaos2.gained === 30 && chaos2.said.includes('30 more seconds.'), `with no fall, the buzzer puts thirty seconds on the chaos clock, and says so (8.1.4): ${chaos2.gained} ${chaos2.said.join(' | ')}`);
+check(chaos2.gainedAfterFall === 60 && chaos2.saidAfterFall.includes('60 more seconds.'), `after a fall in that crossing, sixty (8.1.4): ${chaos2.gainedAfterFall} ${chaos2.saidAfterFall.join(' | ')}`);
 
 // ------------------------------------------------------------------ time up (8.0.4)
 const tup = await page.evaluate(() => {

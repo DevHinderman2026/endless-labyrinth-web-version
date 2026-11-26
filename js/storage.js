@@ -27,7 +27,9 @@ export const SCORES_RESET_AT = Date.UTC(2026, 10, 21, 19, 0, 0);   // 21 Novembe
 // (8.1.3, Russell, 26 November 2026: The Abyss reset again, as replaced creatures were heard
 // waking after nearly every case; not The Edge. The mark moved from 4 PM to 6 PM Eastern, so
 // every save and backup from before 8.1.3 counts as from before the reset.)
-export const BOARD_RESETS = { abyss: Date.UTC(2026, 10, 26, 23, 0, 0) };   // The Abyss: 26 November 2026, 6 PM Eastern
+// (8.1.4, Russell, 26 November 2026: The Abyss and The Edge both reset, after the fixes and
+// changes of 8.1.4; the marks moved to 8 PM Eastern.)
+export const BOARD_RESETS = { abyss: Date.UTC(2026, 10, 27, 1, 0, 0), edge: Date.UTC(2026, 10, 27, 1, 0, 0) };   // 26 November 2026, 8 PM Eastern
 
 // The boards that a save's own marks say are from before their reset.
 export function staleBoards(data) {

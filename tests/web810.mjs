@@ -69,16 +69,16 @@ const r = await page.evaluate(async ({ OLD, EVENTS }) => {
   return JSON.parse(JSON.stringify(out));
 }, { OLD, EVENTS });
 
-check(r.mark === Date.UTC(2026, 10, 26, 23, 0, 0), 'one board has a reset of its own: The Abyss, 26 November 2026 (8.1.3: moved to 6 PM Eastern, resetting it again)');
+check(r.mark === Date.UTC(2026, 10, 27, 1, 0, 0), 'The Abyss has a reset of its own, 26 November 2026 (8.1.4: moved to 8 PM Eastern, resetting it again, with The Edge)');
 check(r.page[0] === 0 && r.page[1] === 0 && r.page[2] === 0 && r.page[3] === 410 && r.page[4] === 900, 'the Game Stats page shows no Abyss score or stats from before the reset, even before the game is opened: ' + JSON.stringify(r.page));
 const L = r.load;
 check(L.scores.abyss === 0 && L.abyssTime === 0 && L.abyssRuns === 0 && L.saved === 0 && L.mark === r.mark, 'opened on 8.1.0, The Abyss\'s score, play time and runs go to zero, and the save is marked: ' + JSON.stringify(L));
-check(L.scores.standard === 9 && L.scores.edge === 3 && L.scores.chaos === 410 && L.chaosTime === 900 && L.edgeRuns === 2, 'every other board and its stats, The Edge and Chaos included, are untouched');
+check(L.scores.standard === 9 && L.scores.edge === 0 && L.scores.chaos === 410 && L.chaosTime === 900 && L.edgeRuns === 0, 'The Edge is reset with it (8.1.4); every other board and its stats, Chaos included, are untouched');
 check(r.again[0] === 12 && r.again[1] === 1, 'a new Abyss best after the reset is kept: it is reset only once: ' + JSON.stringify(r.again));
 check(r.tab[0] === 12 && r.tab[1] === 0 && r.tab[2] === 1 && r.tab[3] === 500 && r.tab[4] === 900, 'another tab with the old numbers brings back none of The Abyss\'s, but its other records still count: ' + JSON.stringify(r.tab));
 check(r.combine[0] === 12 && r.combine[1] === 0 && r.combine[2] === 1 && r.combine[3] === 9 && r.combine[4] === 500 && r.combine[5] === 100 && r.combine[6] === r.mark, 'combining a backup from before the reset brings back everything but The Abyss: ' + JSON.stringify(r.combine));
-check(r.replace[0] === 0 && r.replace[1] === 0 && r.replace[2] === 0 && r.replace[3] === 3 && r.replace[4] === 410 && r.replace[5] === 5 && r.replace[6] === r.mark && r.replace[7] === 40, 'replacing with it brings back everything but The Abyss, events included: ' + JSON.stringify(r.replace));
-check(/3 high scores, 11 runs counted/.test(r.describeOld), 'the restore question counts what would come back, without The Abyss: ' + r.describeOld);
+check(r.replace[0] === 0 && r.replace[1] === 0 && r.replace[2] === 0 && !r.replace[3] && r.replace[4] === 410 && r.replace[5] === 5 && r.replace[6] === r.mark && r.replace[7] === 40, 'replacing with it brings back everything but The Abyss and The Edge, events included: ' + JSON.stringify(r.replace));
+check(/2 high scores, 9 runs counted/.test(r.describeOld), 'the restore question counts what would come back, without The Abyss: ' + r.describeOld);
 check(r.afterReplace[0] === 0 && r.afterReplace[1] === 0 && r.afterReplace[2] === 410, 'and the game, opened again, keeps The Abyss at zero: ' + JSON.stringify(r.afterReplace));
 check(r.newBackup[0] === 15 && r.newBackup[1] === 2 && r.newBackup[2] === 15 && r.newBackup[3] === 2, 'a backup made after the reset brings The Abyss back, combined or replaced: ' + JSON.stringify(r.newBackup));
 check(!errors.length, 'no page errors ' + errors.join(' | '));
