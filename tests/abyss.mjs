@@ -457,6 +457,35 @@ check(grow.tooNear === 0 && grow.keep >= 9 - 0.6, 'keeping apart never eases a c
   check(Math.abs(far81.l - 0.3) < 0.03, 'about three cases in ten hold lightning: ' + far81.l.toFixed(3));
 }
 
+{
+  // 8.1.3: under the lightning's cover, creatures running to the strike cannot catch you;
+  // and a replacement for a creature left far behind appears out of hearing.
+  const st = await page.evaluate(async () => {
+    const g = window.__el.game; const t = window.__t; const M = await import('./js/modes/abyss.js');
+    t.start('abyss'); const ab = g.ab; ab.smashed = 21; g._abFillCreatures(); g.timeLeft = 999;
+    let caught = 0; const orig = g._abCaught.bind(g); g._abCaught = () => { caught += 1; ab.grace = 99; };
+    for (let k = 0; k < 120; k++) {
+      ab.grace = 0; ab.cover = 0; g.playerPos = [0, 0];
+      for (const c of ab.creatures) { const a = Math.random() * 6.283; const d = 6 + Math.random() * 12; c.x = Math.sin(a) * d; c.y = -Math.cos(a) * d; c.charge = 0; c.storm = 0; c.move = 0; }
+      ab.nextStrike = 0; g.updateAbyss(1 / 30);
+      g._face(Math.random() * 6.283, true);
+      for (let s = 0; s < 19 && ab.cover > 0; s++) { g.strideStepping = 'up'; g.input('up'); for (let f = 0; f < 6; f++) g.updateAbyss(1 / 30); }
+    }
+    // One not running to the lightning still catches you.
+    ab.cover = 0; ab.grace = 0; const c0 = ab.creatures[0]; c0.storm = 0; c0.charge = 1; c0.x = g.playerPos[0] + 0.5; c0.y = g.playerPos[1];
+    g.updateAbyss(1 / 30); const huntCatch = caught;
+    g._abCaught = orig;
+    // Replacements: drop every creature far behind, and see where the new ones wake.
+    for (const c of ab.creatures) { c.x = 5000; c.y = 5000; }
+    g._abFillCreatures();
+    const ds = ab.creatures.map((c) => Math.hypot(c.x - g.playerPos[0], c.y - g.playerPos[1]));
+    t.menu();
+    return { caughtUnderCover: huntCatch - 1, huntCatch, ds, far: M.AB_REPLACE_SPAWN, heard: M.AB_CREATURE_RANGE };
+  });
+  check(st.caughtUnderCover === 0 && st.huntCatch === 1, 'under the lightning, running among ten crowded creatures 120 times: none running to the strike catches you, and a hunting one still does (8.1.3): ' + JSON.stringify([st.caughtUnderCover, st.huntCatch]));
+  check(st.ds.length === 10 && st.ds.every((d) => d >= st.far[0] - 0.1 && d <= st.far[1] + 0.1 && d > st.heard), 'a creature left far behind is replaced out of hearing, 27 to 33 steps off (8.1.3): ' + st.ds.map((d) => d.toFixed(0)).join(', '));
+}
+
 check(!errors.length, 'no page errors ' + errors.join(' | '));
 await browser.close();
 console.log(failures ? `${failures} FAILED` : 'ALL PASSED');

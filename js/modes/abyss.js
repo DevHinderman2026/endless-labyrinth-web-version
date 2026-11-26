@@ -125,6 +125,13 @@ export const AB_GRACE = 2.0;                    // seconds after a catch before 
 export const AB_CREATURE_SPAWN = [45.0, 75.0];  // units from you that a creature wakes (15 to 25 steps; 6.3.1, was 10 to 20)
 export const AB_SPAWN_APART = 15.0;             // units (five steps): never this near another creature, or a case
 export const AB_CREATURE_FAR = 110.0;           // further off than this, it goes (and another appears)
+// (8.1.3, Russell, 26 November 2026: "every three cases a creature wakes up. Right now it's
+// happening every case.") The count was right, but a creature left too far behind was
+// replaced by one waking 15 to 25 steps from you, well within hearing, so it sounded like a
+// new creature waking after nearly every case. A replacement now appears out of hearing
+// (beyond AB_CREATURE_RANGE), 27 to 33 steps off; only the new creature every three cases
+// (and the first ones of a run) wakes where you can hear it. In Chaos's Abyss levels too.
+export const AB_REPLACE_SPAWN = [80.0, 100.0];   // units from you that a replacement appears (unheard)
 export const AB_CREATURE_RANGE = 75.0;          // heard within this many units (6.3.1: as far as one wakes)
 export const AB_CREATURE_GAIN = 1.0;            // moving, at a battle enemy's loudness
 export const AB_IDLE_GAIN = 0.55;               // still: quieter
@@ -351,13 +358,19 @@ const mixin = {
     return c;
   },
 
-  // As many creatures as the cases smashed call for, none too far off.
+  // As many creatures as the cases smashed call for, none too far off. One that is left
+  // too far behind is replaced out of hearing (8.1.3); a new one, every three cases, wakes
+  // where it is heard.
   _abFillCreatures() {
     const ab = this.ab;
+    let replace = 0;
     for (const c of [...ab.creatures]) {
-      if (dist2([c.x, c.y], this.playerPos) > AB_CREATURE_FAR) this._abDropCreature(c);
+      if (dist2([c.x, c.y], this.playerPos) > AB_CREATURE_FAR) { this._abDropCreature(c); replace += 1; }
     }
-    while (ab.creatures.length < creaturesFor(ab.smashed, ab.chaos)) this._abNewCreature();
+    while (ab.creatures.length < creaturesFor(ab.smashed, ab.chaos)) {
+      if (replace > 0) { this._abNewCreature(AB_REPLACE_SPAWN[0], AB_REPLACE_SPAWN[1]); replace -= 1; }
+      else this._abNewCreature();
+    }
   },
 
   _abDropCreature(c) {
@@ -454,9 +467,14 @@ const mixin = {
       this._abCreatureSound(c);
     }
     this._abKeepApart();
-    // It has you: this near now, or you walked through where it is.
+    // It has you: this near now, or you walked through where it is. (8.1.3, Russell, 26
+    // November 2026: under the lightning's cover he ran, unheard, and was caught anyway, as
+    // creatures sprinting to the strike ran into him, above all with many crowded round. A
+    // creature running to the lightning is not hunting you, so it cannot catch you, even if
+    // it passes right by you or you run through it.)
     if (ab.grace > 0) return;
     for (const c of ab.creatures) {
+      if (c.storm > 0) continue;
       let near = dist2([c.x, c.y], this.playerPos);
       for (const [a, b] of ab.steps) near = Math.min(near, pointToSegment(c.x, c.y, a, b));
       if (near < AB_CATCH) { this._abCaught(c); return; }
@@ -922,7 +940,7 @@ const HELP_SECTIONS = [
   ['The Abyss', [
     { title: 'The Abyss', sound: null, desc: 'The Abyss is a mode of its own, new in 6.2.0, inspired by Papa Sangre, the horror game made only of sound, where you creep through the dark past monsters you can only hear. You are in a huge, endless abyss, with no walls and no edge, and the whole floor is broken glass: every step you take can be heard. Creatures live all through it. Your goal is to smash as many glass cases as you can before the clock runs out. You turn and walk as in every walking mode (see General Turning). Double tap for the cases you have smashed, your lives, the seconds left and the way you are facing. Since 8.0.0, choosing The Abyss on the main menu opens a small menu: The Abyss, or its sub mode The Edge, where you cross the abyss on a narrow ledge (see The Edge).' },
     { title: 'The Abyss The Creatures', sound: null, desc: 'The creatures are blind, just like you, and they hunt by sound, so they come for you only while you move. Walk, and the ones within about ten steps creep toward the sound of your steps. Run, and the ones within about twenty steps charge you, a little slower than you can run. Stop, and they stop hunting you: each one goes back to wandering the abyss very slowly, in no particular direction, never toward you, and it always turns away before it comes within three steps of you, so a creature that has not heard you can never stumble into you. Standing still never gets you away from them; it only holds them off, while the clock runs on. A wandering creature makes a quieter sound and faint footsteps; a hunting one growls, with a footstep on the glass for every step it takes. The creatures always keep about three steps apart from one another, and a creature that wakes does so fifteen to twenty-five steps from you, never right beside another. You cannot shoot them. If one catches you, you lose a life, and it is thrown far away.' },
-    { title: 'The Abyss Lightning', sound: null, desc: 'Lightning is your cover. Every few seconds it strikes somewhere in the abyss, really loud: a thunderclap from where it strikes, while the wind and the hum of the cases dip under it. It lands fifteen to twenty-five steps from you, and every creature in the abyss runs toward it, each to its own spot around the strike, so they spread out instead of crowding into one pack. For five seconds after a strike your steps are not heard, so that is the moment to move. At first it strikes every six to ten seconds; as you smash more cases it comes less often, but never more than twenty-five seconds apart (in Chaos Mode, twenty).' },
+    { title: 'The Abyss Lightning', sound: null, desc: 'Lightning is your cover. Every few seconds it strikes somewhere in the abyss, really loud: a thunderclap from where it strikes, while the wind and the hum of the cases dip under it. It lands fifteen to twenty-five steps from you, and every creature in the abyss runs toward it, each to its own spot around the strike, so they spread out instead of crowding into one pack. For five seconds after a strike your steps are not heard, so that is the moment to move, and a creature running to the lightning cannot catch you, even if it runs right past you. At first it strikes every six to ten seconds; as you smash more cases it comes less often, but never more than twenty-five seconds apart (in Chaos Mode, twenty).' },
     { title: 'The Abyss Glass Cases', sound: null, desc: 'A glass case hums where it stands. Three stand around you at a time, and new ones appear further away the more you smash, a step further for every three cases, with no end, so on a long run you walk further for each one; their hum carries further to match, but only one knocks: the nearest, from about fifteen steps away, faster and louder as you close in, so you can turn until the knocking is centred between your ears. The others only hum, more softly, and the knocking moves to another case only when you smash this one or come two steps nearer to another. When you are beside a case and facing it, a bell rings: tap with two fingers to smash it, or press the spacebar. Smashing glass is loud: every creature that hears it charges you for about three seconds, unless the five seconds after a lightning strike have not yet run out, so a case is best smashed just after the lightning. Each case gives you ten seconds, every one of them; the voice does not say so, as it is always ten. About three cases in ten also hold lightning (one in four in Chaos Mode): as it breaks, lightning strikes somewhere in the abyss and the creatures run to it instead of to you. And about one case in twenty also holds an extra life: you hear the heart, and the voice says it with your lives, such as Extra life, 4 lives. There is no limit to how many lives you can have. (Not in Chaos Mode, where the run has its one health bar.)' },
     { title: 'The Abyss Clock, Lives and Score', sound: null, desc: 'The clock starts at forty-five seconds, and only glass cases add to it. You start with three lives, and a rare case gives you another, with no limit: when the clock runs out, or a creature catches you when you have one life left, the run is over. Every three cases you smash, one more creature wakes in the abyss, up to ten, the lightning comes a little less often, never more than twenty-five seconds apart, and new cases appear a step further away, with no end. Your score is the number of cases you smash, and The Abyss has its own high score board.' },
     { title: 'The Abyss in Chaos Mode', sound: null, desc: 'Chaos Mode has Abyss levels too. You know you are in one at once: lightning strikes the moment you arrive, so move. There you must smash a set number of cases: three or four the first time in a run, and one more each time after, at most eight. Each case adds its time to the chaos clock: usually ten seconds, sometimes twenty or thirty, and very rarely sixty. When you have smashed enough, the creatures, the cases and the lightning all go, and over the wind of the abyss, which plays on, an exit is heard, the battle exit\'s Morse signal; the chaos clock waits until you walk through it. There a catch costs 25 health from the one health bar of the chaos run (see Chaos Health) instead of a life. There, double tap for the cases smashed, then your health, the clock and the points. These levels are as they were before 8.1.0: at most seven creatures, lightning never more than twenty seconds apart, one case in four with lightning, and the cases no further off. A fall from the edge of an abyss in Chaos Mode also lands you on an abyss\'s floor, with cases to smash and an elevator back up instead of an exit (see The Edge in Chaos Mode).' },

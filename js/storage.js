@@ -24,7 +24,10 @@ export const SCORES_RESET_AT = Date.UTC(2026, 10, 21, 19, 0, 0);   // 21 Novembe
 // every device. A save, another tab's save or a backup made before the mark cannot bring them
 // back; one made after it can. Every other board, its stats, and the Event High Scores are
 // not touched. (A board's key is also its key in the stats.)
-export const BOARD_RESETS = { abyss: Date.UTC(2026, 10, 26, 21, 0, 0) };   // The Abyss: 26 November 2026, 4 PM Eastern
+// (8.1.3, Russell, 26 November 2026: The Abyss reset again, as replaced creatures were heard
+// waking after nearly every case; not The Edge. The mark moved from 4 PM to 6 PM Eastern, so
+// every save and backup from before 8.1.3 counts as from before the reset.)
+export const BOARD_RESETS = { abyss: Date.UTC(2026, 10, 26, 23, 0, 0) };   // The Abyss: 26 November 2026, 6 PM Eastern
 
 // The boards that a save's own marks say are from before their reset.
 export function staleBoards(data) {

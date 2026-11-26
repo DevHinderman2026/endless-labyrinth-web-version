@@ -69,7 +69,7 @@ const r = await page.evaluate(async ({ OLD, EVENTS }) => {
   return JSON.parse(JSON.stringify(out));
 }, { OLD, EVENTS });
 
-check(r.mark === Date.UTC(2026, 10, 26, 21, 0, 0), 'one board has a reset of its own: The Abyss, 26 November 2026');
+check(r.mark === Date.UTC(2026, 10, 26, 23, 0, 0), 'one board has a reset of its own: The Abyss, 26 November 2026 (8.1.3: moved to 6 PM Eastern, resetting it again)');
 check(r.page[0] === 0 && r.page[1] === 0 && r.page[2] === 0 && r.page[3] === 410 && r.page[4] === 900, 'the Game Stats page shows no Abyss score or stats from before the reset, even before the game is opened: ' + JSON.stringify(r.page));
 const L = r.load;
 check(L.scores.abyss === 0 && L.abyssTime === 0 && L.abyssRuns === 0 && L.saved === 0 && L.mark === r.mark, 'opened on 8.1.0, The Abyss\'s score, play time and runs go to zero, and the save is marked: ' + JSON.stringify(L));
