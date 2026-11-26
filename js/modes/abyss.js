@@ -158,7 +158,8 @@ export const AB_EXIT_REACH = 3.0;
 // and the chaos clock runs on; a catch costs 25 health and 10 seconds; once the cases are
 // smashed an elevator calls you (its hum, and the single note of an island's elevator on
 // the seabed, as the only way is up), and its ride (the chaos clock stopped) takes you back
-// onto the ledge (edge.js _edReturn, with 60 seconds on the clock).
+// onto the ledge (edge.js _edReturn; 8.1.2: no time for it, and a smash says nothing; the
+// double tap tells the cases smashed and wanted).
 export const AB_BELOW_CATCH_TIME = 10;          // seconds off the chaos clock for a catch below
 export const AB_BELOW_FIRST_STRIKE = 1.5;       // seconds after you land before the first strike (8.1.1)
 export const AB_LIFT_RANGE = [15.0, 30.0];      // units from you that the elevator appears (5 to 10 steps)
@@ -713,7 +714,7 @@ const mixin = {
       if (this.audio.has(AB_LIFE_SOUND)) this.audio.play(AB_LIFE_SOUND, { at: [c.x, c.y], keep: true });
       this.tts.speak(`Extra life, ${ab.lives} lives.`, { interrupt: true });
     } else if (ab.below) {
-      if (ab.smashed < ab.quota) this.tts.speak(`${ab.smashed} of ${ab.quota} glass cases.`, { interrupt: true });
+      // (8.1.2, Russell: below the Edge, smashing a case says nothing; the double tap tells.)
     } else if (ab.chaos) this.tts.speak(`${c.value} more seconds.`, { interrupt: true });
     if (c.lightning) this._abStrike();
     else if (ab.cover <= 0) {
@@ -888,6 +889,8 @@ const mixin = {
     // (Worded with words the recorded voice already has: js/voice-text.js.)
     if (ab.chaos) {
       // (Its health is added by _report, as in every chaos level.)
+      // (8.1.2, Russell: below the Edge the double tap still says how many are wanted, but
+      // smashing a case says nothing.)
       this._report(ab.exit || ab.lift ? `All ${ab.quota} glass cases.` : `${ab.smashed} of ${ab.quota} glass cases.`, true);
       return;
     }

@@ -34,14 +34,17 @@
 //
 // Chaos Mode has Edge levels too (js/modes/chaos.js): one crossing, shorter, from a
 // square in the direction you happen to face. The chaos clock runs, and the buzzer
-// puts thirty seconds on it (8.0.4). (8.1.0, Russell's idea, 26 November 2026.) A fall
+// puts sixty seconds on it (8.1.2; thirty from 8.0.4). (8.1.0, Russell's idea, 26 November 2026.) A fall
 // costs 35 health and no time: you fall the whole way, screaming, and land on the
 // abyss's glass floor, where The Abyss's own rules hold (js/modes/abyss.js, `below`):
-// smash 3 glass cases on the run's first fall, one more each fall after, at most 8;
+// smash 3 glass cases in the run's first Edge level, one more for each Edge level after,
+// at most 15 (8.1.2: by Edge level, so a fall late in a run risks more; 8.1.0 and 8.1.1
+// counted falls, at most 8); smashing one says nothing, and a double tap tells how many;
 // they give no time, and the chaos clock runs on (8.1.1: you land with a heavy thud on the
 // glass, and the first strike comes a moment after it, not on the instant); a creature's catch costs 25 health and
 // 10 seconds. Then an elevator calls you, and its ride carries you back up onto the stone
-// you fell from, with 60 seconds on the chaos clock, and the crossing goes on. Too little
+// you fell from, with no time added (8.1.2: only crossing to the buzzer gives time; 8.1.0
+// and 8.1.1 gave 60 seconds here), and the crossing goes on. Too little
 // health or time, anywhere in that, ends the run. (8.0.0 to 8.0.4: a fall cost 35 health
 // and 60 seconds and put you straight back on the stone.)
 //
@@ -94,16 +97,17 @@ export const ED_NEXT_HOLD = 1.6;                // seconds after the buzzer befo
 // finish as many crossings as you can. It stops during a fall and between crossings.
 export const ED_START_TIME = 240.0;
 // Chaos (8.0.4): the chaos clock runs through an Edge level, and reaching the buzzer puts
-// thirty seconds on it. (8.0.0 to 8.0.3: the clock waited for the whole level.)
-export const ED_CHAOS_DONE_TIME = 30;
+// time on it: sixty seconds (8.1.2, Russell, 26 November 2026: the time is for making it
+// across, not for climbing out of the abyss below; 8.0.4 to 8.1.1: thirty). (8.0.0 to
+// 8.0.3: the clock waited for the whole level.)
+export const ED_CHAOS_DONE_TIME = 60;
 // The buzzer: as loud as The Museum's door, heard from anywhere on the crossing.
 export const ED_BUZZ_GAIN = 1.0;
 export const ED_BUZZ_FLOOR = 0.3;
 export const ED_BUZZ_RANGE = 90.0;
 // Chaos (Russell, 25 November 2026; 8.1.0, 26 November 2026).
 export const ED_CHAOS_FALL_HEALTH = 35;         // a fall's cost: health only (8.0.0 to 8.0.4: and 60 seconds)
-export const ED_CHAOS_RETURN_TIME = 60;         // seconds on the chaos clock as the elevator brings you back up
-export const ED_BELOW_QUOTA = [3, 1, 8];        // cases to smash below: on the run's first fall, more each fall, at most
+export const ED_BELOW_QUOTA = [3, 1, 15];       // cases to smash below: in the run's first Edge level, more each Edge level, at most (8.1.2: 15)
 // Sounds.
 export const ED_BACKGROUND = AB_BACKGROUND;     // the abyss's own wind
 // Gravel underfoot (8.0.1, Russell: the stone steps sounded like concrete); The Museum's
@@ -155,7 +159,8 @@ export function turnCell([x, y], k) {
 }
 // The recordings of a crossing (held in memory while it lasts).
 export const ED_RECORDINGS = [ED_GLASS_STONE, ED_GLASS_WHOOSH, ED_GLASS_BELOW, ED_KICK, ED_FALL, ED_SCREAM, ED_FALL_WHOLE, ED_SCREAM_WHOLE, ED_LAND];
-// The cases to smash on the abyss's floor after a Chaos fall: the run's nth fall.
+// The cases to smash on the abyss's floor after a Chaos fall in the run's nth Edge level
+// (8.1.2: every fall in that level asks the same; later Edge levels ask more).
 export function belowQuota(n) { return Math.min(ED_BELOW_QUOTA[2], ED_BELOW_QUOTA[0] + ED_BELOW_QUOTA[1] * Math.max(0, n - 1)); }
 export function bendsFor(crossing, table = ED_BENDS) {
   const n = Math.min(table[2], table[0] + table[1] * Math.max(0, crossing - 1));
@@ -473,7 +478,7 @@ const mixin = {
   _edLand() {
     const ed = this.ed;
     this.chaosEdgeFalls = (this.chaosEdgeFalls || 0) + 1;
-    const quota = belowQuota(this.chaosEdgeFalls);
+    const quota = belowQuota(this.chaosEdgeCount || 1);
     ed.below = { quota, fall: this.chaosEdgeFalls };
     ed.drops = [];
     if (ed.buzz.voice) { ed.buzz.voice.stop(); ed.buzz.voice = null; }
@@ -490,7 +495,7 @@ const mixin = {
   },
 
   // Back up (from abyss.js, at the end of the elevator's ride): onto the stone you fell
-  // from, with ED_CHAOS_RETURN_TIME on the chaos clock, and the crossing goes on.
+  // from, and the crossing goes on. No time is added (8.1.2): only the buzzer gives time.
   _edReturn(wind = null) {
     const ed = this.ed;
     if (!ed) return;
@@ -505,12 +510,7 @@ const mixin = {
     ed.cell = [...back];
     this.playerPos = this._edPos(back);
     ed.buzz.t = 0.6;
-    this.timeLeft += ED_CHAOS_RETURN_TIME;
-    this.thirtySecAnnounced = this.timeLeft <= 30.0;
-    const step = this._announceStep();
-    this.nextAnnounceTime = Math.floor((this.timeLeft - 1) / step) * step;
-    this.lastBeepSecond = -1;
-    this.tts.speak(`${ED_CHAOS_RETURN_TIME} more seconds. ${this.towerHp} health.`, { interrupt: true });
+    this.tts.speak(`${this.towerHp} health.`, { interrupt: true });
   },
 
   // ---------------------------------------------------------------- the exit
@@ -600,7 +600,7 @@ const HELP_SECTIONS = [
     { title: 'The Edge The Ledge', sound: null, desc: 'You always begin in the middle of a small square of gravel, five steps across, so you are two steps from the edge on every side: walk about, get your bearings and throw some glass before you set out. The ledge leaves from the middle of the side ahead of you. It runs straight for one or two steps, never more, then bends a quarter turn to the left or the right: three flicks, and the ticks for north, east, south and west help you count. It only ever goes forward or sideways, never back, so the buzzer is always somewhere ahead of where you started: after a stretch forward, the way on is to your left or your right; after a stretch sideways, the way on is forward again, toward the buzzer. Near the far side it opens out, three steps wide and three deep, and the buzzer is at its far end, so you can walk straight in.' },
     { title: 'The Edge Loose Stones', sound: null, desc: 'Every time a step brings you to the edge, with the edge straight ahead of you, your foot kicks a stone off it, and you hear it tumble away: do not step forward again. Turn, throw glass, and find the way on. The warning comes only for the edge straight ahead, the way you walked; the edge beside you is found with the glass.' },
     { title: 'The Edge Clock, Falling and Score', sound: null, desc: 'You have four minutes for the whole run: finish as many crossings as you can before the clock runs out. Nothing adds time to it. The clock stops while you fall, and for the moment between one crossing and the next. Step off the path and you fall, screaming, and the run is over at once: there are no lives. Each crossing you finish counts: the next one begins a moment after the buzzer, on a new path with two more bends than the last, up to thirty. Your score is the number of crossings you finish, and The Edge has its own high score board.' },
-    { title: 'The Edge in Chaos Mode', sound: null, desc: 'Chaos Mode has Edge levels too, one crossing to a level: you know one by the gravel underfoot, the wind of the abyss and the buzzer. You begin in the middle of a square of gravel, two steps from the edge on every side, and the path leaves from the side you happen to be facing. A crossing in chaos has six bends the first time in a run, and two more each time after, up to twelve. The chaos clock keeps running while you cross, and reaching the buzzer puts thirty seconds on it. A fall costs 35 health and no time, but it is a long one: you fall the whole way, screaming, and land with a heavy thud on the broken glass floor of the abyss below. The first lightning strike comes a moment after you land. There The Abyss\'s own rules hold (see The Abyss): listen for the lightning, as for five seconds after a strike your steps are not heard; the creatures hunt by sound; the glass cases hum, and the nearest one knocks. Smash three cases the first time you fall in a run, and one more each time you fall after that, up to eight. They give no time, and the chaos clock keeps running while you are down there. A creature that catches you costs 25 health and 10 seconds. When the last case breaks, the creatures and the lightning go, and an elevator calls you, with its hum and a single note, as on an island\'s seabed. Walk into it: the ride up stops the clock, and it carries you back onto the spot you fell from, with sixty more seconds on the chaos clock, and the crossing goes on, the buzzer still ahead. If a fall, or anything below, leaves you with no health, or the chaos clock with no time, the run is over. Double tap for your health, the clock and the points; below, for the cases smashed first.' },
+    { title: 'The Edge in Chaos Mode', sound: null, desc: 'Chaos Mode has Edge levels too, one crossing to a level: you know one by the gravel underfoot, the wind of the abyss and the buzzer. You begin in the middle of a square of gravel, two steps from the edge on every side, and the path leaves from the side you happen to be facing. A crossing in chaos has six bends the first time in a run, and two more each time after, up to twelve. The chaos clock keeps running while you cross, and reaching the buzzer puts sixty seconds on it: the only time an Edge level gives. A fall costs 35 health and no time, but it is a long one: you fall the whole way, screaming, and land with a heavy thud on the broken glass floor of the abyss below. The first lightning strike comes a moment after you land. There The Abyss\'s own rules hold (see The Abyss): listen for the lightning, as for five seconds after a strike your steps are not heard; the creatures hunt by sound; the glass cases hum, and the nearest one knocks. You must smash a number of cases before you can leave: three in your first Edge level of a run, one more for each Edge level after, up to fifteen, and every fall in the same level asks the same, so a fall late in a run costs you far more time than one early on. Smashing a case says nothing; a double tap tells you how many you have smashed and how many you need. They give no time, and the chaos clock keeps running while you are down there. A creature that catches you costs 25 health and 10 seconds. When the last case breaks, the creatures and the lightning go, and an elevator calls you, with its hum and a single note, as on an island\'s seabed. Walk into it: the ride up stops the clock, and it carries you back onto the spot you fell from, and the crossing goes on, the buzzer still ahead. Climbing out gives no time: only reaching the buzzer does. If a fall, or anything below, leaves you with no health, or the chaos clock with no time, the run is over. Double tap for your health, the clock and the points; below, for the cases smashed and wanted first.' },
   ]],
 ];
 

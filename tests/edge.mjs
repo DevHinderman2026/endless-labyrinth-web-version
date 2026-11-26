@@ -289,7 +289,7 @@ const chaos = await page.evaluate(async () => {
   g.menuIndex = g.menuKeys.indexOf('chaos'); g.input('enter'); t.frames(0.2);
   const ed = g.ed;
   const r = { state: g.state, chaos: ed && ed.chaos, bends: ed && ed.bends, clock0: g.timeLeft, hp0: g.towerHp };
-  r.quotas = [1, 2, 3, 4, 5, 6, 7, 10].map((k) => E.belowQuota(k));
+  r.quotas = [1, 2, 3, 4, 5, 6, 7, 10, 13, 20].map((k) => E.belowQuota(k));
   t.frames(10); r.clock1 = g.timeLeft;
   // (8.1.0) A fall: 35 health and no time; the whole scream; then the abyss's floor below.
   ed.cell = [0, -1]; g.playerPos = g._edPos(ed.cell); t.face(1); t.played.length = 0; g.input('up'); g.input('up'); g.input('up');
@@ -335,6 +335,7 @@ const chaos = await page.evaluate(async () => {
   // The next fall asks one more case.
   ed.cell = [0, -1]; g.playerPos = g._edPos(ed.cell); t.face(1); g.input('up'); g.input('up'); g.input('up');
   t.frames(11.8); r.quota2 = g.ab && g.ab.quota; r.state4 = g.state;
+  r.quotaLater = E.belowQuota(6);
   // Low on time below: a catch that takes the clock to nothing ends the run.
   g.timeLeft = 8; g.towerHp = 100; g.ab.grace = 0; t.said.length = 0; g._abCaught(g.ab.creatures[0]); t.frames(0.2);
   r.end = g.state; r.endSaid = t.said.slice();
@@ -350,20 +351,20 @@ check(chaos.hp1 === chaos.hp0 - 35 && Math.abs(chaos.clock2 - chaos.clock1) < 0.
 check(chaos.state2 === 'abyss' && chaos.below && chaos.edKept, 'you land on the glass floor of the abyss below, the crossing waiting above');
 check(chaos.landed === 1 && !chaos.thunderAtLanding && chaos.thunderSoon, 'you land with a thud on the glass (8.1.1), and the first strike comes a moment later, not on top of it');
 check(chaos.said.some((s) => /^65 health\.$/.test(s)), 'the voice says your health as you land: ' + chaos.said.join(' | '));
-check(chaos.quota === 3 && JSON.stringify(chaos.quotas) === JSON.stringify([3, 4, 5, 6, 7, 8, 8, 8]), 'three cases on the first fall of a run, one more each fall, at most eight: ' + JSON.stringify(chaos.quotas));
+check(chaos.quota === 3 && JSON.stringify(chaos.quotas) === JSON.stringify([3, 4, 5, 6, 7, 8, 9, 12, 15, 15]), 'three cases in the first Edge level of a run, one more each Edge level after, at most fifteen (8.1.2): ' + JSON.stringify(chaos.quotas));
 check(chaos.creatures === 3 && chaos.cases === 3 && chaos.wind, 'The Abyss\'s rules below: three creatures, three cases, the wind playing on');
 check(chaos.clockRuns > 1.9 && chaos.clockRuns < 2.1, 'below, the chaos clock keeps running: ' + chaos.clockRuns.toFixed(2));
 check(chaos.reportBelow.length === 1 && /^0 of 3 glass cases\. \d+ health\. Clock \d+ seconds\./.test(chaos.reportBelow[0]), 'double tap below: the cases, then health, clock, points: ' + chaos.reportBelow.join(' | '));
 check(chaos.catchHp === 25 && Math.abs(chaos.catchTime - 10) < 0.01 && chaos.catchSaid.includes('Caught. Lost 10 seconds.'), `a catch below costs 25 health and 10 seconds (${chaos.catchHp}, ${chaos.catchTime.toFixed(2)}): ` + chaos.catchSaid.join(' | '));
-check(chaos.smash.every(([dt]) => dt === 0) && chaos.smash[0][1] === '1 of 3 glass cases.' && chaos.smash[1][1] === '2 of 3 glass cases.', 'cases below give no time, and the voice counts them: ' + JSON.stringify(chaos.smash));
+check(chaos.smash.every(([dt, said]) => dt === 0 && said === ''), 'cases below give no time, and smashing one says nothing (8.1.2): ' + JSON.stringify(chaos.smash));
 check(chaos.lift && chaos.after.creatures === 0 && chaos.after.cases === 0 && !chaos.after.exit, 'the last case brings an elevator, not an exit, and the creatures and cases go');
 check(chaos.hum && chaos.calls >= 1 && chaos.clickAtLift, 'the elevator hums and calls with its single note; the attack only clicks');
 check(chaos.riding && chaos.clockRide < 0.01, 'walking in starts the ride up, and the clock stops for it: ' + chaos.clockRide);
 check(chaos.state3 === 'edge' && chaos.cell3 === chaos.stoneBefore && !chaos.ab3 && !chaos.below3, `the ride brings you back onto the stone you fell from (${chaos.cell3}, ${chaos.rideSecs.toFixed(1)} s)`);
-check(Math.abs(chaos.gain - 60) < 0.15 && chaos.retSaid.some((s) => /^60 more seconds\. \d+ health\.$/.test(s)), `with sixty more seconds on the chaos clock: ${chaos.gain.toFixed(2)}, ` + chaos.retSaid.join(' | '));
+check(Math.abs(chaos.gain) < 0.15 && chaos.retSaid.some((s) => /^\d+ health\.$/.test(s)) && !chaos.retSaid.some((s) => /seconds/.test(s)), `climbing out gives no time (8.1.2): ${chaos.gain.toFixed(2)}, ` + chaos.retSaid.join(' | '));
 check(chaos.arrive && chaos.edWind && chaos.buzz, 'the elevator arrives with its chime, the wind plays on, and the buzzer calls again');
 check(chaos.report.length === 1 && /health\. Clock \d+ seconds\. \d+ points total\. Facing /.test(chaos.report[0]), 'double tap in chaos: health, clock, points: ' + chaos.report.join(' | '));
-check(chaos.quota2 === 4, 'the next fall asks four cases: ' + chaos.quota2);
+check(chaos.quota2 === 3 && chaos.quotaLater === 8, 'a second fall in the same Edge level asks the same three; a fall in the sixth Edge level of a run would ask eight: ' + JSON.stringify([chaos.quota2, chaos.quotaLater]));
 check(chaos.end === 'game_over' && chaos.endSaid.some((s) => /^Time up\./.test(s)), 'below, a catch that takes the clock to nothing ends the run: ' + chaos.endSaid.join(' | '));
 
 // A chaos crossing reached: the next level.
@@ -394,7 +395,7 @@ const chaos2 = await page.evaluate(async () => {
 });
 check(chaos2.east, 'in chaos the crossing lies ahead of the way you face (east, here)');
 check(chaos2.st !== 'edge' && chaos2.pts1 === chaos2.pts0 + 10, `reaching the buzzer in chaos goes on to the next level, for ten points (${chaos2.st})`);
-check(chaos2.gained === 30 && chaos2.said.includes('30 more seconds.'), `and puts thirty seconds on the chaos clock, and says so (8.0.4): ${chaos2.gained} ${chaos2.said.join(' | ')}`);
+check(chaos2.gained === 60 && chaos2.said.includes('60 more seconds.'), `and puts sixty seconds on the chaos clock, and says so (8.1.2; thirty from 8.0.4): ${chaos2.gained} ${chaos2.said.join(' | ')}`);
 
 // ------------------------------------------------------------------ time up (8.0.4)
 const tup = await page.evaluate(() => {

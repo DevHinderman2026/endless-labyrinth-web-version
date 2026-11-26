@@ -287,7 +287,8 @@ const far = await page.evaluate(async () => {
   for (let i = 0; i < 80; i++) { ab.grace = 1; g.input('up'); g.frame(1 / 30); }
   const out = { y: g.playerPos[1], boundary: t.played.includes('boundary') };
   out.creaturesNear = ab.creatures.every((c) => Math.hypot(c.x - g.playerPos[0], c.y - g.playerPos[1]) < 110);
-  out.casesNear = ab.cases.filter((c) => !c.smashed).every((c) => Math.hypot(c.x - g.playerPos[0], c.y - g.playerPos[1]) < 110);
+  const caseFar = (await import('./js/modes/abyss.js')).caseFar(ab.smashed);   // (8.1.0: cases are let go further off as the tiers go up)
+  out.casesNear = ab.cases.filter((c) => !c.smashed).every((c) => Math.hypot(c.x - g.playerPos[0], c.y - g.playerPos[1]) <= caseFar);
   t.said.length = 0; g.input('enter'); out.report = t.said[t.said.length - 1];
   out.canSay = window.__el.speech.bella ? window.__el.speech.bella.canSay(out.report) : null;
   out.canSayCaught = window.__el.speech.bella ? ['Caught. 2 lives left.', '10 more seconds.', '60 more seconds.'].every((x) => window.__el.speech.bella.canSay(x)) : null;
