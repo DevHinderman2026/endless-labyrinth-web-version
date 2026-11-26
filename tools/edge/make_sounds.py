@@ -56,15 +56,26 @@ SOUNDS = {
     # by DRAGON-STUDIO (433006), 0.35 to 2.85 s.
     'ed_fall':         ('edge_fall_wind_463217.mp3', 0.0, 8.0, False, -19.0, False),
     'ed_fall_whole':   ('edge_fall_wind_463217.mp3', 0.0, 11.5, False, -19.0, False),
+    # (8.1.1, Russell, 26 November 2026: the scream has no impact at its end, so a Chaos
+    # fall needs a landing of its own.) Landing on the abyss's glass floor at the end of a
+    # Chaos fall: "Heavy Body Fall" by Universfield (Pixabay 352446), Russell's pick, with a
+    # crunch of the floor's own broken glass under it: two of The Abyss's glass footsteps
+    # (ut_glass_step_1 and _3, from the ultimate pack), the second a moment after the first.
+    'ed_land':         ('edge_land_352446.mp3', 0.15, 2.3, False, -15.0, False),
+    'ed_land_glass1':  ('pack:ultimate:ut_glass_step_1', 0.0, 0.68, False, -19.0, False),
+    'ed_land_glass3':  ('pack:ultimate:ut_glass_step_3', 0.0, 0.72, False, -21.0, False),
 }
 XFADE = 1.0
 FADE_OUT = {'edge_glass_cup_93946.mp3': 0.15, 'edge_gravel_steps_397987.mp3': 0.08, 'edge_kick_44890.mp3': 0.5}
 # A fade of a sound's own, over its file's (8.1.0: two cuts of one recording fade differently).
 # The Edge's scream and air fade away over their last second and a half, as you fall away.
-FADE_NAMED = {'ed_scream': 1.5, 'ed_fall': 1.5, 'ed_scream_whole': 0.4, 'ed_fall_whole': 1.0}
+FADE_NAMED = {'ed_scream': 1.5, 'ed_fall': 1.5, 'ed_scream_whole': 0.4, 'ed_fall_whole': 1.0, 'ed_land': 0.4}
 FADE_IN_NAMED = {'ed_fall': 0.3, 'ed_fall_whole': 0.3}
-# Sounds made of two: (name, [parts], rms dB). The parts are not packed on their own.
-MIXES = [('ed_glass_stone', ['ed_glass_stone', 'ed_glass_gravel'], -18.0)]
+# Sounds made of two or more: (name, [parts], rms dB). A part is a name, or (name, seconds
+# it starts late). The parts are not packed on their own. (8.1.1: the mix is as long as its
+# longest part, the others padded with silence; ed_glass_stone's two parts are the same length.)
+MIXES = [('ed_glass_stone', ['ed_glass_stone', 'ed_glass_gravel'], -18.0),
+         ('ed_land', ['ed_land', 'ed_land_glass1', ('ed_land_glass3', 0.09)], -15.0)]
 
 
 REPO = None
@@ -140,8 +151,12 @@ def main():
     made = {name: make(f if f.startswith('pack:') else os.path.join(src_dir, f), a, b, loop, rms, mono, name) for name, (f, a, b, loop, rms, mono) in SOUNDS.items()}
     parts = set()
     for name, ps, rms in MIXES:
-        n = min(len(made[q]) for q in ps)
-        y = sum(made[q][:n].astype(np.float64) for q in ps)
+        ps = [(q, 0.0) if isinstance(q, str) else q for q in ps]
+        n = max(int(at * RATE) + len(made[q]) for q, at in ps)
+        y = np.zeros((n, 2))
+        for q, at in ps:
+            k = int(at * RATE); y[k:k + len(made[q])] += made[q].astype(np.float64)
+        ps = [q for q, _ in ps]
         y *= 10 ** (rms / 20) / np.sqrt(np.mean(y * y))
         lim = 10 ** (-1.0 / 20)
         if np.abs(y).max() > lim: y = np.tanh(y / lim) * lim

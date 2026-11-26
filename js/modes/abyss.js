@@ -160,6 +160,7 @@ export const AB_EXIT_REACH = 3.0;
 // the seabed, as the only way is up), and its ride (the chaos clock stopped) takes you back
 // onto the ledge (edge.js _edReturn, with 60 seconds on the clock).
 export const AB_BELOW_CATCH_TIME = 10;          // seconds off the chaos clock for a catch below
+export const AB_BELOW_FIRST_STRIKE = 1.5;       // seconds after you land before the first strike (8.1.1)
 export const AB_LIFT_RANGE = [15.0, 30.0];      // units from you that the elevator appears (5 to 10 steps)
 export const AB_LIFT_REACH = 3.0;
 export const AB_LIFT_DING = 1.6;                // seconds between its calls, as an island's
@@ -278,8 +279,10 @@ const mixin = {
     this._abFillCases();
     this._abFillCreatures();
     // In chaos, lightning strikes the moment you arrive, so you know at once where you
-    // are and that you must move (Russell, 20 November 2026).
-    if (chaos) this._abStrike();
+    // are and that you must move (Russell, 20 November 2026). (8.1.1) Below the Edge, a
+    // moment after you land (AB_BELOW_FIRST_STRIKE), so the strike does not cover the landing.
+    if (below) ab.nextStrike = AB_BELOW_FIRST_STRIKE;
+    else if (chaos) this._abStrike();
   },
 
   // The recordings the mode plays, under the names their sound rules want.

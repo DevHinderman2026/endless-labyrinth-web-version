@@ -67,9 +67,9 @@ const check = (ok, what) => { console.log((ok ? 'PASS ' : 'FAIL ') + what); if (
   const buf = readFileSync(root + 'packs/' + p.file);
   const n = buf.readUInt32LE(8);
   const head = JSON.parse(buf.slice(12, 12 + n).toString('utf8'));
-  const want = ['ed_step_1', 'ed_step_2', 'ed_step_3', 'ed_step_4', 'ed_glass_stone', 'ed_glass_whoosh', 'ed_glass_below', 'ed_kick', 'ed_fall', 'ed_scream', 'ed_fall_whole', 'ed_scream_whole'];
-  check(buf.length === p.bytes && head.pack === 'edge' && head.entries.length === 12 && want.every((w) => head.entries.some((e) => e.name === w)),
-    'the edge pack holds its twelve recordings (8.0.1: four gravel steps, the glass set down on gravel; 8.1.0: the new scream and wind, cut and whole): ' + head.entries.map((e) => `${e.name} ${(e.frames / head.rate).toFixed(2)} s`).join(', '));
+  const want = ['ed_step_1', 'ed_step_2', 'ed_step_3', 'ed_step_4', 'ed_glass_stone', 'ed_glass_whoosh', 'ed_glass_below', 'ed_kick', 'ed_fall', 'ed_scream', 'ed_fall_whole', 'ed_scream_whole', 'ed_land'];
+  check(buf.length === p.bytes && head.pack === 'edge' && head.entries.length === 13 && want.every((w) => head.entries.some((e) => e.name === w)),
+    'the edge pack holds its thirteen recordings (8.0.1: four gravel steps, the glass set down on gravel; 8.1.0: the new scream and wind, cut and whole; 8.1.1: the landing): ' + head.entries.map((e) => `${e.name} ${(e.frames / head.rate).toFixed(2)} s`).join(', '));
   const len = (nm) => { const e = head.entries.find((x) => x.name === nm); return e ? e.frames / head.rate : 0; };
   check(Math.abs(len('ed_scream') - 8) < 0.01 && Math.abs(len('ed_fall') - 8) < 0.01 && Math.abs(len('ed_scream_whole') - 11.5) < 0.01 && Math.abs(len('ed_fall_whole') - 11.5) < 0.01,
     'the scream and the rushing air last as long as each other: eight seconds in The Edge, eleven and a half in a Chaos fall (8.1.0)');
@@ -296,7 +296,8 @@ const chaos = await page.evaluate(async () => {
   r.fallingAt = ed.falling && ed.falling.at.join(); r.stoneBefore = ed.cell.join();
   r.fallPlayed = t.played.filter((n) => /ed_(scream|fall)/.test(n));
   t.said.length = 0; t.frames(11.0); r.stillFalling = !!ed.falling && g.state === 'edge'; r.clockFalling = g.timeLeft;
-  t.frames(0.7);
+  t.played.length = 0; t.frames(0.7);
+  r.landed = t.played.filter((n) => /ed_land$/.test(n)).length; r.thunderAtLanding = t.played.some((n) => /thunder/.test(n));
   r.hp1 = g.towerHp; r.clock2 = g.timeLeft; r.said = t.said.slice(); r.state2 = g.state;
   const ab = g.ab;
   r.below = !!(ab && ab.below && ab.chaos); r.quota = ab && ab.quota; r.edKept = g.ed === ed && !!ed.below;
@@ -304,7 +305,7 @@ const chaos = await page.evaluate(async () => {
   r.wind = !!(ab && ab.amb && ab.amb.voice);
   // Down there the chaos clock runs.
   for (const c of ab.creatures) { c.x = 9000; c.y = 9000; }
-  const c3 = g.timeLeft; t.frames(2.0); r.clockRuns = c3 - g.timeLeft;
+  t.played.length = 0; const c3 = g.timeLeft; t.frames(2.0); r.clockRuns = c3 - g.timeLeft; r.thunderSoon = t.played.some((n) => /thunder/.test(n));
   // Double tap below: the cases, then health, clock, points.
   t.said.length = 0; g.input('enter'); r.reportBelow = t.said.slice();
   // A catch below: 25 health and 10 seconds.
@@ -347,6 +348,7 @@ check(chaos.fallPlayed.some((n) => /ed_scream_whole$/.test(n)) && chaos.fallPlay
 check(chaos.stillFalling && Math.abs(chaos.clockFalling - chaos.clock1) < 0.1, 'the fall lasts the whole scream, eleven and a half seconds, the clock stopped');
 check(chaos.hp1 === chaos.hp0 - 35 && Math.abs(chaos.clock2 - chaos.clock1) < 0.75, `a fall costs 35 health and no time (8.1.0: ${chaos.hp0} to ${chaos.hp1}, ${chaos.clock1.toFixed(1)} to ${chaos.clock2.toFixed(1)})`);
 check(chaos.state2 === 'abyss' && chaos.below && chaos.edKept, 'you land on the glass floor of the abyss below, the crossing waiting above');
+check(chaos.landed === 1 && !chaos.thunderAtLanding && chaos.thunderSoon, 'you land with a thud on the glass (8.1.1), and the first strike comes a moment later, not on top of it');
 check(chaos.said.some((s) => /^65 health\.$/.test(s)), 'the voice says your health as you land: ' + chaos.said.join(' | '));
 check(chaos.quota === 3 && JSON.stringify(chaos.quotas) === JSON.stringify([3, 4, 5, 6, 7, 8, 8, 8]), 'three cases on the first fall of a run, one more each fall, at most eight: ' + JSON.stringify(chaos.quotas));
 check(chaos.creatures === 3 && chaos.cases === 3 && chaos.wind, 'The Abyss\'s rules below: three creatures, three cases, the wind playing on');
