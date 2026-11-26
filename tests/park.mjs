@@ -486,7 +486,7 @@ const chaos = await page.evaluate(async () => {
 check(chaos.weight === 1, 'a water park comes up in Chaos as often as an abyss');
 check(chaos.state === 'park' && chaos.chaos && chaos.count === 3 && chaos.amb === 'wp_park', 'a chaos water park: three attractions, the park\'s air');
 check(chaos.room === 'hall' && Math.abs(chaos.ambLevel - 0.55) < 0.01, `7.0.1: a chaos water park is the same: the hall's echo, the park's air at 0.55 (${chaos.room}, ${chaos.ambLevel})`);
-check(chaos.added === 45, `each token is 15 seconds on the chaos clock: ${chaos.added}`);
+check(chaos.added === 30, `each token is 10 seconds on the chaos clock (8.1.5): ${chaos.added}`);
 check(chaos.exit && chaos.won && chaos.waits, 'every token won: the exit, and the chaos clock waits');
 check(chaos.bell && chaos.quiet, 'the bell is the sign the exit is open, and nothing is said (7.2.17)');
 check(chaos.ambAtExit, 'the park\'s air plays on when the exit opens');

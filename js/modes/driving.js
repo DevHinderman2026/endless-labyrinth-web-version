@@ -93,7 +93,11 @@ const DRIVE_FIRST_FEATURE = [300.0, 900.0];     // road before the first one
 // Tyre skids: Rubber Tire Screech 4, 7 and 12.
 const DRIVE_SKIDS = ['drv_skid_1', 'drv_skid_2', 'drv_skid_3'];
 // Chaos only (see the note at the top).
-const CHAOS_CREDIT_VALUES = [40, 50, 60];
+// (8.1.5, Russell, 26 November 2026: Chaos gave too much time; he got the clock up to eight
+// minutes.) Chaos credits are worth 20, 30 or 40 seconds (were 40, 50 or 60); each keeps
+// the beacon its place in the scale had (the lowest for 20, the highest for 40).
+const CHAOS_CREDIT_VALUES = [20, 30, 40];
+const CHAOS_CREDIT_BEACON = { 20: 'credit_beacon_40', 30: 'credit_beacon_50', 40: 'credit_beacon_60' };
 const CHAOS_CREDIT_ROAD_GAP = 2000.0;
 
 const STATE = 'drive';
@@ -559,7 +563,7 @@ const mixin = {
 
       if (t.kind === 'credit') {
         if (t.channel === null && gap < DRIVE_HORIZON) {
-          const beacon = t.chaos ? `credit_beacon_${t.value}` : `credit_beacon_drive_${t.value}`;
+          const beacon = t.chaos ? (CHAOS_CREDIT_BEACON[t.value] || `credit_beacon_${t.value}`) : `credit_beacon_drive_${t.value}`;
           t.channel = this.audio.play(beacon, { loops: -1 });
         }
         // Credits ride above everything else on the road.

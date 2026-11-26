@@ -301,11 +301,23 @@ const r7 = await page.evaluate(async () => {
   D.roll = () => seq[Math.min(k++, seq.length - 1)];
   try { g._utCastGive(zone); } finally { D.roll = realRoll; }
   const out = { dTime: Math.round(u.worldTime - before.time), dClock: Math.round(g.timeLeft - before.clock), words: u.lastGift.words };
+  // (8.1.5) At 150 health a health gift becomes chaos points; nearly full, the rest does.
+  const give = (group, hp) => {
+    zone.who = { ch: { ...C.castList()[2], group }, pos: [0, 0], state: 'giving', told: null };
+    u.hp = hp; const p0 = g.chaosPoints || 0;
+    D.roll = () => 0.9;      // not the rare gift; no lucky surplus
+    try { g._utCastGive(zone); } finally { D.roll = realRoll; }
+    return { hp: u.hp, points: (g.chaosPoints || 0) - p0, words: u.lastGift.words };
+  };
+  out.full = give(3, 150); out.near = give(3, 140); out.water = give(6, 150);
   g._stopRunSounds(); g.runId += 1; g.state = 'menu';
   delete g._chaosPickNext;
   return out;
 });
-check(r7.dTime === 120 && r7.dClock === 210, 'in a chaos world stage the two minutes add two minutes to the world and three and a half to the chaos clock: ' + JSON.stringify(r7));
+check(r7.full.hp === 150 && r7.full.points >= 25 && r7.full.points <= 35 && r7.full.words === `You've just received ${r7.full.points} points.`, 'at 150 health, a meal becomes chaos points instead (8.1.5): ' + JSON.stringify(r7.full));
+check(r7.near.hp === 150 && r7.near.points === (r7.near.points > 0 ? r7.near.points : -1) && r7.near.words === `You've just received 10 health and ${r7.near.points} points.`, 'nearly full, the health that fits, and the rest as points: ' + JSON.stringify(r7.near));
+check(r7.water.hp === 150 && r7.water.points >= 10 && /^You've just received \d+ shots of ammo and \d+ points\.$/.test(r7.water.words), 'a gift of ammo and health at 150: the ammo, and the health as points: ' + JSON.stringify(r7.water));
+check(r7.dTime === 120 && r7.dClock === 60, 'in a chaos world stage the two minutes add two minutes to the world and one to the chaos clock (8.1.5): ' + JSON.stringify(r7));
 
 check(errors.length === 0, 'no page errors ' + errors.slice(0, 3).join(' | '));
 await browser.close();

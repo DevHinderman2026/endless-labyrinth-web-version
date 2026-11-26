@@ -157,7 +157,11 @@ const SEABED_STROKE_EVERY = 0.35;
 const BATTLE_SPAWN_PAN = 0.55;      // (the desktop's: enemies ahead or behind only; since web 5.0.0 they come from any side)
 const BATTLE_AMMO_CLEARANCE = 14.0;
 // Chaos only (see the chaosMode branches).
-const CHAOS_CREDIT_VALUES = [40, 50, 60];
+// (8.1.5, Russell, 26 November 2026: Chaos gave too much time; he got the clock up to eight
+// minutes.) Chaos credits are worth 20, 30 or 40 seconds (were 40, 50 or 60); each keeps
+// the beacon its place in the scale had (the lowest for 20, the highest for 40).
+const CHAOS_CREDIT_VALUES = [20, 30, 40];
+const CHAOS_CREDIT_BEACON = { 20: 'credit_beacon_40', 30: 'credit_beacon_50', 40: 'credit_beacon_60' };
 const CHAOS_CREDIT_FLOOR = 0.15;
 const CHAOS_CREDIT_ISLAND = 0.5;
 const CHAOS_CREDIT_SEABED = 0.33;
@@ -961,7 +965,7 @@ const mixin = {
     // On an island, a step inside the shore, for the same reason as the treasure.
     const pos = this._islandPlace(lo, hi, limit === ISLAND_ARENA ? limit - 3.0 : limit, avoid, far);
     this.islandItems.push({ kind: 'credit', pos, value, seabed,
-      ch: this.audio.play(`credit_beacon_${value}`, { loops: -1, volume: 0.0 }) });
+      ch: this.audio.play(CHAOS_CREDIT_BEACON[value] || `credit_beacon_${value}`, { loops: -1, volume: 0.0 }) });
   },
 
   _islandTake(it) {

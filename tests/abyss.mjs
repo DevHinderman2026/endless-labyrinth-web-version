@@ -171,6 +171,8 @@ const storm = await page.evaluate(async () => {
   out.varied = new Set(names).size === 3 && !names.includes('ab_thunder_2') && names.every((x, i) => i === 0 || x !== names[i - 1]);
   out.storm = [a.storm > 0, b.storm > 0, c.storm > 0];
   out.spots = a.stormSpot && b.stormSpot ? [Math.hypot(a.stormSpot[0] - b.stormSpot[0], a.stormSpot[1] - b.stormSpot[1]), Math.hypot(a.stormSpot[0] - ab.strike[0], a.stormSpot[1] - ab.strike[1])] : null;
+  // (8.1.4: one whose way to the strike would bring it nearer to you runs away from you instead.)
+  out.aAway = !!a.stormSpot && ((a.stormSpot[0] - a.x) * (a.x - g.playerPos[0]) + (a.stormSpot[1] - a.y) * (a.y - g.playerPos[1])) >= -1e-6;
   const da = Math.hypot(a.x - ab.strike[0], a.y - ab.strike[1]);
   t.frames(1.0);
   out.toward = Math.hypot(a.x - ab.strike[0], a.y - ab.strike[1]) < da;
@@ -185,7 +187,7 @@ const storm = await page.evaluate(async () => {
   return out;
 });
 check(storm.cover === 5 && storm.d >= 44.9 && storm.d <= 75.1, 'lightning strikes 45 to 75 units (15 to 25 steps) off, and covers your steps for five seconds: ' + storm.d.toFixed(1));
-check(storm.spots && storm.spots[0] >= 8.9 && storm.spots[1] >= 5.9 && storm.spots[1] <= 18.1, 'each creature runs to its own spot around the strike, three steps or more from the others: ' + JSON.stringify(storm.spots));
+check(storm.spots && storm.spots[0] >= 8.9 && storm.aAway && ((storm.spots[1] >= 5.9 && storm.spots[1] <= 18.1) || storm.spots[1] > 18.1), 'each creature runs to its own spot around the strike, three steps or more from the others, or away from you if the strike lies beyond you (8.1.4): ' + JSON.stringify(storm.spots));
 check(storm.thunder.length === 1 && Math.hypot(storm.thunder[0][0] - storm.strike[0], storm.thunder[0][1] - storm.strike[1]) < 0.01, 'the thunder is heard from where it strikes');
 check(storm.ducked < 0.5 && storm.pinned && storm.varied, 'each strike is one of three thunderclaps (the dry one gone, 6.3.3), never the same twice running; the wind and hums dip under it; the claps are held in memory: ' + JSON.stringify([storm.ducked, storm.pinned, storm.varied]));
 check(storm.storm[0] && storm.storm[1] && !storm.storm[2] && storm.toward, 'creatures near the strike run toward it; one far off does not: ' + JSON.stringify(storm.storm));
@@ -260,7 +262,7 @@ check(cases.click, 'with nothing in reach, the attack clicks');
 const o = cases.odds; const sh = (k) => o[k] / 40000;
 check(o[10] === 40000 && o[20] === 0 && o[30] === 0 && o[60] === 0, 'every case gives 10 seconds, never 20, 30 or 60 (8.0.2): ' + JSON.stringify(o));
 { const oc = cases.chaosOdds; const sc = (k) => oc[k] / 40000;
-  check(Math.abs(sc(10) - 0.62) < 0.02 && Math.abs(sc(20) - 0.25) < 0.02 && Math.abs(sc(30) - 0.10) < 0.015 && Math.abs(sc(60) - 0.03) < 0.01, 'in Chaos the cases keep 10 mostly, sometimes 20 or 30, rarely 60: ' + JSON.stringify(oc)); }
+  check(oc[10] === 40000, 'in Chaos every case gives 10 seconds (8.1.5: Chaos gave too much time): ' + JSON.stringify(oc)); }
 check(JSON.stringify(cases.creaturesFor) === JSON.stringify([3, 3, 4, 5, 6, 7, 10]), 'one more creature every three cases, at most ten (8.1.0; seven until then): ' + JSON.stringify(cases.creaturesFor));
 
 // ------------------------------------------------------------------ 8.1.0: harder long runs, Chaos's stages unchanged

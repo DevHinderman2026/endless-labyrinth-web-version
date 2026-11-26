@@ -197,7 +197,7 @@ const w1 = await page.evaluate(async () => {
   return out;
 });
 check(w1.state === 'ultimate' && w1.chaos && w1.spatial && w1.len >= 120 && w1.len <= 300, 'a world stage: a world of Ultimate Mode, 2 to 5 minutes long: ' + Math.round(w1.len));
-check(w1.credits === 0 && w1.cases.length >= 2 && w1.cases.length <= 3 && w1.cases.every((v) => [40, 50, 60].includes(v)), 'its credits: 2 or 3, every one a chaos time credit in a glass case: ' + JSON.stringify(w1.cases));
+check(w1.credits === 0 && w1.cases.length >= 2 && w1.cases.length <= 3 && w1.cases.every((v) => [20, 30, 40].includes(v)), 'its credits: 2 or 3, every one a chaos time credit (20, 30 or 40 since 8.1.5) in a glass case: ' + JSON.stringify(w1.cases));
 check(w1.consts[0] && w1.consts[1] && w1.enemies > 0, 'Ultimate\'s enemies and buses come along unchanged: ' + JSON.stringify([w1.enemies, w1.busAt]));
 check(w1.ticks > 0.9, 'the chaos clock runs in a world');
 check(w1.smash && w1.smash.added === w1.smash.value && w1.smash.said === `${w1.smash.value} more seconds.` && w1.smash.points === 0 && w1.smash.coin, 'a case gives its time to the chaos clock, never points: ' + JSON.stringify(w1.smash));

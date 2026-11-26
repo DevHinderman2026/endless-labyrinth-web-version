@@ -573,7 +573,7 @@ const chaos = await page.evaluate(async () => {
   await t.frames(14);
   r.next = g.state !== 'museum' || g.mu !== mu;
   r.points = g.chaosPoints - points;
-  r.doneSaid = t.said.some((x) => /^60 more seconds\.$/.test(x));
+  r.doneSaid = t.said.some((x) => /^30 more seconds\.$/.test(x));
   r.hp = g.towerHp;
   r.room = [g._utHpRoom({ chaos: true, hp: 145 }), g._utHpRoom({ chaos: true, hp: 150 }), g._utHpCap({ chaos: true, hp: 120 }, 180), g._utHpRoom({ chaos: false, hp: 400 })];
   // A pool costs fifty health, and you are pulled out (7.2.17); with fifty or less, it ends the run.
@@ -599,7 +599,7 @@ const chaos = await page.evaluate(async () => {
 });
 check(chaos.state === 'museum' && chaos.chaos && chaos.count === 3, 'Chaos has museums: three memories the first time');
 check(chaos.time === 0, `a memory puts no time on the chaos clock (7.2.15): ${chaos.time}`);
-check(chaos.done === 60 && chaos.doneSaid, `completing the museum puts sixty seconds on the chaos clock, and says so (7.2.16): ${chaos.done}`);
+check(chaos.done === 30 && chaos.doneSaid, `completing the museum puts thirty seconds on the chaos clock, and says so (8.1.5; sixty from 7.2.16): ${chaos.done}`);
 check(chaos.hp === 150, `chaos health stops at 150: 145 and a level's ten make 150 (7.2.16): ${chaos.hp}`);
 check(JSON.stringify(chaos.room) === JSON.stringify([5, 0, 150, null]), `a chaos world stage's health gains stop at 150 too, and Ultimate Mode's do not (7.2.16): ${JSON.stringify(chaos.room)}`);
 check(chaos.door && chaos.clockWaits, 'every memory found: the door, and the chaos clock waits');

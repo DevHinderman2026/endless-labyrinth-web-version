@@ -94,7 +94,11 @@ const BEHIND_CURVE = 1.5;
 // Chaos mode's branches in Standard and Battle (the rest of Chaos is js/modes/chaos.js).
 // Chaos runs on a flat five minutes, with the clock spoken every two minutes.
 const CHAOS_TIME_ANNOUNCE = 120.0;
-const CHAOS_CREDIT_VALUES = [40, 50, 60];
+// (8.1.5, Russell, 26 November 2026: Chaos gave too much time; he got the clock up to eight
+// minutes.) Chaos credits are worth 20, 30 or 40 seconds (were 40, 50 or 60); each keeps
+// the beacon its place in the scale had (the lowest for 20, the highest for 40).
+const CHAOS_CREDIT_VALUES = [20, 30, 40];
+export const CHAOS_CREDIT_BEACON = { 20: 'credit_beacon_40', 30: 'credit_beacon_50', 40: 'credit_beacon_60' };
 const CHAOS_CREDIT_LABYRINTH = 0.5;       // chance a chaos labyrinth has one
 const CHAOS_CREDIT_BATTLE_RATE = 1 / 80;  // per second of a chaos battle, one at a time
 
@@ -296,10 +300,10 @@ class TimeCredit {
       this.soundName = ['credit_10', 'credit_20', 'credit_30'][tier];
       this.beaconName = 'credit_beacon_battle_' + [10, 15, 20][tier];
     } else if (chaos) {
-      // Chaos mode: 40, 50 or 60 seconds, a beacon per value, one pickup for all.
+      // Chaos mode: 20, 30 or 40 seconds (8.1.5), a beacon per value, one pickup for all.
       this.value = choice(CHAOS_CREDIT_VALUES);
       this.soundName = 'credit_chaos';
-      this.beaconName = 'credit_beacon_' + this.value;
+      this.beaconName = CHAOS_CREDIT_BEACON[this.value] || ('credit_beacon_' + this.value);
     } else {
       this.value = weighted(STANDARD_CREDIT_VALUES, STANDARD_CREDIT_WEIGHTS);
       this.soundName = ['credit_10', 'credit_20', 'credit_30'][STANDARD_CREDIT_VALUES.indexOf(this.value)];

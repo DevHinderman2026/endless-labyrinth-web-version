@@ -42,7 +42,7 @@
 //
 // Chaos Mode has water parks too (js/modes/chaos.js): one park per level, with three
 // attractions the first time in a run and one more each time, at most six. Each token
-// adds fifteen seconds to the chaos clock, and a mistake takes the same seconds off it.
+// adds ten seconds to the chaos clock (8.1.5; fifteen until then), and a mistake takes the same seconds off it.
 // When the last token is won the exit is heard, the chaos clock waits until you reach
 // it, and the park's air plays on.
 //
@@ -72,7 +72,7 @@ export const PK_MISTAKE = 5.0;                // seconds a whistle costs
 export const PK_CHAOS_FIRST = 3;
 export const PK_CHAOS_GROW = 1;
 export const PK_CHAOS_MAX = 6;
-export const PK_CHAOS_TOKEN = 15.0;
+export const PK_CHAOS_TOKEN = 10.0;              // (8.1.5: Chaos gave too much time; was 15)
 // The layout: attractions this far from where you start and from one another.
 export const PK_NEAR = 24.0;
 export const PK_APART = 22.0;
@@ -894,7 +894,7 @@ const HELP_SECTIONS = [
     { title: 'Water Park Tipping Bucket', sound: null, desc: 'The tipping bucket is found by the water filling it, louder and louder as it fills, until it tips and dumps its water with a crash. As the last of the water falls, a bell rings: that is your moment to run under it, before it fills again. The token is right under it. Dash in at the bell, and stay under it for a moment, a second, to take the token. Before the next dump the bell counts down: three bells, one second apart, and a second after the third the water comes down. If the bucket dumps while you are under it, or close beside it, you are caught: the lifeguard blows the whistle, you are pushed back from the bucket, and it costs five seconds. The bucket fills a little faster in every park.' },
     { title: 'Water Park Duck Stand', sound: null, desc: 'The duck stand, new in 7.1.0, is found by its carnival organ music. Walk up to its counter and you take the air rifle: a ding says start shooting. Ducks fly in toward you from all around, two in the air at once, each quacking as it comes, louder as it nears. Turn until a duck is centred straight ahead of you and shoot, with a two-finger tap or Space: a hit knocks it down with a clang. A shot takes only a duck in front of you, but you need not be exact: a duck up to about 50 degrees either side of straight ahead is hit, the nearest first. There is no ammo to collect, but the rifle takes half a second to cock again between shots. You stay at the counter while you shoot, turning only. If a duck reaches you, it hits you: the lifeguard blows the whistle, it costs ten seconds, and another duck comes in its place. Shoot down every duck and the token is yours. The first park has four ducks, each taking seven seconds to reach you; every new park has one more duck, up to ten, and they always fly at that same speed.' },
     { title: 'Water Park Closing Time and Score', sound: null, desc: 'Each park has its own clock: forty seconds, and thirty more for each attraction, with one second less for each attraction in every new park, never less than eighteen. The first park has three attractions, two minutes and ten seconds. Every token you win is announced with how many are left to go. When the last one is won, you go straight on to the next park, which has one more attraction: there is no gate to find. Time left over is not carried on. When closing time comes, the bell rings and your visit is over. Your score is the number of tokens you won, across every park of the visit, and Water Park has its own high score board.' },
-    { title: 'Water Park in Chaos Mode', sound: null, desc: 'Chaos Mode has water parks too, one park to a level, which you know by the busy pool and its children. A water park in chaos has three attractions the first time in a run, and one more each time after, at most six. There is no park clock there: each token you win adds fifteen seconds to the chaos clock, and a mistake takes its seconds off it. When the last token is won, the bell rings: that is your sign the exit is open, and nothing is said. The exit is heard over the park, which plays on, and the chaos clock waits until you walk through it. There, double tap for the tokens found, then your health, the clock and the points.' },
+    { title: 'Water Park in Chaos Mode', sound: null, desc: 'Chaos Mode has water parks too, one park to a level, which you know by the busy pool and its children. A water park in chaos has three attractions the first time in a run, and one more each time after, at most six. There is no park clock there: each token you win adds ten seconds to the chaos clock, and a mistake takes its seconds off it. When the last token is won, the bell rings: that is your sign the exit is open, and nothing is said. The exit is heard over the park, which plays on, and the chaos clock waits until you walk through it. There, double tap for the tokens found, then your health, the clock and the points.' },
   ]],
 ];
 

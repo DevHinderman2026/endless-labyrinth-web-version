@@ -432,7 +432,7 @@ export const CASE_ITEMS = [2, 3];
 // decision); the two switches are here in case that is ever revisited.
 export const CHAOS_WORLD_ENEMIES = true;
 export const CHAOS_WORLD_BUSES = true;
-export const CHAOS_CREDIT_VALUES = [40, 50, 60];   // seconds, as every chaos credit
+export const CHAOS_CREDIT_VALUES = [20, 30, 40];   // seconds, as every chaos credit (8.1.5: were 40, 50, 60)
 export const CHAOS_SLIDE_TIME = 30;
 // (Web 6.3.7, Russell, 22 November 2026: "I actually don't want the player to keep banking
 // time" on the slide, which could be ridden again and again for 30 s each.) The first ride in
@@ -489,7 +489,7 @@ export const GIFT_ITEMS = [3, 5];
 export const GIFT_BUNDLE = { shots: [3, 5], health: [10, 15], items: [1, 2] };
 export const GIFT_RARE_CHANCE = 0.1;            // in every group: two more minutes in this world, or a treasure chest (half each)
 export const GIFT_MINUTES = 120;
-export const GIFT_CHAOS_CLOCK = 210;            // a chaos world stage: and three and a half minutes on the chaos clock
+export const GIFT_CHAOS_CLOCK = 60;             // a chaos world stage: and one minute on the chaos clock (8.1.5; was three and a half)
 // The world's mercy: only after a story line that is a hint, by luck, once the
 // character has finished talking.
 export const MERCY_CHANCE = 0.3;
@@ -891,8 +891,18 @@ const mixin = {
   _utCastGive(a) {
     const u = this.ut; const w = a.who;
     const rint = (r) => randint(r[0], r[1]);
-    const health = (n) => { const got = Math.min(n, this._utHpRoom(u)); u.hp += got; if (u.hp > 35) u.lowWarned = false; return got; };
+    // (8.1.5, Russell, 26 November 2026: in a chaos world at 150 health a health gift was
+    // wasted.) In chaos, health that does not fit becomes chaos points, one for each.
+    let spare = 0;
+    const toPoints = (n) => { if (u.chaos && n > 0) { spare += n; this.chaosPoints = (this.chaosPoints || 0) + n; } };
+    const health = (n) => { const got = Math.min(n, this._utHpRoom(u)); u.hp += got; if (u.hp > 35) u.lowWarned = false; toPoints(n - got); return got; };
     const gotWords = (n) => (n > 0 ? `You've just received ${n} health.` : 'Your health is already full.');
+    // Health and the points it turned into, as the voice says them (in chaos).
+    const hpWords = (n) => {
+      if (!spare) return gotWords(n);
+      if (n > 0) return `You've just received ${n} health and ${spare} ${plural(spare, 'point')}.`;
+      return `You've just received ${spare} ${plural(spare, 'point')}.`;
+    };
     let words = null; let sound = 'ammo'; let chestNow = false;
     const roll = () => GIFT_DICE.roll();
     if (roll() < GIFT_RARE_CHANCE) {
@@ -900,7 +910,7 @@ const mixin = {
         u.worldTime += GIFT_MINUTES;
         u.lastCount = -1;
         sound = 'credit_chaos';
-        if (u.chaos) { this._utChaosTime(GIFT_CHAOS_CLOCK); words = 'You\'ve just received 2 more minutes in this world, and 3 and a half minutes on the clock.'; }
+        if (u.chaos) { this._utChaosTime(GIFT_CHAOS_CLOCK); words = 'You\'ve just received 2 more minutes in this world, and 1 minute on the clock.'; }
         else words = 'You\'ve just received 2 more minutes in this world.';
       } else {
         // A treasure chest, put straight into your hands and opened there (7.2.17,
@@ -914,25 +924,29 @@ const mixin = {
       const g = w.ch.group;
       if (g === 1) {
         const r = roll();
-        if (r < GIFT_SPOOKY_LUCKY) { const before = u.hp; u.hp = this._utHpCap(u, Math.max(u.hp, START_HP) + rint(GIFT_SPOOKY_SURPLUS)); u.lowWarned = false; sound = 'potion_drink'; words = gotWords(u.hp - before); }
+        if (r < GIFT_SPOOKY_LUCKY) { const before = u.hp; const want = Math.max(u.hp, START_HP) + rint(GIFT_SPOOKY_SURPLUS); u.hp = this._utHpCap(u, want); toPoints(want - u.hp); u.lowWarned = false; sound = 'potion_drink'; words = hpWords(u.hp - before); }
         else if (r < 0.5 + GIFT_SPOOKY_LUCKY / 2) { const n = rint(GIFT_SPOOKY_AMMO); u.ammo += n; words = `You've just received ${n} shots of ammo.`; }
-        else { const n = health(rint(GIFT_SPOOKY_HEALTH)); sound = 'potion_drink'; words = gotWords(n); }
+        else { const n = health(rint(GIFT_SPOOKY_HEALTH)); sound = 'potion_drink'; words = hpWords(n); }
       } else if (g === 2) { const n = GIFT_FULL_CARTRIDGE; u.ammo += n; words = `You've just received ${n} shots of ammo.`; }
-      else if (g === 3) { const n = health(rint(GIFT_MEAL)); sound = 'potion_drink'; words = gotWords(n); }
+      else if (g === 3) { const n = health(rint(GIFT_MEAL)); sound = 'potion_drink'; words = hpWords(n); }
       else if (g === 4) { const n = rint(GIFT_BIG_CARTRIDGE); u.ammo += n; words = `You've just received ${n} shots of ammo.`; }
       else if (g === 5) {
         const before = u.hp; health(rint(GIFT_HOLY_HEALTH));
-        if (roll() < GIFT_HOLY_SURPLUS) u.hp = this._utHpCap(u, Math.max(u.hp, START_HP + rint(GIFT_HOLY_OVER)));
-        sound = 'potion_drink'; words = gotWords(u.hp - before);
+        if (roll() < GIFT_HOLY_SURPLUS) { const want = Math.max(u.hp, START_HP + rint(GIFT_HOLY_OVER)); u.hp = this._utHpCap(u, want); toPoints(want - u.hp); }
+        sound = 'potion_drink'; words = hpWords(u.hp - before);
       } else if (g === 6) {
         const s = rint(GIFT_WATER.shots); const h = rint(GIFT_WATER.health);
-        u.ammo += s; health(h);
-        words = `You've just received ${s} shots of ammo and ${h} health.`;
+        u.ammo += s; const got = health(h);
+        if (!spare) words = `You've just received ${s} shots of ammo and ${h} health.`;
+        else if (got > 0) words = `You've just received ${s} shots of ammo, ${got} health and ${spare} ${plural(spare, 'point')}.`;
+        else words = `You've just received ${s} shots of ammo and ${spare} ${plural(spare, 'point')}.`;
       } else if (g === 7) { const n = rint(GIFT_ITEMS); u.items += n; sound = 'item_throw'; words = `You've just received ${n} tower items.`; }
       else {
         const s = rint(GIFT_BUNDLE.shots); const h = rint(GIFT_BUNDLE.health); const i = rint(GIFT_BUNDLE.items);
-        u.ammo += s; health(h); u.items += i;
-        words = `You've just received ${s} shots of ammo, ${h} health and ${i} tower ${plural(i, 'item')}.`;
+        u.ammo += s; const got = health(h); u.items += i;
+        if (!spare) words = `You've just received ${s} shots of ammo, ${h} health and ${i} tower ${plural(i, 'item')}.`;
+        else if (got > 0) words = `You've just received ${s} shots of ammo, ${got} health, ${i} tower ${plural(i, 'item')} and ${spare} ${plural(spare, 'point')}.`;
+        else words = `You've just received ${s} shots of ammo, ${spare} ${plural(spare, 'point')} and ${i} tower ${plural(i, 'item')}.`;
       }
     }
     if (sound && this.audio.has(sound)) this.audio.play(sound, { keep: true });
