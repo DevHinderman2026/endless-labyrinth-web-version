@@ -14,30 +14,35 @@ const check = (ok, what) => { console.log((ok ? 'PASS ' : 'FAIL ') + what); if (
 {
   const V = await import('../js/modes/volcanic.js');
   let ahead = true; let inside = true; let bombsOk = true; let apart = true; let onWay = true; let creditsOk = true;
+  const dists = [];
   for (const depth of [1, 3, 6, 10, 15, 30]) {
     for (let i = 0; i < 150; i++) {
       const c = V.layCave(depth);
       const d = Math.hypot(c.hole[0], c.hole[1]);
-      // The hole: ahead (north, give or take 70 degrees), at its depth's distance, inside the edge.
-      if (Math.abs(d - V.holeDistFor(depth)) > 1e-6 || c.hole[1] >= 0 || Math.abs(Math.atan2(c.hole[0], -c.hole[1])) > 70.01 * Math.PI / 180) ahead = false;
-      if (Math.abs(c.hole[0]) > c.half - 20 || Math.abs(c.hole[1]) > c.half - 20) inside = false;
+      // The hole: any way from you, 12 units to 1.4 times the depth's distance; you and it inside the edge.
+      if (d < 11.999 || d > V.holeDistFor(depth) * 1.4 + 1e-6) ahead = false;
+      dists.push(d);
+      const [x0, y0, x1, y1] = c.bounds;
+      const inB = (p, m) => p[0] >= x0 + m && p[0] <= x1 - m && p[1] >= y0 + m && p[1] <= y1 - m;
+      if (!inB([0, 0], 11.99) || !inB(c.hole, 11.99)) inside = false;
       // Bombs: as many as the depth asks, never near the start or the hole, never close together, inside the edge.
       if (depth === 1 ? c.bombs.length !== 1 : (c.bombs.length < Math.min(20, depth) || c.bombs.length > Math.min(20, depth + 1))) bombsOk = false;
       let near = 0;
       for (const b of c.bombs) {
         if (Math.hypot(b[0], b[1]) < 12 || Math.hypot(b[0] - c.hole[0], b[1] - c.hole[1]) < 6) bombsOk = false;
-        if (Math.abs(b[0]) > c.half || Math.abs(b[1]) > c.half) inside = false;
+        if (!inB(b, 0)) inside = false;
         // distance from the line from you to the hole
         const t = Math.max(0, Math.min(1, (b[0] * c.hole[0] + b[1] * c.hole[1]) / (d * d)));
         if (Math.hypot(b[0] - c.hole[0] * t, b[1] - c.hole[1] * t) <= 5.01) near += 1;
       }
-      if (near < Math.min(Math.round(c.bombs.length * 0.6), Math.max(1, Math.floor(d * 0.75 / 28)))) onWay = false;   // (at least half as many as fit 14 apart)
+      if (near < Math.min(Math.round(c.bombs.length * 0.6), Math.floor(Math.max(0, d * 0.9 - 18) / 28))) onWay = false;   // (at least half as many as fit 14 apart)
       for (let a = 0; a < c.bombs.length; a++) for (let b = a + 1; b < c.bombs.length; b++) if (Math.hypot(c.bombs[a][0] - c.bombs[b][0], c.bombs[a][1] - c.bombs[b][1]) < 14) apart = false;
-      if (c.credit && (Math.abs(c.credit[0]) > c.half || Math.abs(c.credit[1]) > c.half || Math.hypot(c.credit[0], c.credit[1]) > 22.001 || Math.hypot(c.credit[0], c.credit[1]) < 9.999)) creditsOk = false;
+      if (c.credit && (!inB(c.credit, 0) || Math.hypot(c.credit[0], c.credit[1]) > 22.001 || Math.hypot(c.credit[0], c.credit[1]) < 9.999)) creditsOk = false;
     }
   }
-  check(ahead, 'the hole lies ahead, give or take 70 degrees, at its depth\'s distance');
-  check(inside, 'the hole and the bombs lie inside the cavern\'s edge, with room beyond the hole');
+  check(ahead, 'the hole lies 12 units to 1.4 times the depth\'s distance away');
+  check(dists.filter((x) => x < 20).length > 20 && dists.filter((x) => x > 80).length > 100, `sometimes right by you, sometimes far away (${dists.filter((x) => x < 20).length} under 20 units, ${dists.filter((x) => x > 80).length} over 80, of ${dists.length})`);
+  check(inside, 'you, the hole and the bombs lie inside the cavern\'s edge, you and the hole with room round you');
   check(bombsOk && apart, 'as many bombs as the depth asks, never near the start or the hole, at least 14 units apart (8.2.5)');
   check(onWay, 'most bombs lie on the way to the hole');
   check(creditsOk, 'a credit always lies near where you start (10 to 22 units), inside the cavern');
@@ -94,7 +99,7 @@ await page.evaluate(async () => {
   // A test cave: open, 60 units each way, the hole 48 ahead (north). Bombs and a credit at units.
   t.straight = (bombs = [], credit = null) => {
     const vc = g.vc;
-    vc.half = 60; vc.hole = [0, -48]; vc.bombs = bombs.map((p) => ({ pos: p, t: 0.1, tock: false }));
+    vc.bounds = [-60, -60, 60, 60]; vc.hole = [0, -48]; vc.bombs = bombs.map((p) => ({ pos: p, t: 0.1, tock: false }));
     vc.credit = credit; g.playerPos = [0, 0]; vc.speed = 0; vc.throttle = false; vc.start = [0, 0]; vc.startFace = 0; t.face(0);
   };
 });
@@ -125,14 +130,14 @@ const start = await page.evaluate(() => {
   const g = window.__el.game; const vc = g.vc;
   return { state: g.state, depth: vc.depth, pos: g.playerPos, turns: g._turnsNow(), room: g._currentRoom(), gm: g.mode.gestureMode(g),
     air: vc.air && vc.air.name, lava: vc.lava && vc.lava.name, engine: vc.engine && vc.engine.name, clock: g.timeLeft,
-    north: vc.hole[1] < 0, turnHold: (g._f(1 / 30), g.gestures.turnHold), gmode: g.gestures.mode };
+    north: Math.hypot(vc.hole[0], vc.hole[1]) >= 12, turnHold: (g._f(1 / 30), g.gestures.turnHold), gmode: g.gestures.mode };
 });
 check(start.state === 'volcanic' && start.depth === 1 && start.pos.join() === '0,0', 'a run starts in the first cave, at its start');
 check(start.turns && start.gm === 'drive' && start.gmode === 'drive' && start.turnHold, 'the cave turns with you, with the driving gestures and turning both on');
 check(start.room === 'lab', 'a cave\'s echo');
 check(start.air === 'vc_air' && start.lava === 'vc_lava' && /^engine_\d+$/.test(start.engine || ''), `the cave's air, the lava and the engine play: ${start.air}, ${start.lava}, ${start.engine}`);
 check(Math.abs(start.clock - 120) < 0.1, 'two minutes on the clock: ' + start.clock);
-check(start.north, 'the hole lies ahead, to the north');
+check(start.north, 'the hole is somewhere away from you, at least 12 units');
 
 // ------------------------------------------------------------------ driving, turning, walls
 const drive = await page.evaluate(() => {
@@ -216,16 +221,16 @@ check(hole.said.length === 0, 'no voice says anything as you drop into the next 
 // ------------------------------------------------------------------ the facing kept through the drop
 const bend = await page.evaluate(() => {
   const g = window.__el.game; const t = window.__t; const vc = g.vc;
-  vc.half = 60; vc.hole = [40, 0]; vc.bombs = []; vc.credit = null;
+  vc.bounds = [-60, -60, 60, 60]; vc.hole = [40, 0]; vc.bombs = []; vc.credit = null;
   g.playerPos = [0, 0]; vc.speed = 0; t.face(1);
   const depth0 = vc.depth;
   g.input('accel_on'); t.frames(5); g.input('accel_off');
   const faceInDrop = g.tn.face; t.frames(2.5);
-  return { depth0, depth1: g.vc.depth, faceInDrop, faceAfter: g.tn.face, hole: g.vc.hole };
+  return { depth0, depth1: g.vc.depth, faceInDrop, faceAfter: g.tn.face, hole: g.vc.hole, bounds: g.vc.bounds };
 });
 check(bend.depth1 === bend.depth0 + 1, `driving east into the hole (level ${bend.depth0} to ${bend.depth1})`);
 check(Math.abs(bend.faceInDrop - Math.PI / 2) < 1e-6 && Math.abs(bend.faceAfter - Math.PI / 2) < 1e-6, 'the drop keeps the way you faced (east)');
-check(bend.hole[0] > 0, 'and the next cave\'s hole lies ahead of it, to the east: ' + bend.hole.map((x) => x.toFixed(1)));
+check(Array.isArray(bend.bounds) && bend.bounds[0] < -11 && bend.bounds[2] > 11 && bend.bounds[1] < -11 && bend.bounds[3] > 11, 'and you land somewhere inside the next cave: ' + JSON.stringify(bend.bounds && bend.bounds.map((x) => +x.toFixed(1))));
 
 // ------------------------------------------------------------------ the report, the credit, the lava
 const misc = await page.evaluate(() => {
