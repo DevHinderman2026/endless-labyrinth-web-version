@@ -22,7 +22,7 @@ const check = (ok, what) => { console.log((ok ? 'PASS ' : 'FAIL ') + what); if (
       if (Math.abs(d - V.holeDistFor(depth)) > 1e-6 || c.hole[1] >= 0 || Math.abs(Math.atan2(c.hole[0], -c.hole[1])) > 70.01 * Math.PI / 180) ahead = false;
       if (Math.abs(c.hole[0]) > c.half - 20 || Math.abs(c.hole[1]) > c.half - 20) inside = false;
       // Bombs: as many as the depth asks, never near the start or the hole, never close together, inside the edge.
-      if (c.bombs.length !== V.bombsFor(depth)) bombsOk = false;
+      if (depth === 1 ? c.bombs.length !== 1 : (c.bombs.length < Math.min(20, depth) || c.bombs.length > Math.min(20, depth + 1))) bombsOk = false;
       let near = 0;
       for (const b of c.bombs) {
         if (Math.hypot(b[0], b[1]) < 12 || Math.hypot(b[0] - c.hole[0], b[1] - c.hole[1]) < 6) bombsOk = false;
@@ -44,7 +44,7 @@ const check = (ok, what) => { console.log((ok ? 'PASS ' : 'FAIL ') + what); if (
   check(V.tickEvery(48) === 0.5 && Math.abs(V.tickEvery(2) - 0.12) < 1e-9 && V.tickEvery(10) < V.tickEvery(30), 'a bomb ticks faster the closer you are: every half second at the edge of hearing, every 0.12 s right before it');
   check(V.holeBonusFor(1) === 5 && V.holeBonusFor(3) === 6 && V.holeBonusFor(11) === 10 && V.holeBonusFor(40) === 10 && V.holeBonusFor(1, true) === 5 && V.holeBonusFor(30, true) === 5, 'the hole gives 5 seconds, one more every two levels, 10 from level 11; 5 in Chaos');
   check(V.holeDistFor(1) === 40 && V.holeDistFor(6) === 80 && V.holeDistFor(99) === 200, 'the hole farther every level: 40, then 8 more a level, at most 200');
-  check(V.bombsFor(1) === 3 && V.bombsFor(5) === 7 && V.bombsFor(99) === 20, 'three bombs in the first cave, one more every level, at most twenty');
+  check(V.bombsFor(1, 0.9) === 1 && V.bombsFor(2, 0.1) === 2 && V.bombsFor(2, 0.9) === 3 && V.bombsFor(5, 0.9) === 6 && V.bombsFor(99, 0.9) === 20, 'one bomb in the first cave, then as many as the level or one more (level 2: two or three), at most twenty');
   check(V.listenLevel(1) === 1 && Math.abs(V.listenLevel(22) - 0.35) < 1e-9 && V.listenLevel(11) < 1 && V.listenLevel(11) > 0.35, 'the bombs, the hole and the credits grow quieter as the lava rises: full at level 1, 35 percent from 22 (Escape the Cave)');
   // Escape the Cave's lava curve: faint at 1, full at 22, rising on toward the ceiling.
   const L = V.lavaVolume;
@@ -209,9 +209,9 @@ const hole = await page.evaluate(() => {
 });
 check(hole.beeps >= 1 && hole.near > hole.far && hole.atHole === '0,-48', `the hole beeps from where it is, higher the nearer you are (pitch ${hole.far} far, ${hole.near} near)`);
 check(hole.popped && hole.land, 'driving into the hole: a pop, then the landing below');
-check(hole.gained > 4.5 && hole.bonusSaid.includes('5 more seconds.'), `leaving the first cave puts 5 seconds on the clock, and says so (${hole.gained.toFixed(1)} s): ${hole.bonusSaid.join(' | ')}`);
+check(hole.gained > 4.5 && hole.bonusSaid.length === 0, `leaving the first cave puts 5 seconds on the clock, silently (${hole.gained.toFixed(1)} s): ${JSON.stringify(hole.bonusSaid)}`);
 check(hole.depth === 2 && hole.pos === '0,0', 'and you are at the start of the next cave down, level 2');
-check(!hole.said.some((x) => /level/i.test(x)), 'no voice says the level: ' + JSON.stringify(hole.said));
+check(hole.said.length === 0, 'no voice says anything as you drop into the next cave: ' + JSON.stringify(hole.said));
 
 // ------------------------------------------------------------------ the facing kept through the drop
 const bend = await page.evaluate(() => {
