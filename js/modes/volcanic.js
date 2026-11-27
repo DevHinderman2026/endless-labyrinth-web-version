@@ -88,8 +88,8 @@ export const VC_EDGE_PAST = 24;                // units of cavern beyond the hol
 export const VC_BOMBS_MAX = 20;
 export function bombsFor(depth, r = rand()) { return depth <= 1 ? 1 : Math.min(VC_BOMBS_MAX, depth + (r < 0.5 ? 0 : 1)); }
 export const VC_ON_THE_WAY = 0.6;              // of them lie on the way to the hole (within VC_WAY_WIDE of the line)
-export const VC_WAY_WIDE = 4.0;
-export const VC_BOMB_APART = 5.0;              // never closer together than this
+export const VC_WAY_WIDE = 5.0;
+export const VC_BOMB_APART = 14.0;             // never closer together than this (8.2.5, Russell: spread out much more; was 5)
 export const VC_BOMB_CLEAR = 12.0;             // never this close to where you start, nor VC_HOLE_CLEAR to the hole
 export const VC_HOLE_CLEAR = 6.0;
 export const VC_TICK_EVERY = 0.5;              // seconds between a bomb's ticks, from the edge of hearing (8.2.0: always)
@@ -183,7 +183,15 @@ export function lavaVolume(level) {
   return LAVA_VOLUME_END + (LAVA_CEILING - LAVA_VOLUME_END) * (1.0 - Math.exp(-past / LAVA_RISE_SPAN));
 }
 // The lava's loudness in the game, on a level.
-export function lavaLevel(level) { return VC_LAVA_TOP * lavaVolume(level) / LAVA_CEILING; }
+// (8.2.5, Russell, 27 November 2026: twice as strong. Quite loud by level 15, and by level 20 so loud
+// that the bombs and the hole are hard to hear, though never blotted out, and still rising, level
+// after level, without end.) Twice 8.2.0 to 8.2.4's loudness: about 0.62 at level 15, 0.83 at 20,
+// toward 1.9. A sound plays no louder than full, so past 1.0 a second copy of the lava joins the
+// first, half a loop apart (VC_LAVA_TWIN, as the arena crowd's two copies).
+export const VC_LAVA_STRENGTH = 2.0;
+export function lavaLevel(level) { return VC_LAVA_STRENGTH * VC_LAVA_TOP * lavaVolume(level) / LAVA_CEILING; }
+export const VC_LAVA_TWIN = 0.5;               // of the loop: where the second copy starts
+export const VC_LAVA_LOOP = 19.4;              // seconds: the lava loop's length (tools/volcanic/make_sounds.py)
 // And, as in Escape the Cave (beacon_volume), everything you listen for, the bombs, the hole and
 // the credits, grows quieter as the lava grows louder: full on level 1, 35 percent from level 22
 // (BEACON_VOLUME_FLOOR, BEACON_FLOOR_AT), so the deep caves' lava drowns out nearly everything.
@@ -221,9 +229,11 @@ export function layCave(depth) {
   const n = bombsFor(depth);
   const onWay = Math.round(n * VC_ON_THE_WAY);
   const side = [Math.cos(a), Math.sin(a)];      // across the way to the hole
-  for (let tries = 0; tries < 2000 && bombs.length < n; tries++) {
+  // (Those on the way that cannot be fitted that far apart go elsewhere in the cavern.)
+  let wayTries = 0;
+  for (let tries = 0; tries < 4000 && bombs.length < n; tries++) {
     let p;
-    if (bombs.length < onWay) {
+    if (bombs.length < onWay && wayTries++ < 600) {
       const t = 0.15 + rand() * 0.75; const off = (rand() * 2 - 1) * VC_WAY_WIDE;
       p = [hole[0] * t + side[0] * off, hole[1] * t + side[1] * off];
     } else p = [(rand() * 2 - 1) * (half - 3), (rand() * 2 - 1) * (half - 3)];
@@ -267,7 +277,7 @@ const mixin = {
   // A cave: a run's next level down, or a Chaos level (`holes` to reach there).
   _vcBegin({ chaos, depth, holes = 0, adopt = null }) {
     const prev = this.vc;
-    const keep = prev ? { air: prev.air, lava: prev.lava, engine: prev.engine, band: prev.band } : null;
+    const keep = prev ? { air: prev.air, lava: prev.lava, lava2: prev.lava2, engine: prev.engine, band: prev.band } : null;
     if (prev) this._vcSilence(prev, false);
     this.vcNames = new Map(this._vcNames());
     for (const [stem, name] of this.vcNames) if (name) this.audio.prepare(name, `volcanic:${stem}`);
@@ -282,7 +292,7 @@ const mixin = {
       credit: null,
       speed: 0.0, throttle: !!(prev && prev.throttle), touching: false, rockT: 0,
       beepT: 0, drop: null, boom: null, done: false,
-      air: keep ? keep.air : null, lava: keep ? keep.lava : null,
+      air: keep ? keep.air : null, lava: keep ? keep.lava : null, lava2: keep ? keep.lava2 : null,
       engine: keep ? keep.engine : null, band: keep ? keep.band : -1,
       deepest: Math.max(depth, prev ? prev.deepest || 0 : 0),
     };
@@ -331,8 +341,15 @@ const mixin = {
     }
     const lava = this._vcName(VC_LAVA);
     const level = lavaLevel(vc.depth);
-    if (vc.lava && vc.lava.busy) vc.lava.setVolume(level);
-    else vc.lava = lava ? this.audio.play(lava, { loops: -1, volume: level, fadeMs: 600, send: BACKGROUND_SEND }) : null;
+    const one = Math.min(1.0, level); const two = Math.min(1.0, Math.max(0.0, level - 1.0));
+    if (vc.lava && vc.lava.busy) vc.lava.setVolume(one);
+    else vc.lava = lava ? this.audio.play(lava, { loops: -1, volume: one, fadeMs: 600, send: BACKGROUND_SEND }) : null;
+    if (two > 0 && lava) {
+      if (vc.lava2 && vc.lava2.busy) vc.lava2.setVolume(two);
+      else {
+        vc.lava2 = this.audio.play(lava, { loops: -1, volume: two, fadeMs: 600, send: BACKGROUND_SEND, offset: VC_LAVA_LOOP * VC_LAVA_TWIN });
+      }
+    } else if (vc.lava2) { vc.lava2.fadeout(300); vc.lava2 = null; }
   },
 
   // Whether a place is inside the cavern (the edge is its only wall).
@@ -608,7 +625,7 @@ const mixin = {
   // Everything of a cave stopped (`all`: the air, the lava and the engine too).
   _vcSilence(vc, all = true) {
     if (all) {
-      for (const k of ['air', 'lava', 'engine']) if (vc[k]) { vc[k].stop(); vc[k] = null; }
+      for (const k of ['air', 'lava', 'lava2', 'engine']) if (vc[k]) { vc[k].stop(); vc[k] = null; }
     }
   },
 
@@ -624,9 +641,9 @@ const mixin = {
 // ------------------------------------------------------------------ help
 const HELP_SECTIONS = [
   ['Volcanic Caves', [
-    { title: 'Volcanic Caves', sound: null, desc: 'Volcanic Caves is a mode of its own inside Driving, new in 8.2.0: choose Driving Mode on the main menu, then Volcanic Caves. Inspired by Roller Ball in Sonar Islands, you drive down through volcanic caves toward the centre of the Earth. Each level is one cave: a wide open cavern with no walls inside it, only its edge all round. Somewhere in it is the hole down to the next level, and it beeps from where it is, faster and higher the nearer you are, like a labyrinth\'s exit. Drive into it: you hear it pop, you drop, and you land in the next cave down. No voice tells you the level: double tap for it, with the clock and the way you are facing. The lava is all around you and never touches you, but it grows louder the deeper you go, as in Escape the Cave, while the bombs, the hole and the credits grow quieter, until the lava drowns out almost everything else.' },
+    { title: 'Volcanic Caves', sound: null, desc: 'Volcanic Caves is a mode of its own inside Driving, new in 8.2.0: choose Driving Mode on the main menu, then Volcanic Caves. Inspired by Roller Ball in Sonar Islands, you drive down through volcanic caves toward the centre of the Earth. Each level is one cave: a wide open cavern with no walls inside it, only its edge all round. Somewhere in it is the hole down to the next level, and it beeps from where it is, faster and higher the nearer you are, like a labyrinth\'s exit. Drive into it: you hear it pop, you drop, and you land in the next cave down. No voice tells you the level: double tap for it, with the clock and the way you are facing. The lava is all around you and never touches you, but it grows louder the deeper you go, as in Escape the Cave, without end: quite loud by the fifteenth cave, and by the twentieth so loud that the bombs, the hole and the credits, which grow quieter as it rises, are hard to hear, though never lost completely.' },
     { title: 'Volcanic Caves Driving and Turning', sound: null, desc: 'You drive as in Driving Mode: slide one finger up and keep it down to accelerate, and slide that finger back down, or swipe down, to brake. But here the cave turns with you, as when you walk. To turn, lift the accelerating finger first, then flick left or right for one small turn of 30 degrees, or slide left or right and keep your finger down to keep turning until you lift it. The car coasts while your finger is up, slowing a little, so turn, then accelerate again. On a keyboard, hold the up arrow to accelerate, press or hold the left and right arrows to turn, and press the down arrow to brake. The ticks for north, east, south and west help you count your turns. Each new cave is laid out ahead of the way you face, to the nearest of north, east, south and west: its hole is somewhere ahead of you.' },
-    { title: 'Volcanic Caves Bombs and the Edge', sound: null, desc: 'The bombs are the only thing to avoid. Each one ticks like a clock, tick, tock, from where it lies, and the closer you are, the faster it ticks: slowly from far off, twice a second, and quicker and quicker as you near it, fastest right before you would drive into it. You hear the nearest three. Most of them lie on the way to the hole. A bomb goes off only if you drive into it head on. Then the cave shakes, and a moment later you are back at the start of that cave, facing as you began it, and the clock keeps running. Brushing past one does nothing: when a bomb ticks straight ahead of you, turn a little to one side and drive round it, then turn back toward the hole. A bomb that has gone off is gone. Deeper caves have more bombs: one in the first cave, then as many as the cave\'s level, or one more, so two or three in the second, up to twenty. There are no walls inside a cave: its only wall is its edge, and the cave\'s echo grows tighter as you near it. Drive straight into the edge and the car stops with a thud of rock. That costs no time: turn, and drive on. If you only glance along it, a softer knock tells you so, and the car slides on along it.' },
+    { title: 'Volcanic Caves Bombs and the Edge', sound: null, desc: 'The bombs are the only thing to avoid. Each one ticks like a clock, tick, tock, from where it lies, and the closer you are, the faster it ticks: slowly from far off, twice a second, and quicker and quicker as you near it, fastest right before you would drive into it. You hear the nearest three. Most of them lie on the way to the hole, spread well apart, never closer together than a couple of car lengths. A bomb goes off only if you drive into it head on. Then the cave shakes, and a moment later you are back at the start of that cave, facing as you began it, and the clock keeps running. Brushing past one does nothing: when a bomb ticks straight ahead of you, turn a little to one side and drive round it, then turn back toward the hole. A bomb that has gone off is gone. Deeper caves have more bombs: one in the first cave, then as many as the cave\'s level, or one more, so two or three in the second, up to twenty. There are no walls inside a cave: its only wall is its edge, and the cave\'s echo grows tighter as you near it. Drive straight into the edge and the car stops with a thud of rock. That costs no time: turn, and drive on. If you only glance along it, a softer knock tells you so, and the car slides on along it.' },
     { title: 'Volcanic Caves Clock and Score', sound: null, desc: 'You start with two minutes, and the run ends only when the time runs out. Time credits worth 10, 20 or 30 seconds lie in about two caves in three, always near where you start the cave, each marked by coins clinking now and then from where it lies, quietly, louder as you come closer. Drive onto one to take it, and the coins tell you which you got. Reaching the hole quietly puts time on the clock, and a double tap\'s clock tells you the new time: 5 seconds for leaving the first cave, one more for every two caves deeper, and 10 from the eleventh cave on. The clock waits while you drop down a hole. Each cave deeper has the hole farther away and more bombs, but the credits stay the same. Your score is the deepest level you reach, and Volcanic Caves has its own high score board, right after Driving\'s.' },
     { title: 'Volcanic Caves in Chaos Mode', sound: null, desc: 'Chaos Mode has Volcanic Caves levels too: you know one by the bubbling of the volcanic cave, the lava, your engine, and the clock ticking of bombs. There you must reach the hole two times in your first Volcanic level of a run, one more for each such level after, up to five, each hole dropping you into a new cave. A bomb there costs 20 health and 15 seconds instead of sending you back, and you drive on from where you are. The chaos clock keeps running, but waits while you drop, and each hole puts 5 seconds on it. Time credits of 10, 20 or 30 seconds lie in these caves too, marked by the same clinking coins. Double tap for the cave you are in and how many the level asks for, such as Level 1 of 2, then your health, the clock and the points.' },
   ]],

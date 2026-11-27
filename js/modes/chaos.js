@@ -291,7 +291,7 @@ const mixin = {
     }
     // (8.2.0) A volcanic cave's air and lava fade out under the next level's too.
     if (this.vc) {
-      for (const k of ['air', 'lava']) {
+      for (const k of ['air', 'lava', 'lava2']) {
         const v = this.vc[k];
         this.vc[k] = null;
         if (!v || spared.some((x) => x === v)) continue;

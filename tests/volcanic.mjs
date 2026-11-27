@@ -29,16 +29,16 @@ const check = (ok, what) => { console.log((ok ? 'PASS ' : 'FAIL ') + what); if (
         if (Math.abs(b[0]) > c.half || Math.abs(b[1]) > c.half) inside = false;
         // distance from the line from you to the hole
         const t = Math.max(0, Math.min(1, (b[0] * c.hole[0] + b[1] * c.hole[1]) / (d * d)));
-        if (Math.hypot(b[0] - c.hole[0] * t, b[1] - c.hole[1] * t) <= 4.01) near += 1;
+        if (Math.hypot(b[0] - c.hole[0] * t, b[1] - c.hole[1] * t) <= 5.01) near += 1;
       }
-      if (near < Math.round(c.bombs.length * 0.6)) onWay = false;
-      for (let a = 0; a < c.bombs.length; a++) for (let b = a + 1; b < c.bombs.length; b++) if (Math.hypot(c.bombs[a][0] - c.bombs[b][0], c.bombs[a][1] - c.bombs[b][1]) < 5) apart = false;
+      if (near < Math.min(Math.round(c.bombs.length * 0.6), Math.max(1, Math.floor(d * 0.75 / 28)))) onWay = false;   // (at least half as many as fit 14 apart)
+      for (let a = 0; a < c.bombs.length; a++) for (let b = a + 1; b < c.bombs.length; b++) if (Math.hypot(c.bombs[a][0] - c.bombs[b][0], c.bombs[a][1] - c.bombs[b][1]) < 14) apart = false;
       if (c.credit && (Math.abs(c.credit[0]) > c.half || Math.abs(c.credit[1]) > c.half || Math.hypot(c.credit[0], c.credit[1]) > 22.001 || Math.hypot(c.credit[0], c.credit[1]) < 9.999)) creditsOk = false;
     }
   }
   check(ahead, 'the hole lies ahead, give or take 70 degrees, at its depth\'s distance');
   check(inside, 'the hole and the bombs lie inside the cavern\'s edge, with room beyond the hole');
-  check(bombsOk && apart, 'as many bombs as the depth asks, never near the start or the hole, never close together');
+  check(bombsOk && apart, 'as many bombs as the depth asks, never near the start or the hole, at least 14 units apart (8.2.5)');
   check(onWay, 'most bombs lie on the way to the hole');
   check(creditsOk, 'a credit always lies near where you start (10 to 22 units), inside the cavern');
   check(V.tickEvery(48) === 0.5 && Math.abs(V.tickEvery(2) - 0.12) < 1e-9 && V.tickEvery(10) < V.tickEvery(30), 'a bomb ticks faster the closer you are: every half second at the edge of hearing, every 0.12 s right before it');
@@ -49,7 +49,7 @@ const check = (ok, what) => { console.log((ok ? 'PASS ' : 'FAIL ') + what); if (
   // Escape the Cave's lava curve: faint at 1, full at 22, rising on toward the ceiling.
   const L = V.lavaVolume;
   check(Math.abs(L(1) - 0.05) < 1e-9 && Math.abs(L(22) - 1.0) < 1e-9 && L(30) > 1.0 && L(200) < 2.1 && L(12) > L(11), 'the lava rises level after level, as in Escape the Cave (0.05 at level 1, 1.0 at level 22, toward 2.1)');
-  check(V.lavaLevel(1) < V.lavaLevel(10) && V.lavaLevel(10) < V.lavaLevel(40) && V.lavaLevel(500) <= 0.95, 'and is played louder the deeper the cave: ' + [1, 10, 22, 40].map((n) => V.lavaLevel(n).toFixed(3)).join(', '));
+  check(V.lavaLevel(1) < V.lavaLevel(10) && V.lavaLevel(10) < V.lavaLevel(40) && V.lavaLevel(500) <= 1.9 && Math.abs(V.lavaLevel(15) - 2 * 0.95 * L(15) / 2.1) < 1e-9 && V.lavaLevel(15) > 0.6 && V.lavaLevel(20) > 0.8 && V.lavaLevel(60) > 1.0, 'and is played twice as strong as 8.2.4, louder the deeper the cave, past full (a second copy) from about level 24: ' + [1, 10, 15, 20, 22, 40].map((n) => V.lavaLevel(n).toFixed(3)).join(', '));
   check(V.chaosHolesFor(1) === 2 && V.chaosHolesFor(2) === 3 && V.chaosHolesFor(9) === 5, 'Chaos asks for two holes, one more each Volcanic level, at most five');
 }
 
