@@ -516,6 +516,26 @@ check(grow.tooNear === 0 && grow.keep >= 9 - 0.6, 'keeping apart never eases a c
   check(lt.vols[0] === 0.5 && lt.vols[1] === 1, 'your walking steps on the glass are softer than running ones (8.1.4): ' + JSON.stringify(lt.vols));
 }
 
+{
+  // 8.1.6: walking away leaves a creature behind, and you hear it fall behind.
+  const wk = await page.evaluate(async () => {
+    const g = window.__el.game; const t = window.__t; const M = await import('./js/modes/abyss.js');
+    t.start('abyss'); const ab = g.ab; ab.nextStrike = 999; ab.cover = 0; ab.grace = 0; g.timeLeft = 999;
+    for (const c of ab.cases) c.x += 5000;
+    const [c, ...rest] = ab.creatures; for (const o of rest) t.put(o, 4000, 4000);
+    g.playerPos = [0, 0]; g._face(0, true); t.put(c, 0, 6); c.move = 0; c.charge = 0; c.storm = 0;
+    let caught = false; const orig = g._abCaught.bind(g); g._abCaught = () => { caught = true; ab.grace = 99; };
+    const lvl = () => { const [l, r] = g._abLevels([c.x, c.y], M.AB_IDLE_GAIN, M.AB_CREATURE_RANGE, true); return Math.max(l, r); };
+    let heard = 0; let first = null;
+    for (let s = 1; s <= 12; s++) { g.input('up'); if (c.move > 0) heard += 1; for (let f = 0; f < 15; f++) g.updateAbyss(1 / 30); if (s === 1) first = lvl(); }
+    const last = lvl(); const apart = Math.hypot(c.x - g.playerPos[0], c.y - g.playerPos[1]) / 3;
+    g._abCaught = orig; t.menu();
+    return { caught, heard, apart, ratio: last / first, far: M.quietFade(60, 75), q12: M.quietFade(36, 75), q6: M.quietFade(18, 75) };
+  });
+  check(!wk.caught && wk.heard <= 3 && wk.apart > 10, `walking away from a creature two steps behind: it hears only your first steps and falls behind, ${wk.apart.toFixed(1)} steps after twelve (8.1.6)`);
+  check(wk.ratio < 0.45 && Math.abs(wk.q6 - 0.5) < 0.01 && Math.abs(wk.q12 - 0.25) < 0.01 && wk.far > 0.05, `and you hear it fall behind: its breathing half as loud by six steps, a quarter by twelve, still faint at twenty (${wk.ratio.toFixed(2)} of its first level)`);
+}
+
 check(!errors.length, 'no page errors ' + errors.join(' | '));
 await browser.close();
 console.log(failures ? `${failures} FAILED` : 'ALL PASSED');
