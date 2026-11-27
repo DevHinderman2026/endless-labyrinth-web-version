@@ -53,6 +53,8 @@ const check = (ok, what) => { console.log((ok ? 'PASS ' : 'FAIL ') + what); if (
   check(V.holeBonusFor(1) === 5 && V.holeBonusFor(3) === 6 && V.holeBonusFor(11) === 10 && V.holeBonusFor(40) === 10 && V.holeBonusFor(1, true) === 5 && V.holeBonusFor(30, true) === 5, 'the hole gives 5 seconds, one more every two levels, 10 from level 11; 5 in Chaos');
   check(V.holeDistFor(1) === 40 && V.holeDistFor(6) === 80 && V.holeDistFor(99) === 200, 'the hole farther every level: 40, then 8 more a level, at most 200');
   check(V.bombsFor(1, 0.9) === 1 && V.bombsFor(2, 0.1) === 2 && V.bombsFor(2, 0.9) === 3 && V.bombsFor(5, 0.9) === 6 && V.bombsFor(99, 0.9) === 20, 'one bomb in the first cave, then as many as the level or one more (level 2: two or three), at most twenty');
+  const keep = [22, 30, 50, 100, 400].map((n) => V.listenLevel(n) / V.lavaLevel(n));
+  check(keep.every((k) => Math.abs(k - keep[0]) < 1e-9) && V.listenLevel(400) > V.listenLevel(22) && V.listenLevel(1000) <= 1, 'past level 22 the hole and the credits rise with the lava, never harder to hear than at 22: ' + [22, 30, 50, 100].map((n) => V.listenLevel(n).toFixed(2)).join(', '));
   check(V.listenLevel(1) === 1 && Math.abs(V.listenLevel(22) - 0.35) < 1e-9 && V.listenLevel(11) < 1 && V.listenLevel(11) > 0.35, 'the hole and the credits grow quieter as the lava rises: full at level 1, 35 percent from 22 (Escape the Cave); the bombs never do (8.2.7)');
   // Escape the Cave's lava curve: faint at 1, full at 22, rising on toward the ceiling.
   const L = V.lavaVolume;
