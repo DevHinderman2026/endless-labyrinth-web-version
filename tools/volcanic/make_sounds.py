@@ -30,9 +30,12 @@ SOUNDS = {
     # game does (balance(), below: the right side is about 4 dB louder), looped. The game
     # raises it level after level as Escape the Cave does (volcanic.js lavaLevel).
     'vc_lava':  ('evt_cauldron_etc.ogg', 0.0, 19.4, True, -20.0, False),
-    # A bomb's tick: "ticking bomb" by freesound_community (Pixabay 90319), its first tick
-    # alone; the game plays it every half second (VC_TICK_EVERY).
-    'vc_tick':  ('vc_tick_90319.mp3', 0.02, 0.12, False, -20.0, True),
+    # A bomb ticking like a clock (8.2.0, Russell: "the bombs are supposed to be ticking clock
+    # sounds", not the electronic beep of "ticking bomb", freesound_community 90319, used until
+    # then): "Clock Ticking SFX" by DRAGON-STUDIO (Pixabay 467486), one tick and the tock after
+    # it, each cut on its own; the game plays them in turn every half second (VC_TICK_EVERY).
+    'vc_tick':  ('vc_tick_467486.mp3', 1.72, 2.12, False, -20.0, True),
+    'vc_tock':  ('vc_tick_467486.mp3', 2.72, 3.12, False, -21.0, True),
     # The explosion: "Loud Explosion" by DRAGON-STUDIO (Pixabay 425457).
     'vc_boom':  ('vc_boom_425457.mp3', 0.0, 2.85, False, -12.0, False),
     # The rock wall: "Heavy Boulder Thud" by DRAGON-STUDIO (Pixabay 515257), its thud.
@@ -44,6 +47,10 @@ SOUNDS = {
     'vc_land':  ('vc_drop_291096.mp3', 0.08, 1.6, False, -17.0, False),
 }
 BALANCE = {'vc_lava'}
+# (Escape the Cave, cave_audio.py LAVA_HEADROOM.) The lava is made this much louder, its peaks
+# rounded off, never clipped, and played that much quieter, so it can keep rising level after
+# level until it drowns out nearly everything (volcanic.js lavaLevel).
+HEADROOM = {'vc_lava': 2.2}
 
 
 def balance(y):
@@ -55,7 +62,7 @@ def balance(y):
     return y
 
 XFADE = 1.0
-FADE_OUT = {'vc_rock_515257.mp3': 0.25, 'vc_boom_425457.mp3': 0.6, 'vc_drop_291096.mp3': 0.3, 'vc_drop_288419.mp3': 0.15}
+FADE_OUT = {'vc_tick_467486.mp3': 0.15, 'vc_rock_515257.mp3': 0.25, 'vc_boom_425457.mp3': 0.6, 'vc_drop_291096.mp3': 0.3, 'vc_drop_288419.mp3': 0.15}
 FADE_NAMED = {'vc_tick': 0.01}
 FADE_IN_NAMED = {}
 MIXES = []
@@ -111,6 +118,8 @@ def make(src, a, b, loop, rms_db, mono, name=None):
     now = np.sqrt(np.mean(y * y))
     g = 10 ** (rms_db / 20) / now
     y = y * g
+    if name in HEADROOM:
+        return (np.tanh(y * HEADROOM[name]) * 0.97 * 10 ** (-1.0 / 20)).astype(np.float32)
     lim = 10 ** (-1.0 / 20)
     peak = np.abs(y).max()
     if peak > lim:                       # a soft limit: only the peaks are pressed down

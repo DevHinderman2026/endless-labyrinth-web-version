@@ -12,44 +12,46 @@
 // finger is up. On a keyboard: hold the up arrow to accelerate, the left and right arrows
 // turn (pressed or held), the down arrow brakes.
 //
-// Each level is one cave: passages of rock, one passage wide, that twist and branch.
-// Somewhere in it is the hole down to the next level. It beeps from where it is, faster
+// Each level is one cave: a wide open cavern with no walls inside it (8.2.0, Russell, 27
+// November 2026: "no walls in the cave; the bombs are the only thing you have to avoid; the
+// only wall is the edge"). Somewhere in it is the hole down to the next level. It beeps from where it is, faster
 // and higher the nearer you are, like a labyrinth's exit. Drive into it: a pop, a drop,
 // and you land in the next cave down. Nothing says the level; a double tap does.
 //
-// Ticking bombs lie in the passages, each ticking twice a second. One explodes only if
-// you drive into it head on: then you are back at the start of that cave, and the clock
-// runs on. Brushing past one does nothing (hug the passage wall to get by). A cave wall
-// stops the car with a thud of rock, and costs no time: turn, and drive on. Glancing
-// along a wall, the car slides along it with a softer knock.
+// Ticking bombs lie about the cavern, each ticking like a clock, twice a second (tick, tock).
+// One explodes only if you drive into it head on: then you are back at the start of that
+// cave, and the clock runs on. Brushing past one does nothing: steer round it. The cavern's
+// edge is its only wall: it stops the car with a thud of rock, and costs no time: turn, and
+// drive on. Glancing along it, the car slides along it with a softer knock.
 //
 // The lava is all around you, never touching you: Escape the Cave's lava ("Cauldron
 // Boiling"), growing louder the deeper you go, exactly as that game raises it (lavaLevel).
 //
 // The clock: two minutes to start, with time credits of 10, 20 and 30 seconds lying in
-// the caves (the game's spinning credit beacons, higher and faster for more). The run
+// the caves, each marked by keys jingling, quietly, from where it lies (8.2.0, Russell: the
+// game's credit beacons were far too loud here). The run
 // ends only when the time runs out. Deeper caves have more bombs, the hole farther away,
-// and twistier passages; the credits stay the same at every depth. The score is the
+// and more bombs on the way to it; the credits stay the same at every depth. The score is the
 // deepest level reached, on Volcanic Caves' own high score board.
 //
 // Chaos Mode has Volcanic Caves levels too (js/modes/chaos.js): reach the hole a set number
 // of times (VC_CHAOS_HOLES); a bomb costs health and time there instead of a restart.
 //
-// The sounds: the cave's own bubbling air, the lava, the bombs' ticking and explosion, the
+// The sounds: the cave's own bubbling air, the lava, the bombs' clock ticking and explosion, the
 // rock, the pop and the landing (Pixabay, web-only, in the volcanic pack;
 // tools/volcanic/make_sounds.py names each one), the Driving engine, the game's proximity
-// beeps for the hole, and its credit beacons and coins. Should a recording ever be
+// beeps for the hole, the events' jingling keys for a credit, and the game's coins. Should a recording ever be
 // missing, the game's nearest sound stands in for it (VC_STAND_INS).
 
 import { aliasRecording } from './events/sounds.js';
 import { AMBIENCE_LEVEL, BACKGROUND_SEND } from './ultimate.js';
-import { wrapAngle, QUARTER, COMPASS_DIRS, walkStep, mainIndex } from '../turning.js';
+import { wrapAngle, QUARTER } from '../turning.js';
 
 export const STATE = 'volcanic';
 export const BOARD = 'volcanic';
 
 // ------------------------------------------------------------------ constants
-export const VC_CELL = 6.0;                    // one stretch of passage, in the game's units (a passage is this wide)
+export const VC_STEP = 6.0;                    // one stretch of cave, in the game's units: the hole's beeps count them
 // The car (units a second). Slower than the road's: a cave is tight.
 export const VC_MAX_SPEED = 11.0;
 export const VC_ACCEL = 7.0;
@@ -60,43 +62,46 @@ export const VC_START_TIME = 120.0;
 export const VC_CREDIT_CHANCE = 0.65;          // a cave has a credit about two times in three
 export const VC_CREDIT_VALUES = [10, 20, 30];
 export const VC_CREDIT_WEIGHTS = [0.5, 0.35, 0.15];
-export const VC_CREDIT_BEACONS = ['credit_beacon_battle_10', 'credit_beacon_battle_15', 'credit_beacon_battle_20'];
 export const VC_CREDIT_PICKUPS = ['credit_10', 'credit_20', 'credit_30'];
-export const VC_CREDIT_GAIN = 0.75;
+// (8.2.0, Russell, 27 November 2026: the credit beacons were far too loud.) A credit is marked
+// instead by keys jingling, "Keys Jingle SFX" (the events' evt_keys_jingle), from where it lies,
+// once every VC_JINGLE_EVERY seconds, quieter than a beacon. The coins still tell what it was worth.
+export const VC_JINGLE = 'evt_keys_jingle';
+export const VC_JINGLE_EVERY = 1.8;
+export const VC_CREDIT_GAIN = 0.5;
 export const VC_CREDIT_RANGE = 90.0;
-export const VC_CREDIT_FLOOR = 0.12;
-// The hole and a credit are taken by driving into their stretch of passage (their cell).
-export const VC_CENTRE_PULL = 2.0;             // units a second: driving squarely down a passage, the car keeps to its middle
-// The cave's layout, by depth (level 1 the first cave). Its passages run straight for a
-// few stretches, then bend a quarter turn: more bends deeper down, and shorter runs between
-// them (twistier), so the hole is farther away along the way. Side passages that lead
-// nowhere grow in number too.
-export const VC_BENDS = [2, 1, 16];            // the first cave's bends, more each level, at most
-export function bendsFor(depth) { return Math.min(VC_BENDS[2], VC_BENDS[0] + VC_BENDS[1] * Math.max(0, depth - 1)); }
-export function runFor(depth) {                // stretches straight between two bends: [fewest, most]
-  if (depth <= 2) return [3, 5];
-  if (depth <= 5) return [2, 4];
-  if (depth <= 9) return [2, 3];
-  return [1, 3];
-}
-export function branchesFor(depth) { return Math.min(6, Math.floor(depth / 2)); }
-// Bombs: one in the first cave, one more every second level, at most twelve.
-export function bombsFor(depth) { return Math.min(12, 1 + Math.floor((depth - 1) / 2)); }
+export const VC_CREDIT_FLOOR = 0.08;
+export const VC_REACH = 3.0;                   // units: this close to the hole or a credit, and you have it
+// The cave's layout, by depth (level 1 the first cave): an open cavern, square, you in its
+// middle. The hole lies ahead of you, give or take 70 degrees, farther every level; the
+// cavern reaches VC_EDGE_PAST beyond it. Deeper caves have more bombs, most of them on the
+// way to the hole.
+export const VC_HOLE_DIST = [40, 8, 200];      // units to the hole: in the first cave, more each level, at most
+export function holeDistFor(depth) { return Math.min(VC_HOLE_DIST[2], VC_HOLE_DIST[0] + VC_HOLE_DIST[1] * Math.max(0, depth - 1)); }
+export const VC_HOLE_SPREAD = 70;              // degrees either side of straight ahead
+export const VC_EDGE_PAST = 24;                // units of cavern beyond the hole, and at least this round you
+// Bombs: three in the first cave, one more every level, at most twenty.
+export function bombsFor(depth) { return Math.min(20, 2 + depth); }
+export const VC_ON_THE_WAY = 0.6;              // of them lie on the way to the hole (within VC_WAY_WIDE of the line)
+export const VC_WAY_WIDE = 4.0;
+export const VC_BOMB_APART = 5.0;              // never closer together than this
+export const VC_BOMB_CLEAR = 12.0;             // never this close to where you start, nor VC_HOLE_CLEAR to the hole
+export const VC_HOLE_CLEAR = 6.0;
 export const VC_TICK_EVERY = 0.5;              // seconds between a bomb's ticks (Russell: every half second)
 export const VC_TICK_GAIN = 0.8;
-export const VC_TICK_RANGE = 48.0;             // eight stretches of passage
+export const VC_TICK_RANGE = 48.0;             // eight stretches of cave
 export const VC_TICK_HEARD = 3;                // the nearest this many bombs tick; the rest are silent until nearer (fewer placed sounds at once: the static)
-export const VC_BOMB_HIT = 1.6;                // units: closer than this to a bomb's middle is driving into it head on
+export const VC_BOMB_HIT = 2.0;                // units: closer than this to a bomb's middle is driving into it head on
 export const VC_BOMB_MIN_SPEED = 0.5;          // (standing still, or creeping slower, never sets one off)
 export const VC_BOOM_HOLD = 1.6;               // seconds after an explosion before you are back at the start
 // The hole's beacon: the labyrinth exit's proximity beeps (prox_0 to prox_19), measured in
-// stretches of passage.
+// stretches of cave (VC_STEP).
 export const VC_HOLE_GAIN = 0.55;
 export const VC_HOLE_FLOOR = 0.25;
 export const VC_HOLE_RANGE = 240.0;
 export const VC_DROP_TIME = 1.6;               // seconds from the pop to the next cave (the clock waits)
 export const VC_LAND_AT = 0.7;                 // seconds into the drop: the landing below
-// Walls.
+// The edge.
 export const VC_ROCK_GAIN = 0.9;
 export const VC_GLANCE_GAIN = 0.35;
 export const VC_ROCK_GAP = 0.45;               // seconds: a thud no more often than this
@@ -120,22 +125,24 @@ export const VC_CHAOS_BOMB_TIME = 15;
 // Sounds.
 export const VC_AIR = 'vc_air';
 export const VC_LAVA = 'vc_lava';
-export const VC_TICK = 'vc_tick';
+export const VC_TICK = 'vc_tick';              // a clock's tick ...
+export const VC_TOCK = 'vc_tock';              // ... and its tock: a bomb ticks tick, tock, tick, tock
 export const VC_BOOM = 'vc_boom';
 export const VC_ROCK = 'vc_rock';
 export const VC_POP = 'vc_pop';
 export const VC_LAND = 'vc_land';
-export const VC_ROOM = 'lab';                  // a cave's echo, tighter near the rock
+export const VC_ROOM = 'lab';                  // a cave's echo, tighter near the edge
 export const VC_STAND_INS = {
   [VC_AIR]: ['lab_02_scary_cave'],
   [VC_LAVA]: ['evt_cauldron'],
   [VC_TICK]: ['ut_click'],
+  [VC_TOCK]: [VC_TICK, 'ut_click'],
   [VC_BOOM]: ['crash', 'evt_explosion'],
   [VC_ROCK]: ['boundary'],
   [VC_POP]: ['evt_pop', 'menu_move'],
   [VC_LAND]: ['event_falling'],
 };
-export const VC_RECORDINGS = [VC_AIR, VC_LAVA, VC_TICK, VC_BOOM, VC_ROCK, VC_POP, VC_LAND];
+export const VC_RECORDINGS = [VC_AIR, VC_LAVA, VC_TICK, VC_TOCK, VC_BOOM, VC_ROCK, VC_POP, VC_LAND];
 
 // ------------------------------------------------------------------ helpers
 const rand = Math.random;
@@ -155,6 +162,12 @@ export function lavaVolume(level) {
 }
 // The lava's loudness in the game, on a level.
 export function lavaLevel(level) { return VC_LAVA_TOP * lavaVolume(level) / LAVA_CEILING; }
+// And, as in Escape the Cave (beacon_volume), everything you listen for, the bombs, the hole and
+// the credits, grows quieter as the lava grows louder: full on level 1, 35 percent from level 22
+// (BEACON_VOLUME_FLOOR, BEACON_FLOOR_AT), so the deep caves' lava drowns out nearly everything.
+export const VC_LISTEN_FLOOR = 0.35;
+export const VC_LISTEN_FLOOR_AT = 22;
+export function listenLevel(level) { return 1.0 - (1.0 - VC_LISTEN_FLOOR) * Math.min(1, Math.max(0, (level - 1) / (VC_LISTEN_FLOOR_AT - 1))); }
 
 // The holes a Chaos Volcanic level asks for, the run's nth.
 export function chaosHolesFor(n) { return Math.min(VC_CHAOS_HOLES[2], VC_CHAOS_HOLES[0] + VC_CHAOS_HOLES[1] * Math.max(0, n - 1)); }
@@ -169,102 +182,41 @@ export function turnCell([x, y], k) {
 }
 
 // ------------------------------------------------------------------ the cave
-// A cave laid out, facing north from its start (0, 0):
-//   { open: Set of 'x,y', path: [[x, y]...] (start to hole), hole: [x, y],
-//     branches: [[[x, y]...]...], bombs: [[x, y]...], credit: [x, y] or null }
-// Passages are one cell wide and never run beside one another (a cell of a passage
-// touches, side to side, only the cells before and after it, and where a side passage
-// leaves), so every passage is a clean tunnel with rock either side.
+// A cave laid out, facing north from its start (0, 0), in the game's units:
+//   { half: the cavern reaches this far from you each way, hole: [x, y],
+//     bombs: [[x, y]...], credit: [x, y] or null }
+// No walls inside: only the edge, `half` from the middle on every side.
 export function layCave(depth) {
-  const bends = bendsFor(depth);
-  const [r0, r1] = runFor(depth);
-  for (let attempt = 0; attempt < 400; attempt++) {
-    const open = new Set([key(0, 0)]);
-    const path = [[0, 0]];
-    let pos = [0, 0]; let dir = [0, -1];
-    const free = (c, from) => {
-      if (open.has(key(c[0], c[1]))) return false;
-      for (const [dx, dy] of COMPASS_DIRS) {
-        const n = [c[0] + dx, c[1] + dy];
-        if (n[0] === from[0] && n[1] === from[1]) continue;
-        if (open.has(key(n[0], n[1]))) return false;
-      }
-      return true;
-    };
-    let ok = true;
-    for (let b = 0; b <= bends && ok; b++) {
-      const len = randint(r0, r1) + (b === 0 ? 1 : 0);
-      for (let i = 0; i < len; i++) {
-        const next = [pos[0] + dir[0], pos[1] + dir[1]];
-        if (!free(next, pos)) { ok = false; break; }
-        open.add(key(next[0], next[1])); path.push(next); pos = next;
-      }
-      if (!ok || b === bends) break;
-      // A quarter turn, left or right, whichever the next cell can go.
-      const sides = [[-dir[1], dir[0]], [dir[1], -dir[0]]];
-      const can = sides.filter((d) => free([pos[0] + d[0], pos[1] + d[1]], pos));
-      if (!can.length) { ok = false; break; }
-      dir = choice(can);
-    }
-    if (!ok) continue;
-    const hole = path[path.length - 1];
-    // Side passages: from a straight cell of the way, out to one side, two to four cells,
-    // leading nowhere.
-    const branches = [];
-    const straightAt = (i) => i > 0 && i < path.length - 1
-      && path[i + 1][0] - path[i][0] === path[i][0] - path[i - 1][0]
-      && path[i + 1][1] - path[i][1] === path[i][1] - path[i - 1][1];
-    const want = branchesFor(depth);
-    const usedAt = new Set();
-    for (let tries = 0; tries < 60 && branches.length < want; tries++) {
-      const i = randint(2, Math.max(2, path.length - 3));
-      if (!straightAt(i) || usedAt.has(i)) continue;       // (one side passage from a cell: no crossroads)
-      const along = [path[i + 1][0] - path[i][0], path[i + 1][1] - path[i][1]];
-      const d = choice([[-along[1], along[0]], [along[1], -along[0]]]);
-      const n = randint(2, 4);
-      const cells = [];
-      let at = path[i]; let good = true;
-      for (let k = 0; k < n; k++) {
-        const c = [at[0] + d[0], at[1] + d[1]];
-        if (!free(c, at)) { good = false; break; }
-        cells.push(c); at = c;
-        open.add(key(c[0], c[1]));     // (added as it goes: the next cell checks against it)
-      }
-      if (!good || cells.length < 2) { for (const c of cells) open.delete(key(c[0], c[1])); continue; }
-      branches.push(cells);
-      usedAt.add(i);
-    }
-    // Bombs: on straight stretches of the way (never at a bend, the start or the hole's
-    // last cells, where they could not be passed), and at the far ends of side passages;
-    // never two side by side.
-    const spots = [];
-    for (let i = 3; i < path.length - 2; i++) if (straightAt(i) && Math.abs(path[i][0]) + Math.abs(path[i][1]) >= 3) spots.push(path[i]);
-    for (const br of branches) { const e = br[br.length - 1]; if (Math.abs(e[0]) + Math.abs(e[1]) >= 3) spots.push(e); }
-    const bombs = [];
-    const nBombs = bombsFor(depth);
-    const pool = spots.slice();
-    while (bombs.length < nBombs && pool.length) {
-      const c = pool.splice(Math.floor(rand() * pool.length), 1)[0];
-      if (bombs.some((b) => Math.abs(b[0] - c[0]) + Math.abs(b[1] - c[1]) < 2)) continue;
-      bombs.push(c);
-    }
-    // A credit, two times in three: at the end of a side passage with no bomb (a reward for
-    // looking), or else midway along the way.
-    let credit = null;
-    if (rand() < VC_CREDIT_CHANCE) {
-      const ends = branches.map((br) => br[br.length - 1]).filter((c) => !bombs.some((b) => b[0] === c[0] && b[1] === c[1]));
-      if (ends.length) credit = choice(ends);
-      else {
-        const mid = path.slice(2, -2).filter((c) => !bombs.some((b) => Math.abs(b[0] - c[0]) + Math.abs(b[1] - c[1]) < 2));
-        if (mid.length) credit = choice(mid);
-      }
-    }
-    return { open, path, hole, branches, bombs, credit };
+  const d = holeDistFor(depth);
+  const a = (rand() * 2 - 1) * VC_HOLE_SPREAD * Math.PI / 180;
+  const hole = [Math.sin(a) * d, -Math.cos(a) * d];
+  const half = Math.max(Math.abs(hole[0]), Math.abs(hole[1])) + VC_EDGE_PAST;
+  const inside = (p) => Math.abs(p[0]) <= half - 3 && Math.abs(p[1]) <= half - 3;
+  const bombs = [];
+  const fits = (p) => inside(p) && Math.hypot(p[0], p[1]) >= VC_BOMB_CLEAR
+    && Math.hypot(p[0] - hole[0], p[1] - hole[1]) >= VC_HOLE_CLEAR
+    && bombs.every((b) => Math.hypot(b[0] - p[0], b[1] - p[1]) >= VC_BOMB_APART);
+  const n = bombsFor(depth);
+  const onWay = Math.round(n * VC_ON_THE_WAY);
+  const side = [Math.cos(a), Math.sin(a)];      // across the way to the hole
+  for (let tries = 0; tries < 2000 && bombs.length < n; tries++) {
+    let p;
+    if (bombs.length < onWay) {
+      const t = 0.15 + rand() * 0.75; const off = (rand() * 2 - 1) * VC_WAY_WIDE;
+      p = [hole[0] * t + side[0] * off, hole[1] * t + side[1] * off];
+    } else p = [(rand() * 2 - 1) * (half - 3), (rand() * 2 - 1) * (half - 3)];
+    if (fits(p)) bombs.push(p);
   }
-  // (Never in practice: a short straight passage always fits.)
-  const open = new Set(); const path = [];
-  for (let i = 0; i <= 5; i++) { open.add(key(0, -i)); path.push([0, -i]); }
-  return { open, path, hole: [0, -5], branches: [], bombs: [], credit: null };
+  // A credit, two times in three: somewhere in the cavern, not by a bomb.
+  let credit = null;
+  if (rand() < VC_CREDIT_CHANCE) {
+    for (let tries = 0; tries < 400 && !credit; tries++) {
+      const p = [(rand() * 2 - 1) * (half - 6), (rand() * 2 - 1) * (half - 6)];
+      if (Math.hypot(p[0], p[1]) >= 15 && bombs.every((b) => Math.hypot(b[0] - p[0], b[1] - p[1]) >= 6)
+        && Math.hypot(p[0] - hole[0], p[1] - hole[1]) >= 8) credit = p;
+    }
+  }
+  return { half, hole, bombs, credit };
 }
 
 // ------------------------------------------------------------------ the game's methods
@@ -298,24 +250,21 @@ const mixin = {
     // The cave is laid out ahead of you: the way you face, to the nearest main direction.
     const k = mainOf(this.tn ? this.tn.face : 0);
     const T = (c) => turnCell(c, k);
-    const open = new Set([...lay.open].map((q) => { const [x, y] = q.split(',').map(Number); const [a, b] = T([x, y]); return key(a, b); }));
     const vc = this.vc = {
       run: this.runId, chaos, depth, holes, reached: prev && prev.chaos === chaos ? prev.reached : 0,
-      open, hole: T(lay.hole), start: [0.0, 0.0], startFace: this.tn ? this.tn.face : 0,
-      bombs: lay.bombs.map((c) => ({ cell: T(c), pos: this._vcPos(T(c)), t: rand() * VC_TICK_EVERY })),
+      half: lay.half, hole: T(lay.hole), start: [0.0, 0.0], startFace: this.tn ? this.tn.face : 0,
+      bombs: lay.bombs.map((c) => ({ pos: T(c), t: rand() * VC_TICK_EVERY, tock: rand() < 0.5 })),
       credit: null,
       speed: 0.0, throttle: !!(prev && prev.throttle), touching: false, rockT: 0,
       beepT: 0, drop: null, boom: null, done: false,
       air: keep ? keep.air : null, lava: keep ? keep.lava : null,
       engine: keep ? keep.engine : null, band: keep ? keep.band : -1,
       deepest: Math.max(depth, prev ? prev.deepest || 0 : 0),
-      path: lay.path.map(T),
     };
-    if (lay.credit && !chaos) {      // (no time credits in Chaos's caves)
+    if (lay.credit) {                // (Chaos's caves have them too: 8.2.0, Russell)
       let r = rand(); let i = 0;
       while (i < VC_CREDIT_VALUES.length - 1 && r >= VC_CREDIT_WEIGHTS[i]) { r -= VC_CREDIT_WEIGHTS[i]; i += 1; }
-      vc.credit = { cell: T(lay.credit), pos: this._vcPos(T(lay.credit)), value: VC_CREDIT_VALUES[i],
-        beacon: VC_CREDIT_BEACONS[i], pickup: VC_CREDIT_PICKUPS[i], voice: null };
+      vc.credit = { pos: T(lay.credit), value: VC_CREDIT_VALUES[i], pickup: VC_CREDIT_PICKUPS[i], jingleT: 0.3 };
     }
     this.playerPos = [0.0, 0.0];
     this.arenaLimit = 1e9;
@@ -361,10 +310,8 @@ const mixin = {
     else vc.lava = lava ? this.audio.play(lava, { loops: -1, volume: level, fadeMs: 600, send: BACKGROUND_SEND }) : null;
   },
 
-  // A cell's middle in the world, and whether it is open (passage, not rock).
-  _vcPos([x, y]) { return [x * VC_CELL, y * VC_CELL]; },
-  _vcCellOf(p) { return [Math.round(p[0] / VC_CELL), Math.round(p[1] / VC_CELL)]; },
-  _vcOpenAt(p) { const c = this._vcCellOf(p); return !!(this.vc && this.vc.open.has(key(c[0], c[1]))); },
+  // Whether a place is inside the cavern (the edge is its only wall).
+  _vcInside(p) { const h = this.vc ? this.vc.half : 0; return Math.abs(p[0]) <= h && Math.abs(p[1]) <= h; },
 
   // How loud a thing is from where you are: [left, right, distance] (as the battle's levels,
   // over a range of its own; never quieter than `floor`, however far off).
@@ -427,7 +374,7 @@ const mixin = {
     if (this.vc !== vc || vc.drop || vc.boom) return;
     this._vcTicks(dt);
     this._vcHoleBeacon(dt);
-    this._vcCredit();
+    this._vcCredit(dt);
   },
 
   // The car: the throttle, coasting, and a step of the way it faces; rock stops it.
@@ -441,7 +388,7 @@ const mixin = {
     const from = this.playerPos;
     const res = this._vcStep(from, f, vc.speed * dt);
     if (res.hit && res.moved <= 1e-6) {
-      // Straight into the rock: a thud, and the car stops. No time is lost.
+      // Straight into the edge: a thud of rock, and the car stops. No time is lost.
       if (vc.rockT <= 0) {
         const at = [from[0] + f[0] * 2.0, from[1] + f[1] * 2.0];
         const [l, r] = this._vcLevels(at, VC_ROCK_GAIN, 30.0, 0.5);
@@ -454,7 +401,7 @@ const mixin = {
       return;
     }
     if (res.hit && !vc.touching && vc.rockT <= 0) {
-      // Glancing along the rock: a softer knock, and the car slides on along it.
+      // Glancing along the edge: a softer knock, and the car slides on along it.
       const at = [res.hit[0], res.hit[1]];
       const [l, r] = this._vcLevels(at, VC_GLANCE_GAIN, 30.0, 0.5);
       this._vcShot(this._vcName(VC_ROCK), at, l, r);
@@ -462,50 +409,35 @@ const mixin = {
     }
     vc.touching = !!res.hit;
     this.playerPos = res.pos;
-    // Driving squarely along a passage (facing straight down it, not touching the rock), the car
-    // keeps to the middle of it, so it meets a bomb head on unless you steer past: turn a little
-    // toward a wall and slide along the rock (VC_CENTRE_PULL).
-    if (!res.hit) {
-      const k = mainIndex(this.tn ? this.tn.face : 0);
-      if (k >= 0) {
-        const axis = k % 2 === 0 ? 0 : 1;            // facing north or south: keep to the middle across x
-        const c = this._vcCellOf(this.playerPos);
-        const mid = c[axis] * VC_CELL;
-        const off = this.playerPos[axis] - mid;
-        const pull = Math.min(Math.abs(off), VC_CENTRE_PULL * dt);
-        const p = this.playerPos.slice(); p[axis] -= Math.sign(off) * pull; this.playerPos = p;
-      }
-    }
     this._vcBombCheck();
     if (this.vc !== vc || vc.boom) return;
-    // The hole is reached by driving into its stretch of passage (wherever across it you are).
-    const here = this._vcCellOf(this.playerPos);
-    if (here[0] === vc.hole[0] && here[1] === vc.hole[1]) this._vcIntoHole();
+    if (Math.hypot(vc.hole[0] - this.playerPos[0], vc.hole[1] - this.playerPos[1]) < VC_REACH) this._vcIntoHole();
   },
 
-  // A frame's worth of driving: straight on if the way is open; against the rock at a slant,
-  // the part of it along the rock (the car slides along the wall, `hit` set); straight into
-  // the rock, nowhere (moved 0). (walkStep, the walking modes' step, glides only a whole
-  // step's worth, and a frame's is far smaller.)
+  // A frame's worth of driving: straight on if it stays inside the cavern; at the edge at a
+  // slant, the part of it along the edge (the car slides along it, `hit` set); straight at the
+  // edge, nowhere (moved 0).
   _vcStep(from, f, len) {
-    const res = walkStep(from, f, len, (p) => this._vcOpenAt(p), (p) => this._vcCellOf(p), (x, y) => this._vcPos([x, y]), VC_CELL);
-    if (!res.hit || res.moved > 1e-6) return res;
+    const to = [from[0] + f[0] * len, from[1] + f[1] * len];
+    if (this._vcInside(to)) return { pos: to, moved: len, hit: null };
+    const h = this.vc.half;
+    const hit = [Math.max(-h, Math.min(h, to[0])), Math.max(-h, Math.min(h, to[1]))];
     const vx = f[0] * len; const vy = f[1] * len;
     const parts = Math.abs(vx) >= Math.abs(vy) ? [[vx, 0], [0, vy]] : [[0, vy], [vx, 0]];
     for (const [sx, sy] of parts) {
       const part = Math.abs(sx) + Math.abs(sy);
-      if (part < 0.25 * len) continue;          // (square on to the rock: no sliding)
-      const to = [from[0] + sx, from[1] + sy];
-      if (this._vcOpenAt(to)) return { pos: to, moved: part, hit: res.hit };
+      if (part < 0.25 * len) continue;          // (square on to the edge: no sliding)
+      const p = [from[0] + sx, from[1] + sy];
+      if (this._vcInside(p)) return { pos: p, moved: part, hit };
     }
-    return res;
+    return { pos: [from[0], from[1]], moved: 0, hit };
   },
 
   // ---------------------------------------------------------------- bombs
   // Each bomb ticks twice a second, from where it lies; only the nearest few are heard.
   _vcTicks(dt) {
     const vc = this.vc;
-    const name = this._vcName(VC_TICK);
+    const tick = this._vcName(VC_TICK); const tock = this._vcName(VC_TOCK) || tick;
     const near = vc.bombs.map((b) => [b, Math.hypot(b.pos[0] - this.playerPos[0], b.pos[1] - this.playerPos[1])])
       .sort((a, b) => a[1] - b[1]).slice(0, VC_TICK_HEARD).map(([b]) => b);
     for (const b of vc.bombs) {
@@ -513,9 +445,10 @@ const mixin = {
       if (b.t > 0) continue;
       b.t += VC_TICK_EVERY;
       if (b.t <= 0) b.t = VC_TICK_EVERY;
+      b.tock = !b.tock;                         // tick, tock, tick, tock
       if (!near.includes(b)) continue;
-      const [l, r, d] = this._vcLevels(b.pos, VC_TICK_GAIN, VC_TICK_RANGE);
-      if (d < VC_TICK_RANGE) this._vcShot(name, b.pos, l, r);
+      const [l, r, d] = this._vcLevels(b.pos, VC_TICK_GAIN * listenLevel(vc.depth), VC_TICK_RANGE);
+      if (d < VC_TICK_RANGE) this._vcShot(b.tock ? tock : tick, b.pos, l, r);
     }
   },
 
@@ -558,9 +491,9 @@ const mixin = {
     const vc = this.vc;
     vc.beepT -= dt;
     if (vc.beepT > 0) return;
-    const pos = this._vcPos(vc.hole);
-    const [l, r, d] = this._vcLevels(pos, VC_HOLE_GAIN, VC_HOLE_RANGE, VC_HOLE_FLOOR);
-    const cells = d / VC_CELL;
+    const pos = vc.hole;
+    const [l, r, d] = this._vcLevels(pos, VC_HOLE_GAIN * listenLevel(vc.depth), VC_HOLE_RANGE, VC_HOLE_FLOOR);
+    const cells = d / VC_STEP;
     vc.beepT = Math.max(0.15, cells * 0.05);
     const pitch = Math.max(0, Math.min(19, 19 - Math.trunc(cells)));
     if (this.audio.has('prox_' + pitch)) this._vcShot('prox_' + pitch, pos, l, r);
@@ -568,7 +501,7 @@ const mixin = {
 
   _vcIntoHole() {
     const vc = this.vc;
-    const pos = this._vcPos(vc.hole);
+    const pos = vc.hole;
     const pop = this._vcName(VC_POP);
     if (pop) this.audio.play(pop, { at: this.audio.binaural ? pos : null, volume: 1.0, keep: true });
     vc.speed = 0.0;
@@ -597,16 +530,19 @@ const mixin = {
   },
 
   // ---------------------------------------------------------------- the credit
-  _vcCredit() {
+  _vcCredit(dt = 0) {
     const vc = this.vc;
     const c = vc.credit;
     if (!c) return;
-    if (!(c.voice && c.voice.busy)) c.voice = this.audio.has(c.beacon) ? this.audio.play(c.beacon, { loops: -1, volume: 0.0 }) : null;
-    const [l, r] = this._vcLevels(c.pos, VC_CREDIT_GAIN, VC_CREDIT_RANGE, VC_CREDIT_FLOOR);
-    if (c.voice) c.voice.setVolume(l, r, this._behind(c.pos));
-    const here = this._vcCellOf(this.playerPos);
-    if (here[0] !== c.cell[0] || here[1] !== c.cell[1]) return;     // (taken by driving into its stretch of passage)
-    if (c.voice) c.voice.stop();
+    // The keys jingling, from where it lies, now and then.
+    c.jingleT -= dt;
+    if (c.jingleT <= 0) {
+      c.jingleT = VC_JINGLE_EVERY;
+      const name = aliasRecording(this.audio, VC_JINGLE, `event_sfx_file_${VC_JINGLE}`);
+      const [l, r] = this._vcLevels(c.pos, VC_CREDIT_GAIN * listenLevel(vc.depth), VC_CREDIT_RANGE, VC_CREDIT_FLOOR);
+      if (name) this._vcShot(name, c.pos, l, r);
+    }
+    if (Math.hypot(c.pos[0] - this.playerPos[0], c.pos[1] - this.playerPos[1]) >= VC_REACH) return;
     vc.credit = null;
     this.timeLeft += c.value;
     this.thirtySecAnnounced = this.timeLeft <= 30.0;
@@ -638,7 +574,6 @@ const mixin = {
 
   // Everything of a cave stopped (`all`: the air, the lava and the engine too).
   _vcSilence(vc, all = true) {
-    if (vc.credit && vc.credit.voice) { vc.credit.voice.stop(); vc.credit.voice = null; }
     if (all) {
       for (const k of ['air', 'lava', 'engine']) if (vc[k]) { vc[k].stop(); vc[k] = null; }
     }
@@ -656,11 +591,11 @@ const mixin = {
 // ------------------------------------------------------------------ help
 const HELP_SECTIONS = [
   ['Volcanic Caves', [
-    { title: 'Volcanic Caves', sound: null, desc: 'Volcanic Caves is a mode of its own inside Driving, new in 8.2.0: choose Driving Mode on the main menu, then Volcanic Caves. Inspired by Roller Ball in Sonar Islands, you drive down through volcanic caves toward the centre of the Earth. Each level is one cave of rock passages, one passage wide, that twist and branch. Somewhere in it is the hole down to the next level, and it beeps from where it is, faster and higher the nearer you are, like a labyrinth\'s exit. Drive into it: you hear it pop, you drop, and you land in the next cave down. No voice tells you the level: double tap for it, with the clock and the way you are facing. The lava is all around you and never touches you, but it grows louder the deeper you go, as in Escape the Cave.' },
-    { title: 'Volcanic Caves Driving and Turning', sound: null, desc: 'You drive as in Driving Mode: slide one finger up and keep it down to accelerate, and slide that finger back down, or swipe down, to brake. But here the cave turns with you, as when you walk. To turn, lift the accelerating finger first, then flick left or right for one small turn of 30 degrees, or slide left or right and keep your finger down to keep turning until you lift it. The car coasts while your finger is up, slowing a little, so turn, then accelerate again. On a keyboard, hold the up arrow to accelerate, press or hold the left and right arrows to turn, and press the down arrow to brake. The ticks for north, east, south and west help you count your turns. Each new cave is laid out ahead of the way you face, to the nearest of north, east, south and west.' },
-    { title: 'Volcanic Caves Walls and Bombs', sound: null, desc: 'Drive straight into the rock and the car stops with a thud. That costs no time: turn, and drive on. If you only glance along a wall, a softer knock tells you so, and the car slides on along it. Ticking bombs lie in the passages, each ticking twice a second from where it lies; you hear the nearest three. A bomb goes off only if you drive into it head on. Then the cave shakes, and a moment later you are back at the start of that cave, facing as you began it, and the clock keeps running. Brushing past one does nothing: when a bomb ticks straight ahead, turn a little toward a wall and let the car slide along the rock past it, then turn back. A bomb that has gone off is gone. Deeper caves have more bombs.' },
-    { title: 'Volcanic Caves Clock and Score', sound: null, desc: 'You start with two minutes, and the run ends only when the time runs out. Time credits worth 10, 20 or 30 seconds lie in about two caves in three, often at the far end of a side passage, marked by the spinning credit beacon, higher and faster the more it is worth. Drive onto one to take it, and the coins tell you which you got. The clock waits while you drop down a hole. Each cave deeper has the hole farther away, twistier passages and more bombs, but the credits stay the same. Your score is the deepest level you reach, and Volcanic Caves has its own high score board, right after Driving\'s.' },
-    { title: 'Volcanic Caves in Chaos Mode', sound: null, desc: 'Chaos Mode has Volcanic Caves levels too: you know one by the bubbling of the volcanic cave, the lava, your engine, and the ticking of bombs. There you must reach the hole two times in your first Volcanic level of a run, one more for each such level after, up to five, each hole dropping you into a new cave. A bomb there costs 20 health and 15 seconds instead of sending you back, and you drive on from where you are. The chaos clock keeps running, but waits while you drop. There are no time credits in these levels. Double tap for the cave you are in and how many the level asks for, such as Level 1 of 2, then your health, the clock and the points.' },
+    { title: 'Volcanic Caves', sound: null, desc: 'Volcanic Caves is a mode of its own inside Driving, new in 8.2.0: choose Driving Mode on the main menu, then Volcanic Caves. Inspired by Roller Ball in Sonar Islands, you drive down through volcanic caves toward the centre of the Earth. Each level is one cave: a wide open cavern with no walls inside it, only its edge all round. Somewhere in it is the hole down to the next level, and it beeps from where it is, faster and higher the nearer you are, like a labyrinth\'s exit. Drive into it: you hear it pop, you drop, and you land in the next cave down. No voice tells you the level: double tap for it, with the clock and the way you are facing. The lava is all around you and never touches you, but it grows louder the deeper you go, as in Escape the Cave, while the bombs, the hole and the credits grow quieter, until the lava drowns out almost everything else.' },
+    { title: 'Volcanic Caves Driving and Turning', sound: null, desc: 'You drive as in Driving Mode: slide one finger up and keep it down to accelerate, and slide that finger back down, or swipe down, to brake. But here the cave turns with you, as when you walk. To turn, lift the accelerating finger first, then flick left or right for one small turn of 30 degrees, or slide left or right and keep your finger down to keep turning until you lift it. The car coasts while your finger is up, slowing a little, so turn, then accelerate again. On a keyboard, hold the up arrow to accelerate, press or hold the left and right arrows to turn, and press the down arrow to brake. The ticks for north, east, south and west help you count your turns. Each new cave is laid out ahead of the way you face, to the nearest of north, east, south and west: its hole is somewhere ahead of you.' },
+    { title: 'Volcanic Caves Bombs and the Edge', sound: null, desc: 'The bombs are the only thing to avoid. Each one ticks like a clock, tick, tock, twice a second, from where it lies; you hear the nearest three. Most of them lie on the way to the hole. A bomb goes off only if you drive into it head on. Then the cave shakes, and a moment later you are back at the start of that cave, facing as you began it, and the clock keeps running. Brushing past one does nothing: when a bomb ticks straight ahead of you, turn a little to one side and drive round it, then turn back toward the hole. A bomb that has gone off is gone. Deeper caves have more bombs. There are no walls inside a cave: its only wall is its edge, and the cave\'s echo grows tighter as you near it. Drive straight into the edge and the car stops with a thud of rock. That costs no time: turn, and drive on. If you only glance along it, a softer knock tells you so, and the car slides on along it.' },
+    { title: 'Volcanic Caves Clock and Score', sound: null, desc: 'You start with two minutes, and the run ends only when the time runs out. Time credits worth 10, 20 or 30 seconds lie in about two caves in three, somewhere in the cavern, each marked by keys jingling now and then from where it lies, quietly, louder as you come closer. Drive onto one to take it, and the coins tell you which you got. The clock waits while you drop down a hole. Each cave deeper has the hole farther away and more bombs, but the credits stay the same. Your score is the deepest level you reach, and Volcanic Caves has its own high score board, right after Driving\'s.' },
+    { title: 'Volcanic Caves in Chaos Mode', sound: null, desc: 'Chaos Mode has Volcanic Caves levels too: you know one by the bubbling of the volcanic cave, the lava, your engine, and the clock ticking of bombs. There you must reach the hole two times in your first Volcanic level of a run, one more for each such level after, up to five, each hole dropping you into a new cave. A bomb there costs 20 health and 15 seconds instead of sending you back, and you drive on from where you are. The chaos clock keeps running, but waits while you drop. Time credits of 10, 20 or 30 seconds lie in these caves too, marked by the same jingling keys. Double tap for the cave you are in and how many the level asks for, such as Level 1 of 2, then your health, the clock and the points.' },
   ]],
 ];
 
@@ -669,9 +604,10 @@ const HELP_DEMOS = [
     { title: 'Volcanic Caves Demos', sound: null, desc: 'The sounds of Volcanic Caves.' },
     { title: 'Volcanic Cave Air', sound: VC_AIR, desc: 'The bubbling air of a volcanic cave, heard all through it.' },
     { title: 'Lava', sound: VC_LAVA, desc: 'The lava around the caves: faint at first, louder the deeper you go.' },
-    { title: 'Bomb Ticking', sound: VC_TICK, desc: 'One tick of a bomb. Each bomb ticks twice a second.' },
+    { title: 'Bomb Ticking', sound: VC_TICK, desc: 'A bomb ticking: tick, and then tock. Each bomb ticks like a clock, twice a second.' },
+    { title: 'Bomb Tock', sound: VC_TOCK, desc: 'The tock of a bomb\'s tick-tock.' },
     { title: 'Explosion', sound: VC_BOOM, desc: 'A bomb you drove into head on.' },
-    { title: 'Rock Wall', sound: VC_ROCK, desc: 'The car driving into the rock.' },
+    { title: 'The Edge of the Cave', sound: VC_ROCK, desc: 'The car driving into the rock at the edge of the cave.' },
     { title: 'Into the Hole', sound: VC_POP, desc: 'The car dropping into the hole.' },
     { title: 'Landing Below', sound: VC_LAND, desc: 'Landing in the next cave down.' },
   ]],
@@ -710,20 +646,18 @@ export default {
   // (The drop does not turn, but keeps the way you faced: the next cave is laid out ahead of it.)
   keepFacing(game) { return game.state === STATE && !!(game.vc && game.vc.drop); },
   gestureMode() { return 'drive'; },
-  // The echo is tighter where the rock is close, and leans toward the side it is on (as a
-  // labyrinth's: game.js _labSurroundings), so the passage can be heard round you.
+  // The echo is tighter near the cavern's edge, and leans toward the side it is on (as a
+  // battle arena's: game.js _arenaSurroundings), so the edge can be heard coming.
   surroundings(game, pos) {
     const vc = game.vc;
     if (!vc) return [1.0, 0.0];
     const p = pos || game.playerPos;
-    const [cx, cy] = game._vcCellOf(p);
-    const rock = (x, y) => !vc.open.has(key(x, y));
-    let around = 0;
-    for (const dx of [-1, 0, 1]) for (const dy of [-1, 0, 1]) if ((dx || dy) && rock(cx + dx, cy + dy)) around += 1;
-    const near = Math.min(1.0, around / 6.0);
+    const range = 18.0;
+    const nearX = Math.max(0.0, 1.0 - (vc.half - Math.abs(p[0])) / range);
+    const nearY = Math.max(0.0, 1.0 - (vc.half - Math.abs(p[1])) / range);
+    const near = Math.min(1.0, Math.max(nearX, nearY));
     const gain = 0.85 + (1.2 - 0.85) * near;
-    const wl = rock(cx - 1, cy); const wr = rock(cx + 1, cy);
-    return [gain, wl && !wr ? -0.2 : wr && !wl ? 0.2 : 0.0];
+    return [gain, nearX > 0 ? 0.2 * nearX * (p[0] > 0 ? 1.0 : -1.0) : 0.0];
   },
   status(game) {
     const vc = game.vc;
