@@ -28,8 +28,8 @@
 // Boiling"), growing louder the deeper you go, exactly as that game raises it (lavaLevel).
 //
 // The clock: two minutes to start, with time credits of 10, 20 and 30 seconds lying in
-// the caves, each marked by keys jingling, quietly, from where it lies (8.2.0, Russell: the
-// game's credit beacons were far too loud here). The run
+// the caves, each marked by coins clinking, quietly, from where it lies (8.2.1, Russell: the
+// game's credit beacons were far too loud here; 8.2.2, his pick after keys jingling). The run
 // ends only when the time runs out. Deeper caves have more bombs, the hole farther away,
 // and more bombs on the way to it; the credits stay the same at every depth. The score is the
 // deepest level reached, on Volcanic Caves' own high score board.
@@ -40,7 +40,7 @@
 // The sounds: the cave's own bubbling air, the lava, the bombs' clock ticking and explosion, the
 // rock, the pop and the landing (Pixabay, web-only, in the volcanic pack;
 // tools/volcanic/make_sounds.py names each one), the Driving engine, the game's proximity
-// beeps for the hole, the events' jingling keys for a credit, and the game's coins. Should a recording ever be
+// beeps for the hole, the events' clinking coins for a credit, and the game's coins. Should a recording ever be
 // missing, the game's nearest sound stands in for it (VC_STAND_INS).
 
 import { aliasRecording } from './events/sounds.js';
@@ -64,9 +64,10 @@ export const VC_CREDIT_VALUES = [10, 20, 30];
 export const VC_CREDIT_WEIGHTS = [0.5, 0.35, 0.15];
 export const VC_CREDIT_PICKUPS = ['credit_10', 'credit_20', 'credit_30'];
 // (8.2.0, Russell, 27 November 2026: the credit beacons were far too loud.) A credit is marked
-// instead by keys jingling, "Keys Jingle SFX" (the events' evt_keys_jingle), from where it lies,
-// once every VC_JINGLE_EVERY seconds, quieter than a beacon. The coins still tell what it was worth.
-export const VC_JINGLE = 'evt_keys_jingle';
+// instead by coins clinking, "Clinking Coins 8" (the events' evt_coins; 8.2.2, Russell's pick of
+// four, after he did not take to 8.2.1's keys jingling, evt_keys_jingle), from where it lies, once
+// every VC_JINGLE_EVERY seconds, quieter than a beacon. The pickup coins still tell what it was worth.
+export const VC_JINGLE = 'evt_coins';
 export const VC_JINGLE_EVERY = 1.8;
 export const VC_CREDIT_GAIN = 0.5;
 export const VC_CREDIT_RANGE = 90.0;
@@ -534,7 +535,7 @@ const mixin = {
     const vc = this.vc;
     const c = vc.credit;
     if (!c) return;
-    // The keys jingling, from where it lies, now and then.
+    // The coins clinking, from where it lies, now and then.
     c.jingleT -= dt;
     if (c.jingleT <= 0) {
       c.jingleT = VC_JINGLE_EVERY;
@@ -594,8 +595,8 @@ const HELP_SECTIONS = [
     { title: 'Volcanic Caves', sound: null, desc: 'Volcanic Caves is a mode of its own inside Driving, new in 8.2.0: choose Driving Mode on the main menu, then Volcanic Caves. Inspired by Roller Ball in Sonar Islands, you drive down through volcanic caves toward the centre of the Earth. Each level is one cave: a wide open cavern with no walls inside it, only its edge all round. Somewhere in it is the hole down to the next level, and it beeps from where it is, faster and higher the nearer you are, like a labyrinth\'s exit. Drive into it: you hear it pop, you drop, and you land in the next cave down. No voice tells you the level: double tap for it, with the clock and the way you are facing. The lava is all around you and never touches you, but it grows louder the deeper you go, as in Escape the Cave, while the bombs, the hole and the credits grow quieter, until the lava drowns out almost everything else.' },
     { title: 'Volcanic Caves Driving and Turning', sound: null, desc: 'You drive as in Driving Mode: slide one finger up and keep it down to accelerate, and slide that finger back down, or swipe down, to brake. But here the cave turns with you, as when you walk. To turn, lift the accelerating finger first, then flick left or right for one small turn of 30 degrees, or slide left or right and keep your finger down to keep turning until you lift it. The car coasts while your finger is up, slowing a little, so turn, then accelerate again. On a keyboard, hold the up arrow to accelerate, press or hold the left and right arrows to turn, and press the down arrow to brake. The ticks for north, east, south and west help you count your turns. Each new cave is laid out ahead of the way you face, to the nearest of north, east, south and west: its hole is somewhere ahead of you.' },
     { title: 'Volcanic Caves Bombs and the Edge', sound: null, desc: 'The bombs are the only thing to avoid. Each one ticks like a clock, tick, tock, twice a second, from where it lies; you hear the nearest three. Most of them lie on the way to the hole. A bomb goes off only if you drive into it head on. Then the cave shakes, and a moment later you are back at the start of that cave, facing as you began it, and the clock keeps running. Brushing past one does nothing: when a bomb ticks straight ahead of you, turn a little to one side and drive round it, then turn back toward the hole. A bomb that has gone off is gone. Deeper caves have more bombs. There are no walls inside a cave: its only wall is its edge, and the cave\'s echo grows tighter as you near it. Drive straight into the edge and the car stops with a thud of rock. That costs no time: turn, and drive on. If you only glance along it, a softer knock tells you so, and the car slides on along it.' },
-    { title: 'Volcanic Caves Clock and Score', sound: null, desc: 'You start with two minutes, and the run ends only when the time runs out. Time credits worth 10, 20 or 30 seconds lie in about two caves in three, somewhere in the cavern, each marked by keys jingling now and then from where it lies, quietly, louder as you come closer. Drive onto one to take it, and the coins tell you which you got. The clock waits while you drop down a hole. Each cave deeper has the hole farther away and more bombs, but the credits stay the same. Your score is the deepest level you reach, and Volcanic Caves has its own high score board, right after Driving\'s.' },
-    { title: 'Volcanic Caves in Chaos Mode', sound: null, desc: 'Chaos Mode has Volcanic Caves levels too: you know one by the bubbling of the volcanic cave, the lava, your engine, and the clock ticking of bombs. There you must reach the hole two times in your first Volcanic level of a run, one more for each such level after, up to five, each hole dropping you into a new cave. A bomb there costs 20 health and 15 seconds instead of sending you back, and you drive on from where you are. The chaos clock keeps running, but waits while you drop. Time credits of 10, 20 or 30 seconds lie in these caves too, marked by the same jingling keys. Double tap for the cave you are in and how many the level asks for, such as Level 1 of 2, then your health, the clock and the points.' },
+    { title: 'Volcanic Caves Clock and Score', sound: null, desc: 'You start with two minutes, and the run ends only when the time runs out. Time credits worth 10, 20 or 30 seconds lie in about two caves in three, somewhere in the cavern, each marked by coins clinking now and then from where it lies, quietly, louder as you come closer. Drive onto one to take it, and the coins tell you which you got. The clock waits while you drop down a hole. Each cave deeper has the hole farther away and more bombs, but the credits stay the same. Your score is the deepest level you reach, and Volcanic Caves has its own high score board, right after Driving\'s.' },
+    { title: 'Volcanic Caves in Chaos Mode', sound: null, desc: 'Chaos Mode has Volcanic Caves levels too: you know one by the bubbling of the volcanic cave, the lava, your engine, and the clock ticking of bombs. There you must reach the hole two times in your first Volcanic level of a run, one more for each such level after, up to five, each hole dropping you into a new cave. A bomb there costs 20 health and 15 seconds instead of sending you back, and you drive on from where you are. The chaos clock keeps running, but waits while you drop. Time credits of 10, 20 or 30 seconds lie in these caves too, marked by the same clinking coins. Double tap for the cave you are in and how many the level asks for, such as Level 1 of 2, then your health, the clock and the points.' },
   ]],
 ];
 

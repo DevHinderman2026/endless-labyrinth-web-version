@@ -226,14 +226,14 @@ const misc = await page.evaluate(() => {
   t.said.length = 0; g.input('enter'); const report = t.said.slice();
   t.straight([], { pos: [0, -14], value: 20, pickup: 'credit_20', jingleT: 0 });
   const c0 = g.timeLeft; t.played.length = 0; t.placed.length = 0; g.input('accel_on'); t.frames(2.4); g.input('accel_off');
-  const jingles = t.placed.filter(([n]) => /keys_jingle/.test(n)).map(([, p]) => p.join());
+  const jingles = t.placed.filter(([n]) => /evt_coins/.test(n)).map(([, p]) => p.join());
   const beacon = t.played.some((n) => /credit_beacon/.test(n));
   const took = g.timeLeft - c0;
   const coins = t.played.includes('credit_20');
   return { report, took, coins, credit: vc.credit, jingles, beacon };
 });
 check(misc.report.length === 1 && /^Level 3\./.test(misc.report[0]) && /seconds/.test(misc.report[0]) && /Facing/.test(misc.report[0]), 'double tap reports the level, the clock and the way you face: ' + misc.report[0]);
-check(misc.jingles.length >= 1 && misc.jingles[0] === '0,-14' && !misc.beacon, 'a credit is marked by keys jingling from where it lies, not a credit beacon: ' + JSON.stringify(misc.jingles));
+check(misc.jingles.length >= 1 && misc.jingles[0] === '0,-14' && !misc.beacon, 'a credit is marked by coins clinking from where it lies, not a credit beacon: ' + JSON.stringify(misc.jingles));
 check(misc.coins && misc.took > 17 && misc.took < 20 && !misc.credit, `a credit driven onto adds its time (${misc.took.toFixed(1)} s net) with its coins`);
 
 // ------------------------------------------------------------------ the end of the run, the board
