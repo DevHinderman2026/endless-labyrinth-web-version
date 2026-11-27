@@ -242,7 +242,7 @@ const cases = await page.evaluate(async () => {
   ab.cover = 0; g.playerPos = [5000, 5000]; g.updateAbyss(1 / 30);
   t.played.length = 0; g.input('space'); out.click = t.played.includes('empty_click');
   // The odds.
-  const n = { 10: 0, 20: 0, 30: 0, 60: 0 };
+  const n = { 5: 0, 10: 0, 20: 0, 30: 0, 60: 0 };
   for (let i = 0; i < 40000; i++) n[mod.rollReward()] += 1;
   out.odds = n;
   const nc = { 10: 0, 20: 0, 30: 0, 60: 0 };
@@ -253,14 +253,14 @@ const cases = await page.evaluate(async () => {
 });
 check(cases.hum && cases.knock >= 1, 'a case hums where it stands, and knocks as you close in');
 check(cases.bell === 1, 'beside it and facing it, the bell rings once');
-check(cases.smash && cases.time === 10 && !cases.said.some((s) => /more seconds/.test(s)), 'the attack smashes it: its time is yours (ten for the first case), and the voice does not say how much (8.0.4): ' + JSON.stringify([cases.time, cases.said]));
+check(cases.smash && cases.time === 5 && !cases.said.some((s) => /more seconds/.test(s)), 'the attack smashes it: its time is yours (five for the first case, 8.2.11), and the voice does not say how much (8.0.4): ' + JSON.stringify([cases.time, cases.said]));
 check(cases.charge[0] === 3 && cases.charge[1] === 0 && cases.closer && cases.chargeOver, 'the smash brings every creature in hearing charging for three seconds: ' + JSON.stringify(cases.charge));
 check(cases.refilled === 3, 'a new case appears in its place, so three are always around');
 check(cases.coveredSmash, 'a smash under the lightning\'s cover brings no charge');
 check(cases.lightningCase, 'a lightning case sends a strike, and the creatures run to it instead of you');
 check(cases.click, 'with nothing in reach, the attack clicks');
 const o = cases.odds; const sh = (k) => o[k] / 40000;
-check(o[10] === 40000 && o[20] === 0 && o[30] === 0 && o[60] === 0, 'every case gives 10 seconds, never 20, 30 or 60 (8.0.2): ' + JSON.stringify(o));
+check(o[5] === 40000 && o[10] === 0 && o[20] === 0 && o[30] === 0 && o[60] === 0, 'every case starts at 5 seconds (8.2.11; 10 from 8.0.2), never 20, 30 or 60: ' + JSON.stringify(o));
 { const oc = cases.chaosOdds; const sc = (k) => oc[k] / 40000;
   check(oc[10] === 40000, 'in Chaos every case gives 10 seconds (8.1.5: Chaos gave too much time): ' + JSON.stringify(oc)); }
 check(JSON.stringify(cases.creaturesFor) === JSON.stringify([3, 3, 4, 5, 6, 7, 10]), 'one more creature every three cases, at most ten (8.1.0; seven until then): ' + JSON.stringify(cases.creaturesFor));
@@ -270,7 +270,7 @@ check(JSON.stringify(cases.creaturesFor) === JSON.stringify([3, 3, 4, 5, 6, 7, 1
   const M = await import('../js/modes/abyss.js');
   check(M.creaturesFor(21) === 10 && M.creaturesFor(18) === 9 && M.creaturesFor(300) === 10, 'ten creatures from case 21 on');
   check(M.creaturesFor(30, true) === 10 && M.creaturesFor(6, true) === 5, 'in Chaos\'s Abyss stages too, at most ten (8.1.4)');
-  check(JSON.stringify([1, 5, 6, 12, 30, 60].map((k) => M.caseReward(k))) === JSON.stringify([10, 10, 11, 12, 15, 20]), 'a case\'s time grows gently: one second more every six cases (8.1.4)');
+  check(JSON.stringify([1, 5, 6, 12, 30, 60].map((k) => M.caseReward(k))) === JSON.stringify([5, 5, 6, 7, 10, 15]), 'a case\'s time starts at 5 seconds (8.2.11) and grows gently: one second more every six cases (8.1.4)');
   check(JSON.stringify(M.strikeGap(30, true)) === JSON.stringify([16, 25]) && JSON.stringify(M.strikeGap(6, true)) === JSON.stringify([8, 14]), 'in Chaos too, lightning up to 25 seconds apart (8.1.4)');
   check(M.AB_LIGHTNING_CASE === 0.3 && M.lightningCaseOdds(false) === 0.3 && M.lightningCaseOdds(true) === 0.3, 'lightning in three cases in ten, in Chaos too (8.1.4)');
   const ring = [0, 3, 30, 60].map((k) => M.caseRing(k));
