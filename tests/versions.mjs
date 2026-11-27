@@ -74,7 +74,7 @@ for (const name of ['play.html', 'help.html']) {
 
 // An old kept copy: the site says a newer version. One reload, at a new address,
 // never a second, and the saved scores and settings exactly as they were.
-const SAVED = JSON.stringify({ format: 1, scores: { ultimate: [{ score: 1234, date: '2026-11-09' }] }, settings: { speechRate: 5 }, resetAt: 1795287600000, boardResets: { abyss: Date.UTC(2026, 10, 27, 1, 0, 0), edge: Date.UTC(2026, 10, 27, 1, 0, 0) } });   // (8.1.0: a save already past The Abyss's own reset, so opening the game has nothing to reset)
+const SAVED = JSON.stringify({ format: 1, scores: { ultimate: [{ score: 1234, date: '2026-11-09' }] }, settings: { speechRate: 5 }, resetAt: 1795287600000, boardResets: { abyss: Date.UTC(2026, 10, 27, 1, 0, 0), edge: Date.UTC(2026, 10, 27, 1, 0, 0), volcanic: Date.UTC(2026, 10, 27, 19, 30, 0) } });   // (8.1.0: a save already past The Abyss's own reset, so opening the game has nothing to reset; 8.2.10: and past Volcanic Caves')
 for (const name of ['play.html', 'help.html']) {
   const { ctx, page, navs, answer } = await freshPage(null);
   await page.goto(`${base}/privacy.html`);   // (any page of the site, current, to set the storage first)

@@ -14,7 +14,7 @@ const check = (ok, what) => { console.log((ok ? 'PASS ' : 'FAIL ') + what); if (
 {
   const V = await import('../js/modes/volcanic.js');
   let ahead = true; let inside = true; let bombsOk = true; let apart = true; let onWay = true; let creditsOk = true;
-  const dists = []; const byDepth = {};
+  const dists = []; const byDepth = {}; let credits = 0;
   for (const depth of [1, 3, 6, 10, 15, 30]) {
     for (let i = 0; i < 150; i++) {
       const c = V.layCave(depth);
@@ -37,6 +37,7 @@ const check = (ok, what) => { console.log((ok ? 'PASS ' : 'FAIL ') + what); if (
       }
       if (near < Math.min(Math.round(c.bombs.length * 0.6), Math.floor(Math.max(0, d * 0.9 - 18) / 28))) onWay = false;   // (at least half as many as fit 14 apart)
       for (let a = 0; a < c.bombs.length; a++) for (let b = a + 1; b < c.bombs.length; b++) if (Math.hypot(c.bombs[a][0] - c.bombs[b][0], c.bombs[a][1] - c.bombs[b][1]) < 14) apart = false;
+      if (c.credit) credits += 1;
       if (c.credit && (!inB(c.credit, 0) || Math.hypot(c.credit[0], c.credit[1]) > 22.001 || Math.hypot(c.credit[0], c.credit[1]) < 9.999)) creditsOk = false;
     }
   }
@@ -50,7 +51,7 @@ const check = (ok, what) => { console.log((ok ? 'PASS ' : 'FAIL ') + what); if (
   check(inside, 'you, the hole and the bombs lie inside the cavern\'s edge, you and the hole with room round you');
   check(bombsOk && apart, 'as many bombs as the depth asks, never near the start or the hole, at least 14 units apart (8.2.5)');
   check(onWay, 'most bombs lie on the way to the hole');
-  check(creditsOk, 'a credit always lies near where you start (10 to 22 units), inside the cavern');
+  check(creditsOk && !credits, 'no time credits in any cave (8.2.10)');
   check(V.tickEvery(48) === 0.5 && Math.abs(V.tickEvery(2) - 0.12) < 1e-9 && V.tickEvery(10) < V.tickEvery(30), 'a bomb ticks faster the closer you are: every half second at the edge of hearing, every 0.12 s right before it');
   check(V.holeBonusFor(1) === 5 && V.holeBonusFor(3) === 6 && V.holeBonusFor(11) === 10 && V.holeBonusFor(40) === 10 && V.holeBonusFor(1, true) === 5 && V.holeBonusFor(30, true) === 5, 'the hole gives 5 seconds, one more every two levels, 10 from level 11; 5 in Chaos');
   check(V.holeDistFor(1) === 40 && V.holeDistFor(6) === 80 && V.holeDistFor(99) === 200, 'the hole farther every level: 40, then 8 more a level, at most 200');

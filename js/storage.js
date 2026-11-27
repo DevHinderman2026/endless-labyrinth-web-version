@@ -29,7 +29,9 @@ export const SCORES_RESET_AT = Date.UTC(2026, 10, 21, 19, 0, 0);   // 21 Novembe
 // every save and backup from before 8.1.3 counts as from before the reset.)
 // (8.1.4, Russell, 26 November 2026: The Abyss and The Edge both reset, after the fixes and
 // changes of 8.1.4; the marks moved to 8 PM Eastern.)
-export const BOARD_RESETS = { abyss: Date.UTC(2026, 10, 27, 1, 0, 0), edge: Date.UTC(2026, 10, 27, 1, 0, 0) };   // 26 November 2026, 8 PM Eastern
+// (8.2.10, Russell, 27 November 2026: Volcanic Caves' board reset for every player, as the time
+// credits are gone and its runs are much shorter now; its mark is 2:30 PM Eastern.)
+export const BOARD_RESETS = { abyss: Date.UTC(2026, 10, 27, 1, 0, 0), edge: Date.UTC(2026, 10, 27, 1, 0, 0), volcanic: Date.UTC(2026, 10, 27, 19, 30, 0) };   // abyss and edge: 26 November 2026, 8 PM Eastern
 
 // The boards that a save's own marks say are from before their reset.
 export function staleBoards(data) {
