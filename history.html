@@ -8,7 +8,7 @@
   <link rel="icon" href="icons/icon-192.png">
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
   <meta name="theme-color" content="#0c0f14">
-  <link rel="stylesheet" href="css/site.css?v=8.2.8">
+  <link rel="stylesheet" href="css/site.css?v=8.2.9">
 </head>
 <body data-update-alert="history">
   <header class="site">
@@ -19,6 +19,15 @@
   <main class="page">
     <p>This page lists the web version. For the Windows version, see its <a href="https://github.com/DevHinderman2026/Endless-Labyrinth/blob/main/Credits%20and%20Version%20History/CHANGELOG.md">changelog</a> on GitHub.</p>
     <p>The game updates by itself: the next time you open it, you have the latest version. Only a sound pack that has changed is downloaded again, and your high scores are kept. Events are not listed here: they appear in the Events menu as they open.</p>
+
+    <h2>8.2.9 (27 November 2026), web only</h2>
+    <p>Volcanic Caves: straight in, and sound that keeps going.</p>
+    <ul>
+      <li>Volcanic Caves no longer announces itself: choose it and you simply start driving. The device's own voice said "Volcanic Caves. Two minutes." there, and a device voice speaking during play can stop an iPhone's game sound.</li>
+      <li>The sound sometimes stopped in Volcanic Caves until you tapped the screen. There your finger can stay on the throttle a long time, and only a tap used to ask the phone for the sound back. Now, in every mode, sound that has stopped during a run is asked to come back by itself within a second or two; if the phone still refuses, a tap brings it back as before.</li>
+      <li>The caves' echo now grows with them: the first caves ring a little, from the fourth they ring like a hall, and from the tenth like a cathedral, the echo growing louder level after level until the caverns are at their biggest, at level 21. The bombs, the rock, the pop into the hole and the engine now ring in the cave's echo too; until now only the cave's air and the lava did.</li>
+      <li>However many bombs are ticking fast near you, their ticks never pile up closer together than six hundredths of a second, so they never flood the 3D sound.</li>
+    </ul>
 
     <h2>8.2.8 (27 November 2026), web only</h2>
     <p>Volcanic Caves: the hole and the credits can always be heard.</p>
@@ -1309,72 +1318,72 @@
   <script type="importmap">
   {
     "imports": {
-      "./js/accessibility.js": "./js/accessibility.js?v=8.2.8",
-      "./js/audio.js": "./js/audio.js?v=8.2.8",
-      "./js/backup.js": "./js/backup.js?v=8.2.8",
-      "./js/backups-page.js": "./js/backups-page.js?v=8.2.8",
-      "./js/bella-lexicon.js": "./js/bella-lexicon.js?v=8.2.8",
-      "./js/bella-words.js": "./js/bella-words.js?v=8.2.8",
-      "./js/braille.js": "./js/braille.js?v=8.2.8",
-      "./js/calendar.js": "./js/calendar.js?v=8.2.8",
-      "./js/device.js": "./js/device.js?v=8.2.8",
-      "./js/display.js": "./js/display.js?v=8.2.8",
-      "./js/game.js": "./js/game.js?v=8.2.8",
-      "./js/gestures.js": "./js/gestures.js?v=8.2.8",
-      "./js/help-data.js": "./js/help-data.js?v=8.2.8",
-      "./js/help-page.js": "./js/help-page.js?v=8.2.8",
-      "./js/keywords.js": "./js/keywords.js?v=8.2.8",
-      "./js/main.js": "./js/main.js?v=8.2.8",
-      "./js/modes/abyss.js": "./js/modes/abyss.js?v=8.2.8",
-      "./js/modes/chaos.js": "./js/modes/chaos.js?v=8.2.8",
-      "./js/modes/driving.js": "./js/modes/driving.js?v=8.2.8",
-      "./js/modes/edge.js": "./js/modes/edge.js?v=8.2.8",
-      "./js/modes/events/blocks.js": "./js/modes/events/blocks.js?v=8.2.8",
-      "./js/modes/events/engine.js": "./js/modes/events/engine.js?v=8.2.8",
-      "./js/modes/events/feed.js": "./js/modes/events/feed.js?v=8.2.8",
-      "./js/modes/events/help.js": "./js/modes/events/help.js?v=8.2.8",
-      "./js/modes/events/missions.js": "./js/modes/events/missions.js?v=8.2.8",
-      "./js/modes/events/more-spec.js": "./js/modes/events/more-spec.js?v=8.2.8",
-      "./js/modes/events/more.js": "./js/modes/events/more.js?v=8.2.8",
-      "./js/modes/events/py.js": "./js/modes/events/py.js?v=8.2.8",
-      "./js/modes/events/schema.js": "./js/modes/events/schema.js?v=8.2.8",
-      "./js/modes/events/sign.js": "./js/modes/events/sign.js?v=8.2.8",
-      "./js/modes/events/sounds.js": "./js/modes/events/sounds.js?v=8.2.8",
-      "./js/modes/events/tunes.js": "./js/modes/events/tunes.js?v=8.2.8",
-      "./js/modes/events/wording.js": "./js/modes/events/wording.js?v=8.2.8",
-      "./js/modes/events.js": "./js/modes/events.js?v=8.2.8",
-      "./js/modes/findvoice-guide.js": "./js/modes/findvoice-guide.js?v=8.2.8",
-      "./js/modes/findvoice.js": "./js/modes/findvoice.js?v=8.2.8",
-      "./js/modes/index.js": "./js/modes/index.js?v=8.2.8",
-      "./js/modes/island.js": "./js/modes/island.js?v=8.2.8",
-      "./js/modes/museum.js": "./js/modes/museum.js?v=8.2.8",
-      "./js/modes/park.js": "./js/modes/park.js?v=8.2.8",
-      "./js/modes/story.js": "./js/modes/story.js?v=8.2.8",
-      "./js/modes/tower.js": "./js/modes/tower.js?v=8.2.8",
-      "./js/modes/toymemory.js": "./js/modes/toymemory.js?v=8.2.8",
-      "./js/modes/ultimate/cast.js": "./js/modes/ultimate/cast.js?v=8.2.8",
-      "./js/modes/ultimate/help.js": "./js/modes/ultimate/help.js?v=8.2.8",
-      "./js/modes/ultimate/world.js": "./js/modes/ultimate/world.js?v=8.2.8",
-      "./js/modes/ultimate.js": "./js/modes/ultimate.js?v=8.2.8",
-      "./js/modes/volcanic.js": "./js/modes/volcanic.js?v=8.2.8",
-      "./js/packs.js": "./js/packs.js?v=8.2.8",
-      "./js/site.js": "./js/site.js?v=8.2.8",
-      "./js/sound-rules.js": "./js/sound-rules.js?v=8.2.8",
-      "./js/speech.js": "./js/speech.js?v=8.2.8",
-      "./js/stats.js": "./js/stats.js?v=8.2.8",
-      "./js/storage.js": "./js/storage.js?v=8.2.8",
-      "./js/storymode-lines.js": "./js/storymode-lines.js?v=8.2.8",
-      "./js/turning.js": "./js/turning.js?v=8.2.8",
-      "./js/update-alert.js": "./js/update-alert.js?v=8.2.8",
-      "./js/version.js": "./js/version.js?v=8.2.8",
-      "./js/voice-text.js": "./js/voice-text.js?v=8.2.8",
-      "./js/voice.js": "./js/voice.js?v=8.2.8",
-      "./js/wetworker.js": "./js/wetworker.js?v=8.2.8"
+      "./js/accessibility.js": "./js/accessibility.js?v=8.2.9",
+      "./js/audio.js": "./js/audio.js?v=8.2.9",
+      "./js/backup.js": "./js/backup.js?v=8.2.9",
+      "./js/backups-page.js": "./js/backups-page.js?v=8.2.9",
+      "./js/bella-lexicon.js": "./js/bella-lexicon.js?v=8.2.9",
+      "./js/bella-words.js": "./js/bella-words.js?v=8.2.9",
+      "./js/braille.js": "./js/braille.js?v=8.2.9",
+      "./js/calendar.js": "./js/calendar.js?v=8.2.9",
+      "./js/device.js": "./js/device.js?v=8.2.9",
+      "./js/display.js": "./js/display.js?v=8.2.9",
+      "./js/game.js": "./js/game.js?v=8.2.9",
+      "./js/gestures.js": "./js/gestures.js?v=8.2.9",
+      "./js/help-data.js": "./js/help-data.js?v=8.2.9",
+      "./js/help-page.js": "./js/help-page.js?v=8.2.9",
+      "./js/keywords.js": "./js/keywords.js?v=8.2.9",
+      "./js/main.js": "./js/main.js?v=8.2.9",
+      "./js/modes/abyss.js": "./js/modes/abyss.js?v=8.2.9",
+      "./js/modes/chaos.js": "./js/modes/chaos.js?v=8.2.9",
+      "./js/modes/driving.js": "./js/modes/driving.js?v=8.2.9",
+      "./js/modes/edge.js": "./js/modes/edge.js?v=8.2.9",
+      "./js/modes/events/blocks.js": "./js/modes/events/blocks.js?v=8.2.9",
+      "./js/modes/events/engine.js": "./js/modes/events/engine.js?v=8.2.9",
+      "./js/modes/events/feed.js": "./js/modes/events/feed.js?v=8.2.9",
+      "./js/modes/events/help.js": "./js/modes/events/help.js?v=8.2.9",
+      "./js/modes/events/missions.js": "./js/modes/events/missions.js?v=8.2.9",
+      "./js/modes/events/more-spec.js": "./js/modes/events/more-spec.js?v=8.2.9",
+      "./js/modes/events/more.js": "./js/modes/events/more.js?v=8.2.9",
+      "./js/modes/events/py.js": "./js/modes/events/py.js?v=8.2.9",
+      "./js/modes/events/schema.js": "./js/modes/events/schema.js?v=8.2.9",
+      "./js/modes/events/sign.js": "./js/modes/events/sign.js?v=8.2.9",
+      "./js/modes/events/sounds.js": "./js/modes/events/sounds.js?v=8.2.9",
+      "./js/modes/events/tunes.js": "./js/modes/events/tunes.js?v=8.2.9",
+      "./js/modes/events/wording.js": "./js/modes/events/wording.js?v=8.2.9",
+      "./js/modes/events.js": "./js/modes/events.js?v=8.2.9",
+      "./js/modes/findvoice-guide.js": "./js/modes/findvoice-guide.js?v=8.2.9",
+      "./js/modes/findvoice.js": "./js/modes/findvoice.js?v=8.2.9",
+      "./js/modes/index.js": "./js/modes/index.js?v=8.2.9",
+      "./js/modes/island.js": "./js/modes/island.js?v=8.2.9",
+      "./js/modes/museum.js": "./js/modes/museum.js?v=8.2.9",
+      "./js/modes/park.js": "./js/modes/park.js?v=8.2.9",
+      "./js/modes/story.js": "./js/modes/story.js?v=8.2.9",
+      "./js/modes/tower.js": "./js/modes/tower.js?v=8.2.9",
+      "./js/modes/toymemory.js": "./js/modes/toymemory.js?v=8.2.9",
+      "./js/modes/ultimate/cast.js": "./js/modes/ultimate/cast.js?v=8.2.9",
+      "./js/modes/ultimate/help.js": "./js/modes/ultimate/help.js?v=8.2.9",
+      "./js/modes/ultimate/world.js": "./js/modes/ultimate/world.js?v=8.2.9",
+      "./js/modes/ultimate.js": "./js/modes/ultimate.js?v=8.2.9",
+      "./js/modes/volcanic.js": "./js/modes/volcanic.js?v=8.2.9",
+      "./js/packs.js": "./js/packs.js?v=8.2.9",
+      "./js/site.js": "./js/site.js?v=8.2.9",
+      "./js/sound-rules.js": "./js/sound-rules.js?v=8.2.9",
+      "./js/speech.js": "./js/speech.js?v=8.2.9",
+      "./js/stats.js": "./js/stats.js?v=8.2.9",
+      "./js/storage.js": "./js/storage.js?v=8.2.9",
+      "./js/storymode-lines.js": "./js/storymode-lines.js?v=8.2.9",
+      "./js/turning.js": "./js/turning.js?v=8.2.9",
+      "./js/update-alert.js": "./js/update-alert.js?v=8.2.9",
+      "./js/version.js": "./js/version.js?v=8.2.9",
+      "./js/voice-text.js": "./js/voice-text.js?v=8.2.9",
+      "./js/voice.js": "./js/voice.js?v=8.2.9",
+      "./js/wetworker.js": "./js/wetworker.js?v=8.2.9"
     }
   }
   </script>
   <!-- end of versions -->
-  <script type="module" src="js/site.js?v=8.2.8"></script>
-  <script type="module" src="js/update-alert.js?v=8.2.8"></script>
+  <script type="module" src="js/site.js?v=8.2.9"></script>
+  <script type="module" src="js/update-alert.js?v=8.2.9"></script>
 </body>
 </html>

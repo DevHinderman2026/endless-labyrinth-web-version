@@ -2142,6 +2142,19 @@ export class Game {
     if (au && au.setLoud) au.setLoud(LOUD_STATES.has(lead));
     if (au && this._freshCtx !== au.ctx) { this._freshCtx = au.ctx; this.playSinceFresh = 0; }
     if (this.playing && !this.isPaused) this.playSinceFresh = (this.playSinceFresh || 0) + dt;
+    // (8.2.9, Russell, 27 November 2026: in Volcanic Caves the sound sometimes stopped until he tapped.
+    // There a finger may stay on the throttle for a long time, and only a lift (a tap) used to ask the
+    // phone for the sound back: AudioEngine.wake.) During a run, sound whose clock has stopped for
+    // more than a second is asked to resume at once, at most every two seconds, with no tap needed.
+    // (A phone that refuses without a touch is asked again at the next tap, as before.)
+    if (au && this.playing && !this.isPaused && au.ctx && !au.flowing) {
+      const now = performance.now();
+      this._silentSince = this._silentSince || now;
+      if (now - this._silentSince > 1000 && now - (this._resumeAskedAt || 0) > 2000) {
+        this._resumeAskedAt = now;
+        try { au.ctx.resume().catch(() => {}); } catch (e) { /* asked again at the next tap */ }
+      }
+    } else this._silentSince = 0;
     const md = this.mode;
     const gm = md && md.gestureMode ? md.gestureMode(this) : null;
     this.gestures.setMode(this.playing && !this.isPaused ? (gm || 'run') : this.state === S.PRACTICE ? 'practice' : 'menu');

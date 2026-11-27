@@ -46,6 +46,7 @@
 import { aliasRecording } from './events/sounds.js';
 import { AMBIENCE_LEVEL, BACKGROUND_SEND } from './ultimate.js';
 import { wrapAngle, QUARTER } from '../turning.js';
+import { RULES } from '../sound-rules.js';
 
 export const STATE = 'volcanic';
 export const BOARD = 'volcanic';
@@ -96,6 +97,9 @@ export const VC_TICK_EVERY = 0.5;              // seconds between a bomb's ticks
 // the closer you are: every VC_TICK_EVERY seconds at the edge of hearing (VC_TICK_RANGE),
 // quickening steadily to every VC_TICK_FASTEST right before you would drive into it.
 export const VC_TICK_FASTEST = 0.12;
+// (8.2.9) However many bombs tick, ticks are never closer together than this, so fast ticking near
+// two or three bombs at once never floods the 3D sound with placed sounds.
+export const VC_TICK_MIN_GAP = 0.06;
 export function tickEvery(d) {
   const t = Math.min(1, Math.max(0, (d - VC_BOMB_HIT) / (VC_TICK_RANGE - VC_BOMB_HIT)));
   return VC_TICK_FASTEST + (VC_TICK_EVERY - VC_TICK_FASTEST) * t;
@@ -152,7 +156,26 @@ export const VC_BOOM = 'vc_boom';
 export const VC_ROCK = 'vc_rock';
 export const VC_POP = 'vc_pop';
 export const VC_LAND = 'vc_land';
-export const VC_ROOM = 'lab';                  // a cave's echo, tighter near the edge
+export const VC_ROOM = 'lab';                  // a cave's echo, tighter near the edge (the first caves')
+// (8.2.9, Russell, 27 November 2026: the caves grow, so their echo must grow with them, a lot: a
+// small cave rings little, a big one a great deal.) The room's echo by depth: a cave's to level 3,
+// a hall's to level 9, then a cathedral's (VC_ROOMS), and its echo louder level after level, up to
+// VC_ECHO_MAX times by level VC_ECHO_FULL_AT, as the caverns reach their biggest.
+export const VC_ROOMS = [[3, 'lab'], [9, 'hall'], [Infinity, 'cathedral']];
+export function roomFor(depth) { return VC_ROOMS.find(([upTo]) => depth <= upTo)[1]; }
+export const VC_ECHO_MAX = 2.0;
+export const VC_ECHO_FULL_AT = 21;
+export function echoFor(depth) { return 1 + (VC_ECHO_MAX - 1) * Math.min(1, Math.max(0, (depth - 1) / (VC_ECHO_FULL_AT - 1))); }
+// Every sound of a cave rings in all three rooms (the engine's echo is otherwise a tunnel's only,
+// and the pack's own sounds had no echo of their own until 8.2.9, beyond the air and the lava).
+export const VC_ECHO_ROOMS = ['lab', 'hall', 'cathedral'];
+function echoEverywhere(names) {
+  for (const n of names) {
+    if (!n) continue;
+    const have = RULES.ROOMS[n] || [];
+    RULES.ROOMS[n] = [...new Set([...have, ...VC_ECHO_ROOMS])];
+  }
+}
 export const VC_STAND_INS = {
   [VC_AIR]: ['lab_02_scary_cave'],
   [VC_LAVA]: ['evt_cauldron'],
@@ -304,7 +327,9 @@ const mixin = {
     this.thirtySecAnnounced = this.timeLeft <= 30.0;
     this.lastBeepSecond = -1;
     this._vcBegin({ chaos: false, depth: 1 });
-    this.tts.speak('Volcanic Caves. Two minutes.', { interrupt: true });
+    // (8.2.9, Russell, 27 November 2026: no announcement; you simply start. Until then the device's
+    // voice said "Volcanic Caves. Two minutes.", which Bella has no recording of, and a device voice
+    // speaking during play can stop an iPhone's game sound.)
   },
 
   // A cave: a run's next level down, or a Chaos level (`holes` to reach there).
@@ -313,6 +338,9 @@ const mixin = {
     const keep = prev ? { air: prev.air, lava: prev.lava, lava2: prev.lava2, engine: prev.engine, band: prev.band } : null;
     if (prev) this._vcSilence(prev, false);
     this.vcNames = new Map(this._vcNames());
+    echoEverywhere([...this.vcNames.values(), ...Array.from({ length: VC_ENGINE_BANDS }, (_, i) => `engine_${i}`),
+      ...Array.from({ length: 20 }, (_, i) => `prox_${i}`), ...VC_CREDIT_PICKUPS,
+      aliasRecording(this.audio, VC_JINGLE, `event_sfx_file_${VC_JINGLE}`)]);
     for (const [stem, name] of this.vcNames) if (name) this.audio.prepare(name, `volcanic:${stem}`);
     const lay = layCave(depth);
     // (8.2.6: the hole may lie any way from you, so the cave is no longer turned to the way you face.)
@@ -511,6 +539,7 @@ const mixin = {
   _vcTicks(dt) {
     const vc = this.vc;
     const tick = this._vcName(VC_TICK); const tock = this._vcName(VC_TOCK) || tick;
+    vc.tickClock = (vc.tickClock || 0) + dt;
     const near = vc.bombs.map((b) => [b, Math.hypot(b.pos[0] - this.playerPos[0], b.pos[1] - this.playerPos[1])])
       .sort((a, b) => a[1] - b[1]).slice(0, VC_TICK_HEARD).map(([b]) => b);
     for (const b of vc.bombs) {
@@ -523,7 +552,7 @@ const mixin = {
       // (8.2.7, Russell: the bombs stay at full loudness however loud the lava; only the hole and
       // the credits fade with depth.)
       const [l, r, d] = this._vcLevels(b.pos, VC_TICK_GAIN, VC_TICK_RANGE);
-      if (d < VC_TICK_RANGE) this._vcShot(b.tock ? tock : tick, b.pos, l, r);
+      if (d < VC_TICK_RANGE && vc.tickClock - (vc.lastTick ?? -1) >= VC_TICK_MIN_GAP) { vc.lastTick = vc.tickClock; this._vcShot(b.tock ? tock : tick, b.pos, l, r); }
     }
   },
 
@@ -676,7 +705,7 @@ const HELP_SECTIONS = [
   ['Volcanic Caves', [
     { title: 'Volcanic Caves', sound: null, desc: 'Volcanic Caves is a mode of its own inside Driving, new in 8.2.0: choose Driving Mode on the main menu, then Volcanic Caves. Inspired by Roller Ball in Sonar Islands, you drive down through volcanic caves toward the centre of the Earth. Each level is one cave: a wide open cavern with no walls inside it, only its edge all round. Somewhere in it is the hole down to the next level, and it beeps from where it is, faster and higher the nearer you are, like a labyrinth\'s exit. Drive into it: you hear it pop, you drop, and you land in the next cave down. No voice tells you the level: double tap for it, with the clock and the way you are facing. The lava is all around you and never touches you, but it grows louder the deeper you go, as in Escape the Cave, without end: quite loud by the fifteenth cave, and by the twentieth so loud that the hole and the credits, which grow quieter as it rises, are hard to hear, though never lost completely: past the twenty-second cave they grow louder with the lava, so they never become harder to hear than there. The bombs always tick at full loudness.' },
     { title: 'Volcanic Caves Driving and Turning', sound: null, desc: 'You drive as in Driving Mode: slide one finger up and keep it down to accelerate, and slide that finger back down, or swipe down, to brake. But here the cave turns with you, as when you walk. To turn, lift the accelerating finger first, then flick left or right for one small turn of 30 degrees, or slide left or right and keep your finger down to keep turning until you lift it. The car coasts while your finger is up, slowing a little, so turn, then accelerate again. On a keyboard, hold the up arrow to accelerate, press or hold the left and right arrows to turn, and press the down arrow to brake. The ticks for north, east, south and west help you count your turns. Each cave you land somewhere different, and the hole can be any way from you: near, middling or far, at random, whatever the level, so listen for it before you set off.' },
-    { title: 'Volcanic Caves Bombs and the Edge', sound: null, desc: 'The bombs are the only thing to avoid. Each one ticks like a clock, tick, tock, from where it lies, and the closer you are, the faster it ticks: slowly from far off, twice a second, and quicker and quicker as you near it, fastest right before you would drive into it. You hear the nearest three. Most of them lie on the way to the hole, spread well apart, never closer together than a couple of car lengths. A bomb goes off only if you drive into it head on. Then the cave shakes, and a moment later you are back at the start of that cave, facing as you began it, and the clock keeps running. Brushing past one does nothing: when a bomb ticks straight ahead of you, turn a little to one side and drive round it, then turn back toward the hole. A bomb that has gone off is gone. Deeper caves have more bombs: one in the first cave, then as many as the cave\'s level, or one more, so two or three in the second, up to twenty. There are no walls inside a cave: its only wall is its edge, and the cave\'s echo grows tighter as you near it. Drive straight into the edge and the car stops with a thud of rock. That costs no time: turn, and drive on. If you only glance along it, a softer knock tells you so, and the car slides on along it.' },
+    { title: 'Volcanic Caves Bombs and the Edge', sound: null, desc: 'The bombs are the only thing to avoid. Each one ticks like a clock, tick, tock, from where it lies, and the closer you are, the faster it ticks: slowly from far off, twice a second, and quicker and quicker as you near it, fastest right before you would drive into it. You hear the nearest three. Most of them lie on the way to the hole, spread well apart, never closer together than a couple of car lengths. A bomb goes off only if you drive into it head on. Then the cave shakes, and a moment later you are back at the start of that cave, facing as you began it, and the clock keeps running. Brushing past one does nothing: when a bomb ticks straight ahead of you, turn a little to one side and drive round it, then turn back toward the hole. A bomb that has gone off is gone. Deeper caves have more bombs: one in the first cave, then as many as the cave\'s level, or one more, so two or three in the second, up to twenty. There are no walls inside a cave: its only wall is its edge, and the cave\'s echo grows tighter as you near it. The caves grow bigger the deeper you go, and so does their echo: a small cave rings a little, a hall-sized one more, and the great caverns from the tenth on ring like a cathedral, more and more. Drive straight into the edge and the car stops with a thud of rock. That costs no time: turn, and drive on. If you only glance along it, a softer knock tells you so, and the car slides on along it.' },
     { title: 'Volcanic Caves Clock and Score', sound: null, desc: 'You start with two minutes, and the run ends only when the time runs out. Time credits worth 10, 20 or 30 seconds lie in about two caves in three, always near where you start the cave, each marked by coins clinking now and then from where it lies, quietly, louder as you come closer. Drive onto one to take it, and the coins tell you which you got. Reaching the hole quietly puts time on the clock, and a double tap\'s clock tells you the new time: 5 seconds for leaving the first cave, one more for every two caves deeper, and 10 from the eleventh cave on. The clock waits while you drop down a hole. Each cave deeper has more bombs, but the credits stay the same, and the hole is as likely to be near as far at every level. Your score is the deepest level you reach, and Volcanic Caves has its own high score board, right after Driving\'s.' },
     { title: 'Volcanic Caves in Chaos Mode', sound: null, desc: 'Chaos Mode has Volcanic Caves levels too: you know one by the bubbling of the volcanic cave, the lava, your engine, and the clock ticking of bombs. There you must reach the hole two times in your first Volcanic level of a run, one more for each such level after, up to five, each hole dropping you into a new cave. A bomb there costs 20 health and 15 seconds instead of sending you back, and you drive on from where you are. The chaos clock keeps running, but waits while you drop, and each hole puts 5 seconds on it. Time credits of 10, 20 or 30 seconds lie in these caves too, marked by the same clinking coins. Double tap for the cave you are in and how many the level asks for, such as Level 1 of 2, then your health, the clock and the points.' },
   ]],
@@ -724,7 +753,7 @@ export default {
     const n = game.vc ? game.vc.deepest || game.vc.depth : 1;
     return { key: BOARD, score: n, message: `Time up. You reached level ${n} of the volcanic caves. ` };
   },
-  room() { return VC_ROOM; },
+  room(game) { return game.vc ? roomFor(game.vc.depth) : VC_ROOM; },
   turns(game) { return game.state === STATE && !!game.vc && !game.vc.drop; },
   // (The drop does not turn, but keeps the way you faced: the next cave is laid out ahead of it.)
   keepFacing(game) { return game.state === STATE && !!(game.vc && game.vc.drop); },
@@ -741,7 +770,7 @@ export default {
     const nearY = Math.max(0.0, 1.0 - Math.min(p[1] - b[1], b[3] - p[1]) / range);
     const nearX = Math.max(west, east);
     const near = Math.min(1.0, Math.max(nearX, nearY));
-    const gain = 0.85 + (1.2 - 0.85) * near;
+    const gain = (0.85 + (1.2 - 0.85) * near) * echoFor(vc.depth);
     return [gain, nearX > 0 ? 0.2 * (east - west) : 0.0];
   },
   status(game) {

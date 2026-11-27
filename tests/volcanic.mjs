@@ -44,6 +44,8 @@ const check = (ok, what) => { console.log((ok ? 'PASS ' : 'FAIL ') + what); if (
   const share = (arr, lo, hi) => arr.filter((x) => x >= lo && x < hi).length / arr.length;
   const even = Object.values(byDepth).every((arr) => [[12, 30], [30, 70], [70, 131]].every(([lo, hi]) => Math.abs(share(arr, lo, hi) - 1 / 3) < 0.13));
   check(even, 'at every level the hole is near, middling or far, each about a third of the time: ' + Object.entries(byDepth).map(([k, arr]) => `${k}: ${[[12, 30], [30, 70], [70, 131]].map(([lo, hi]) => Math.round(share(arr, lo, hi) * 100)).join('/')}%`).join(', '));
+  check(V.roomFor(1) === 'lab' && V.roomFor(3) === 'lab' && V.roomFor(4) === 'hall' && V.roomFor(9) === 'hall' && V.roomFor(10) === 'cathedral' && V.roomFor(80) === 'cathedral', 'the echo grows with the caves: a cave\'s to level 3, a hall\'s to 9, then a cathedral\'s');
+  check(V.echoFor(1) === 1 && V.echoFor(11) > 1.4 && V.echoFor(21) === 2 && V.echoFor(99) === 2, 'and louder level after level: twice as much echo by level 21');
   check(V.holeDistance(0, 0) === 12 && V.holeDistance(0.5, 0) === 30 && V.holeDistance(0.99, 0.999) > 129, 'the bands: near 12 to 30 units, middling 30 to 70, far 70 to 130');
   check(inside, 'you, the hole and the bombs lie inside the cavern\'s edge, you and the hole with room round you');
   check(bombsOk && apart, 'as many bombs as the depth asks, never near the start or the hole, at least 14 units apart (8.2.5)');
@@ -127,7 +129,7 @@ check(menu.st1 === 'drive_menu' && /Driving\. Swipe up and down/.test(menu.s1.jo
 check(menu.s2 === 'Volcanic Caves' && menu.s3 === 'Back to the main menu' && menu.s4 === 'Driving Mode', 'it offers Driving Mode, Volcanic Caves, and Back');
 check(menu.st2 === 'menu', 'Back (triple tap) returns to the main menu');
 check(menu.st3 === 'drive', 'Driving Mode, chosen there, starts the road as before');
-check(menu.st4 === 'volcanic' && menu.said4.includes('Volcanic Caves. Two minutes.'), 'Volcanic Caves, chosen there, starts Volcanic Caves');
+check(menu.st4 === 'volcanic' && menu.said4.length === 0, 'Volcanic Caves, chosen there, starts Volcanic Caves at once, with no announcement: ' + JSON.stringify(menu.said4));
 check(!menu.vcKey, 'Volcanic Caves has no main menu entry of its own');
 
 // ------------------------------------------------------------------ the start
@@ -140,6 +142,8 @@ const start = await page.evaluate(() => {
 check(start.state === 'volcanic' && start.depth === 1 && start.pos.join() === '0,0', 'a run starts in the first cave, at its start');
 check(start.turns && start.gm === 'drive' && start.gmode === 'drive' && start.turnHold, 'the cave turns with you, with the driving gestures and turning both on');
 check(start.room === 'lab', 'a cave\'s echo');
+const deep = await page.evaluate(() => { const g = window.__el.game; const d0 = g.vc.depth; g.vc.depth = 12; const r = g._currentRoom(); const sr = g.mode.surroundings(g, null); g.vc.depth = d0; return { r, gain: sr[0], rules: ['vc_tick', 'engine_3', 'prox_5'].map((n) => (window.__el.rules || null)) }; });
+check(deep.r === 'cathedral' && deep.gain > 1.2, `in the twelfth cave, a cathedral's echo, louder (${deep.r}, ${deep.gain.toFixed(2)})`);
 check(start.air === 'vc_air' && start.lava === 'vc_lava' && /^engine_\d+$/.test(start.engine || ''), `the cave's air, the lava and the engine play: ${start.air}, ${start.lava}, ${start.engine}`);
 check(Math.abs(start.clock - 120) < 0.1, 'two minutes on the clock: ' + start.clock);
 check(start.north, 'the hole is somewhere away from you, at least 12 units');
