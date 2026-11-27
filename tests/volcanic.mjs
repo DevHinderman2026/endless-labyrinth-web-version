@@ -14,14 +14,14 @@ const check = (ok, what) => { console.log((ok ? 'PASS ' : 'FAIL ') + what); if (
 {
   const V = await import('../js/modes/volcanic.js');
   let ahead = true; let inside = true; let bombsOk = true; let apart = true; let onWay = true; let creditsOk = true;
-  const dists = [];
+  const dists = []; const byDepth = {};
   for (const depth of [1, 3, 6, 10, 15, 30]) {
     for (let i = 0; i < 150; i++) {
       const c = V.layCave(depth);
       const d = Math.hypot(c.hole[0], c.hole[1]);
       // The hole: any way from you, 12 units to 1.4 times the depth's distance; you and it inside the edge.
-      if (d < 11.999 || d > V.holeDistFor(depth) * 1.4 + 1e-6) ahead = false;
-      dists.push(d);
+      if (d < 11.999 || d > 130.001) ahead = false;
+      dists.push(d); (byDepth[depth] = byDepth[depth] || []).push(d);
       const [x0, y0, x1, y1] = c.bounds;
       const inB = (p, m) => p[0] >= x0 + m && p[0] <= x1 - m && p[1] >= y0 + m && p[1] <= y1 - m;
       if (!inB([0, 0], 11.99) || !inB(c.hole, 11.99)) inside = false;
@@ -40,8 +40,11 @@ const check = (ok, what) => { console.log((ok ? 'PASS ' : 'FAIL ') + what); if (
       if (c.credit && (!inB(c.credit, 0) || Math.hypot(c.credit[0], c.credit[1]) > 22.001 || Math.hypot(c.credit[0], c.credit[1]) < 9.999)) creditsOk = false;
     }
   }
-  check(ahead, 'the hole lies 12 units to 1.4 times the depth\'s distance away');
-  check(dists.filter((x) => x < 20).length > 20 && dists.filter((x) => x > 80).length > 100, `sometimes right by you, sometimes far away (${dists.filter((x) => x < 20).length} under 20 units, ${dists.filter((x) => x > 80).length} over 80, of ${dists.length})`);
+  check(ahead, 'the hole lies 12 to 130 units away');
+  const share = (arr, lo, hi) => arr.filter((x) => x >= lo && x < hi).length / arr.length;
+  const even = Object.values(byDepth).every((arr) => [[12, 30], [30, 70], [70, 131]].every(([lo, hi]) => Math.abs(share(arr, lo, hi) - 1 / 3) < 0.13));
+  check(even, 'at every level the hole is near, middling or far, each about a third of the time: ' + Object.entries(byDepth).map(([k, arr]) => `${k}: ${[[12, 30], [30, 70], [70, 131]].map(([lo, hi]) => Math.round(share(arr, lo, hi) * 100)).join('/')}%`).join(', '));
+  check(V.holeDistance(0, 0) === 12 && V.holeDistance(0.5, 0) === 30 && V.holeDistance(0.99, 0.999) > 129, 'the bands: near 12 to 30 units, middling 30 to 70, far 70 to 130');
   check(inside, 'you, the hole and the bombs lie inside the cavern\'s edge, you and the hole with room round you');
   check(bombsOk && apart, 'as many bombs as the depth asks, never near the start or the hole, at least 14 units apart (8.2.5)');
   check(onWay, 'most bombs lie on the way to the hole');
@@ -50,7 +53,7 @@ const check = (ok, what) => { console.log((ok ? 'PASS ' : 'FAIL ') + what); if (
   check(V.holeBonusFor(1) === 5 && V.holeBonusFor(3) === 6 && V.holeBonusFor(11) === 10 && V.holeBonusFor(40) === 10 && V.holeBonusFor(1, true) === 5 && V.holeBonusFor(30, true) === 5, 'the hole gives 5 seconds, one more every two levels, 10 from level 11; 5 in Chaos');
   check(V.holeDistFor(1) === 40 && V.holeDistFor(6) === 80 && V.holeDistFor(99) === 200, 'the hole farther every level: 40, then 8 more a level, at most 200');
   check(V.bombsFor(1, 0.9) === 1 && V.bombsFor(2, 0.1) === 2 && V.bombsFor(2, 0.9) === 3 && V.bombsFor(5, 0.9) === 6 && V.bombsFor(99, 0.9) === 20, 'one bomb in the first cave, then as many as the level or one more (level 2: two or three), at most twenty');
-  check(V.listenLevel(1) === 1 && Math.abs(V.listenLevel(22) - 0.35) < 1e-9 && V.listenLevel(11) < 1 && V.listenLevel(11) > 0.35, 'the bombs, the hole and the credits grow quieter as the lava rises: full at level 1, 35 percent from 22 (Escape the Cave)');
+  check(V.listenLevel(1) === 1 && Math.abs(V.listenLevel(22) - 0.35) < 1e-9 && V.listenLevel(11) < 1 && V.listenLevel(11) > 0.35, 'the hole and the credits grow quieter as the lava rises: full at level 1, 35 percent from 22 (Escape the Cave); the bombs never do (8.2.7)');
   // Escape the Cave's lava curve: faint at 1, full at 22, rising on toward the ceiling.
   const L = V.lavaVolume;
   check(Math.abs(L(1) - 0.05) < 1e-9 && Math.abs(L(22) - 1.0) < 1e-9 && L(30) > 1.0 && L(200) < 2.1 && L(12) > L(11), 'the lava rises level after level, as in Escape the Cave (0.05 at level 1, 1.0 at level 22, toward 2.1)');
@@ -169,6 +172,11 @@ check(drive.slid, 'turned a little off the edge, the car slides on along it');
 // ------------------------------------------------------------------ bombs
 const bomb = await page.evaluate(() => {
   const g = window.__el.game; const t = window.__t; const vc = g.vc;
+  // (8.2.7) Deep down, the bombs still tick at full loudness.
+  const vols = []; const pl = window.__el.audio.play; const ap = window.__el.audio;
+  ap.play = (n, o) => { if (/^vc_t/.test(n) && o) vols.push(o.volume); return pl.call(ap, n, o); };
+  const d0 = vc.depth; vc.depth = 25; t.straight([[0, -6]]); t.frames(1.0); vc.depth = d0; ap.play = pl;
+  const deepVol = Math.max(0, ...vols);
   t.straight([[0, -18]]);
   t.placed.length = 0; t.frames(1.2);
   const ticks = t.placed.filter(([n]) => n === 'vc_tick' || n === 'vc_tock');
@@ -186,10 +194,11 @@ const bomb = await page.evaluate(() => {
   g.input('accel_on'); t.frames(2.6); g.input('accel_off');
   const boomed = t.played.includes('vc_boom'); const gone = vc.bombs.length === 0;
   t.frames(2.0);
-  return { ticks: ticks.length, nearTicks, tickAt, tickTock, passed, brushAt, boomed, gone, back: g.playerPos.join(), ran: c0 - g.timeLeft };
+  return { deepVol, ticks: ticks.length, nearTicks, tickAt, tickTock, passed, brushAt, boomed, gone, back: g.playerPos.join(), ran: c0 - g.timeLeft };
 });
 check(bomb.ticks >= 2 && bomb.tickAt === '0,-18' && bomb.tickTock, `a bomb ticks like a clock, tick and tock, twice a second, from where it lies (${bomb.ticks} in 1.2 s at ${bomb.tickAt})`);
 check(bomb.nearTicks > bomb.ticks * 1.5, `closer to it, the ticking is faster (${bomb.ticks} ticks in 1.2 s 18 away, ${bomb.nearTicks} 4 away)`);
+check(bomb.deepVol > 0.6, `on level 25 a bomb 6 units away still ticks at full loudness (${bomb.deepVol.toFixed(2)})`);
 check(bomb.passed, 'brushing past a bomb, a few units to one side, does nothing: ' + bomb.brushAt);
 check(bomb.boomed && bomb.gone, 'driving into a bomb head on sets it off, and it is gone');
 check(bomb.back === '0,0' && bomb.ran > 3.5, `back at the start of the cave, the clock having run on (${bomb.ran.toFixed(1)} s)`);
