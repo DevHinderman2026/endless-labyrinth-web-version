@@ -24,7 +24,7 @@ function el(tag, attrs = {}, children = []) {
   return e;
 }
 
-export const MODE_NAMES = { standard: 'Standard Mode', battle: 'Battle Mode', drive: 'Driving Mode', tower: 'Tower Mode', island: 'Island Mode', chaos: 'Chaos Mode', findvoice: 'Find the Voice', abyss: 'The Abyss', edge: 'The Edge', park: 'Water Park', museum: 'The Museum', ultimate: 'Ultimate Mode', event: 'Events' };
+export const MODE_NAMES = { standard: 'Standard Mode', battle: 'Battle Mode', toymemory: 'Toy Memory', drive: 'Driving Mode', volcanic: 'Volcanic Caves', tower: 'Tower Mode', island: 'Island Mode', chaos: 'Chaos Mode', findvoice: 'Find the Voice', abyss: 'The Abyss', edge: 'The Edge', park: 'Water Park', museum: 'The Museum', ultimate: 'Ultimate Mode', event: 'Events' };
 
 // The high score boards, in the game's own High Scores order and words.
 export const BOARDS = [
@@ -32,6 +32,7 @@ export const BOARDS = [
   ['tower', 'Tower Mode', (v) => count(v, 'floor')],
   ['drive', 'Driving Mode', (v) => count(v, 'car')],
   ['drive_distance', 'Driving Distance', (v) => `${v} m`],
+  ['volcanic', 'Volcanic Caves', (v) => `Level ${v}`],   // (8.2.0: right after Driving's)
   ['island', 'Island Mode', (v) => count(v, 'point')],
   ['findvoice', 'Find the Voice', (v) => count(v, 'level')],
   ['abyss', 'The Abyss', (v) => count(v, 'case')],
@@ -41,6 +42,7 @@ export const BOARDS = [
   ['ultimate', 'Ultimate Mode', (v) => count(v, 'point')],
   ['standard', 'Standard Mode', (v) => `Level ${v}`],
   ['battle', 'Battle Mode', (v) => count(v, 'enemy')],
+  ['toymemory', 'Toy Memory', (v) => `${v} ${v === 1 ? 'box' : 'boxes'}`],   // (8.2.0: right after Battle's)
 ];
 
 // Seconds as words: "2 hours 5 minutes", "45 seconds", "none yet".

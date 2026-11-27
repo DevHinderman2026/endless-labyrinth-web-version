@@ -89,8 +89,9 @@ check(setup.menu.indexOf('Find the Voice') === setup.menu.indexOf('Island Mode')
   && setup.menu.findIndex((m) => /^Event High Scores/.test(m)) === setup.menu.indexOf('Chaos Mode') + 2
   && setup.menu.indexOf('High Scores') === setup.menu.indexOf('Chaos Mode') + 3, 'the main menu begins with Story Mode (7.5.0) and ends its modes with Find the Voice, The Abyss, Water Park, The Museum, Ultimate Mode and Chaos Mode, then the events: ' + setup.menu.join(', '));
 const lineAt = (k) => setup.lines.findIndex((l) => l.startsWith(k));
-check(lineAt('Chaos Mode') === 2 && lineAt('Tower Mode') === 3 && lineAt('Driving Mode') === 4 && lineAt('Driving Distance') === 5
-  && lineAt('Island Mode') === 6 && setup.lines.includes('Chaos Mode: No score yet'), 'the boards in the desktop\'s order: ' + setup.lines.join(' | '));
+// (8.2.0: Toy Memory, Battle's sub mode, right after Battle's board; Island further on, after any board the driving modes add.)
+check(lineAt('Toy Memory') === 2 && lineAt('Chaos Mode') === 3 && lineAt('Tower Mode') === 4 && lineAt('Driving Mode') === 5 && lineAt('Driving Distance') === 6
+  && lineAt('Island Mode') > 6 && setup.lines.includes('Chaos Mode: No score yet'), 'the boards in the desktop\'s order: ' + setup.lines.join(' | '));
 check(setup.names.indexOf('Events') === setup.names.indexOf('Chaos Mode') + 1 && setup.names.indexOf('Ultimate Mode') > setup.names.indexOf('Find the Voice')
   && setup.names.indexOf('Chaos Mode') > setup.names.indexOf('Ultimate Mode') && setup.names.indexOf('Demos, Chaos Mode') === setup.names.length - 2, 'help has Chaos Mode last of the modes, then Events, and the demos in the same order: ' + setup.names.join(' | '));
 check(setup.missing.length === 0, 'every chaos sound, its demos and the elevator\'s muffled drones are in the packs' + (setup.missing.length ? ': missing ' + setup.missing.join(', ') : ''));

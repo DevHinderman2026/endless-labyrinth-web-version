@@ -18,6 +18,8 @@ import edge from './edge.js';
 import park from './park.js';
 import museum from './museum.js';
 import story from './story.js';
+import toymemory from './toymemory.js';
+import volcanic from './volcanic.js';
 
 // Web 6.0.1 (Russell, 19 Nov): every mode comes before Events on the main menu:
 // Standard, Battle, Driving, Tower, Island, Find the Voice, Ultimate Mode, Chaos
@@ -29,4 +31,9 @@ import story from './story.js';
 // on the main menu, above Standard Mode (its menu item is marked first).
 // Web 8.0.0 (Russell, 25 Nov): The Edge, The Abyss's sub mode, comes right after it (its
 // help and its high scores after The Abyss's); it has no main menu entry of its own.
-export const MODES = [driving, tower, island, findvoice, abyss, edge, park, museum, story, ultimate, chaos, events];
+// Web 8.2.0 (Russell, 27 Nov): Toy Memory, Battle's sub mode, comes first in this list so its
+// help and demos come right after Battle's; it has no main menu entry of its own (Battle Mode
+// opens a menu offering it), and its high scores come right after Battle's (game.js order).
+// Web 8.2.0 (Russell, 27 November 2026): Volcanic Caves, Driving's sub mode, comes right after it
+// (its help and its high scores after Driving's); it has no main menu entry of its own.
+export const MODES = [toymemory, driving, volcanic, tower, island, findvoice, abyss, edge, park, museum, story, ultimate, chaos, events];

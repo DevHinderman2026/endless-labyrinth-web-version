@@ -743,8 +743,46 @@ const HELP_DEMOS = [
 ];
 
 // ------------------------------------------------------------------ the mode
+// ------------------------------------------------------------------ the Driving menu
+// Web 8.2.0 (Russell, 27 November 2026): Driving on the main menu opens a small menu of its
+// own, Driving Mode or its sub mode Volcanic Caves (js/modes/volcanic.js), and Back, the way
+// The Abyss offers The Edge.
+export const S_DRIVE_MENU = 'drive_menu';
+export const DRIVE_MENU = [['drive', 'Driving Mode'], ['volcanic', 'Volcanic Caves'], ['back', 'Back to the main menu']];
+
+function openDriveMenu(game) {
+  game.state = S_DRIVE_MENU;
+  game.driveMenuIndex = 0;
+  game.tts.speak(`Driving. Swipe up and down to choose, double tap to start. ${DRIVE_MENU[0][1]}`, { interrupt: true });
+}
+
+function driveMenuInput(game, g) {
+  const toMain = () => {
+    game.state = 'menu';
+    game._refreshMenu();
+    game.tts.speak('Main Menu. ' + game.menuOptions[game.menuIndex], { interrupt: true });
+  };
+  if (g === 'back') { toMain(); return; }
+  if (g === 'up' || g === 'down') {
+    const n = DRIVE_MENU.length;
+    game.driveMenuIndex = ((game.driveMenuIndex || 0) + (g === 'up' ? -1 : 1) + n) % n;
+    game.audio.play('menu_move');
+    game.tts.speak(DRIVE_MENU[game.driveMenuIndex][1], { interrupt: true });
+    return;
+  }
+  if (g === 'enter') {
+    const [k] = DRIVE_MENU[game.driveMenuIndex || 0];
+    game.audio.play('menu_move');
+    if (k === 'back') toMain();
+    else if (k === 'volcanic') game.startVolcanic();
+    else game.startDrive();
+  }
+}
+
 export default {
-  menu: [{ key: 'drive', label: 'Driving Mode', select: (game) => game.startDrive() }],
+  menu: [{ key: 'drive', label: 'Driving Mode', select: (game) => openDriveMenu(game) }],
+  inputStates: { [S_DRIVE_MENU]: driveMenuInput },
+  statusFor: { [S_DRIVE_MENU]: (game) => 'Driving: ' + DRIVE_MENU[game.driveMenuIndex || 0][1] },
   playStates: [STATE],
   mixin,
 

@@ -83,8 +83,32 @@ const MASTER_LEVEL = 0.85;
 // other mode's: the game is about 1 decibel quieter, Ultimate and Chaos's worlds about 2.5,
 // and the limiter seldom has anything to do (Russell chose this, knowing it is quieter).
 const MASTER_LEVEL_3D = 0.85;                     // (was 1.0)
-const LIMITER = { threshold: -3, knee: 3, ratio: 20, attack: 0.002, release: 0.15 };
+// (Web 8.2.0, Russell, 27 November 2026: "the static still keeps coming back ... I don't know
+// if there's too many sounds coming in one channel or if the channel is being overloaded".)
+// Measured over five-minute runs: in Battle Mode the game's sounds added together went over the
+// top much of the time (peaks 1.3 to 1.6 of full scale, the limiter at work 40 to 85 percent of
+// the time), in Driving up to 3.3 (the limiter at work up to all the time, holding the game down
+// by up to 10 decibels, and a few samples still over the top). A limiter that quick (2 ms) at
+// work that much crackles on loud, deep sounds. Now the modes that overloaded play quieter
+// (LOUD_MODE_TRIM), so it seldom works there at all, and it lets go more slowly (a quarter second,
+// so it does not pump) and takes hold a little less abruptly (3 ms). (Slower than that was tried
+// and measured: 8 ms reaches past the limiter's own 6 ms look-ahead, so the start of a sudden loud
+// sound, The Abyss's thunder or glass, got through, and samples went over the top, 19 of them in
+// four minutes of The Abyss; at 5 ms a burst 6 decibels over the top still got through. At 3 ms it
+// comes out under 0.98 of full scale (0.94 at 2 ms).)
+const LIMITER = { threshold: -3, knee: 3, ratio: 20, attack: 0.003, release: 0.25 };   // (8.2.0: was attack 0.002, release 0.15)
 const LIMITER_TRIM = 1 / 1.1475;                  // undoes the compressor's own makeup gain
+// (8.2.0) Battle Mode, Driving, and their Chaos levels play about 3 decibels quieter: every
+// sound of the game passes through one more gain, the mix (AudioEngine.mix), on its way to the
+// master, and that gain is LOUD_MODE_TRIM in those modes (every sound alike, so nothing changes
+// against anything else). The game says which mode it is in, frame by frame (setLoud); every
+// other mode is as it was. Bella's voice goes to the master itself (js/voice.js), past the mix,
+// so she is exactly as loud as before, in every mode (Russell set the voice's levels by ear).
+export const LOUD_MODE_TRIM = 0.708;
+// (8.2.0) A fresh sound engine in the middle of a run (game.js freshSoundDue): the loops
+// cross over from the old engine to the new one over this many seconds, instead of being
+// cut in one and started in the other, which clicked.
+export const FRESH_CROSSFADE = 0.04;
 // Outside Ultimate Mode, a one-shot stopped to make room for a newer one is faded
 // out over this many milliseconds instead of being cut, which clicked.
 const CULL_FADE_MS = 40;
@@ -465,6 +489,7 @@ export class AudioEngine {
   constructor() {
     this.ctx = newContext();
     ({ out: this.out, lim: this.limiter } = outChain(this.ctx, MASTER_LEVEL));
+    this.mix = this._mixInto(this.out);     // (8.2.0: the game's sounds, before the master)
     this.recoveries = 0;
     this.entries = new Map();     // name -> {dry, dull} pack entries
     this.irEntries = new Map();   // room key -> [entry per take]
@@ -612,14 +637,39 @@ export class AudioEngine {
   // decoded is kept, as there.
   fresh() {
     this.freshened = (this.freshened || 0) + 1;
-    this._renew(8000);
+    // (8.2.0) One asked for in the middle of a run (game.js freshSoundDue) crosses its loops over.
+    const late = this.nextFreshFade ? FRESH_CROSSFADE : 0;
+    this.nextFreshFade = false;
+    this._renew(8000, late);
   }
 
-  _renew(keepOld) {
+  // (8.2.0) How loud the master is for the mode being played: LOUD_MODE_TRIM in the modes
+  // that overloaded (`loud`), 1 everywhere else. Asked for every frame by the game; only a
+  // change is sent, glided to (_master).
+  setLoud(loud) {
+    const k = loud ? LOUD_MODE_TRIM : 1;
+    if (Math.abs(k - (this.modeTrim || 1)) < 1e-6) return;
+    this.modeTrim = k;
+    if (this.mix) glideTo(this.mix.gain, k, this.ctx.currentTime, SEND_GLIDE);
+  }
+
+  // (8.2.0) The mix: one gain, at the mode's trim, into the master.
+  _mixInto(out) {
+    const m = fixedStereo(this.ctx.createGain());
+    m.gain.value = this.modeTrim || 1;
+    m.connect(out);
+    return m;
+  }
+
+  // (`late`, 8.2.0: seconds over which the old engine's loops fade out while the new engine's
+  // fade in; 0, as before, cuts them over at once.)
+  _renew(keepOld, late = 0) {
     const old = this.ctx;
+    const oldOut = this.out;
     this.recoveredAt = performance.now();
     this.ctx = newContext();
     ({ out: this.out, lim: this.limiter } = outChain(this.ctx, this.spatial ? MASTER_LEVEL_3D : MASTER_LEVEL));
+    this.mix = this._mixInto(this.out);     // (8.2.0, at the mode's trim)
     this.convolvers = new Map();
     // The world chain and the area echoes belong to the old engine; made again
     // in the new one, for the same areas, by the mode's next call.
@@ -628,7 +678,9 @@ export class AudioEngine {
     this.worldIn = this.worldFilter = this.worldGain = null;
     if (this.spatial) this.spatialOn();
     else this.setFacing(this.facing || 0, true);     // (a mode that turns keeps the way it faces)
-    for (const v of [...this.live]) v.rebind(old);
+    for (const v of [...this.live]) v.rebind(old, late);
+    // (8.2.0) The old engine fades out under the new one, which is fading its loops in.
+    if (late > 0 && oldOut) { try { glideTo(oldOut.gain, 0, old.currentTime, late); } catch (e) { /* closed already */ } }
     // The echoes come after the voices are in the new engine: setAreaRooms points
     // every voice at its area's new bus, which must not be done to a voice whose
     // nodes still belong to the old one.
@@ -909,7 +961,7 @@ export class AudioEngine {
       node = this.ctx.createConvolver();
       node.normalize = false;
       node.buffer = buf;
-      node.connect(this.out);
+      node.connect(this.mix);     // (8.2.0: was the master; see LOUD_MODE_TRIM)
       node.key = k;
       this.convolvers.set(k, node);
       return node;
@@ -1068,7 +1120,7 @@ export class AudioEngine {
     this.worldGain.gain.value = 1.0;
     this.worldIn.connect(this.worldFilter);
     this.worldFilter.connect(this.worldGain);
-    this.worldGain.connect(this.out);
+    this.worldGain.connect(this.mix);     // (8.2.0: was the master; see LOUD_MODE_TRIM)
     const l = ctx.listener;
     try {
       if (l.positionX) { l.positionX.value = 0; l.positionY.value = 0; l.positionZ.value = 0; }
@@ -1142,7 +1194,8 @@ export class AudioEngine {
   }
 
   // Where a Voice's branches go: the world chain in 3D, the output otherwise.
-  get bus() { return this.spatial && this.worldIn ? this.worldIn : this.out; }
+  // (8.2.0: the mix, not the master itself, see LOUD_MODE_TRIM.)
+  get bus() { return this.spatial && this.worldIn ? this.worldIn : this.mix; }
 
   // An HRTF panner plugged into the mix, placed at (x, y, z): a free one if there
   // is one (see PANNERS), else a new one.
@@ -1532,10 +1585,10 @@ export class Voice {
       // The HRTF panner places the sound; the game still sets its loudness by
       // distance itself, so the panner's own distance rolloff is turned off.
       const [x, y, z] = this.placed ? this.pos3 : [this.dir[0], 0, this.dir[1]];
-      panner = this.audio.takePanner(x, y, z, this.clear && this.placed ? this.audio.out : null);
+      panner = this.audio.takePanner(x, y, z, this.clear && this.placed ? this.audio.mix : null);   // (8.2.0: the mix, see LOUD_MODE_TRIM)
       merge.connect(panner);
     } else {
-      merge.connect(this.direct ? this.audio.out : this.audio.bus);
+      merge.connect(this.direct ? this.audio.mix : this.audio.bus);   // (8.2.0: the mix, see LOUD_MODE_TRIM)
     }
     return { buffer, fade, split, gl, gr, merge, panner, wide };
   }
@@ -1714,7 +1767,9 @@ export class Voice {
   }
 
   // Carry a looping sound over to a fresh sound engine (see AudioEngine.recover).
-  rebind(oldCtx) {
+  // (`late`, 8.2.0: the old copy plays on for that many seconds under the old engine's fade, see
+  // AudioEngine._renew, and is left to go with the old engine; the new copy fades in over it.)
+  rebind(oldCtx, late = 0) {
     if (this.stopped || this.ended) return;
     // A loop still being decoded begins in the new engine when it is ready.
     if (this.loop && !this.dry) { this.ctx = this.audio.ctx; return; }
@@ -1731,11 +1786,17 @@ export class Voice {
     const wasPaused = this.paused;
     const offset = wasPaused ? this.offset : Math.max(0, oldCtx.currentTime - this.startedAt);
     this._endTail(0, oldCtx.currentTime);   // (6.3.7: a ringing echo belongs to the old engine)
-    this._stopSources();
-    this._disconnect();
+    if (late > 0 && !wasPaused) {
+      // (8.2.0) Its nodes belong to the old engine and go when it is closed (_renew).
+      for (const s of this.sources) { s.onended = null; try { s.stop(oldCtx.currentTime + late); } catch (e) { /* not started */ } }
+      this.sources = [];
+    } else {
+      this._stopSources();
+      this._disconnect();
+    }
     this.ctx = this.audio.ctx;
     this.dry = this.dull = this.wet = null;
-    this.fadeMs = 0;
+    this.fadeMs = late > 0 && !wasPaused ? late * 1000 : 0;
     this.paused = false;
     this.begin(offset);
     if (wasPaused) this.pause(undefined, false);     // (held again in silence: no echo to ring out)

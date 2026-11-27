@@ -31,7 +31,7 @@ await page.evaluate(() => {
   window.T = {
     deg: (r) => Math.round(r * 180 / Math.PI * 10) / 10,
     frames: (seconds, dt = 1 / 30) => { for (let i = 0; i < Math.round(seconds / dt); i++) g.frame(dt); },
-    start: (key) => { if (g.state !== 'menu') { g._stopRunSounds(); g.runId += 1; g.state = 'menu'; g._refreshMenu(); } g.menuIndex = g.menuKeys.indexOf(key); g.input('enter'); g.frame(1 / 30); },
+    start: (key) => { if (g.state !== 'menu') { g._stopRunSounds(); g.runId += 1; g.state = 'menu'; g._refreshMenu(); } g.menuIndex = g.menuKeys.indexOf(key); g.input('enter'); if (g.state === 'battle_menu' || g.state === 'drive_menu') g.input('enter'); g.frame(1 / 30); },   // (8.2.0: Battle's and Driving's own menus, then the mode)
     said: () => document.getElementById('said').textContent,
     heard: () => { const a = window.__el.audio; const names = []; const op = a.play.bind(a); a.play = (n, o) => { names.push(n); return op(n, o); }; return { names, stop: () => { a.play = op; } }; },
   };
@@ -279,7 +279,7 @@ check(!rest.drive.turns && rest.drive.facing === 0 && !rest.drive.hold, 'Driving
     && !/fr[eo]z/i.test(during.r.text),
     'for thirty days the Update History opens with a region named Alert: turning, and compatibility between Windows and the web');
   check(before.r === null && after.r === null, 'it is not there before 5.0.0 came out, and it is gone after thirty days');
-  check(/^8\.1\.6 \(26 November 2026\)/.test(during.top), 'the Update History begins with the newest version, 8.1.6: ' + during.top);
+  check(/^8\.2\.0 \(27 November 2026\)/.test(during.top), 'the Update History begins with the newest version, 8.2.0: ' + during.top);
   await page.goto(base + '/help.html');
   const faq = await page.evaluate(() => ['faq-turning', 'faq-turning-lost', 'faq-turning-aim', 'faq-turning-walls', 'faq-turning-which', 'faq-turning-slide'].map((id) => { const h = document.getElementById(id); return h ? h.textContent : null; }));
   check(faq.every(Boolean), 'the frequently asked questions have six questions about turning: ' + faq.join(' | '));

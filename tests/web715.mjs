@@ -54,7 +54,8 @@ const pannerRates = () => page.evaluate((names) => {
   return { made: mine.length, bad };
 }, PANNER);
 const startRun = async (mode, ms = 4000) => {
-  await page.evaluate((mode) => { const g = window.__el.game; g.menuIndex = g.menuKeys.indexOf(mode); g.input('enter'); }, mode);
+  // (8.2.0: Battle's and Driving's own menus, then the mode.)
+  await page.evaluate((mode) => { const g = window.__el.game; g.menuIndex = g.menuKeys.indexOf(mode); g.input('enter'); if (g.state === 'battle_menu' || g.state === 'drive_menu') g.input('enter'); }, mode);
   await page.waitForTimeout(ms);
 };
 const toMenu = async () => {

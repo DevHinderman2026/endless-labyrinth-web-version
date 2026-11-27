@@ -76,6 +76,7 @@ const modes = await page.evaluate(async () => {
     t.menu();
     if (m === 'chaos') g._chaosPickNext = () => 'standard';
     g.menuIndex = g.menuKeys.indexOf(m); g.input('enter'); if (g.state === 'abyss_menu') g.input('enter');
+    if (g.state === 'battle_menu') g.input('enter');   // (8.2.0: Battle Mode's menu, then Battle)
     await new Promise((r) => setTimeout(r, 2500));
     const loops = [...a.live].filter((v) => v.loop && v.dry);
     out[m] = { turns: !!(a.turnsNow ? a.turnsNow() : a.turns), flat: loops.filter((v) => !v.dry.wide && !v.dry.panner).map((v) => v.name), n: loops.length };

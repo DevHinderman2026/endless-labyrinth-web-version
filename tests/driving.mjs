@@ -69,7 +69,7 @@ await page.evaluate(() => {
   const orig = g.input.bind(g);
   g.input = (x) => { window.__g.push(x); orig(x); };
   g.menuIndex = g.menuKeys.indexOf('drive');
-  g.input('enter');
+  g.input('enter'); g.input('enter');   // (8.2.0: Driving's menu, then Driving Mode)
 });
 await page.waitForTimeout(100);
 const st = await page.evaluate(() => {
@@ -282,7 +282,7 @@ const run = await page.evaluate(async () => {
   g.input('pause'); g.input('back');               // quit this run...
   g.input('up'); g.input('enter');                 // ...yes
   g.menuIndex = g.menuKeys.indexOf('drive');
-  g.input('enter');                                // and a fresh one
+  g.input('enter'); g.input('enter');   // and a fresh one (8.2.0: Driving's menu, then Driving Mode)
   const out = { crashes: 0, credits: 0, ammo: 0, shots: 0, wall: 0, itemClash: 0, spawned: 0, frames: 0, maxRamp: 0, lanes: 0 };
   const seen = new Set();
   g.input('accel_on');
@@ -351,7 +351,7 @@ const second = await page.evaluate(() => {
   const g = window.__el.game;
   g.input('enter');
   g.menuIndex = g.menuKeys.indexOf('drive');
-  g.input('enter');
+  g.input('enter'); g.input('enter');   // (8.2.0: Driving's menu, then Driving Mode)
   for (let i = 0; i < 30 * 200 && g.state === 'drive'; i++) g.frame(1 / 30);    // never moves
   return { state: g.state, said: document.getElementById('said').textContent };
 });
@@ -364,7 +364,7 @@ const quit = await page.evaluate(() => {
   const a = window.__el.audio;
   g.input('enter');
   g.menuIndex = g.menuKeys.indexOf('drive');
-  g.input('enter');
+  g.input('enter'); g.input('enter');   // (8.2.0: Driving's menu, then Driving Mode)
   g.input('accel_on');
   for (let i = 0; i < 30 * 20; i++) { g.driveGrace = 5; g.frame(1 / 30); }
   const before = [...a.live].filter((v) => v.loop).map((v) => v.name);

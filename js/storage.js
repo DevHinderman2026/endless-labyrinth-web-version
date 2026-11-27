@@ -55,7 +55,8 @@ export function newerMarks(...sets) {
   return out;
 }
 // The modes stats are kept for, by the key the Game Stats page shows them under.
-export const STAT_MODES = ['standard', 'battle', 'drive', 'tower', 'island', 'chaos', 'findvoice', 'abyss', 'edge', 'park', 'museum', 'ultimate', 'event'];
+// (8.2.0: Toy Memory, Battle's sub mode, right after Battle.)
+export const STAT_MODES = ['standard', 'battle', 'toymemory', 'drive', 'volcanic', 'tower', 'island', 'chaos', 'findvoice', 'abyss', 'edge', 'park', 'museum', 'ultimate', 'event'];
 const STATS_FLUSH_SECONDS = 15;   // play time is written this often, and at the end of a run
 
 export function emptyStats() {

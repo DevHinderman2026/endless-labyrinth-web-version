@@ -86,7 +86,7 @@ check(mono.wide.plan === 'mix' && near(mono.wide.ratio, 1) && mono.wide.lossDb <
 check(mono.single, 'a recording already one channel is used as it is');
 
 // ------------------------------------------------------------------ 2. Battle Mode: placed sounds, and the arena crowd
-await page.evaluate(() => { const g = window.__el.game; g.menuIndex = g.menuKeys.indexOf('battle'); g.input('enter'); });
+await page.evaluate(() => { const g = window.__el.game; g.menuIndex = g.menuKeys.indexOf('battle'); g.input('enter'); g.input('enter'); });   // (8.2.0: Battle Mode's menu, then Battle)
 await page.waitForFunction(() => window.__el.game.state === 'battle');
 await sleep(2500);   // the crowd's long recording is decoded when it is first played
 const bat = await page.evaluate(async () => {
@@ -156,13 +156,13 @@ const bat = await page.evaluate(async () => {
   L.stop();
   return out;
 });
-check(bat.crowd && bat.crowd.name === 'event_amb_file_evt_amb_stadium_crowd' && bat.crowd.busy && bat.crowd.loop && Math.abs(bat.crowd.l - 0.44 * Math.SQRT1_2) < 1e-6, 'Battle Mode: the stadium crowd plays under the drums, at Ultimate\'s level against the drone (two copies, each 0.44/sqrt 2): ' + JSON.stringify(bat.crowd));
+check(bat.crowd && bat.crowd.name === 'event_amb_file_evt_amb_stadium_crowd' && bat.crowd.busy && bat.crowd.loop && Math.abs(bat.crowd.l - 0.44 * 0.8 * Math.SQRT1_2) < 1e-6, 'Battle Mode: the stadium crowd plays under the drums, at Ultimate\'s level against the drone, 20 percent quieter since 8.2.0 (two copies, each 0.44 x 0.8/sqrt 2): ' + JSON.stringify(bat.crowd));
 check(bat.twin && bat.twin.name === bat.crowd.name && bat.twin.busy && Math.abs(bat.twin.l - bat.crowd.l) < 1e-9 && bat.twin.followed && Math.abs(bat.twin.apart - 0.5) < 0.02,
   '6.1.0: its second copy plays half a loop apart, so the recording\'s quiet stretch is always filled: ' + JSON.stringify(bat.twin));
 check(bat.crowd && bat.crowd.followed && bat.crowd.sendSet && Math.abs(bat.crowd.send - 0.15) < 1e-6 && bat.crowd.wet && bat.room === 'battle', 'the crowd goes with the drums and rings lightly in the arena\'s echo, as an Ultimate background does: ' + JSON.stringify(bat.crowd));
 check(bat.drums && bat.drums.ch === 2 && bat.crowd.ch === 2, 'the drums and the crowd, not placed, keep both their channels: ' + JSON.stringify([bat.drums, bat.crowd && bat.crowd.ch]));
 check(bat.swap.same && bat.swap.busy && bat.swap.onNew && bat.swap.offOld && bat.swap.oldFading && bat.swap.newBeat, 'when the drums change the same crowd carries on with the new drums: ' + JSON.stringify(bat.swap));
-check(bat.killed && bat.roar && Math.abs(bat.roar.volume - 0.48) < 1e-6 && Math.abs(bat.roar.send - (/_[12]$/.test(bat.roar.name) ? 0.5 : 0.8)) < 1e-6 && bat.roar.wet && /^battle/.test(bat.roar.conv || ''), 'shooting an enemy down: the crowd roars after the bang, a little quieter than Ultimate\'s (0.48), in the arena\'s echo (0.8, or 0.5 for the live-recorded roars): ' + JSON.stringify(bat.roar));
+check(bat.killed && bat.roar && Math.abs(bat.roar.volume - 0.48 * 0.8) < 1e-6 && Math.abs(bat.roar.send - (/_[12]$/.test(bat.roar.name) ? 0.5 : 0.8)) < 1e-6 && bat.roar.wet && /^battle/.test(bat.roar.conv || ''), 'shooting an enemy down: the crowd roars after the bang, a little quieter than Ultimate\'s (0.48, and 20 percent quieter again since 8.2.0), in the arena\'s echo (0.8, or 0.5 for the live-recorded roars): ' + JSON.stringify(bat.roar));
 check(bat.announcer === 0, 'no announcer: nothing is spoken for a kill');
 check(!bat.repeats, 'the crowd never roars the same recording twice running');
 check(bat.enemy.ch === 1 && bat.enemy.panner, `an enemy heard from its place plays one channel (its recording has ${bat.enemy.orig}): ` + JSON.stringify(bat.enemy));
@@ -174,7 +174,7 @@ check(!bat.react && bat.over === 'game_over' && !bat.crowdAfter, '6.1.0: an enem
 // ------------------------------------------------------------------ 2b. (6.0.3) Louder beacons, and the crowd going wild as a wave begins
 await page.evaluate(() => { window.__el.game.input('enter'); });
 await page.waitForFunction(() => window.__el.game.state === 'menu');
-await page.evaluate(() => { const g = window.__el.game; g.menuIndex = g.menuKeys.indexOf('battle'); g.input('enter'); });
+await page.evaluate(() => { const g = window.__el.game; g.menuIndex = g.menuKeys.indexOf('battle'); g.input('enter'); g.input('enter'); });   // (8.2.0: Battle Mode's menu, then Battle)
 await page.waitForFunction(() => window.__el.game.state === 'battle');
 await sleep(1500);
 const wave = await page.evaluate(async () => {
@@ -222,8 +222,8 @@ check(Math.abs(wave.ammo.l - wave.ammo.want) < 1e-6 && Math.abs(wave.ammo.r - wa
 check(wave.close <= 1 + 1e-9 && wave.close > 0.9, 'and up close it is held to full loudness, never over: ' + wave.close);
 check(wave.credit && Math.abs(wave.credit.v - wave.credit.want) < 1e-6, 'a credit beacon is twice as loud too: ' + JSON.stringify(wave.credit));
 check(wave.horn, 'the break ends with the war horn');
-check(wave.roars.length === 3 && new Set(wave.roars.map(([n]) => n)).size === 3 && wave.roars.every(([, v]) => Math.abs(v - 0.48) < 1e-6), 'and the crowd goes wild: three different roars together, as loud as a kill\'s cheer (6.1.0): ' + JSON.stringify(wave.roars));
-check(Math.abs(wave.crowdBefore - 0.44 * Math.SQRT1_2) < 1e-6 && wave.swell > 1.9 * 0.44 * Math.SQRT1_2 && Math.abs(wave.after - 0.44 * Math.SQRT1_2) < 1e-6 && wave.surge === null, `the crowd's murmur swells to twice its level and settles back after a few seconds: ${wave.crowdBefore} -> ${wave.swell} -> ${wave.after}`);
+check(wave.roars.length === 3 && new Set(wave.roars.map(([n]) => n)).size === 3 && wave.roars.every(([, v]) => Math.abs(v - 0.48 * 0.8) < 1e-6), 'and the crowd goes wild: three different roars together, as loud as a kill\'s cheer (6.1.0): ' + JSON.stringify(wave.roars));
+check(Math.abs(wave.crowdBefore - 0.352 * Math.SQRT1_2) < 1e-6 && wave.swell > 1.9 * 0.352 * Math.SQRT1_2 && Math.abs(wave.after - 0.352 * Math.SQRT1_2) < 1e-6 && wave.surge === null, `the crowd's murmur swells to twice its level and settles back after a few seconds: ${wave.crowdBefore} -> ${wave.swell} -> ${wave.after}`);
 
 // ------------------------------------------------------------------ 3. Chaos: a battle has the crowd, which fades out with its drums
 await page.evaluate(() => { const g = window.__el.game; g.input('enter'); });

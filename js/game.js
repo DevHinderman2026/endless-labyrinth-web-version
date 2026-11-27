@@ -47,7 +47,12 @@ const BATTLE_CREDIT_GAIN = 0.7;
 const BATTLE_AMMO_GAIN = 0.55 * BATTLE_BEACON_BOOST;
 // (6.1.0, Russell) In Battle Mode and Chaos's battles the crowd's cheer for a kill is a
 // little quieter than in Ultimate Mode's battle areas (ROAR_LEVEL, unchanged there).
-const BATTLE_ROAR_LEVEL = ROAR_LEVEL * 0.8;
+// (8.2.0, Russell, 27 November 2026: the cheering still a bit too loud.) The whole crowd, its
+// cheers and its loop, about 20 percent quieter again in Battle Mode and Chaos's battles
+// (BATTLE_CROWD_QUIETER); Ultimate Mode's crowd is unchanged. Only how loud it is played
+// changes; the recordings are never touched.
+const BATTLE_CROWD_QUIETER = 0.8;
+const BATTLE_ROAR_LEVEL = ROAR_LEVEL * 0.8 * BATTLE_CROWD_QUIETER;
 // The crowd goes wild when a wave begins, with the war horn: three of its roars
 // at once, a little apart, and its own loop swelling to WAVE_SURGE times its level
 // for a few seconds and easing back. (6.1.0, Russell: the roars as loud as a kill's
@@ -66,7 +71,7 @@ const BATTLE_BREAK_COUNTDOWN = 5;
 // Ultimate's). (6.1.0: no groan or gasp when one reaches you; see below.)
 // No announcer. Its level against the drone is Ultimate's (there the drone is
 // AMBIENCE_LEVEL and the crowd CROWD_LEVEL of that; here the drone is 0.8).
-const BATTLE_CROWD_LEVEL = CROWD_LEVEL * AMBIENCE_LEVEL;
+const BATTLE_CROWD_LEVEL = CROWD_LEVEL * AMBIENCE_LEVEL * BATTLE_CROWD_QUIETER;   // (8.2.0: 20 percent quieter)
 // (6.1.0, Russell: the stadium crowd must be heard everywhere, never silent.) Its
 // recording has a long lull, about eleven seconds where it falls to a third of its
 // loudness, and under the drums that was heard as no crowd at all. So the crowd is
@@ -125,6 +130,15 @@ const S = {
   KEY_TEST: 'key_test',   // Windows (web 3.0.0): the Braille key test (js/braille.js)
 };
 const PLAYING = [S.STANDARD, S.BATTLE];
+// (Web 8.2.0, Russell, 27 November 2026: the static, "too many sounds coming in one channel".)
+// The runs whose sounds added together went over the top most of the time: Battle Mode (Chaos's
+// battles too, the same state) and Driving (Chaos's roads too). The whole game is played about
+// 3 decibels quieter in them (js/audio.js LOUD_MODE_TRIM), and so in the help and the quit
+// question opened from them; every other mode, and the menus, as before.
+const LOUD_STATES = new Set([S.BATTLE, 'drive']);
+// (8.2.0) A fresh sound engine in the middle of any run, inside a touch, after this many seconds
+// of play (pauses not counted) on the same engine: see freshSoundDue.
+const FRESH_AFTER = 180;
 
 // The modes in js/modes/: their methods join the game's own, their runs count as
 // play, and their help sections go after Battle's (and their demos after Battle's
@@ -1210,8 +1224,33 @@ export class Game {
     // Story Mode, a run of half an hour or more, once in each chapter.
     const md = this.mode;
     if (this.playing && !this.isPaused && md && md.freshDue && md.freshDue(this)) return true;
+    if (this._freshMidRun()) return true;
     if (!this.soundStale || this.state !== S.MENU) return false;
     this.soundStale = false;
+    return true;
+  }
+
+  // (Web 8.2.0, Russell, 27 November 2026: "the static still keeps coming back. It's still
+  // clearing when you pause it.") Nothing in the game's sound piles up over a run (measured:
+  // sounds, nodes, panners and memory stay level over sixteen minutes of play), and what a pause
+  // does that nothing else in a run does is have the phone's own voice speak, which restarts the
+  // phone's sound output (7.0.0's finding). So, as Story Mode does in each chapter (7.5.3), every
+  // run now gets a fresh sound engine of its own after FRESH_AFTER seconds of play on the old one,
+  // at the next touch or key press (a phone starts a new engine only inside a touch), and only
+  // at a quiet moment: not paused, nothing but loops playing (no footstep, shot or chime that
+  // would be cut short), no line being said (Bella's or the phone's), and not while the mode
+  // holds the pause back (a ride, a climb). The loops cross over to the new engine in 40
+  // milliseconds (js/audio.js FRESH_CROSSFADE); everything decoded is kept.
+  _freshMidRun() {
+    const md = this.mode;
+    const a = this.audio;
+    if (!this.playing || this.isPaused || !a || !(this.playSinceFresh >= FRESH_AFTER)) return false;
+    if (md && md.freshDue) return false;                      // (Story Mode chooses its own moments)
+    if (md && md.blockPause && md.blockPause(this)) return false;
+    if (this.tts && this.tts.speaking) return false;
+    for (const v of a.live) if (!v.loop && !v.ended && !v.stopped) return false;
+    this.playSinceFresh = 0;
+    a.nextFreshFade = true;
     return true;
   }
 
@@ -1358,7 +1397,8 @@ export class Game {
       return v <= 0 ? `${label}: No score yet` : `${label}: ${fmt(v)}`;
     };
     // In the desktop's _score_lines order; a board it does not list goes after.
-    const order = ['chaos', 'tower', 'drive', 'drive_distance', 'island', 'findvoice', 'abyss', 'edge', 'park_tokens', 'museum', 'ultimate'];
+    // (8.2.0: Toy Memory, Battle's sub mode, right after Battle's board.)
+    const order = ['toymemory', 'chaos', 'tower', 'drive', 'drive_distance', 'volcanic', 'island', 'findvoice', 'abyss', 'edge', 'park_tokens', 'museum', 'ultimate'];
     const rank = (b) => (order.includes(b.key) ? order.indexOf(b.key) : order.length);
     const boards = MODES.flatMap((md) => md.boards || []).map((b, i) => [b, i])
       .sort((a, b) => rank(a[0]) - rank(b[0]) || a[1] - b[1]).map(([b]) => b);
@@ -1477,7 +1517,9 @@ export class Game {
     } else if (g === 'enter') {
       this.audio.play('menu_move');
       if (k === 'standard') this.startGame(S.STANDARD);
-      else if (k === 'battle') this.startGame(S.BATTLE);
+      // (8.2.0, Russell, 27 November 2026: Battle Mode opens a small menu, Battle or Toy
+      // Memory, and Back: js/modes/toymemory.js.)
+      else if (k === 'battle') this.openBattleMenu();
       else if (k === 'scores') {
         this.state = S.HIGH_SCORES;
         this.scoreIndex = 0;
@@ -2093,6 +2135,13 @@ export class Game {
   // -------------------------------------------------------------- one frame
   frame(dt) {
     this._countStats(dt);
+    // (8.2.0) The level of the game's sounds for the mode being played (LOUD_STATES), and the play on this
+    // sound engine so far (freshSoundDue).
+    const au = this.audio;
+    const lead = (this.state === S.HELP || this.state === S.CONFIRM_EXIT) ? this.prevState : this.state;
+    if (au && au.setLoud) au.setLoud(LOUD_STATES.has(lead));
+    if (au && this._freshCtx !== au.ctx) { this._freshCtx = au.ctx; this.playSinceFresh = 0; }
+    if (this.playing && !this.isPaused) this.playSinceFresh = (this.playSinceFresh || 0) + dt;
     const md = this.mode;
     const gm = md && md.gestureMode ? md.gestureMode(this) : null;
     this.gestures.setMode(this.playing && !this.isPaused ? (gm || 'run') : this.state === S.PRACTICE ? 'practice' : 'menu');

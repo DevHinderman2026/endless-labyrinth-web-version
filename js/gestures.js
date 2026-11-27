@@ -157,6 +157,9 @@ export class Gestures {
   }
 
   _holds() { return this.mode === 'run' || this.mode === 'practice'; }
+  // Whether a slide to the side turns: in a mode that turns (turnHold) on foot, and (8.2.0)
+  // in a car that turns, Volcanic Caves, where the throttle is the 'drive' mode's.
+  _turnsHere() { return this.turnHold && (this._holds() || this.mode === 'drive'); }
 
   // The finger that was running or walking back has lifted (or the run is over).
   _endStride(dead = false) {
@@ -283,12 +286,14 @@ export class Gestures {
         g.swiped = true;
         this._resetTaps();
         // (In the modes that turn, sideways only when clearly sideways: 5.2.0.)
-        const sideways = this.turnHold && this._holds()
+        // (8.2.0: Volcanic Caves drives and turns: with the accelerating finger lifted,
+        // a flick or a slide to the side turns the car, as walking does: _turnsHere.)
+        const sideways = this._turnsHere()
           ? Math.abs(dx) > SIDEWAYS_RATIO * Math.abs(dy) : Math.abs(dx) > Math.abs(dy);
         if (sideways) {
           // Left or right: a swipe; where the game asks (a mode that turns), a
           // flick or a slide, told apart by how soon the finger lifts.
-          if (this.turnHold && this._holds() && !g.strideDone) this._armTurn(g, dx > 0 ? 'right' : 'left', t.identifier);
+          if (this._turnsHere() && !g.strideDone) this._armTurn(g, dx > 0 ? 'right' : 'left', t.identifier);
           else this.emit(dx > 0 ? 'right' : 'left');
         } else if (dy < 0 && this.mode === 'drive') {
           // Slide up and hold: the throttle stays on while this finger stays down.
@@ -409,7 +414,7 @@ export class Gestures {
       }
       return;
     }
-    if (this.turnHold && this.mode === 'run' && (e.key === 'ArrowLeft' || e.key === 'ArrowRight')) {
+    if (this.turnHold && (this.mode === 'run' || this.mode === 'drive') && (e.key === 'ArrowLeft' || e.key === 'ArrowRight')) {
       // A mode that turns: a turn. Let go at once it is a quick turn (see _keyUp);
       // still down after KEY_HOLD_MS it is a held turn, until the key is let go.
       e.preventDefault();

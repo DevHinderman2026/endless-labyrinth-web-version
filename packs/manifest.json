@@ -95,6 +95,14 @@
   "edge": {
    "file": "edge-4c98217e17.elpack",
    "bytes": 692975
+  },
+  "toymemory": {
+   "file": "toymemory-ede6aec8e4.elpack",
+   "bytes": 483406
+  },
+  "volcanic": {
+   "file": "volcanic-15ca0be844.elpack",
+   "bytes": 705187
   }
  }
 }
